@@ -235,6 +235,77 @@ class BTN_bake_low_poly(bpy.types.Operator):
 
         return {'FINISHED'}
 
+#Facade interface
+class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
+    bl_idname = "xp.add_rem_fac"
+    bl_label = "Remove Spelling"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    collection_name: bpy.props.StringProperty() # type: ignore
+    floor_index: bpy.props.IntProperty() # type: ignore
+    wall_index: bpy.props.IntProperty() # type: ignore
+    spelling_index: bpy.props.IntProperty() # type: ignore
+    level: bpy.props.StringProperty() # type: ignore    spelling, wall, or floor
+    add: bpy.props.BoolProperty() # type: ignore true to add a new item after the target, false to remove the target
+
+    def execute(self, context):
+        #Get the collection
+        col = None
+        for search_col in bpy.data.collections:
+            if search_col.name == self.collection_name:
+                col = search_col
+        
+        if col is None:
+            self.report({'ERROR'}, "Collection not found")
+            return {'CANCELLED'}
+
+        #Get the floor
+        floor = col.xp_facade.floors[self.floor_index]
+        if floor is None:
+            self.report({'ERROR'}, "Floor not found")
+            return {'CANCELLED'}
+        
+        if self.level == "floor":
+            if self.add:
+                new_floor = col.xp_facade.floors.add()
+                new_floor.collection = "New Floor"
+            else:
+                col.xp_facade.floors.remove(self.floor_index)
+            return {'FINISHED'}
+        
+        #Get the wall
+        wall = floor.walls[self.wall_index]
+
+        if wall is None:
+            self.report({'ERROR'}, "Wall not found")
+            return {'CANCELLED'}
+
+        if self.level == "wall":
+            if self.add:
+                wall = floor.walls.add()
+                wall.name = "New Wall"
+            else:
+                floor.walls.remove(self.wall_index)
+            return {'FINISHED'}
+        
+        #Get the spelling
+        spelling = wall.spellings[self.spelling_index]
+
+        if spelling is None:
+            self.report({'ERROR'}, "Spelling not found")
+            return {'CANCELLED'}
+
+        if self.level == "spelling":
+            spelling = wall.spellings[self.spelling_index]
+            if self.add:
+                new_spelling = wall.spellings.add()
+                new_spelling.collection = "New Spelling"
+            else:
+                wall.spellings.remove(self.spelling_index)
+            return {'FINISHED'}
+
+        return {'FINISHED'}
+
 def menu_func_import(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     
@@ -243,7 +314,9 @@ def register():
     bpy.utils.register_class(IMPORT_lin)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
+    bpy.utils.register_class(BTN_bake_low_poly)
     bpy.utils.register_class(BTN_update_xp_export_settings)
+    bpy.utils.resgister_class(MENU_BT_fac_add_or_rem_in_fac)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
 def unregister():
@@ -251,5 +324,7 @@ def unregister():
     bpy.utils.unregister_class(IMPORT_lin)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
+    bpy.utils.unregister_class(BTN_bake_low_poly)
     bpy.utils.unregister_class(BTN_update_xp_export_settings)
+    bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)

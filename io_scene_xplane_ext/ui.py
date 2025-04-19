@@ -101,6 +101,74 @@ def draw_decal_prop(layout, property_item, index):
             row.prop(property_item, "nml_decal_key_blue")
             row.prop(property_item, "nml_decal_key_alpha")
 
+def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index, spelling_index):
+    row = layout.row()
+    row.prop(spelling, "collection", text="Segment")
+    btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
+    btn_rem.collection_name = collection_name
+    btn_rem.floor_index = floor_index
+    btn_rem.wall_index = wall_index
+    btn_rem.spelling_index = spelling_index
+    btn_rem.level = "spelling"
+    btn_rem.add = False
+
+def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
+    box = layout.box()
+    row = box.row()
+    row.prop(wall, "is_ui_expanded", text=wall.name, icon='TRIA_DOWN' if wall.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+    if wall.is_ui_expanded:
+        box.prop(wall, "name", text="Name")
+        box.prop(wall, "min_width", text="Min Width")
+        box.prop(wall, "max_width", text="Max Width")
+        box.prop(wall, "min_heading", text="Min Heading")
+        box.prop(wall, "max_heading", text="Max Heading")
+
+        box.label(text="Wall Spellings")
+
+        for i, spelling in enumerate(wall.spellings):
+            draw_fac_spelling(box, spelling, collection_name, floor_index, wall_index, i)
+
+        btn_add = box.operator("xp.add_rem_fac", text="Add Segment", icon='ADD')
+        btn_add.collection_name = collection_name
+        btn_add.floor_index = floor_index
+        btn_add.wall_index = wall_index
+        btn_add.spelling_index = len(wall.spellings)
+        btn_add.level = "spelling"
+        btn_add.add = True
+
+
+    btn_rem = box.operator("xp.add_rem_fac", text="", icon='X')
+    btn_rem.collection_name = collection_name
+    btn_rem.floor_index = floor_index
+    btn_rem.wall_index = wall_index
+    btn_rem.level = "wall"
+    btn_rem.add = False
+
+def draw_fac_floor(layout, floor, collection_name, floor_index):
+    box = layout.box()
+    row = box.row()
+    row.prop(floor, "is_ui_expanded", text=floor.name, icon='TRIA_DOWN' if floor.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+    if floor.is_ui_expanded:
+        box.label(text=f"Floor")
+        box.prop(floor, "name", text="Name")
+        box.prop(floor, "roof_collection", text="Roof Collection")
+
+        for i, wall in enumerate(floor.walls):
+            draw_fac_wall(box, wall, collection_name, floor_index, i)
+
+        btn_add = box.operator("xp.add_rem_fac", text="Add Wall", icon='ADD')
+        btn_add.collection_name = collection_name
+        btn_add.floor_index = floor_index
+        btn_add.wall_index = len(floor.walls)
+        btn_add.level = "wall"
+        btn_add.add = True
+
+    btn_rem = box.operator("xp.add_rem_fac", text="", icon='X')
+    btn_rem.collection_name = collection_name
+    btn_rem.floor_index = floor_index
+    btn_rem.level = "floor"
+    btn_rem.add = False
+
 class MENU_lin_exporter(bpy.types.Panel):
     bl_label = "X-Plane Line Exporter"
     bl_idname = "SCENE_PT_lin_exporter"
@@ -249,104 +317,71 @@ class MENU_facade(bpy.types.Panel):
 
         layout = self.layout
 
-        facade_exporter = context.scene.facade_exporter
+        for col in bpy.data.collections:
+            if col.xp_fac.exportable:
+                fac = col.xp_fac
 
-        #Export button
-        layout.operator("blender_utils.export_facade")
-        layout.prop(facade_exporter, "facade_name")
+                layout.label(text=f"Collection: {col.name}")
 
-        layout.separator()
+                box = layout.box()
+                top_row = box.row()
+                top_row.prop(col.xp_fac, "is_ui_expanded", text=fac.name, icon='TRIA_DOWN' if col.xp_fac.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+                top_row.prop(col.xp_fac, "exportable", text="Export Enabled")
+                if col.xp_fac.is_ui_expanded:
+                    layout.prop(fac, "facade_name")
 
-        layout.label(text="Global Properties:")
-        layout.prop(facade_exporter, "graded")
-        layout.prop(facade_exporter, "ring")
-        layout.prop(facade_exporter, "solid")
-        layout.prop(facade_exporter, "layergroup")
-        layout.prop(facade_exporter, "layergroup_draped")
+                    layout.separator()
 
-        layout.separator()
+                    layout.label(text="Global Properties:")
+                    layout.prop(fac, "graded")
+                    layout.prop(fac, "ring")
+                    layout.prop(fac, "solid")
+                    layout.prop(fac, "layergroup")
+                    layout.prop(fac, "layergroup_draped")
 
-        #Wall properties-----------------------------------------------------------------------------------------
+                    layout.separator()
 
-        box = layout.box()
+                    #Wall properties-----------------------------------------------------------------------------------------
 
-        box.label(text="Wall Properties:")
-        box.prop(facade_exporter, "render_wall")
-        if facade_exporter.render_wall:
-            box.prop(facade_exporter, "wall_texture_alb")
-            box.prop(facade_exporter, "wall_texture_nml")
-            box.prop(facade_exporter, "wall_texture_nml_scale")
-            
-            box.separator()
+                    box = layout.box()
 
-            #Decals
-            box.prop(facade_exporter, "wall_seperate_normal_decals")
-            box.prop(facade_exporter, "wall_modulator_texture")
-            for index, item in enumerate(facade_exporter.wall_decals):
-                if item.visible:
-                    draw_decal_prop(box, item, index)
+                    box.label(text="Wall Properties:")
+                    box.prop(fac, "render_wall")
+                    if fac.render_wall:
+                        pass
 
-        layout.separator()
+                    layout.separator()
 
-        #Roof properties-----------------------------------------------------------------------------------------
+                    #Roof properties-----------------------------------------------------------------------------------------
 
-        box = layout.box()
+                    box = layout.box()
 
-        box.label(text="Roof Properties:")
-        box.prop(facade_exporter, "render_roof")
-        if facade_exporter.render_roof:
-            box.prop(facade_exporter, "roof_texture_alb")
-            box.prop(facade_exporter, "roof_texture_nml")
-            box.prop(facade_exporter, "roof_texture_nml_scale")
-            box.prop(facade_exporter, "roof_height")
+                    box.label(text="Roof Properties:")
+                    box.prop(fac, "render_roof")
+                    if fac.render_roof:
+                        pass
 
-            box.separator()
+                    layout.separator()
 
-            #Decals
-            box.prop(facade_exporter, "roof_seperate_normal_decals")
-            box.prop(facade_exporter, "roof_modulator_texture")
-            for index, item in enumerate(facade_exporter.roof_decals):
-                if item.visible:
-                    DecalProperties.DecalProperties.draw(box, item, index)
+                    #Wall spellings-----------------------------------------------------------------------------------------
 
-        layout.separator()
+                    box = layout.box()
+                    box.label(text="Floor Definitions:")
+                    for i, floor in enumerate(fac.floors):
+                        draw_fac_floor(box, floor, fac.facade_name, i)
+                    
+                    btn_add = box.operator("xp.add_rem_fac", text="Add Floor", icon='ADD')
+                    btn_add.collection_name = fac.facade_name
+                    btn_add.floor_index = len(fac.floors)
+                    btn_add.level = "floor"
+                    btn_add.add = True
 
-        #Wall spettings-----------------------------------------------------------------------------------------
-
-        box = layout.box()
-
-        box.label(text="Facade Wall Spellings:")
-
-        # Display the collection of text items
-        wall_counter = 0
-        for index, item in enumerate(facade_exporter.spellings):
-            row = box.row()
-            col1 = row.column()
-            col2 = row.column()
-            
-            #We will switch which properties we show based on whether this is a wall or a spelling
-            col1.prop(item, "type", text="", expand=False)
-
-            if item.type == "WALL":
-                col2.prop(item, "wall_name")
-                row2 = box.row()
-                row2.prop(item, "min_width")
-                row2.prop(item, "max_width")
-                row2.prop(item, "min_heading")
-                row2.prop(item, "max_heading")
-            elif item.type == "WALL_RULE":
-                row2 = box.row()
-                row2.prop(item, "min_width")
-                row2.prop(item, "max_width")
-                row2.prop(item, "min_heading")
-                row2.prop(item, "max_heading")
-            else:
-                col2.prop(item, "spellings")
-            
-            row.operator("object.remove_spelling", text="", icon='X').index = index
-
-        # Add button to add new text items
-        box.operator("object.add_spelling", text="Add Spelling")
+        for col in bpy.data.collections:
+            if not col.xp_fac.exportable:
+                fac = col.xp_fac
+                box = layout.box()
+                top_row = box.row()
+                top_row.prop(col.xp_fac, "exportable", text="Export Enabled")
 
 class MENU_attached_object(bpy.types.Panel):
     """Creates a Panel in the object properties window"""

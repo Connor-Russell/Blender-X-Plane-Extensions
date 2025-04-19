@@ -30,9 +30,15 @@ layer_group_enum = [
     ('CARS', "Cars", "Cars layer group"),
 ]
 
+#For facade spelling enums
+def get_all_collection_names():
+    return[col.name for col in bpy.data.collections]
+
 #Function to force a UI update after a property has been changed
 def update_ui(self, context):
     context.area.tag_redraw()
+
+#Line properties
 
 class PROP_lin_layer(bpy.types.PropertyGroup):
     is_exportable: bpy.props.BoolProperty(
@@ -87,35 +93,7 @@ class PROP_lin_collection(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
-class PROP_xp_ext_scene(bpy.types.PropertyGroup):
-    collection_search: bpy.props.StringProperty(
-        name="Search",
-        default="",
-        description="Search for a collection to configure export",
-        update=update_ui
-    ) # type: ignore
-
-    exportable_collections_expanded: bpy.props.BoolProperty(
-        name="Exportable Collections Expanded",
-        default=False,
-        update=update_ui
-    ) # type: ignore
-
-    low_poly_bake_resolution: bpy.props.FloatProperty(
-        name="Bake Resolution",
-        description="The resolution of the low poly bake",
-        default=1024,
-        min=32.0,
-        max=8192
-    ) #type: ignore
-
-    low_poly_bake_ss_factor: bpy.props.FloatProperty(
-         name="Bake Super-Sampling Factor",
-         description="The Sumper-Sampling factor of the low poly bake",
-         default=1.0,
-         min=1.0,
-         max=4.0
-     ) #type: ignore
+#Material properties
 
 class PROP_decal(bpy.types.PropertyGroup):
     enabled: bpy.props.BoolProperty(name="Enabled", description="Whether this decal slot is enabled", update=update_ui)# type: ignore
@@ -290,6 +268,8 @@ class PROP_mats(bpy.types.PropertyGroup):
     decal_one: bpy.props.PointerProperty(type=PROP_decal) # type: ignore
     decal_two: bpy.props.PointerProperty(type=PROP_decal) # type: ignore
 
+#General properties
+
 class PROP_attached_obj(bpy.types.PropertyGroup):
 
     #Number of cuts for the mesh
@@ -300,10 +280,70 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     draped: bpy.props.BoolProperty(name="Draped", description="Whether the object is draped", default=False)    # type: ignore
     resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
 
+class PROP_xp_ext_scene(bpy.types.PropertyGroup):
+    collection_search: bpy.props.StringProperty(
+        name="Search",
+        default="",
+        description="Search for a collection to configure export",
+        update=update_ui
+    ) # type: ignore
+
+    exportable_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    low_poly_bake_resolution: bpy.props.FloatProperty(
+        name="Bake Resolution",
+        description="The resolution of the low poly bake",
+        default=1024,
+        min=32.0,
+        max=8192
+    ) #type: ignore
+
+    low_poly_bake_ss_factor: bpy.props.FloatProperty(
+         name="Bake Super-Sampling Factor",
+         description="The Sumper-Sampling factor of the low poly bake",
+         default=1.0,
+         min=1.0,
+         max=4.0
+     ) #type: ignore
+
+#Facade properties
+
+class PROP_fac_spelling(bpy.types.PropertyGroup):
+    collection: bpy.props.EnumProperty(
+        name="Type",
+        items=get_all_collection_names,
+        update=update_ui  # type: ignore
+    )
+
+class PROP_fac_wall(bpy.types.PropertyGroup):
+    min_width: bpy.props.FloatProperty(name="Min Width", description="The minimum width of the wall")# type: ignore
+    max_width: bpy.props.FloatProperty(name="Max Width", description="The maximum width of the wall")# type: ignore
+    min_heading: bpy.props.FloatProperty(name="Min Heading", description="The minimum heading of the wall")# type: ignore
+    max_heading: bpy.props.FloatProperty(name="Max Heading", description="The maximum heading of the wall")# type: ignore
+    name: bpy.props.StringProperty(name="Wall Name", default="", update=update_ui)# type: ignore
+    spellings: bpy.props.CollectionProperty(type=PROP_fac_spelling)# type: ignore
+    is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the wall is expanded in the UI", default=False, update=update_ui)# type: ignore
+
+class PROP_fac_floor(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Floor Name", description="The name of the floor")# type: ignore
+    roof_collection: bpy.props.EnumProperty(
+        name="Type",
+        items=get_all_collection_names,
+        update=update_ui  # type: ignore
+    )
+    walls: bpy.props.CollectionProperty(type=PROP_fac_wall_rules)# type: ignore
+    is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the floor is expanded in the UI", default=False, update=update_ui)# type: ignore
+
 class PROP_facade(bpy.types.PropertyGroup):
 
     #Facade name
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the facade is exportable", default=True, update=update_ui)# type: ignore
     facade_name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade")# type: ignore
+    is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the facade is expanded in the UI", default=False, update=update_ui)# type: ignore
 
     #Global properties
     graded: bpy.props.BoolProperty(name="Graded", description="Whether the facade is graded, otherwise draped")# type: ignore
@@ -314,27 +354,11 @@ class PROP_facade(bpy.types.PropertyGroup):
 
     #Wall properties
     render_wall: bpy.props.BoolProperty(name="Render Wall", description="Whether the wall is rendered", update=update_ui)# type: ignore
-    wall_texture_alb: bpy.props.StringProperty(name="Texture ALB Path", description="The relative path of the ALB", subtype='FILE_PATH')# type: ignore
-    wall_texture_nml: bpy.props.StringProperty(name="Texture NML Path", description="The relative path of the NML", subtype='FILE_PATH')# type: ignore
-    wall_texture_nml_scale: bpy.props.FloatProperty(name="Texture NML Scale", description="The scale of the NML texture")# type: ignore
+    
 
     #Roof properties
     render_roof: bpy.props.BoolProperty(name="Render Roof", description="Whether the roof is rendered", update=update_ui)# type: ignore
-    roof_texture_alb: bpy.props.StringProperty(name="Texture ALB Path", description="The relative path of the ALB", subtype='FILE_PATH')# type: ignore
-    roof_texture_nml: bpy.props.StringProperty(name="Texture NML Path", description="The relative path of the NML", subtype='FILE_PATH')# type: ignore
-    roof_texture_nml_scale: bpy.props.FloatProperty(name="Texture NML Scale", description="The scale of the NML texture")# type: ignore
-    roof_height: bpy.props.FloatProperty(name="Roof Height", description="The height of the roof")# type: ignore
-
-    #Spellings
-    spellings: bpy.props.CollectionProperty(type=facade_utils.spelling_item)# type: ignore
-
-    #Decals
-    wall_modulator_texture: bpy.props.StringProperty(name="Wall Modulator Texture", description="The texture that modulates the wall", subtype='FILE_PATH')# type: ignore
-    wall_seperate_normal_decals: bpy.props.BoolProperty(name="Wall Seperate Normal Decals", description="Whether the wall has seperate normal decals, otherwise normals align with the RGB decal.", update=update_wall_decals)# type: ignore
-    wall_decals: bpy.props.CollectionProperty(type=DecalProperties.DecalProperties)# type: ignore
-    roof_modulator_texture: bpy.props.StringProperty(name="Roof Modulator Texture", description="The texture that modulates the roof", subtype='FILE_PATH')# type: ignore
-    roof_seperate_normal_decals: bpy.props.BoolProperty(name="Roof Seperate Normal Decals", description="Whether the roof has seperate normal decals, otherwise normals align with the RGB decal.", update=update_wall_decals) # type: ignore
-    roof_decals: bpy.props.CollectionProperty(type=DecalProperties.DecalProperties) # type: ignore
+ 
 
 def register():
     
@@ -344,11 +368,16 @@ def register():
     bpy.utils.register_class(PROP_decal)
     bpy.utils.register_class(PROP_mats)
     bpy.utils.register_class(PROP_attached_obj)
+    bpy.utils.register_class(PROP_fac_spelling)
+    bpy.utils.register_class(PROP_fac_wall)
+    bpy.utils.register_class(PROP_fac_floor)
     bpy.utils.register_class(PROP_facade)
+    
 
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
+    bpy.types.Collection.xp_fac = bpy.props.PointerProperty(type=PROP_facade)
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
     bpy.types.Material.xp_materials = bpy.props.PointerProperty(type=PROP_mats)
 
@@ -360,6 +389,9 @@ def unregister():
     bpy.utils.unregister_class(PROP_mats)
     bpy.utils.unregister_class(PROP_decal)
     bpy.utils.unregister_class(PROP_attached_obj)
+    bpy.utils.unregister_class(PROP_fac_spelling)
+    bpy.utils.unregister_class(PROP_fac_wall)
+    bpy.utils.unregister_class(PROP_fac_floor)
     bpy.utils.unregister_class(PROP_facade)
 
     del bpy.types.Object.xp_lin
