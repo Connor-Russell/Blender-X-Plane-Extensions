@@ -11,8 +11,8 @@ import bpy #type: ignore
 import bmesh #type: ignore
 
 #Our modules
-from . import GeometryUtils
-from . import MiscUtils
+from ..Helpers import GeometryUtils
+from ..Helpers import MiscUtils
 
 #Simple container to hold attached object data  
 class xp_attached_obj:

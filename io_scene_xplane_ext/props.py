@@ -6,6 +6,7 @@
 
 import bpy # type: ignore
 from . import material_config
+from .Helpers import facade_utils
 
 #Enum for types. Can be START END or SEGMENT
 line_type = [
@@ -325,7 +326,7 @@ class PROP_facade(bpy.types.PropertyGroup):
     roof_height: bpy.props.FloatProperty(name="Roof Height", description="The height of the roof")# type: ignore
 
     #Spellings
-    spellings: bpy.props.CollectionProperty(type=FacadeSpellingItem)# type: ignore
+    spellings: bpy.props.CollectionProperty(type=facade_utils.spelling_item)# type: ignore
 
     #Decals
     wall_modulator_texture: bpy.props.StringProperty(name="Wall Modulator Texture", description="The texture that modulates the wall", subtype='FILE_PATH')# type: ignore
@@ -358,8 +359,11 @@ def unregister():
     bpy.utils.unregister_class(PROP_xp_ext_scene)
     bpy.utils.unregister_class(PROP_mats)
     bpy.utils.unregister_class(PROP_decal)
+    bpy.utils.unregister_class(PROP_attached_obj)
+    bpy.utils.unregister_class(PROP_facade)
 
     del bpy.types.Object.xp_lin
+    del bpy.types.Object.xp_attached_obj
     del bpy.types.Collection.xp_lin
     del bpy.types.Scene.xp_ext
     del bpy.types.Material.xp_materials

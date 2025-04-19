@@ -284,8 +284,7 @@ class MENU_facade(bpy.types.Panel):
             box.prop(facade_exporter, "wall_modulator_texture")
             for index, item in enumerate(facade_exporter.wall_decals):
                 if item.visible:
-                    props.PROP_decal.draw(box, item, index)
-        
+                    draw_decal_prop(box, item, index)
 
         layout.separator()
 
@@ -387,9 +386,13 @@ def register():
     bpy.utils.register_class(MENU_lin_layer)
     bpy.utils.register_class(MENU_mats)
     bpy.utils.register_class(MENU_operations)
+    bpy.utils.register_class(MENU_facade)
+    bpy.utils.register_class(MENU_attached_object)
 
 def unregister():
     bpy.utils.unregister_class(MENU_lin_exporter)
     bpy.utils.unregister_class(MENU_lin_layer)
     bpy.utils.unregister_class(MENU_mats)
     bpy.utils.unregister_class(MENU_operations)
+    bpy.utils.unregister_class(MENU_facade)
+    bpy.utils.unregister_class(MENU_attached_object)
