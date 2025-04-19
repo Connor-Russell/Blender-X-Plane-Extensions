@@ -5,6 +5,7 @@
 #Purpose:   Provide a single file containing functions for drawing the UIs
 
 import bpy # type: ignore
+from . import props
 
 def draw_decal_prop(layout, property_item, index):
     layout.prop(property_item, "enabled", text=f"Decal {index + 1}")
@@ -235,6 +236,151 @@ class MENU_operations(bpy.types.Panel):
 
         layout.separator()
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
+
+class MENU_facade(bpy.types.Panel):
+    """Creates a Panel in the scene properties window"""
+    bl_label = "X-Plane Facade Exporter"
+    bl_idname = "SCENE_PT_facade_exporter"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+
+    def draw(self, context):
+
+        layout = self.layout
+
+        facade_exporter = context.scene.facade_exporter
+
+        #Export button
+        layout.operator("blender_utils.export_facade")
+        layout.prop(facade_exporter, "facade_name")
+
+        layout.separator()
+
+        layout.label(text="Global Properties:")
+        layout.prop(facade_exporter, "graded")
+        layout.prop(facade_exporter, "ring")
+        layout.prop(facade_exporter, "solid")
+        layout.prop(facade_exporter, "layergroup")
+        layout.prop(facade_exporter, "layergroup_draped")
+
+        layout.separator()
+
+        #Wall properties-----------------------------------------------------------------------------------------
+
+        box = layout.box()
+
+        box.label(text="Wall Properties:")
+        box.prop(facade_exporter, "render_wall")
+        if facade_exporter.render_wall:
+            box.prop(facade_exporter, "wall_texture_alb")
+            box.prop(facade_exporter, "wall_texture_nml")
+            box.prop(facade_exporter, "wall_texture_nml_scale")
+            
+            box.separator()
+
+            #Decals
+            box.prop(facade_exporter, "wall_seperate_normal_decals")
+            box.prop(facade_exporter, "wall_modulator_texture")
+            for index, item in enumerate(facade_exporter.wall_decals):
+                if item.visible:
+                    props.PROP_decal.draw(box, item, index)
+        
+
+        layout.separator()
+
+        #Roof properties-----------------------------------------------------------------------------------------
+
+        box = layout.box()
+
+        box.label(text="Roof Properties:")
+        box.prop(facade_exporter, "render_roof")
+        if facade_exporter.render_roof:
+            box.prop(facade_exporter, "roof_texture_alb")
+            box.prop(facade_exporter, "roof_texture_nml")
+            box.prop(facade_exporter, "roof_texture_nml_scale")
+            box.prop(facade_exporter, "roof_height")
+
+            box.separator()
+
+            #Decals
+            box.prop(facade_exporter, "roof_seperate_normal_decals")
+            box.prop(facade_exporter, "roof_modulator_texture")
+            for index, item in enumerate(facade_exporter.roof_decals):
+                if item.visible:
+                    DecalProperties.DecalProperties.draw(box, item, index)
+
+        layout.separator()
+
+        #Wall spettings-----------------------------------------------------------------------------------------
+
+        box = layout.box()
+
+        box.label(text="Facade Wall Spellings:")
+
+        # Display the collection of text items
+        wall_counter = 0
+        for index, item in enumerate(facade_exporter.spellings):
+            row = box.row()
+            col1 = row.column()
+            col2 = row.column()
+            
+            #We will switch which properties we show based on whether this is a wall or a spelling
+            col1.prop(item, "type", text="", expand=False)
+
+            if item.type == "WALL":
+                col2.prop(item, "wall_name")
+                row2 = box.row()
+                row2.prop(item, "min_width")
+                row2.prop(item, "max_width")
+                row2.prop(item, "min_heading")
+                row2.prop(item, "max_heading")
+            elif item.type == "WALL_RULE":
+                row2 = box.row()
+                row2.prop(item, "min_width")
+                row2.prop(item, "max_width")
+                row2.prop(item, "min_heading")
+                row2.prop(item, "max_heading")
+            else:
+                col2.prop(item, "spellings")
+            
+            row.operator("object.remove_spelling", text="", icon='X').index = index
+
+        # Add button to add new text items
+        box.operator("object.add_spelling", text="Add Spelling")
+
+class MENU_attached_object(bpy.types.Panel):
+    """Creates a Panel in the object properties window"""
+    bl_label = "X-Plane Attached Object"
+    bl_idname = "OBJECT_PT_facade_object"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "object"
+
+    def draw(self, context):
+
+        layout = self.layout
+
+        facade_object = context.object.facade_object
+
+        #If this is a mesh, we show the mesh options of cut, and exportable
+        if context.object.type == 'MESH':
+            layout.label(text="Facade Mesh Properties")
+            layout.separator()
+            layout.prop(facade_object, "far_lod")
+            layout.prop(facade_object, "group")
+            layout.prop(facade_object, "cuts")
+            layout.prop(facade_object, "exportable")
+
+        elif context.object.type == 'EMPTY':
+            layout.label(text="Facade Attached Object Properties")
+            layout.separator()
+            layout.prop(facade_object, "exportable")
+            layout.prop(facade_object, "draped")
+            layout.prop(facade_object, "resource")
+
+        else:
+            layout.label(text="This object is not a mesh or empty")
 
 def register():
     bpy.utils.register_class(MENU_lin_exporter)

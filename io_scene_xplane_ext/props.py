@@ -289,6 +289,52 @@ class PROP_mats(bpy.types.PropertyGroup):
     decal_one: bpy.props.PointerProperty(type=PROP_decal) # type: ignore
     decal_two: bpy.props.PointerProperty(type=PROP_decal) # type: ignore
 
+class PROP_attached_obj(bpy.types.PropertyGroup):
+
+    #Number of cuts for the mesh
+    far_lod: bpy.props.IntProperty(name="Far LOD", description="The far LOD for the object", default=1000)  # type: ignore
+    group: bpy.props.IntProperty(name="Group", description="The group for the object. Use for layering transparency") # type: ignore
+    cuts: bpy.props.IntProperty(name="Segments", description="The number of segments in the mesh (used for curves. If it is a flat plane with 3 subdivisions, you have 4 segments)")   # type: ignore
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
+    draped: bpy.props.BoolProperty(name="Draped", description="Whether the object is draped", default=False)    # type: ignore
+    resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
+
+class PROP_facade(bpy.types.PropertyGroup):
+
+    #Facade name
+    facade_name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade")# type: ignore
+
+    #Global properties
+    graded: bpy.props.BoolProperty(name="Graded", description="Whether the facade is graded, otherwise draped")# type: ignore
+    ring: bpy.props.BoolProperty(name="Ring", description="Whether the facade is a closed or an open ring")# type: ignore
+    layergroup: bpy.props.StringProperty(name="Layer Group", description="The layer group of the facade")# type: ignore
+    layergroup_draped: bpy.props.StringProperty(name="Layer Group Draped", description="The layer group of the draped facade")# type: ignore
+    solid: bpy.props.BoolProperty(name="Solid", description="Whether the roof has collision testing enabled")# type: ignore
+
+    #Wall properties
+    render_wall: bpy.props.BoolProperty(name="Render Wall", description="Whether the wall is rendered", update=update_ui)# type: ignore
+    wall_texture_alb: bpy.props.StringProperty(name="Texture ALB Path", description="The relative path of the ALB", subtype='FILE_PATH')# type: ignore
+    wall_texture_nml: bpy.props.StringProperty(name="Texture NML Path", description="The relative path of the NML", subtype='FILE_PATH')# type: ignore
+    wall_texture_nml_scale: bpy.props.FloatProperty(name="Texture NML Scale", description="The scale of the NML texture")# type: ignore
+
+    #Roof properties
+    render_roof: bpy.props.BoolProperty(name="Render Roof", description="Whether the roof is rendered", update=update_ui)# type: ignore
+    roof_texture_alb: bpy.props.StringProperty(name="Texture ALB Path", description="The relative path of the ALB", subtype='FILE_PATH')# type: ignore
+    roof_texture_nml: bpy.props.StringProperty(name="Texture NML Path", description="The relative path of the NML", subtype='FILE_PATH')# type: ignore
+    roof_texture_nml_scale: bpy.props.FloatProperty(name="Texture NML Scale", description="The scale of the NML texture")# type: ignore
+    roof_height: bpy.props.FloatProperty(name="Roof Height", description="The height of the roof")# type: ignore
+
+    #Spellings
+    spellings: bpy.props.CollectionProperty(type=FacadeSpellingItem)# type: ignore
+
+    #Decals
+    wall_modulator_texture: bpy.props.StringProperty(name="Wall Modulator Texture", description="The texture that modulates the wall", subtype='FILE_PATH')# type: ignore
+    wall_seperate_normal_decals: bpy.props.BoolProperty(name="Wall Seperate Normal Decals", description="Whether the wall has seperate normal decals, otherwise normals align with the RGB decal.", update=update_wall_decals)# type: ignore
+    wall_decals: bpy.props.CollectionProperty(type=DecalProperties.DecalProperties)# type: ignore
+    roof_modulator_texture: bpy.props.StringProperty(name="Roof Modulator Texture", description="The texture that modulates the roof", subtype='FILE_PATH')# type: ignore
+    roof_seperate_normal_decals: bpy.props.BoolProperty(name="Roof Seperate Normal Decals", description="Whether the roof has seperate normal decals, otherwise normals align with the RGB decal.", update=update_wall_decals) # type: ignore
+    roof_decals: bpy.props.CollectionProperty(type=DecalProperties.DecalProperties) # type: ignore
+
 def register():
     
     bpy.utils.register_class(PROP_lin_layer)
@@ -296,8 +342,11 @@ def register():
     bpy.utils.register_class(PROP_xp_ext_scene)
     bpy.utils.register_class(PROP_decal)
     bpy.utils.register_class(PROP_mats)
+    bpy.utils.register_class(PROP_attached_obj)
+    bpy.utils.register_class(PROP_facade)
 
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
+    bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
     bpy.types.Material.xp_materials = bpy.props.PointerProperty(type=PROP_mats)
