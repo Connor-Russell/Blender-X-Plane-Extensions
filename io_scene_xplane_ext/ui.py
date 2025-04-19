@@ -137,7 +137,7 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
         btn_add.add = True
 
 
-    btn_rem = box.operator("xp.add_rem_fac", text="", icon='X')
+    btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
     btn_rem.collection_name = collection_name
     btn_rem.floor_index = floor_index
     btn_rem.wall_index = wall_index
@@ -152,6 +152,8 @@ def draw_fac_floor(layout, floor, collection_name, floor_index):
         box.label(text=f"Floor")
         box.prop(floor, "name", text="Name")
         box.prop(floor, "roof_collection", text="Roof Collection")
+        box.separator()
+        box.label(text="Wall Rules:")
 
         for i, wall in enumerate(floor.walls):
             draw_fac_wall(box, wall, collection_name, floor_index, i)
@@ -163,7 +165,7 @@ def draw_fac_floor(layout, floor, collection_name, floor_index):
         btn_add.level = "wall"
         btn_add.add = True
 
-    btn_rem = box.operator("xp.add_rem_fac", text="", icon='X')
+    btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
     btn_rem.collection_name = collection_name
     btn_rem.floor_index = floor_index
     btn_rem.level = "floor"
@@ -325,53 +327,55 @@ class MENU_facade(bpy.types.Panel):
 
                 box = layout.box()
                 top_row = box.row()
-                top_row.prop(col.xp_fac, "is_ui_expanded", text=fac.name, icon='TRIA_DOWN' if col.xp_fac.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+                top_row.prop(col.xp_fac, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if col.xp_fac.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
                 top_row.prop(col.xp_fac, "exportable", text="Export Enabled")
                 if col.xp_fac.is_ui_expanded:
-                    layout.prop(fac, "facade_name")
+                    box.prop(fac, "name")
 
-                    layout.separator()
+                    box.separator()
 
-                    layout.label(text="Global Properties:")
-                    layout.prop(fac, "graded")
-                    layout.prop(fac, "ring")
-                    layout.prop(fac, "solid")
-                    layout.prop(fac, "layergroup")
-                    layout.prop(fac, "layergroup_draped")
+                    box.label(text="Global Properties:")
+                    box.prop(fac, "graded")
+                    box.prop(fac, "ring")
+                    box.prop(fac, "solid")
+                    box.prop(fac, "layergroup")
+                    box.prop(fac, "layergroup_draped")
 
-                    layout.separator()
+                    box.separator()
 
                     #Wall properties-----------------------------------------------------------------------------------------
 
-                    box = layout.box()
+                    wall_box = box.box()
 
-                    box.label(text="Wall Properties:")
-                    box.prop(fac, "render_wall")
+                    wall_box.label(text="Wall Properties:")
+                    wall_box.prop(fac, "render_wall")
                     if fac.render_wall:
                         pass
 
-                    layout.separator()
+                    box.separator()
 
                     #Roof properties-----------------------------------------------------------------------------------------
 
-                    box = layout.box()
+                    roof_box = box.box()
 
-                    box.label(text="Roof Properties:")
-                    box.prop(fac, "render_roof")
+                    roof_box.label(text="Roof Properties:")
+                    roof_box.prop(fac, "render_roof")
                     if fac.render_roof:
                         pass
 
-                    layout.separator()
+                    box.separator()
 
                     #Wall spellings-----------------------------------------------------------------------------------------
 
-                    box = layout.box()
-                    box.label(text="Floor Definitions:")
+                    spelling_box = box.box()
+                    spelling_box.label(text="Floor Definitions:")
                     for i, floor in enumerate(fac.floors):
-                        draw_fac_floor(box, floor, fac.facade_name, i)
+                        if floor.name == "":
+                            floor.name = f"Floor {i}"
+                        draw_fac_floor(spelling_box, floor, col.name, i)
                     
-                    btn_add = box.operator("xp.add_rem_fac", text="Add Floor", icon='ADD')
-                    btn_add.collection_name = fac.facade_name
+                    btn_add = spelling_box.operator("xp.add_rem_fac", text="Add Floor", icon='ADD')
+                    btn_add.collection_name = col.name
                     btn_add.floor_index = len(fac.floors)
                     btn_add.level = "floor"
                     btn_add.add = True
@@ -417,16 +421,16 @@ class MENU_attached_object(bpy.types.Panel):
             layout.label(text="This object is not a mesh or empty")
 
 def register():
-    bpy.utils.register_class(MENU_lin_exporter)
-    bpy.utils.register_class(MENU_lin_layer)
+    #bpy.utils.register_class(MENU_lin_exporter)
+    #bpy.utils.register_class(MENU_lin_layer)
     bpy.utils.register_class(MENU_mats)
     bpy.utils.register_class(MENU_operations)
     bpy.utils.register_class(MENU_facade)
     bpy.utils.register_class(MENU_attached_object)
 
 def unregister():
-    bpy.utils.unregister_class(MENU_lin_exporter)
-    bpy.utils.unregister_class(MENU_lin_layer)
+    #bpy.utils.unregister_class(MENU_lin_exporter)
+    #bpy.utils.unregister_class(MENU_lin_layer)
     bpy.utils.unregister_class(MENU_mats)
     bpy.utils.unregister_class(MENU_operations)
     bpy.utils.unregister_class(MENU_facade)

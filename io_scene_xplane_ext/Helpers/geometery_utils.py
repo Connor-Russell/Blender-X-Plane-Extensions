@@ -8,7 +8,7 @@ import math
 import bpy #type: ignore
 import bmesh #type: ignore
 import mathutils #type: ignore
-from . import MiscUtils
+from . import misc_utils
 
 #Simple container to hold an X-Plane Vertex
 class xp_vertex:
@@ -39,7 +39,7 @@ class xp_vertex:
         return self.loc_x == other.loc_x and self.loc_y == other.loc_y and self.loc_z == other.loc_z and self.normal_x == other.normal_x and self.normal_y == other.normal_y and self.normal_z == other.normal_z and self.uv_x == other.uv_x and self.uv_y == other.uv_y
 
     def to_string(self):
-        return "VERTEX\t" + MiscUtils.ftos(self.loc_x, 8) + "\t" + MiscUtils.ftos(self.loc_z, 8) + "\t" + MiscUtils.ftos(self.loc_y, 8) + "\t" + MiscUtils.ftos(self.normal_x, 8) + "\t" + MiscUtils.ftos(self.normal_z, 8) + "\t" + MiscUtils.ftos(self.normal_y, 8) + "\t" + MiscUtils.ftos(self.uv_x, 8) + "\t" + MiscUtils.ftos(self.uv_y, 8)
+        return "VERTEX\t" + misc_utils.ftos(self.loc_x, 8) + "\t" + misc_utils.ftos(self.loc_z, 8) + "\t" + misc_utils.ftos(self.loc_y, 8) + "\t" + misc_utils.ftos(self.normal_x, 8) + "\t" + misc_utils.ftos(self.normal_z, 8) + "\t" + misc_utils.ftos(self.normal_y, 8) + "\t" + misc_utils.ftos(self.uv_x, 8) + "\t" + misc_utils.ftos(self.uv_y, 8)
 
 #Rotate a vertex around an axis ("x", "y", or "z"). Angle must be in degrees. Returns the new vertex as a tuple of x y z in that order.
 def rotate_vertex_on_axis(vertex, angle, axis):

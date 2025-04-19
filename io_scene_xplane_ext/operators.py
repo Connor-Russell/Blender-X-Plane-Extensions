@@ -259,18 +259,26 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
             self.report({'ERROR'}, "Collection not found")
             return {'CANCELLED'}
 
-        #Get the floor
-        floor = col.xp_facade.floors[self.floor_index]
+        #Add a new floor if desired        
+        if self.level == "floor" and self.add:
+            new_floor = col.xp_fac.floors.add()
+            new_floor.name = "New Floor"
+            return {'FINISHED'}
+
+        #Get the floor to remove it
+        floor = col.xp_fac.floors[self.floor_index]
         if floor is None:
             self.report({'ERROR'}, "Floor not found")
             return {'CANCELLED'}
         
-        if self.level == "floor":
-            if self.add:
-                new_floor = col.xp_facade.floors.add()
-                new_floor.collection = "New Floor"
-            else:
-                col.xp_facade.floors.remove(self.floor_index)
+        if self.level == "floor" and not self.add:
+            col.xp_fac.floors.remove(self.floor_index)
+            return {'FINISHED'}
+        
+        #Add a new wall if desired
+        if self.level == "wall" and self.add:
+            new_wall = floor.walls.add()
+            new_wall.name = "New Wall"
             return {'FINISHED'}
         
         #Get the wall
@@ -280,12 +288,14 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
             self.report({'ERROR'}, "Wall not found")
             return {'CANCELLED'}
 
-        if self.level == "wall":
-            if self.add:
-                wall = floor.walls.add()
-                wall.name = "New Wall"
-            else:
-                floor.walls.remove(self.wall_index)
+        if self.level == "wall" and not self.add:
+            floor.walls.remove(self.wall_index)
+            return {'FINISHED'}
+        
+        #Add a new spelling if desired
+        if self.level == "spelling" and self.add:
+            new_spelling = wall.spellings.add()
+            new_spelling.name = "New Spelling"
             return {'FINISHED'}
         
         #Get the spelling
@@ -295,13 +305,8 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
             self.report({'ERROR'}, "Spelling not found")
             return {'CANCELLED'}
 
-        if self.level == "spelling":
-            spelling = wall.spellings[self.spelling_index]
-            if self.add:
-                new_spelling = wall.spellings.add()
-                new_spelling.collection = "New Spelling"
-            else:
-                wall.spellings.remove(self.spelling_index)
+        if self.level == "spelling" and not self.add:
+            wall.spellings.remove(self.spelling_index)
             return {'FINISHED'}
 
         return {'FINISHED'}
@@ -316,7 +321,7 @@ def register():
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_bake_low_poly)
     bpy.utils.register_class(BTN_update_xp_export_settings)
-    bpy.utils.resgister_class(MENU_BT_fac_add_or_rem_in_fac)
+    bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
 def unregister():

@@ -31,8 +31,15 @@ layer_group_enum = [
 ]
 
 #For facade spelling enums
-def get_all_collection_names():
-    return[col.name for col in bpy.data.collections]
+def get_all_collection_names(self, context):
+    enum_results = []
+    for col in bpy.data.collections:
+        enum_results.append((col.name, col.name, col.name))
+        
+    if len(enum_results) == 0:
+        enum_results.append(("NO_COLLECTIONS", "No Collections", "No Collections"))
+
+    return enum_results
 
 #Function to force a UI update after a property has been changed
 def update_ui(self, context):
@@ -314,7 +321,7 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
 
 class PROP_fac_spelling(bpy.types.PropertyGroup):
     collection: bpy.props.EnumProperty(
-        name="Type",
+        name="Collection",
         items=get_all_collection_names,
         update=update_ui  # type: ignore
     )
@@ -331,11 +338,11 @@ class PROP_fac_wall(bpy.types.PropertyGroup):
 class PROP_fac_floor(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Floor Name", description="The name of the floor")# type: ignore
     roof_collection: bpy.props.EnumProperty(
-        name="Type",
+        name="Roof Collection",
         items=get_all_collection_names,
         update=update_ui  # type: ignore
     )
-    walls: bpy.props.CollectionProperty(type=PROP_fac_wall_rules)# type: ignore
+    walls: bpy.props.CollectionProperty(type=PROP_fac_wall)# type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the floor is expanded in the UI", default=False, update=update_ui)# type: ignore
 
 class PROP_facade(bpy.types.PropertyGroup):
@@ -354,10 +361,12 @@ class PROP_facade(bpy.types.PropertyGroup):
 
     #Wall properties
     render_wall: bpy.props.BoolProperty(name="Render Wall", description="Whether the wall is rendered", update=update_ui)# type: ignore
-    
 
     #Roof properties
     render_roof: bpy.props.BoolProperty(name="Render Roof", description="Whether the roof is rendered", update=update_ui)# type: ignore
+
+    #Floors
+    floors: bpy.props.CollectionProperty(type=PROP_fac_floor)# type: ignore
  
 
 def register():

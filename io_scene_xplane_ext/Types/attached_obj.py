@@ -11,8 +11,8 @@ import bpy #type: ignore
 import bmesh #type: ignore
 
 #Our modules
-from ..Helpers import GeometryUtils
-from ..Helpers import MiscUtils
+from ..Helpers import geometery_utils
+from ..Helpers import misc_utils
 
 #Simple container to hold attached object data  
 class xp_attached_obj:
@@ -143,16 +143,16 @@ class xp_attached_obj:
 
         #Get the index of this object's resource in the list of all objects
         try:
-            index = MiscUtils.linear_search_list(xp_attached_obj.all_objects, self.resource)
+            index = misc_utils.linear_search_list(xp_attached_obj.all_objects, self.resource)
         except ValueError:
             print("Error: Resource not found in list of all objects. Number of object in list:" + str(len(xp_attached_obj.all_objects)))
             index = 0
 
         #Add the data index, x, y, z, rot_z, min_draw, max_draw
         if self.roof_obj:
-            out += str(index) + " " + MiscUtils.ftos(self.loc_x, 8) + " " + MiscUtils.ftos(self.loc_y, 8) + " " + MiscUtils.ftos(MiscUtils.resolve_heading(self.rot_z * -1), 4) + " " + str(self.min_draw) + " " + str(self.max_draw)
+            out += str(index) + " " + misc_utils.ftos(self.loc_x, 8) + " " + misc_utils.ftos(self.loc_y, 8) + " " + misc_utils.ftos(misc_utils.resolve_heading(self.rot_z * -1), 4) + " " + str(self.min_draw) + " " + str(self.max_draw)
         else:
-            out += str(index) + " " + MiscUtils.ftos(self.loc_x, 8) + " " + MiscUtils.ftos(self.loc_z, 8) + " " + MiscUtils.ftos(self.loc_y, 8) + " " + MiscUtils.ftos(MiscUtils.resolve_heading(self.rot_z + 180), 3) + " " + str(self.min_draw) + " " + str(self.max_draw)
+            out += str(index) + " " + misc_utils.ftos(self.loc_x, 8) + " " + misc_utils.ftos(self.loc_z, 8) + " " + misc_utils.ftos(self.loc_y, 8) + " " + misc_utils.ftos(misc_utils.resolve_heading(self.rot_z + 180), 3) + " " + str(self.min_draw) + " " + str(self.max_draw)
 
         return out
 

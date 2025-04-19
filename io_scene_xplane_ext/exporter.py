@@ -26,7 +26,6 @@ def export_lin(in_col):
     if len([obj for obj in exportable_objects if obj.xp_lin.type == "SEGMENT"]) == 0:
         raise Exception("Error: No segment objects found in collection" + in_col.name)
     
-    
     #Now we want to sort them based on their Z position. While not *necessary*, it makes the output nicer
     exportable_objects.sort(key=lambda x: x.location.z)
 
