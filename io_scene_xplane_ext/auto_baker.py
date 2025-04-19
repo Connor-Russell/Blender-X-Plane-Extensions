@@ -28,7 +28,7 @@ def auto_bake_current_to_active():
     #Alb. We need to config source materials, config target material, config bake settings, bake
     print("Baking base")
     bake_utils.config_source_materials(bake_utils.BakeType.BASE, mats)
-    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.BASE, bpy.context.scene.blender_utils.low_poly_bake_resolution)
+    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.BASE, bpy.context.scene.blender_utils.low_poly_bake_resolution * bpy.context.scene.xp_mats.low_poly_bake_ss_factor)
     bake_utils.config_bake_settings(bake_utils.BakeType.BASE)
     bpy.ops.object.bake(type=bpy.context.scene.cycles.bake_type)
     print("Base baked")
@@ -38,7 +38,7 @@ def auto_bake_current_to_active():
     #Normal. We need to config source materials, config target material, config bake settings, bake
     print("Baking normal")
     bake_utils.config_source_materials(bake_utils.BakeType.NORMAL, mats)
-    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.NORMAL, bpy.context.scene.blender_utils.low_poly_bake_resolution)
+    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.NORMAL, bpy.context.scene.blender_utils.low_poly_bake_resolution * bpy.context.scene.xp_mats.low_poly_bake_ss_factor)
     bake_utils.config_bake_settings(bake_utils.BakeType.NORMAL)
     bpy.ops.object.bake(type='NORMAL')
     print("Normal baked")
@@ -48,7 +48,7 @@ def auto_bake_current_to_active():
     #Roughness. We need to config source materials, config target material, config bake settings, bake
     print("Baking roughness")
     bake_utils.config_source_materials(bake_utils.BakeType.ROUGHNESS, mats)
-    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.ROUGHNESS, bpy.context.scene.blender_utils.low_poly_bake_resolution)
+    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.ROUGHNESS, bpy.context.scene.blender_utils.low_poly_bake_resolution * bpy.context.scene.xp_mats.low_poly_bake_ss_factor)
     bake_utils.config_bake_settings(bake_utils.BakeType.ROUGHNESS)
     bpy.ops.object.bake(type=bpy.context.scene.cycles.bake_type)
     print("Roughness baked")
@@ -58,7 +58,7 @@ def auto_bake_current_to_active():
     #Metalness. We need to config source materials, config target material, config bake settings, bake
     print("Baking metalness")
     bake_utils.config_source_materials(bake_utils.BakeType.METALNESS, mats)
-    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.METALNESS, bpy.context.scene.blender_utils.low_poly_bake_resolution)
+    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.METALNESS, bpy.context.scene.blender_utils.low_poly_bake_resolution * bpy.context.scene.xp_mats.low_poly_bake_ss_factor)
     bake_utils.config_bake_settings(bake_utils.BakeType.METALNESS)
     bpy.ops.object.bake(type=bpy.context.scene.cycles.bake_type)
     print("Metalness baked")
@@ -68,7 +68,7 @@ def auto_bake_current_to_active():
     #Lit. We need to config source materials, config target material, config bake settings, bake
     print("Baking lit")
     bake_utils.config_source_materials(bake_utils.BakeType.LIT, mats)
-    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.LIT, bpy.context.scene.blender_utils.low_poly_bake_resolution)
+    bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.LIT, bpy.context.scene.blender_utils.low_poly_bake_resolution * bpy.context.scene.xp_mats.low_poly_bake_ss_factor)
     bake_utils.config_bake_settings(bake_utils.BakeType.LIT)
     bpy.ops.object.bake(type=bpy.context.scene.cycles.bake_type)
     print("Lit baked")

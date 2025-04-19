@@ -177,11 +177,11 @@ class MENU_mats(bpy.types.Panel):
     bl_context = "material"
 
     def draw(self, context):
+        if not context.material:
+            return
+        
         layout = self.layout
         material = context.material
-
-        if not material:
-            return
 
         xp_materials = material.xp_materials
 
@@ -230,30 +230,11 @@ class MENU_operations(bpy.types.Panel):
         layout.separator()
         layout.label(text="Auto Low-Poly Baker")
         layout.prop(xp_ext, "low_poly_bake_resolution")
+        layout.prop(xp_ext, "low_poly_bake_ss_factor")
         layout.operator("xp_ext.bake_low_poly", text="Bake to Selected to Low Poly")
 
         layout.separator()
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
-
-        #if TestMode:
-        #    layout.separator()
-        #    layout.label(text="Tests")
-        #    layout.separator()
-        #    layout.label(text="Bake Utils")
-        #    layout.operator("xp_mats.test_config_source_material_base", text="Test Config Source Material Base")
-        #    layout.operator("xp_mats.test_config_source_material_normal", text="Test Config Source Material Normal")
-        #    layout.operator("xp_mats.test_config_source_material_roughness", text="Test Config Source Material Roughness")
-        #    layout.operator("xp_mats.test_config_source_material_metalness", text="Test Config Source Material Metalness")
-        #    layout.operator("xp_mats.test_config_source_material_lit", text="Test Config Source Material Lit")
-        #    layout.operator("xp_mats.test_config_target_bake_texture", text="Test Config Target Bake Texture")
-        #    layout.operator("xp_mats.test_config_bake_settings_base", text="Test Config Bake Settings Base")
-        #    layout.operator("xp_mats.test_config_bake_settings_normal", text="Test Config Bake Settings Normal")
-        #    layout.operator("xp_mats.test_config_bake_settings_roughness", text="Test Config Bake Settings Roughness")
-        #    layout.operator("xp_mats.test_config_bake_settings_metalness", text="Test Config Bake Settings Metalness")
-        #    layout.operator("xp_mats.test_config_bake_settings_lit", text="Test Config Bake Settings Lit")
-        #    layout.operator("xp_mats.test_bake_texture", text="Test Bake Texture")
-        #    layout.operator("xp_mats.test_reset_source_materials", text="Test Reset Source Materials")
-        #    layout.operator("xp_mats.test_full_base_bake", text="Test_full_base_bake")
 
 def register():
     bpy.utils.register_class(MENU_lin_exporter)

@@ -89,8 +89,8 @@ def config_source_materials(type, mats):
 
         #What we do from here is dependant on the type
         if type == BakeType.BASE:
-            if mat.alb_texture != "":
-                str_resolve_path = file_utils.resolve_relative_path(mat.alb_texture)
+            if mat.xp_materials.alb_texture != "":
+                str_resolve_path = file_utils.resolve_relative_path(mat.xp_materials.alb_texture)
                 if str_resolve_path != "":
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
                     image_node.image.colorspace_settings.name = 'sRGB'
@@ -106,9 +106,9 @@ def config_source_materials(type, mats):
 
         elif type == BakeType.NORMAL:
             #If there is a normal we do the node setup, otherwise we do nothing (cuz normal defaults to a sane value)
-            if mat.normal_texture != "":
+            if mat.xp_materials.normal_texture != "":
                 #Now we load the normal image into the image node
-                str_resolve_path = file_utils.resolve_relative_path(mat.normal_texture)
+                str_resolve_path = file_utils.resolve_relative_path(mat.xp_materials.normal_texture)
 
                 if (str_resolve_path != ""):
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -135,9 +135,9 @@ def config_source_materials(type, mats):
 
         elif type == BakeType.ROUGHNESS:
             #If there is a normal we do the node setup, otherwise we do nothing
-            if mat.normal_texture != "":
+            if mat.xp_materials.normal_texture != "":
                 #Now we load the normal image into the image node
-                str_resolve_path = file_utils.resolve_relative_path(mat.normal_texture)
+                str_resolve_path = file_utils.resolve_relative_path(mat.xp_materials.normal_texture)
 
                 if (str_resolve_path != ""):
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -156,9 +156,9 @@ def config_source_materials(type, mats):
 
         elif type == BakeType.METALNESS:
             #If there is a normal we do the node setup, otherwise we do nothing
-            if mat.normal_texture != "":
+            if mat.xp_materials.normal_texture != "":
                 #Now we load the normal image into the image node
-                str_resolve_path = file_utils.resolve_relative_path(mat.normal_texture)
+                str_resolve_path = file_utils.resolve_relative_path(mat.xp_materials.normal_texture)
 
                 if (str_resolve_path != ""):
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -181,8 +181,8 @@ def config_source_materials(type, mats):
 
         elif type == BakeType.LIT:
             #This is literally just diffuse but we load the lit texture instead. IF there is no lit texture, we just do black diffuse
-            if mat.lit_texture != "":
-                str_resolve_path = file_utils.resolve_relative_path(mat.lit_texture)
+            if mat.xp_materials.lit_texture != "":
+                str_resolve_path = file_utils.resolve_relative_path(mat.xp_materials.lit_texture)
                 if str_resolve_path != "":
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
                     image_node.image.colorspace_settings.name = 'sRGB'
@@ -233,11 +233,11 @@ def config_target_bake_texture(target_obj, type, resolution):
         new_image = bpy.data.images.get(create_name)
         
         #Resize the image if it isn't the target size already
-        if new_image.size[0] != resolution or new_image.size[1] != resolution:
-            new_image.scale(resolution, resolution)
+        if new_image.size[0] != int(resolution) or new_image.size[1] != int(resolution):
+            new_image.scale(int(resolution), int(resolution))
     else:
         #Create a new image
-        new_image = bpy.data.images.new(name=create_name, width=resolution, height=resolution, alpha=True)
+        new_image = bpy.data.images.new(name=create_name, width=int(resolution), height=int(resolution), alpha=True)
 
     #Set color space settings
     if type == BakeType.ROUGHNESS or type == BakeType.METALNESS:
@@ -278,6 +278,13 @@ def save_baked_textures(target_obj):
     roughness_image = bpy.data.images.get("BAKE_BUFFER_Roughness")
     metalness_image = bpy.data.images.get("BAKE_BUFFER_Metalness")
     lit_image = bpy.data.images.get("BAKE_BUFFER_Lit")
+
+    #Resize all the images to their current size / bpy.context.scene.xp_mats.low_poly_bake_ss_factor
+    base_image.scale(int(base_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(base_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
+    nml_image.scale(int(nml_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(nml_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
+    roughness_image.scale(int(roughness_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(roughness_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
+    metalness_image.scale(int(metalness_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(metalness_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
+    lit_image.scale(int(lit_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(lit_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
 
     #Get the file path. This is the file path of the current blend file + the name of the collection of the target object + _low_poly_<type>.png
     file_path = bpy.data.filepath
@@ -320,9 +327,12 @@ def save_baked_textures(target_obj):
     base_output_path = ""
     nml_output_path = ""
     lit_output_path = ""
-    base_output_path = os.path.join(os.path.dirname(file_path), parent_collections[0].name + "_LOD01.png")
-    nml_output_path = os.path.join(os.path.dirname(file_path), parent_collections[0].name + "_NML_LOD01.png")
-    lit_output_path = os.path.join(os.path.dirname(file_path), parent_collections[0].name + "_LIT_LOD01.png")
+    adjusted_name = parent_collections[0].name
+    if adjusted_name.endswith("_LOD01"):
+        adjusted_name = adjusted_name[:-6]
+    base_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LOD01.png")
+    nml_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_NML_LOD01.png")
+    lit_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LIT_LOD01.png")
 
     #Save the images
     print("Saving base image to " + base_output_path)
@@ -364,223 +374,9 @@ def config_target_object_with_new_textures(target_obj):
         return
 
     #Set the material properties
-    mat.alb_texture = parent_collections[0].name + "_LOD01.png"
-    mat.normal_texture = parent_collections[0].name + "_LOD01_NML.png"
-    mat.lit_texture = parent_collections[0].name + "_LOD01_LIT.png"
+    mat.xp_materials.alb_texture = parent_collections[0].name + "_LOD01.png"
+    mat.xp_materials.normal_texture = parent_collections[0].name + "_LOD01_NML.png"
+    mat.xp_materials.lit_texture = parent_collections[0].name + "_LOD01_LIT.png"
 
     #Set the active material, then call the update material nodes operator
     MaterialPanel.update_nodes(mat)
-
-#Test operators
-#Tests configuring materials for base bake
-class Test_config_source_material_base(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_source_material_base"
-    bl_label = "Test_config_source_material_base"
-
-    def execute(self, context):
-
-        mats = get_source_materials()
-        config_source_materials(BakeType.BASE, mats)
-
-        return {'FINISHED'}
-
-#Tests configuring materials for normal bake
-class Test_config_source_material_normal(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_source_material_normal"
-    bl_label = "Test_config_source_material_normal"
-
-    def execute(self, context):
-
-        mats = get_source_materials()
-        config_source_materials(BakeType.NORMAL, mats)
-
-        return {'FINISHED'}
-    
-#Tests configuring materials for roughness bake
-class Test_config_source_material_roughness(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_source_material_roughness"
-    bl_label = "Test_config_source_material_roughness"
-
-    def execute(self, context):
-
-        mats = get_source_materials()
-        config_source_materials(BakeType.ROUGHNESS, mats)
-
-        return {'FINISHED'}
-
-#Tests configuring materials for metalness bake    
-class Test_config_source_material_metalness(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_source_material_metalness"
-    bl_label = "Test_config_source_material_metalness"
-
-    def execute(self, context):
-
-        mats = get_source_materials()
-        config_source_materials(BakeType.METALNESS, mats)
-
-        return {'FINISHED'}
-    
-#Tests configuring materials for lit bake
-class Test_config_source_material_lit(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_source_material_lit"
-    bl_label = "Test_config_source_material_lit"
-
-    def execute(self, context):
-
-        mats = get_source_materials()
-        config_source_materials(BakeType.LIT, mats)
-
-        return {'FINISHED'}
-    
-#Tests configuring target bake materials, merging them, and saving them. Primarily tests for errors, not for desired results
-class Test_config_target_bake_texture(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_target_bake_texture"
-    bl_label = "Test_config_target_bake_texture"
-
-    def execute(self, context):
-
-        #Get the active object
-        obj = bpy.context.view_layer.objects.active
-
-        #Config the target bake texture
-        config_target_bake_texture(obj, BakeType.BASE, bpy.context.scene.blender_utils.low_poly_bake_resolution)
-
-        return {'FINISHED'}
-    
-#Tests configuring the bake settings for base
-class Test_config_bake_settings_base(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_bake_settings_base"
-    bl_label = "Test_config_bake_settings"
-
-    def execute(self, context):
-
-        #Config the bake settings
-        config_bake_settings(BakeType.BASE)
-
-        return {'FINISHED'}
-    
-#Tests configuring the bake settings for normal
-class Test_config_bake_settings_normal(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_bake_settings_normal"
-    bl_label = "Test_config_bake_settings_normal"
-
-    def execute(self, context):
-
-        #Config the bake settings
-        config_bake_settings(BakeType.NORMAL)
-
-        return {'FINISHED'}
-    
-#Tests configuring the bake settings for roughness
-class Test_config_bake_settings_roughness(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_bake_settings_roughness"
-    bl_label = "Test_config_bake_settings_roughness"
-
-    def execute(self, context):
-
-        #Config the bake settings
-        config_bake_settings(BakeType.ROUGHNESS)
-
-        return {'FINISHED'}
-    
-#Tests configuring the bake settings for metalness
-class Test_config_bake_settings_metalness(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_bake_settings_metalness"
-    bl_label = "Test_config_bake_settings_metalness"
-
-    def execute(self, context):
-
-        #Config the bake settings
-        config_bake_settings(BakeType.METALNESS)
-
-        return {'FINISHED'}
-    
-#Tests configuring the bake settings for lit
-class Test_config_bake_settings_lit(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_config_bake_settings_lit"
-    bl_label = "Test_config_bake_settings_lit"
-
-    def execute(self, context):
-
-        #Config the bake settings
-        config_bake_settings(BakeType.LIT)
-
-        return {'FINISHED'}
-    
-#Tests starting the bake
-class Test_bake_texture(bpy.types.Operator):
-
-    """Tooltip"""
-    bl_idname = "blender_utils.test_bake_texture"
-    bl_label = "Test_bake_texture"
-
-    def execute(self, context):
-
-        bpy.ops.object.bake(type=bpy.context.scene.cycles.bake_type)
-
-        return {'FINISHED'}
-    
-#Tests resetting the source materials
-class Test_reset_source_materials(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_reset_source_materials"
-    bl_label = "Test_reset_source_materials"
-
-    def execute(self, context):
-
-        #Get the active object
-        obj = bpy.context.active_object
-
-        #Reset the source materials
-        reset_source_materials(get_source_materials())
-
-        return {'FINISHED'}
-    
-#Test full base bake
-class Test_full_base_bake(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "blender_utils.test_full_base_bake"
-    bl_label = "Test_full_base_bake"
-
-    def execute(self, context):
-        #Get all the materials for the selected models
-        mats = get_source_materials()
-
-        #Alb. We need to config source materials, config target material, config bake settings, bake
-        print("Baking base")
-        config_source_materials(BakeType.BASE, mats)
-        config_target_bake_texture(bpy.context.view_layer.objects.active, BakeType.BASE, bpy.context.scene.blender_utils.low_poly_bake_resolution)
-        config_bake_settings(BakeType.BASE)
-        bpy.ops.object.bake(type=bpy.context.scene.cycles.bake_type)
-        print("Base baked")
-
-        return {'FINISHED'}
-        
-#Define a list of test operators
-test_operators = [
-    Test_config_source_material_base,
-    Test_config_source_material_normal,
-    Test_config_source_material_roughness,
-    Test_config_source_material_metalness,
-    Test_config_source_material_lit,
-    Test_config_target_bake_texture,
-    Test_config_bake_settings_base,
-    Test_config_bake_settings_normal,
-    Test_config_bake_settings_roughness,
-    Test_config_bake_settings_metalness,
-    Test_config_bake_settings_lit,
-    Test_bake_texture,
-    Test_reset_source_materials,
-    Test_full_base_bake
-]

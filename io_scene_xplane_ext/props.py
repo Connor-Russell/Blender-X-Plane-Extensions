@@ -108,6 +108,60 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         max=8192
     ) #type: ignore
 
+    low_poly_bake_ss_factor: bpy.props.FloatProperty(
+         name="Bake Super-Sampling Factor",
+         description="The Sumper-Sampling factor of the low poly bake",
+         default=1.0,
+         min=1.0,
+         max=4.0
+     ) #type: ignore
+
+class PROP_decal(bpy.types.PropertyGroup):
+    enabled: bpy.props.BoolProperty(name="Enabled", description="Whether this decal slot is enabled", update=update_ui)# type: ignore
+    normal_follows_albedo: bpy.props.BoolProperty(name="Normal Follows Albedo", description="Whether the normal map should be the same as the albedo map", update=update_ui, default=True)# type: ignore
+    decal_lib: bpy.props.StringProperty(name="Decal Asset", description=".dcl to use instead of putting it directly in the facade", update=update_ui)# type: ignore
+    alb: bpy.props.StringProperty(name="Decal Albedo", description="The albedo to use in the decal", subtype="FILE_PATH")   # type: ignore
+    nml: bpy.props.StringProperty(name="Decal Normal", description="The normal to use in the decal (uses RGB keys)", subtype="FILE_PATH")    # type: ignore
+
+    projected: bpy.props.BoolProperty(name="Projected", description="Whether the decal's UVs are projected, independant of the base UVs'", update=update_ui)# type: ignore
+    tile_ratio: bpy.props.FloatProperty(name="Tile Ratio", description="The ratio of the decal's tiling to the base texture's tiling", default=1.0)# type: ignore
+    scale_x: bpy.props.FloatProperty(name="Scale X", description="The scale of the decal in the x direction", default=1.0)# type: ignore
+    scale_y: bpy.props.FloatProperty(name="Scale Y", description="The scale of the decal in the y direction", default=1.0)# type: ignore
+
+    nml_projected: bpy.props.BoolProperty(name="Projected", description="Whether the normal map's UVs are projected, independant of the base UVs'", update=update_ui)# type: ignore
+    nml_tile_ratio: bpy.props.FloatProperty(name="Tile Ratio", description="The ratio of the normal map's tiling to the base texture's tiling", default=1.0)# type: ignore
+    nml_scale_x: bpy.props.FloatProperty(name="Scale X", description="The scale of the normal map in the x direction", default=1.0)# type: ignore
+    nml_scale_y: bpy.props.FloatProperty(name="Scale Y", description="The scale of the normal map in the y direction", default=1.0)# type: ignore
+
+    dither_ratio: bpy.props.FloatProperty(name="Dither Ratio", description="How much the alpha of the decal modulates the alpha of the base. Probably want this at 0 in a facade...")# type: ignore
+
+    rgb_strength_constant: bpy.props.FloatProperty(name="RGB Strength Constant", description="How strong the RGB decal always is", default=1.0)# type: ignore
+    rgb_strength_modulator: bpy.props.FloatProperty(name="RGB Strength Modulator", description="How strong the effect of the keying or modulator texture is on RGB decal's application", default=0.0)# type: ignore
+
+    rgb_decal_key_red: bpy.props.FloatProperty(name="Red key for RGB Decal", description="The red key for the RGB decal key", default=0.0)# type: ignore
+    rgb_decal_key_green: bpy.props.FloatProperty(name="Green key for RGB Decal", description="The green key for the RGB decal key", default=0.0)# type: ignore
+    rgb_decal_key_blue: bpy.props.FloatProperty(name="Blue key for RGB Decal", description="The blue key for the RGB decal key", default=0.0)# type: ignore
+    rgb_decal_key_alpha: bpy.props.FloatProperty(name="Alpha key for RGB Decal", description="The alpha key for the RGB decal key", default=0.0)# type: ignore
+
+    alpha_strength_constant: bpy.props.FloatProperty(name="Alpha Strength Constant", description="How strong the alpha decal always is", default=1.0)# type: ignore
+    alpha_strength_modulator: bpy.props.FloatProperty(name="Alpha Strength Modulator", description="How strong the effect of the keying or modulator texture is on alpha decal's application", default=0.0)# type: ignore
+
+    alpha_decal_key_red: bpy.props.FloatProperty(name="Red key for Alpha Decal", description="The red key for the alpha decal key", default=0.0)# type: ignore
+    alpha_decal_key_green: bpy.props.FloatProperty(name="Green key for Alpha Decal", description="The green key for the alpha decal key", default=0.0)# type: ignore
+    alpha_decal_key_blue: bpy.props.FloatProperty(name="Blue key for Alpha Decal", description="The blue key for the alpha decal key", default=0.0)# type: ignore
+    alpha_decal_key_alpha: bpy.props.FloatProperty(name="Alpha key for Alpha Decal", description="The alpha key for the alpha decal key", default=0.0)# type: ignore
+
+    nml_strength_constant: bpy.props.FloatProperty(name="Normal Strength Constant", description="How strong the normal decal always is", default=1.0)# type: ignore
+    nml_strength_modulator: bpy.props.FloatProperty(name="Normal Strength Modulator", description="How strong the effect of the keying or modulator texture is on normal decal's application", default=0.0)# type: ignore
+
+    nml_decal_key_red: bpy.props.FloatProperty(name="Red key for Normal Decal", description="The red key for the normal decal key", default=0.0)# type: ignore
+    nml_decal_key_green: bpy.props.FloatProperty(name="Green key for Normal Decal", description="The green key for the normal decal key", default=0.0)# type: ignore
+    nml_decal_key_blue: bpy.props.FloatProperty(name="Blue key for Normal Decal", description="The blue key for the normal decal key", default=0.0)# type: ignore
+    nml_decal_key_alpha: bpy.props.FloatProperty(name="Alpha key for Normal Decal", description="The alpha key for the normal decal key", default=0.0)# type: ignore
+
+    #Internals
+    visible: bpy.props.BoolProperty(name="Visible", description="Whether this decal is visible in the UI", default=True)# type: ignore
+
 class PROP_mats(bpy.types.PropertyGroup):
     #Properties for the material:
     # - Alb texture - String
@@ -232,146 +286,21 @@ class PROP_mats(bpy.types.PropertyGroup):
     ) # type: ignore
 
     #Decal properties
-    decal_one: bpy.props.PointerProperty(type=DecalProperties.PROP_Decal) # type: ignore
-    decal_two: bpy.props.PointerProperty(type=DecalProperties.PROP_Decal) # type: ignore
-
-class PROP_decal(bpy.types.PropertyGroup):
-    enabled: bpy.props.BoolProperty(name="Enabled", description="Whether this decal slot is enabled", update=update_ui)# type: ignore
-    normal_follows_albedo: bpy.props.BoolProperty(name="Normal Follows Albedo", description="Whether the normal map should be the same as the albedo map", update=update_ui, default=True)# type: ignore
-    decal_lib: bpy.props.StringProperty(name="Decal Asset", description=".dcl to use instead of putting it directly in the facade", update=update_ui)# type: ignore
-    alb: bpy.props.StringProperty(name="Decal Albedo", description="The albedo to use in the decal", subtype="FILE_PATH")   # type: ignore
-    nml: bpy.props.StringProperty(name="Decal Normal", description="The normal to use in the decal (uses RGB keys)", subtype="FILE_PATH")    # type: ignore
-
-    projected: bpy.props.BoolProperty(name="Projected", description="Whether the decal's UVs are projected, independant of the base UVs'", update=update_ui)# type: ignore
-    tile_ratio: bpy.props.FloatProperty(name="Tile Ratio", description="The ratio of the decal's tiling to the base texture's tiling", default=1.0)# type: ignore
-    scale_x: bpy.props.FloatProperty(name="Scale X", description="The scale of the decal in the x direction", default=1.0)# type: ignore
-    scale_y: bpy.props.FloatProperty(name="Scale Y", description="The scale of the decal in the y direction", default=1.0)# type: ignore
-
-    nml_projected: bpy.props.BoolProperty(name="Projected", description="Whether the normal map's UVs are projected, independant of the base UVs'", update=update_ui)# type: ignore
-    nml_tile_ratio: bpy.props.FloatProperty(name="Tile Ratio", description="The ratio of the normal map's tiling to the base texture's tiling", default=1.0)# type: ignore
-    nml_scale_x: bpy.props.FloatProperty(name="Scale X", description="The scale of the normal map in the x direction", default=1.0)# type: ignore
-    nml_scale_y: bpy.props.FloatProperty(name="Scale Y", description="The scale of the normal map in the y direction", default=1.0)# type: ignore
-
-    dither_ratio: bpy.props.FloatProperty(name="Dither Ratio", description="How much the alpha of the decal modulates the alpha of the base. Probably want this at 0 in a facade...")# type: ignore
-
-    rgb_strength_constant: bpy.props.FloatProperty(name="RGB Strength Constant", description="How strong the RGB decal always is", default=1.0)# type: ignore
-    rgb_strength_modulator: bpy.props.FloatProperty(name="RGB Strength Modulator", description="How strong the effect of the keying or modulator texture is on RGB decal's application", default=0.0)# type: ignore
-
-    rgb_decal_key_red: bpy.props.FloatProperty(name="Red key for RGB Decal", description="The red key for the RGB decal key", default=0.0)# type: ignore
-    rgb_decal_key_green: bpy.props.FloatProperty(name="Green key for RGB Decal", description="The green key for the RGB decal key", default=0.0)# type: ignore
-    rgb_decal_key_blue: bpy.props.FloatProperty(name="Blue key for RGB Decal", description="The blue key for the RGB decal key", default=0.0)# type: ignore
-    rgb_decal_key_alpha: bpy.props.FloatProperty(name="Alpha key for RGB Decal", description="The alpha key for the RGB decal key", default=0.0)# type: ignore
-
-    alpha_strength_constant: bpy.props.FloatProperty(name="Alpha Strength Constant", description="How strong the alpha decal always is", default=1.0)# type: ignore
-    alpha_strength_modulator: bpy.props.FloatProperty(name="Alpha Strength Modulator", description="How strong the effect of the keying or modulator texture is on alpha decal's application", default=0.0)# type: ignore
-
-    alpha_decal_key_red: bpy.props.FloatProperty(name="Red key for Alpha Decal", description="The red key for the alpha decal key", default=0.0)# type: ignore
-    alpha_decal_key_green: bpy.props.FloatProperty(name="Green key for Alpha Decal", description="The green key for the alpha decal key", default=0.0)# type: ignore
-    alpha_decal_key_blue: bpy.props.FloatProperty(name="Blue key for Alpha Decal", description="The blue key for the alpha decal key", default=0.0)# type: ignore
-    alpha_decal_key_alpha: bpy.props.FloatProperty(name="Alpha key for Alpha Decal", description="The alpha key for the alpha decal key", default=0.0)# type: ignore
-
-    nml_strength_constant: bpy.props.FloatProperty(name="Normal Strength Constant", description="How strong the normal decal always is", default=1.0)# type: ignore
-    nml_strength_modulator: bpy.props.FloatProperty(name="Normal Strength Modulator", description="How strong the effect of the keying or modulator texture is on normal decal's application", default=0.0)# type: ignore
-
-    nml_decal_key_red: bpy.props.FloatProperty(name="Red key for Normal Decal", description="The red key for the normal decal key", default=0.0)# type: ignore
-    nml_decal_key_green: bpy.props.FloatProperty(name="Green key for Normal Decal", description="The green key for the normal decal key", default=0.0)# type: ignore
-    nml_decal_key_blue: bpy.props.FloatProperty(name="Blue key for Normal Decal", description="The blue key for the normal decal key", default=0.0)# type: ignore
-    nml_decal_key_alpha: bpy.props.FloatProperty(name="Alpha key for Normal Decal", description="The alpha key for the normal decal key", default=0.0)# type: ignore
-
-    #Internals
-    visible: bpy.props.BoolProperty(name="Visible", description="Whether this decal is visible in the UI", default=True)# type: ignore
-
-class PROP_legacy_mats(bpy.types.PropertyGroup):
-
-    bpy.types.Material.alb_texture = bpy.props.StringProperty(
-        name="LEGACY Albedo Texture",
-        description="The albedo texture",
-        default="",
-        subtype='FILE_PATH'
-    ) # type: ignore
-
-    bpy.types.Material.normal_texture = bpy.props.StringProperty(
-        name="LEGACY Normal Texture",
-        description="The normal texture",
-        default="",
-        subtype='FILE_PATH'
-    ) # type: ignore
-
-    bpy.types.Material.lit_texture = bpy.props.StringProperty(
-        name="LEGACY Lit Texture",
-        default="",
-        subtype='FILE_PATH'
-    ) # type: ignore
-
-    bpy.types.Material.brightness = bpy.props.FloatProperty(
-        name="LEGACY Brightness",
-        description="The brightness of the LIT texture in NITs",
-        default=1000
-    ) # type: ignore
-
-    bpy.types.Material.draped = bpy.props.BoolProperty(
-        name="LEGACY Draped",
-        default=False
-    ) # type: ignore
-
-    bpy.types.Material.hard = bpy.props.BoolProperty(
-        name="LEGACY Hard",
-        default=False
-    ) # type: ignore
-
-    bpy.types.Material.blend_alpha = bpy.props.BoolProperty(
-        name="LEGACY Blend Alpha",
-        description="Does the material have blended alpha?",
-        default=False
-    ) # type: ignore
-
-    bpy.types.Material.blend_cutoff = bpy.props.FloatProperty(
-        name="LEGACY Blend Cutoff",
-        description="The alpha cutoff value",
-        default=0.5
-    ) # type: ignore
-
-    bpy.types.Material.cast_shadow = bpy.props.BoolProperty(
-        name="LEGACY Casts Shadows",
-        description="Does the material cast shadows?",
-        default=True
-    ) # type: ignore
-
-    bpy.types.Material.polygon_offset = bpy.props.IntProperty(
-        name="LEGACY Polygon Offset",
-        description="The polygon offset",
-        default=0
-    ) # type: ignore
-
-    #Layer group property
-    bpy.types.Material.layer_group = bpy.props.EnumProperty(
-        name="LEGACY Layer Group",
-        description="Select the layer group",
-        items=MaterialPanel.layer_group_enum,
-        default='OBJECTS'
-    ) # type: ignore
-
-    #Layer group offset property
-    bpy.types.Material.layer_group_offset = bpy.props.IntProperty(
-        name="LEGACY Layer Group Offset",
-        description="The layer group offset",
-        default=0
-    ) # type: ignore
+    decal_one: bpy.props.PointerProperty(type=PROP_decal) # type: ignore
+    decal_two: bpy.props.PointerProperty(type=PROP_decal) # type: ignore
 
 def register():
     
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
     bpy.utils.register_class(PROP_xp_ext_scene)
-    bpy.utils.register_class(PROP_mats)
     bpy.utils.register_class(PROP_decal)
-    bpy.utils.register_class(PROP_legacy_mats)
+    bpy.utils.register_class(PROP_mats)
 
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
     bpy.types.Material.xp_materials = bpy.props.PointerProperty(type=PROP_mats)
-    bpy.types.Material.xp_decals = bpy.props.PointerProperty(type=PROP_decal)
 
 def unregister():
 

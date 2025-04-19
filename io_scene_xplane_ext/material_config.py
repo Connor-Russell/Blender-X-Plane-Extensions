@@ -30,7 +30,7 @@ def update_settings(xp_material_props, selected_object):
     if xp_material_props.blend_alpha:
         material.blend_method = 'BLEND'
     else:
-        xp_material_props.blend_method = 'CLIP'
+        material.blend_method = 'CLIP'
         material.xplane.blendRatio = xp_material_props.blend_cutoff
 
     #Set XP draped mode based on the draped property
@@ -191,32 +191,3 @@ def update_nodes(material):
             #If there is an alb, connect the alpha to it's add so it can impact the alpha
             if node_add != None:
                 material.node_tree.links.new(node_lit.outputs[1], node_add.inputs[1])
-
-#Function to attempt to restore the old properties
-def restore_old_plugin_props(in_material, in_new_props):
-    try:
-        in_new_props.alb_texture = in_material.alb_texture
-        in_new_props.normal_texture = in_material.normal_texture
-        in_new_props.lit_texture = in_material.lit_texture
-        in_new_props.draped = in_material.draped
-        in_new_props.hard = in_material.hard
-        in_new_props.blend_alpha = in_material.blend_alpha
-        in_new_props.blend_cutoff = in_material.blend_cutoff
-        in_new_props.polygon_offset = in_material.polygon_offset
-        in_new_props.cast_shadow = in_material.cast_shadow
-        in_new_props.layer_group = in_material.layer_group
-        in_new_props.layer_group_offset = in_material.layer_group_offset
-
-        in_material.alb_texture = ""
-        in_material.normal_texture = ""
-        in_material.lit_texture = ""
-        in_material.draped = False
-        in_material.hard = False
-        in_material.blend_alpha = False
-        in_material.blend_cutoff = 0
-        in_material.polygon_offset = 0
-        in_material.cast_shadow = True
-        in_material.layer_group = ""
-        in_material.layer_group_offset = 0
-    except:
-        pass

@@ -85,11 +85,6 @@ class BTN_mats_update_nodes(bpy.types.Operator):
     bl_label = "Updates material nodes"
 
     def execute(self, context):
-        #if there is an alb texture directly in material, restore the old properties
-        if hasattr(context.material, "alb_texture"):
-            if context.material.alb_texture != "":
-                material_config.restore_old_plugin_props(context.material, context.material.xp_materials)
-
         #Call the function to update the settings
         material_config.update_settings(context.material.xp_materials, bpy.context.active_object)
 
