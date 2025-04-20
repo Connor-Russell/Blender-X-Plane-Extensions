@@ -245,6 +245,7 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
     floor_index: bpy.props.IntProperty() # type: ignore
     wall_index: bpy.props.IntProperty() # type: ignore
     spelling_index: bpy.props.IntProperty() # type: ignore
+    spelling_entry_index: bpy.props.IntProperty() # type: ignore
     level: bpy.props.StringProperty() # type: ignore    spelling, wall, or floor
     add: bpy.props.BoolProperty() # type: ignore true to add a new item after the target, false to remove the target
 
@@ -307,6 +308,23 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
 
         if self.level == "spelling" and not self.add:
             wall.spellings.remove(self.spelling_index)
+            return {'FINISHED'}
+        
+        #If we are adding a new entry, do that
+        if self.level == "spelling_entry" and self.add:
+            new_entry = spelling.entries.add()
+            new_entry.name = "New Entry"
+            return {'FINISHED'}
+        
+        #Get the spelling entry
+        spelling_entry = spelling.entries[self.spelling_entry_index]
+        if spelling_entry is None:
+            self.report({'ERROR'}, "Spelling entry not found")
+            return {'CANCELLED'}
+        
+        #If we are removing an entry, do that
+        if self.level == "spelling_entry" and not self.add:
+            spelling.entries.remove(self.spelling_entry_index)
             return {'FINISHED'}
 
         return {'FINISHED'}

@@ -319,12 +319,15 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
 
 #Facade properties
 
-class PROP_fac_spelling(bpy.types.PropertyGroup):
+class PROP_fac_spelling_entry(bpy.types.PropertyGroup):
     collection: bpy.props.EnumProperty(
         name="Collection",
         items=get_all_collection_names,
         update=update_ui  # type: ignore
     )
+
+class PROP_fac_spelling(bpy.types.PropertyGroup):
+    entries: bpy.props.CollectionProperty(type=PROP_fac_spelling_entry)# type: ignore
 
 class PROP_fac_wall(bpy.types.PropertyGroup):
     min_width: bpy.props.FloatProperty(name="Min Width", description="The minimum width of the wall")# type: ignore
@@ -377,6 +380,7 @@ def register():
     bpy.utils.register_class(PROP_decal)
     bpy.utils.register_class(PROP_mats)
     bpy.utils.register_class(PROP_attached_obj)
+    bpy.utils.register_class(PROP_fac_spelling_entry)
     bpy.utils.register_class(PROP_fac_spelling)
     bpy.utils.register_class(PROP_fac_wall)
     bpy.utils.register_class(PROP_fac_floor)
@@ -398,6 +402,7 @@ def unregister():
     bpy.utils.unregister_class(PROP_mats)
     bpy.utils.unregister_class(PROP_decal)
     bpy.utils.unregister_class(PROP_attached_obj)
+    bpy.utils.unregister_class(PROP_fac_spelling_entry)
     bpy.utils.unregister_class(PROP_fac_spelling)
     bpy.utils.unregister_class(PROP_fac_wall)
     bpy.utils.unregister_class(PROP_fac_floor)

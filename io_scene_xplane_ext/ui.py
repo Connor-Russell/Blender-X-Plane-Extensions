@@ -101,9 +101,23 @@ def draw_decal_prop(layout, property_item, index):
             row.prop(property_item, "nml_decal_key_blue")
             row.prop(property_item, "nml_decal_key_alpha")
 
-def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index, spelling_index):
+def draw_fac_spelling_entry(layout, entry, collection_name, floor_index, wall_index, spelling_index, entry_index):
     row = layout.row()
-    row.prop(spelling, "collection", text="Segment")
+    row.prop(entry, "collection", text="Segment")
+    btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
+    btn_rem.collection_name = collection_name
+    btn_rem.floor_index = floor_index
+    btn_rem.wall_index = wall_index
+    btn_rem.spelling_index = spelling_index
+    btn_rem.spelling_entry_index = entry_index
+    btn_rem.level = "spelling_entry"
+    btn_rem.add = False
+
+def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index, spelling_index):
+    box = layout.box()
+    row = box.row()
+    row.label(text=f"Spelling {spelling_index + 1}")
+
     btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
     btn_rem.collection_name = collection_name
     btn_rem.floor_index = floor_index
@@ -111,6 +125,18 @@ def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index
     btn_rem.spelling_index = spelling_index
     btn_rem.level = "spelling"
     btn_rem.add = False
+    
+    for i, entry in enumerate(spelling.entries):
+        draw_fac_spelling_entry(box, entry, collection_name, floor_index, wall_index, spelling_index, i)
+
+    btn_add = box.operator("xp.add_rem_fac", text="Add Segment", icon='ADD')
+    btn_add.collection_name = collection_name
+    btn_add.floor_index = floor_index
+    btn_add.wall_index = wall_index
+    btn_add.spelling_index = spelling_index
+    btn_add.spelling_entry_index = len(spelling.entries)
+    btn_add.level = "spelling_entry"
+    btn_add.add = True
 
 def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
     box = layout.box()
@@ -128,7 +154,7 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
         for i, spelling in enumerate(wall.spellings):
             draw_fac_spelling(box, spelling, collection_name, floor_index, wall_index, i)
 
-        btn_add = box.operator("xp.add_rem_fac", text="Add Segment", icon='ADD')
+        btn_add = box.operator("xp.add_rem_fac", text="Add Spelling", icon='ADD')
         btn_add.collection_name = collection_name
         btn_add.floor_index = floor_index
         btn_add.wall_index = wall_index
@@ -367,7 +393,7 @@ class MENU_facade(bpy.types.Panel):
 
                     #Wall spellings-----------------------------------------------------------------------------------------
 
-                    spelling_box = box.box()
+                    spelling_box = box
                     spelling_box.label(text="Floor Definitions:")
                     for i, floor in enumerate(fac.floors):
                         if floor.name == "":

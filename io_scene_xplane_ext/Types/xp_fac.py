@@ -7,6 +7,8 @@
 from ..Helpers import facade_utils # type: ignore
 from ..Helpers import geometery_utils # type: ignore
 
+import bpy
+
 class mesh:
     def __init__(self):
         self.name = ""
@@ -52,6 +54,18 @@ class segment:
 
                 if attached_obj.valid:
                     self.attached_objects.append(attached_obj)
+class spelling:
+    def __init__(self):
+        self.segment_names = []  #List of all segment names in this spelling
+
+class wall:
+    def __init__(self):
+        self.spellings = []  #List of all spellings in this wall rule
+        self.name = ""
+        self.min_length = 0
+        self.max_length = 0
+        self.min_heading = 0
+        self.max_heading = 359
 
 class floor:
     def __init__(self):
@@ -60,14 +74,48 @@ class floor:
         self.roof_objs = [] #List of all roof objects. These are xp_attached_obj objects.
         self.floor_height = 0
         self.segment_names = []  #List of all segment names in this floor
-        #TODO: Define the spelling system for the floor. This will be used for choosing segments.
+        self.walls = []
 
-    def from_collection(self, collection):
+    def from_scene(self, in_floor):
 
         #Get the name of the collection
-        self.name = collection.name
+        self.name = in_floor.name
 
-        #Iterate over all objects in the collection. If it starts with "Roof" we will process it as a roof. Otherwise we will process it as a segment.
+        #Iterate over all the wall rules, and all the spellings. We need to get a deduped list of all the segments
+        all_segments = []
+
+        for wall_rule in in_floor.walls:
+
+            cur_wall = wall()
+            cur_wall.name = wall_rule.name
+            cur_wall.min_length = wall_rule.min_length
+            cur_wall.max_length = wall_rule.max_length
+            cur_wall.min_heading = wall_rule.min_heading
+            cur_wall.max_heading = wall_rule.max_heading
+
+            for spelling in wall_rule.spellings:
+                
+                all_segments.append(spelling.collection)
+
+        #Dedup the list of segments
+        all_segments = list(set(all_segments))
+
+        #Iterate over all the segments and get their geometry
+        for segment in all_segments:
+            #Find this collection in the scene
+            col = None
+            for c in bpy.data.collections:
+                if c.name == segment:
+                    col = c
+                    break
+
+            if col is None:
+                print("Could not find collection: " + segment)
+                raise Exception("Could not find collection: " + segment + " Maybe it was deleted?")
+
+            cur_segment = segment()
+            cur_segment.from_collection(segment)
+            self.all_segments.append(cur_segment)
 
 class facade:
     def __init__(self):
