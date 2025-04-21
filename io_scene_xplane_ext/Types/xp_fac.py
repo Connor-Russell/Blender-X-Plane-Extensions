@@ -54,6 +54,7 @@ class segment:
 
                 if attached_obj.valid:
                     self.attached_objects.append(attached_obj)
+                    
 class spelling:
     def __init__(self):
         self.segment_names = []  #List of all segment names in this spelling
@@ -71,18 +72,20 @@ class floor:
     def __init__(self):
         self.name = ""  #Name of the floor, debug purposes only
         self.all_segments = []  #Object containing all segments in this floor. They are referenced by name.
+        self.roof_scale_x = 0  #Meters
+        self.roof_scale_y = 0  #Meters
         self.roof_objs = [] #List of all roof objects. These are xp_attached_obj objects.
         self.floor_height = 0
         self.segment_names = []  #List of all segment names in this floor
         self.walls = []
 
-    def from_scene(self, in_floor):
+    def from_floor_props(self, in_floor):
 
         #Get the name of the collection
         self.name = in_floor.name
 
         #Iterate over all the wall rules, and all the spellings. We need to get a deduped list of all the segments
-        all_segments = []
+        all_segments_names = [] #These are the segment names
 
         for wall_rule in in_floor.walls:
 
@@ -93,15 +96,22 @@ class floor:
             cur_wall.min_heading = wall_rule.min_heading
             cur_wall.max_heading = wall_rule.max_heading
 
+            #Load all the spelling params into this wall, and load all the names of the segments the spellings map to into our list of all segment names
             for spelling in wall_rule.spellings:
-                
-                all_segments.append(spelling.collection)
+                cur_spelling = spelling()
+                for entry in spelling.entries:
+                    all_segments_names.append(entry.collection)
+                    cur_spelling.segment_names.append(entry.collection)
+
+                cur_wall.spellings.append(cur_spelling)
+            
+            self.walls.append(cur_wall)
 
         #Dedup the list of segments
-        all_segments = list(set(all_segments))
+        all_segments_names = list(set(all_segments_names))
 
         #Iterate over all the segments and get their geometry
-        for segment in all_segments:
+        for segment in all_segments_names:
             #Find this collection in the scene
             col = None
             for c in bpy.data.collections:
@@ -117,6 +127,19 @@ class floor:
             cur_segment.from_collection(segment)
             self.all_segments.append(cur_segment)
 
+        #Get the roof collection, so we can get it's parameters
+        roof_col = None
+        for c in bpy.data.collections:
+            if c.name == self.name + "_roof":
+                roof_col = c
+                break
+        
+        if roof_col is None:
+            print("Could not find roof collection: " + self.name + "_roof")
+            raise Exception("Could not find roof collection: " + self.name + "_roof")
+        
+        self.roof_scale_x, self.roof_scale_y, roof_objs = facade_utils.get_roof_scale_and_objects(roof_col)
+
 class facade:
     def __init__(self):
         self.name = "" #Name of the facade, relative to the blender file
@@ -127,6 +150,9 @@ class facade:
         self.do_roof_mesh = True    #If true, the roof mesh will be generated. If false, the roof mesh will not be generated.
         self.wall_material = None   #This is a PROP_mats (bpy.types.Material.xp_materials)
         self.roof_material = None   #This is a PROP_mats (bpy.types.Material.xp_materials)
+        self.solid = False
+        self.graded = False
+        self.ring = False
 
     def read(self, in_path):
         #Todo
@@ -136,9 +162,36 @@ class facade:
         #Todo
         pass
 
-    def from_scene(self):
-        #Todo
-        pass
+    def from_collection(self, in_collection):
+        fac = in_collection.xp_fac
+
+        #Set the general properties
+        self.name = fac.name
+        if self.name == "":
+            self.name = in_collection.name
+        self.do_roof_mesh = fac.render_roof
+        self.do_wall_mesh = fac.render_wall
+        self.wall_material = fac.wall_material
+        self.roof_material = fac.roof_material
+        self.solid = fac.solid
+        self.graded = fac.graded
+        self.ring = fac.ring
+
+        #Get the floors
+        for f in in_collection.floors:
+            cur_floor = floor()
+            cur_floor.from_floor_props(f)
+            self.floors.append(cur_floor)
+
+        #Make sure we have at least one floor
+        if len(self.floors) == 0:
+            print("No floors found in facade: " + self.name)
+            raise Exception("No floors found in facade: " + self.name)
+
+        #Get the roof scale from the first floor.
+        self.roof_scale_x = self.floors[0].roof_scale_x
+        self.roof_scale_y = self.floors[0].roof_scale_y
+
 
     def to_scene(self):
         #Todo

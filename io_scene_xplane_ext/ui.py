@@ -7,6 +7,8 @@
 import bpy # type: ignore
 from . import props
 
+
+
 def draw_decal_prop(layout, property_item, index):
     layout.prop(property_item, "enabled", text=f"Decal {index + 1}")
 
@@ -349,8 +351,6 @@ class MENU_facade(bpy.types.Panel):
             if col.xp_fac.exportable:
                 fac = col.xp_fac
 
-                layout.label(text=f"Collection: {col.name}")
-
                 box = layout.box()
                 top_row = box.row()
                 top_row.prop(col.xp_fac, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if col.xp_fac.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
@@ -376,7 +376,7 @@ class MENU_facade(bpy.types.Panel):
                     wall_box.label(text="Wall Properties:")
                     wall_box.prop(fac, "render_wall")
                     if fac.render_wall:
-                        pass
+                        wall_box.prop(fac, "wall_material")
 
                     box.separator()
 
@@ -387,7 +387,7 @@ class MENU_facade(bpy.types.Panel):
                     roof_box.label(text="Roof Properties:")
                     roof_box.prop(fac, "render_roof")
                     if fac.render_roof:
-                        pass
+                        roof_box.prop(fac, "roof_material")
 
                     box.separator()
 
@@ -411,6 +411,7 @@ class MENU_facade(bpy.types.Panel):
                 fac = col.xp_fac
                 box = layout.box()
                 top_row = box.row()
+                top_row.label(text=col.name)
                 top_row.prop(col.xp_fac, "exportable", text="Export Enabled")
 
 class MENU_attached_object(bpy.types.Panel):
