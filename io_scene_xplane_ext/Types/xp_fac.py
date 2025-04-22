@@ -6,6 +6,7 @@
 
 from ..Helpers import facade_utils # type: ignore
 from ..Helpers import geometery_utils # type: ignore
+from ..Helpers import decal_utils # type: ignore
 
 import bpy
 
@@ -76,6 +77,7 @@ class floor:
     def __init__(self):
         self.name = ""  #Name of the floor, debug purposes only
         self.all_segments = []  #Object containing all segments in this floor. They are referenced by name.
+        self.all_curved_segments = [] #Object containing all the curved segments in this floor. They are referenced by name. These will be duplicates of the straight segments, or an _Curved variant. In the future this may be specifiable via the UI
         self.roof_scale_x = 0  #Meters
         self.roof_scale_y = 0  #Meters
         self.roof_objs = [] #List of all roof objects. These are xp_attached_obj objects.
@@ -163,7 +165,6 @@ class facade:
         self.do_roof_mesh = True    #If true, the roof mesh will be generated. If false, the roof mesh will not be generated.
         self.wall_material = None   #This is a PROP_mats (bpy.types.Material.xp_materials)
         self.roof_material = None   #This is a PROP_mats (bpy.types.Material.xp_materials)
-        self.solid = False
         self.graded = False
         self.ring = False
 
@@ -172,8 +173,178 @@ class facade:
         pass
 
     def write(self, out_path):
-        #Todo
-        pass
+        output = ""
+
+        #Start with the header
+        output += "I\n1000\nFACADE\n\n"
+
+        #Basic properties
+        if self.graded:
+            output += "GRADED\n"
+        else:
+            output += "DRAPED\n"
+
+        if self.ring:
+            output += "RING 1\n"
+        else:
+            output += "RING 0\n"
+
+        output += "\n"
+
+        #Wall shader
+        if self.wall_material is not None and self.do_wall_mesh:
+            output += "SHADER_WALL\n"
+
+            mat = self.wall_material.xp_materials
+
+            #Textures
+            if mat.alb_texture != "":
+                output += "TEXTURE " + mat.alb_texture + "\n"
+            if mat.lit_texture != "":
+                output += "TEXTURE_LIT " + mat.lit_texture + "\n"
+            if mat.normal_texture != "":
+                output += "TEXTURE_NORMAL " + mat.normal_texture + "\n"
+            if mat.decal_modulator != "":
+                output += "TEXTURE_MODULATOR " + mat.decal_modulator + "\n"
+
+            #Blend mode
+            if not mat.blend_alpha:
+                output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
+
+            #Shadows
+            if not mat.cast_shadows:
+                output += "NO_SHADOW\n"
+
+            #Layer group
+            output += "LAYER_GROUP " + str(mat.layer_group) + " " + str(mat.layer_group_offset) + "\n"
+
+            #Decal settings
+            if mat.decal_one.enabled:
+                output += decal_utils.get_decal_command(mat.decal_one) + "\n"
+            if mat.decal_two.enabled:
+                output += decal_utils.get_decal_command(mat.decal_two) + "\n"
+            
+            output += "\n"
+        
+        #Roof shader
+        if self.roof_material is not None and self.do_roof_mesh:
+            output += "SHADER_WALL\n"
+
+            mat = self.roof_material.xp_materials
+
+            #Textures
+            if mat.alb_texture != "":
+                output += "TEXTURE " + mat.alb_texture + "\n"
+            if mat.lit_texture != "":
+                output += "TEXTURE_LIT " + mat.lit_texture + "\n"
+            if mat.normal_texture != "":
+                output += "TEXTURE_NORMAL " + mat.normal_texture + "\n"
+            if mat.decal_modulator != "":
+                output += "TEXTURE_MODULATOR " + mat.decal_modulator + "\n"
+
+            #Blend mode
+            if not mat.blend_alpha:
+                output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
+
+            #Shadows
+            if not mat.cast_shadows:
+                output += "NO_SHADOW\n"
+
+            #Layer group
+            output += "LAYER_GROUP " + str(mat.layer_group) + " " + str(mat.layer_group_offset) + "\n"
+
+            #Decal settings
+            if mat.decal_one.enabled:
+                output += decal_utils.get_decal_command(mat.decal_one) + "\n"
+            if mat.decal_two.enabled:
+                output += decal_utils.get_decal_command(mat.decal_two) + "\n"
+
+            #Hard
+            if mat.hard:
+                output += "ROOF_HARD concrete\n"
+
+        #Roof scale
+        output += "ROOF_SCALE " + str(self.roof_scale_x) + " " + str(self.roof_scale_y) + "\n\n"
+
+        #All objects
+        all_objects = []
+        for cur_floor in self.floors:
+            cur_floor.append_obj_resources(all_objects)
+        
+        all_objects = list(set(all_objects)) #Dedup the list of objects
+
+        for obj in all_objects:
+            output += "OBJ " + obj + "\n"
+
+        #Floors
+        for cur_floor in self.floors:
+            output += "FOOR" + cur_floor.name + "\n"
+            
+            #First step is to add all the roof data
+            if cur_floor.roof_two_sided:
+                output += "ROOF_TWO_SIDED\n"
+            
+            for level in cur_floor.roof_heights:
+                output += "ROOF_HEIGHT " + str(level) + "\n"
+
+            for obj in cur_floor.roof_objs:
+                obj_index = all_objects.index(obj.resource)
+                output += "ROOF_OBJ_HEADING " + str(obj_index) + " " + str(obj.heading) + " " + str(obj.loc_x) + " " + str(obj.loc_z) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+            
+            #Now we need to add all the segment definitions
+            def write_mesh(target_mesh):
+                output += "MESH " + str(target_mesh.group) + " " + str(target_mesh.far_lod) + " " + str(len(target_mesh.verticies)) + " " + str(len(target_mesh.indices)) + "\n"
+                for v in target_mesh.vertices:
+                    output += "VERTEX " + str(v.loc_x) + " " + str(v.loc_y) + " " + str(v.loc_z) + " " + str(v.normal_x) + " " + str(v.normal_z) + " " + str(v.normal_y) + " " + str(v.uv_x) + " " + str(v.uv_y) + "\n"
+                cur_idx = 0
+                while cur_idx < len(target_mesh.indices):
+                    if cur_idx % 10 == 0:
+                        output += "IDX "
+                    
+                    output += str(target_mesh.indices[cur_idx])
+
+                    if cur_idx % 10 == 9:
+                        output += "\n"
+                    else:
+                        output += " "
+                    
+                    cur_idx += 1
+            
+            def write_segment(target_segment, seg_idx, is_curved):
+                output += "# " + target_segment.name + "\n"
+                if is_curved:
+                    output += "SEGMENT_CURVED " + str(seg_idx) + "\n"
+                else:    
+                    output += "SEGMENT " + str(seg_idx) + "\n"
+                for cur_mesh in target_segment.meshes:
+                    write_mesh(cur_mesh)
+                for obj in target_segment.attached_objects:
+                    idx = all_objects.index(obj.resource)
+                    if obj.draped:
+                        output += "ATTACH_DRAPED " + str(idx) + " " + str(obj.loc_x) + " " + str(obj.loc_z) + " " + str(obj.loc_y) + " " + str(obj.heading) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                    else:
+                        output += "ATTACH_GRADED " + str(idx) + " " + str(obj.loc_x) + " " + str(obj.loc_z) + " " + str(obj.loc_y) + " " + str(obj.heading) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+
+            cur_seg_idx = 0
+            for cur_seg in cur_floor.all_segments:
+                write_segment(cur_seg, cur_seg_idx, False)
+                cur_seg_idx += 1
+
+            output += "\n"
+
+            for cur_seg in cur_floor.all_curved_segments:
+                write_segment(cur_seg, cur_seg_idx, True)
+                cur_seg_idx += 1
+
+            output += "\n"
+
+            #Now we need to add all the wall rules
+
+            
+            
+
+        
+
 
     def from_collection(self, in_collection):
         fac = in_collection.xp_fac
@@ -186,7 +357,6 @@ class facade:
         self.do_wall_mesh = fac.render_wall
         self.wall_material = fac.wall_material
         self.roof_material = fac.roof_material
-        self.solid = fac.solid
         self.graded = fac.graded
         self.ring = fac.ring
 

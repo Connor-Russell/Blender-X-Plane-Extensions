@@ -368,8 +368,6 @@ class PROP_facade(bpy.types.PropertyGroup):
     #Global properties
     graded: bpy.props.BoolProperty(name="Graded", description="Whether the facade is graded, otherwise draped")# type: ignore
     ring: bpy.props.BoolProperty(name="Ring", description="Whether the facade is a closed or an open ring")# type: ignore
-    layergroup_draped: bpy.props.StringProperty(name="Layer Group Draped", description="The layer group of the draped facade")# type: ignore
-    solid: bpy.props.BoolProperty(name="Solid", description="Whether the roof has collision testing enabled")# type: ignore
 
     #Wall properties
     render_wall: bpy.props.BoolProperty(name="Render Wall", description="Whether the wall is rendered", update=update_ui)# type: ignore
