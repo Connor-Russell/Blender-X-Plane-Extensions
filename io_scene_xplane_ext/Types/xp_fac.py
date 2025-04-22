@@ -54,6 +54,10 @@ class segment:
 
                 if attached_obj.valid:
                     self.attached_objects.append(attached_obj)
+
+    def append_obj_resources(self, target_list):
+        for obj in self.attached_objects:
+            target_list.append(obj.resource)
                     
 class spelling:
     def __init__(self):
@@ -75,8 +79,9 @@ class floor:
         self.roof_scale_x = 0  #Meters
         self.roof_scale_y = 0  #Meters
         self.roof_objs = [] #List of all roof objects. These are xp_attached_obj objects.
-        self.floor_height = 0
-        self.segment_names = []  #List of all segment names in this floor
+        self.roof_heights = [] #List of all roof heights. These are floats.
+        self.roof_two_sided = False #If true, the roof is two sided. If false, the roof is one sided.
+        self.roof_collision = 'NONE' #Roof collision type. This is a string.
         self.walls = []
 
     def from_floor_props(self, in_floor):
@@ -130,7 +135,7 @@ class floor:
         #Get the roof collection, so we can get it's parameters
         roof_col = None
         for c in bpy.data.collections:
-            if c.name == self.name + "_roof":
+            if c.name == in_floor.roof_collection:
                 roof_col = c
                 break
         
@@ -138,12 +143,20 @@ class floor:
             print("Could not find roof collection: " + self.name + "_roof")
             raise Exception("Could not find roof collection: " + self.name + "_roof")
         
-        self.roof_scale_x, self.roof_scale_y, roof_objs = facade_utils.get_roof_scale_and_objects(roof_col)
+        #Get the roof params
+        self.roof_scale_x, self.roof_scale_y, self.roof_objs, self.roof_heights = facade_utils.get_roof_scale_and_objects(roof_col)
 
+    def append_obj_resources(self, target_list):
+        for seg in self.all_segments:
+            seg.append_obj_resources(target_list)
+        for obj in self.roof_objs:
+            target_list.append(obj.resource)
+            
 class facade:
     def __init__(self):
         self.name = "" #Name of the facade, relative to the blender file
         self.floors = []        #List of all floors in this facade. These are xp_floor objects.
+        self.all_objects = []      #List of all objects in this facade. These are strings
         self.roof_scale_x = 0   #Meters
         self.roof_scale_y = 0   #Meters
         self.do_wall_mesh = True    #If true, the wall mesh will be generated. If false, the wall mesh will not be generated.

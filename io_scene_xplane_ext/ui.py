@@ -426,26 +426,33 @@ class MENU_attached_object(bpy.types.Panel):
 
         layout = self.layout
 
-        facade_object = context.object.facade_object
+        attached_obj = context.object.xp_attached_obj
+
+        if context.object.type == 'EMPTY':
+            layout.prop(attached_obj, "exportable")
+            layout.prop(attached_obj, "draped")
+            layout.prop(attached_obj, "resource")
+
+class MENU_fac_mesh(bpy.types.Panel):
+    """Creates a Panel in the object properties window"""
+    bl_label = "X-Plane Facade Mesh"
+    bl_idname = "OBJECT_PT_facade_object"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "object"
+
+    def draw(self, context):
+
+        layout = self.layout
+
+        fac_mesh = context.object.xp_fac_mesh
 
         #If this is a mesh, we show the mesh options of cut, and exportable
         if context.object.type == 'MESH':
-            layout.label(text="Facade Mesh Properties")
-            layout.separator()
-            layout.prop(facade_object, "far_lod")
-            layout.prop(facade_object, "group")
-            layout.prop(facade_object, "cuts")
-            layout.prop(facade_object, "exportable")
-
-        elif context.object.type == 'EMPTY':
-            layout.label(text="Facade Attached Object Properties")
-            layout.separator()
-            layout.prop(facade_object, "exportable")
-            layout.prop(facade_object, "draped")
-            layout.prop(facade_object, "resource")
-
-        else:
-            layout.label(text="This object is not a mesh or empty")
+            layout.prop(fac_mesh, "far_lod")
+            layout.prop(fac_mesh, "group")
+            layout.prop(fac_mesh, "cuts")
+            layout.prop(fac_mesh, "exportable")
 
 def register():
     #bpy.utils.register_class(MENU_lin_exporter)
@@ -454,6 +461,7 @@ def register():
     bpy.utils.register_class(MENU_operations)
     bpy.utils.register_class(MENU_facade)
     bpy.utils.register_class(MENU_attached_object)
+    bpy.utils.register_class(MENU_fac_mesh)
 
 def unregister():
     #bpy.utils.unregister_class(MENU_lin_exporter)
@@ -462,3 +470,4 @@ def unregister():
     bpy.utils.unregister_class(MENU_operations)
     bpy.utils.unregister_class(MENU_facade)
     bpy.utils.unregister_class(MENU_attached_object)
+    bpy.utils.unregister_class(MENU_fac_mesh)

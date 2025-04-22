@@ -38,8 +38,6 @@ class xp_attached_obj:
 
         self.valid = False
 
-        self.roof_obj = False
-
     #Reads the data from an object
     def read_from_obj(self, obj):
         #Check to make sure this is an empty
@@ -96,63 +94,3 @@ class xp_attached_obj:
 
         self.valid = True
     
-    #Resets the all objects list
-    def reset_objects():
-        xp_attached_obj.all_objects = []
-
-    #Sorts and deduplicates the all objects list
-    def prep_object_list():
-        xp_attached_obj.all_objects.sort()
-
-        #Iterate through the list (except for the last item) adn remove duplicates
-        i = 0
-        while i < len(xp_attached_obj.all_objects) - 1:
-            if xp_attached_obj.all_objects[i] == xp_attached_obj.all_objects[i + 1]:
-                xp_attached_obj.all_objects.pop(i)
-            else:
-                i += 1
-
-    #Adds an object to the list of all objects so we can get it's index later
-    def add_object_to_list(obj):
-        #Make sure this is an empty
-        if obj.type != "EMPTY":
-            return
-        
-        #Check if it is exportable
-        if not obj.xp_attached_obj.exportable:
-            return
-        
-        #Check if it has the obj resource
-        if obj.xp_attached_obj.resource == "":
-            return
-        
-        #Get and store the resource
-        resource = obj.xp_attached_obj.resource
-        xp_attached_obj.all_objects.append(resource)
-        
-
-    #Get the string representation of this object
-    def get_string(self):
-        out = ""
-        if self.roof_obj:
-            out += "ROOF_OBJ_HEADING "
-        elif self.draped:
-            out += "ATTACH_DRAPED "
-        else:
-            out += "ATTACH_GRADED "
-
-        #Get the index of this object's resource in the list of all objects
-        try:
-            index = misc_utils.linear_search_list(xp_attached_obj.all_objects, self.resource)
-        except ValueError:
-            print("Error: Resource not found in list of all objects. Number of object in list:" + str(len(xp_attached_obj.all_objects)))
-            index = 0
-
-        #Add the data index, x, y, z, rot_z, min_draw, max_draw
-        if self.roof_obj:
-            out += str(index) + " " + misc_utils.ftos(self.loc_x, 8) + " " + misc_utils.ftos(self.loc_y, 8) + " " + misc_utils.ftos(misc_utils.resolve_heading(self.rot_z * -1), 4) + " " + str(self.min_draw) + " " + str(self.max_draw)
-        else:
-            out += str(index) + " " + misc_utils.ftos(self.loc_x, 8) + " " + misc_utils.ftos(self.loc_z, 8) + " " + misc_utils.ftos(self.loc_y, 8) + " " + misc_utils.ftos(misc_utils.resolve_heading(self.rot_z + 180), 3) + " " + str(self.min_draw) + " " + str(self.max_draw)
-
-        return out
-

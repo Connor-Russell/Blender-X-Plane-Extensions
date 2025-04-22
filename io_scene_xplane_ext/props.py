@@ -30,6 +30,13 @@ layer_group_enum = [
     ('CARS', "Cars", "Cars layer group"),
 ]
 
+#Enum for collision types
+collision_type_enum = [
+    ('NONE', "None", "No collision"),
+    ('CONCRETE', "Concrete", "Concrete collision"),
+    ('ASPHALT', "Asphalt", "Asphalt collision")
+]
+
 #For facade spelling enums
 def get_all_collection_names(self, context):
     enum_results = []
@@ -277,12 +284,13 @@ class PROP_mats(bpy.types.PropertyGroup):
 
 #General properties
 
-class PROP_attached_obj(bpy.types.PropertyGroup):
-
-    #Number of cuts for the mesh
+class PROP_fac_mesh(bpy.types.PropertyGroup):
     far_lod: bpy.props.IntProperty(name="Far LOD", description="The far LOD for the object", default=1000)  # type: ignore
     group: bpy.props.IntProperty(name="Group", description="The group for the object. Use for layering transparency") # type: ignore
     cuts: bpy.props.IntProperty(name="Segments", description="The number of segments in the mesh (used for curves. If it is a flat plane with 3 subdivisions, you have 4 segments)")   # type: ignore
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
+
+class PROP_attached_obj(bpy.types.PropertyGroup):
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
     draped: bpy.props.BoolProperty(name="Draped", description="Whether the object is draped", default=False)    # type: ignore
     resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
@@ -347,6 +355,8 @@ class PROP_fac_floor(bpy.types.PropertyGroup):
     )
     walls: bpy.props.CollectionProperty(type=PROP_fac_wall)# type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the floor is expanded in the UI", default=False, update=update_ui)# type: ignore
+    roof_collisions: bpy.props.BoolProperty(name="Roof Collisions", description="Whether the roof has collisions enabled", default=True, update=update_ui)# type: ignore
+    roof_two_sided: bpy.props.BoolProperty(name="Roof Two Sided", description="Whether the roof is two sided", default=False, update=update_ui)# type: ignore
 
 class PROP_facade(bpy.types.PropertyGroup):
 
@@ -371,7 +381,6 @@ class PROP_facade(bpy.types.PropertyGroup):
 
     #Floors
     floors: bpy.props.CollectionProperty(type=PROP_fac_floor)# type: ignore
- 
 
 def register():
     
@@ -381,6 +390,7 @@ def register():
     bpy.utils.register_class(PROP_decal)
     bpy.utils.register_class(PROP_mats)
     bpy.utils.register_class(PROP_attached_obj)
+    bpy.utils.register_class(PROP_fac_mesh)
     bpy.utils.register_class(PROP_fac_spelling_entry)
     bpy.utils.register_class(PROP_fac_spelling)
     bpy.utils.register_class(PROP_fac_wall)
@@ -390,6 +400,7 @@ def register():
 
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
+    bpy.types.object.xp_fac_mesh = bpy.props.PointerProperty(type=PROP_fac_mesh)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Collection.xp_fac = bpy.props.PointerProperty(type=PROP_facade)
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
@@ -403,6 +414,7 @@ def unregister():
     bpy.utils.unregister_class(PROP_mats)
     bpy.utils.unregister_class(PROP_decal)
     bpy.utils.unregister_class(PROP_attached_obj)
+    bpy.utils.unregister_class(PROP_fac_mesh)
     bpy.utils.unregister_class(PROP_fac_spelling_entry)
     bpy.utils.unregister_class(PROP_fac_spelling)
     bpy.utils.unregister_class(PROP_fac_wall)
@@ -411,6 +423,7 @@ def unregister():
 
     del bpy.types.Object.xp_lin
     del bpy.types.Object.xp_attached_obj
+    del bpy.types.object.xp_fac_mesh
     del bpy.types.Collection.xp_lin
     del bpy.types.Scene.xp_ext
     del bpy.types.Material.xp_materials
