@@ -1,0 +1,12 @@
+Versions:
+Each test will be run on all desired versions of Blender (see Test.ps1). Every test will be run on one version, then the next version, etc. So results are grouped by version.
+
+Exporter:
+This tests whether the file exports the same.
+
+In the Tests WorkingDir there should be a file named Exporter.blend and Exporter.good.fac.
+
+Exporter.blend should be configured to export a facade by the name of Exporter.fac into the same dir. This Exporter.fac is then compared with the Exporter.good.fac which should be verified (upon setup of this test) to be the correct output from that file.
+
+Output:
+Output will be appended to Test Results.csv. It's a simple CSV with two columns, the test name, and the result.

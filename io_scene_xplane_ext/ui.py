@@ -8,6 +8,7 @@ import bpy # type: ignore
 from . import props
 
 
+#Facade parts UI functions
 
 def draw_decal_prop(layout, property_item, index):
     layout.prop(property_item, "enabled", text=f"Decal {index + 1}")
@@ -80,15 +81,24 @@ def draw_decal_prop(layout, property_item, index):
 
             box.separator()
 
-            box.label(text="Alpha Decal Application Control")
-            row = box.row()
-            row.prop(property_item, "alpha_strength_constant")
-            row.prop(property_item, "alpha_strength_modulator")
-            row = box.row()
-            row.prop(property_item, "alpha_decal_key_red")
-            row.prop(property_item, "alpha_decal_key_green")
-            row.prop(property_item, "alpha_decal_key_blue")
-            row.prop(property_item, "alpha_decal_key_alpha")
+            if property_item.alb != "":
+
+                box.label(text="Alpha Dither Ratio")
+                row = box.row()
+
+                row.prop(property_item, "dither_ratio")
+
+                box.separator()
+
+                box.label(text="Alpha Decal Application Control")
+                row = box.row()
+                row.prop(property_item, "alpha_strength_constant")
+                row.prop(property_item, "alpha_strength_modulator")
+                row = box.row()
+                row.prop(property_item, "alpha_decal_key_red")
+                row.prop(property_item, "alpha_decal_key_green")
+                row.prop(property_item, "alpha_decal_key_blue")
+                row.prop(property_item, "alpha_decal_key_alpha")
 
         if (not property_item.normal_follows_albedo) and property_item.nml != "":
             box.separator()
@@ -158,8 +168,8 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
     row.prop(wall, "is_ui_expanded", text=wall.name, icon='TRIA_DOWN' if wall.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
     if wall.is_ui_expanded:
         box.prop(wall, "name", text="Name")
-        box.prop(wall, "min_width", text="Min Width")
-        box.prop(wall, "max_width", text="Max Width")
+        box.prop(wall, "min_length", text="Min Length")
+        box.prop(wall, "max_length", text="Max Length")
         box.prop(wall, "min_heading", text="Min Heading")
         box.prop(wall, "max_heading", text="Max Heading")
 
@@ -167,6 +177,8 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
 
         for i, spelling in enumerate(wall.spellings):
             draw_fac_spelling(box, spelling, collection_name, floor_index, wall_index, i)
+
+        box.separator()
 
         btn_add = box.operator("xp.add_rem_fac", text="Add Spelling", icon='ADD')
         btn_add.collection_name = collection_name
@@ -198,6 +210,7 @@ def draw_fac_floor(layout, floor, collection_name, floor_index):
         for i, wall in enumerate(floor.walls):
             draw_fac_wall(box, wall, collection_name, floor_index, i)
 
+        box.separator()
         btn_add = box.operator("xp.add_rem_fac", text="Add Wall", icon='ADD')
         btn_add.collection_name = collection_name
         btn_add.floor_index = floor_index
@@ -268,6 +281,11 @@ class MENU_lin_layer(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "object"
 
+    @classmethod
+    def poll(cls, context):
+        # Only show the panel if the active object is a MESH
+        return context.object and context.object.type == 'MESH'
+
     def draw(self, context):
         layout = self.layout
         obj = context.active_object
@@ -281,10 +299,15 @@ class MENU_lin_layer(bpy.types.Panel):
 
 class MENU_mats(bpy.types.Panel):
     bl_label = "X-Plane Material Properties"
-    bl_idname = "MaterialMenuBlenderUtils"
+    bl_idname = "MATERIAL_PT_mats"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
+
+    @classmethod
+    def poll(cls, context):
+        # Only show the panel if there is a material
+        return context.material
 
     def draw(self, context):
         if not context.material:
@@ -298,7 +321,12 @@ class MENU_mats(bpy.types.Panel):
         if xp_materials:
             layout.operator("xp_ext.autodetect_texture", text="Autodetect Texture")
             layout.prop(xp_materials, "alb_texture", text="Albedo Texture")
-            layout.prop(xp_materials, "normal_texture", text="Normal Texture")
+            if xp_materials.draped:
+                row = layout.row()            
+                row.prop(xp_materials, "normal_tile_ratio")
+                row.prop(xp_materials, "normal_texture", text="Normal Texture")
+            else:
+                layout.prop(xp_materials, "normal_texture", text="Normal Texture")
             layout.prop(xp_materials, "lit_texture", text="Lit Texture")
             if (xp_materials.lit_texture != ""):
                 layout.prop(xp_materials, "brightness", text="Brightness")
@@ -326,7 +354,7 @@ class MENU_mats(bpy.types.Panel):
 class MENU_operations(bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
     bl_label = "X-Plane Materials"
-    bl_idname = "MenuXPMats"
+    bl_idname = "SCENE_PT_operations"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "X-Plane Materials"
@@ -441,10 +469,15 @@ class MENU_facade(bpy.types.Panel):
 class MENU_attached_object(bpy.types.Panel):
     """Creates a Panel in the object properties window"""
     bl_label = "X-Plane Attached Object"
-    bl_idname = "OBJECT_PT_facade_object"
+    bl_idname = "OBJECT_PT_attached_object"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "object"
+
+    @classmethod
+    def poll(cls, context):
+        # Only show the panel if the active object is an EMPTY
+        return context.object and context.object.type == 'EMPTY'
 
     def draw(self, context):
 
@@ -464,6 +497,11 @@ class MENU_fac_mesh(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "object"
+
+    @classmethod
+    def poll(cls, context):
+        # Only show the panel if the active object is a MESH
+        return context.object and context.object.type == 'MESH'
 
     def draw(self, context):
 

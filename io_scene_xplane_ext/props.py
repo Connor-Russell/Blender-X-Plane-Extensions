@@ -177,6 +177,14 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.update_settings
     ) # type: ignore
 
+    normal_tile_ratio: bpy.props.FloatProperty(
+        name="Normal Tile Ratio",
+        description="The number of times the normal tiles to the albedo",
+        default=1,
+        min=0,
+        update=material_config.update_settings
+    ) # type: ignore
+
     lit_texture: bpy.props.StringProperty(
         name="Lit Texture",
         description="The lit texture",
@@ -405,7 +413,6 @@ class PROP_facade(bpy.types.PropertyGroup):
 #And that is what this code is. @persistent is a decorator that makes Blender keep the function even after a file is loaded/closed or whatever vs just that session.
 @persistent
 def update_fac_spelling_choices():
-    print("Updating facade spelling choices")
     for col in bpy.data.collections:
         if col.xp_fac:
             if col.xp_fac.exportable:
@@ -417,8 +424,6 @@ def update_fac_spelling_choices():
                     if not add_col.name.endswith("_Curved"):  # Example filter
                         item = col.xp_fac.spelling_choices.add()
                         item.name = add_col.name
-                
-                print(str(len(col.xp_fac.spelling_choices)))
 
 @persistent
 def update_fac_spelling_choices_depgraph_handler(scene):
@@ -457,27 +462,27 @@ def register():
     bpy.app.handlers.load_post.append(update_fac_spelling_choices_load_handler)
 
 def unregister():
-    bpy.app.handlers.depsgraph_update_pre.remove(update_fac_spelling_choices_depgraph_handler)
     bpy.app.handlers.load_post.remove(update_fac_spelling_choices_load_handler)
+    bpy.app.handlers.depsgraph_update_pre.remove(update_fac_spelling_choices_depgraph_handler)
 
-    bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)
-    bpy.utils.unregister_class(PROP_lin_layer)
-    bpy.utils.unregister_class(PROP_lin_collection)
-    bpy.utils.unregister_class(PROP_xp_ext_scene)
+    del bpy.types.Material.xp_materials
+    del bpy.types.Scene.xp_ext
+    del bpy.types.Collection.xp_fac
+    del bpy.types.Collection.xp_lin
+    del bpy.types.Object.xp_fac_mesh
+    del bpy.types.Object.xp_attached_obj
+    del bpy.types.Object.xp_lin
+
+    bpy.utils.unregister_class(PROP_facade)
+    bpy.utils.unregister_class(PROP_fac_floor)
+    bpy.utils.unregister_class(PROP_fac_wall)
+    bpy.utils.unregister_class(PROP_fac_spelling)
+    bpy.utils.unregister_class(PROP_fac_spelling_entry)
+    bpy.utils.unregister_class(PROP_fac_mesh)
     bpy.utils.unregister_class(PROP_mats)
     bpy.utils.unregister_class(PROP_decal)
+    bpy.utils.unregister_class(PROP_xp_ext_scene)
+    bpy.utils.unregister_class(PROP_lin_collection)
+    bpy.utils.unregister_class(PROP_lin_layer)
     bpy.utils.unregister_class(PROP_attached_obj)
-    bpy.utils.unregister_class(PROP_fac_mesh)
-    bpy.utils.unregister_class(PROP_fac_spelling_entry)
-    bpy.utils.unregister_class(PROP_fac_spelling)
-    bpy.utils.unregister_class(PROP_fac_wall)
-    bpy.utils.unregister_class(PROP_fac_floor)
-    bpy.utils.unregister_class(PROP_facade)
-
-    del bpy.types.Object.xp_lin
-    del bpy.types.Object.xp_attached_obj
-    del bpy.types.object.xp_fac_mesh
-    del bpy.types.Collection.xp_lin
-    del bpy.types.Collection.xp_fac
-    del bpy.types.Scene.xp_ext
-    del bpy.types.Material.xp_materials
+    bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)

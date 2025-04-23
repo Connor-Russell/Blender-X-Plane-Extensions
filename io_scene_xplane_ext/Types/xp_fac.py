@@ -9,6 +9,7 @@ from ..Helpers import geometery_utils # type: ignore
 from ..Helpers import decal_utils # type: ignore
 from ..Helpers import file_utils # type: ignore
 from ..Helpers import misc_utils # type: ignore
+from . import xp_attached_obj # type: ignore
 import os
 
 import bpy
@@ -53,11 +54,11 @@ class segment:
             
             #If this is an empty, these typically are an attached object. We will check and handle that here.
             elif obj.type == "EMPTY":
-                attached_obj = attached_obj.xp_attached_obj()
-                attached_obj.read_from_obj(obj)
+                new_attached_obj = xp_attached_obj.xp_attached_obj()
+                new_attached_obj.read_from_obj(obj)
 
-                if attached_obj.valid:
-                    self.attached_objects.append(attached_obj)
+                if new_attached_obj.valid:
+                    self.attached_objects.append(new_attached_obj)
 
     def append_obj_resources(self, target_list):
         for obj in self.attached_objects:
@@ -119,6 +120,7 @@ class floor:
 
         #Dedup the list of segments
         all_segments_names = list(set(all_segments_names))
+        all_segments_names.sort() #Sort the list of segments. Again so the order is deterministic
 
         #Iterate over all the segments and get their geometry
         for cur_segment in all_segments_names:
@@ -169,6 +171,9 @@ class floor:
         
         #Get the roof params
         self.roof_scale_x, self.roof_scale_y, self.roof_objs, self.roof_heights = facade_utils.get_roof_data(roof_col)
+
+        #Sort the roof objects by their names
+        self.roof_objs.sort(key=lambda x: x.resource)
 
     def append_obj_resources(self, target_list):
         for seg in self.all_segments:
@@ -262,7 +267,7 @@ class facade:
             if mat.lit_texture != "":
                 output += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(mat.lit_texture), output_folder) + "\n"
             if mat.normal_texture != "":
-                output += "TEXTURE_NORMAL " + os.path.relpath(file_utils.rel_to_abs(mat.normal_texture), output_folder)+ "\n"
+                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.rel_to_abs(mat.normal_texture), output_folder)+ "\n"
             if mat.decal_modulator != "":
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
@@ -300,6 +305,7 @@ class facade:
             cur_floor.append_obj_resources(all_objects)
         
         all_objects = list(set(all_objects)) #Dedup the list of objects
+        all_objects.sort() #Sort the list of objects. We do this to avoid changes in the order of objects, which would make our output slightly non-deterministic, and therefore invalid for testing
 
         for obj in all_objects:
             output += "OBJ " + obj + "\n"
@@ -317,7 +323,7 @@ class facade:
 
             for obj in cur_floor.roof_objs:
                 obj_index = all_objects.index(obj.resource)
-                output += "ROOF_OBJ_HEADING " + str(obj_index) + " " + misc_utils.ftos(obj.heading, 4) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                output += "ROOF_OBJ_HEADING " + str(obj_index) + " " + misc_utils.ftos(obj.rot_z, 4) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
             
             #Now we need to add all the segment definitions
             def write_mesh(target_mesh):
@@ -332,7 +338,7 @@ class facade:
                     
                     output += str(target_mesh.indices[cur_idx])
 
-                    if cur_idx % 10 == 9:
+                    if cur_idx % 10 == 9 or cur_idx == len(target_mesh.indices) - 1:
                         output += "\n"
                     else:
                         output += " "
@@ -352,9 +358,9 @@ class facade:
                 for obj in target_segment.attached_objects:
                     idx = all_objects.index(obj.resource)
                     if obj.draped:
-                        output += "ATTACH_DRAPED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(obj.heading, 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                        output += "ATTACH_DRAPED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(obj.rot_z, 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
                     else:
-                        output += "ATTACH_GRADED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(obj.heading, 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                        output += "ATTACH_GRADED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(obj.rot_z, 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
                 return output + "\n"
 
             cur_seg_idx = 0
@@ -364,6 +370,7 @@ class facade:
 
             output += "\n"
 
+            cur_seg_idx = 0
             for cur_seg in cur_floor.all_curved_segments:
                 output += write_segment(cur_seg, cur_seg_idx, True)
                 cur_seg_idx += 1

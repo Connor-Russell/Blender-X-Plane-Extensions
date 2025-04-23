@@ -88,20 +88,13 @@ class BTN_mats_update_nodes(bpy.types.Operator):
     bl_label = "Updates material nodes"
     bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
 
-    override_material: bpy.props.PointerProperty(type=bpy.types.Material, default=None) # type: ignore
-
     def execute(self, context):
-        target_material = context.material
-        try:
-            if self.override_material:
-                target_material = self.override_material
-        except AttributeError:
-            pass
 
-        #Call the function to update the settings
-        material_config.update_settings(target_material)
+        #Call the function to update the settings. Currently these functions just take None as argument, they get the material from context because when they are called from an update param, they can't get the appropraite args anyway. 
+        #In the future we will wrap them for the update call so we can pass the material as an argument here and override materials, but that is a job for another day
+        material_config.update_settings(None)
 
-        material_config.update_nodes(target_material)
+        material_config.update_nodes(None)
 
         return {'FINISHED'}
 
