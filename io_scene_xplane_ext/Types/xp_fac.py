@@ -429,8 +429,7 @@ class facade:
         self.roof_scale_x = self.floors[0].roof_scale_x
         self.roof_scale_y = self.floors[0].roof_scale_y
 
-
-    def to_scene(self):
+    def to_collection(self, in_collection):
         #Todo
         pass
         

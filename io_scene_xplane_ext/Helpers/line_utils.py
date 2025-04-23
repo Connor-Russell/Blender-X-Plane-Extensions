@@ -7,10 +7,9 @@
 import bpy # type: ignore
 import bmesh # type: ignore
 
-from ..Types.xp_line import XPCap
-from ..Types.xp_line import XPSegment
+from ..Types import xp_lin # type: ignore
 
-class LineVertex:
+class lin_vertex:
     def __init__(self):
         self.x = 0
         self.y = 0
@@ -39,10 +38,10 @@ def get_layer_from_segment_object(in_object, offset, type):
         return None
     
     #Now, we need to find the edge vertices
-    left_vertex = LineVertex()
-    right_vertex = LineVertex()
-    bottom_vertex = LineVertex()
-    top_vertex = LineVertex()
+    left_vertex = lin_vertex()
+    right_vertex = lin_vertex()
+    bottom_vertex = lin_vertex()
+    top_vertex = lin_vertex()
 
     lowest_x = 1000
     highest_x = -1000
@@ -106,7 +105,7 @@ def get_layer_from_segment_object(in_object, offset, type):
 
     if type == "SEGMENT":
         #format: S_OFFSET <layer> <s1> <sm> <s2>
-        seg = XPSegment()
+        seg = xp_lin.segment()
         seg.l = left_vertex.u * tex_width
         seg.c = s_at_x0 * tex_width
         seg.r = right_vertex.u * tex_width
@@ -114,7 +113,7 @@ def get_layer_from_segment_object(in_object, offset, type):
         return seg
     elif type == "START":
         #START_CAP <layer> <s1> <sm> <s2> <t1> <t2>
-        cap = XPCap()
+        cap = xp_lin.cap()
         cap.l = left_vertex.u * tex_width
         cap.c = s_at_x0 * tex_width
         cap.r = right_vertex.u * tex_width
@@ -123,7 +122,7 @@ def get_layer_from_segment_object(in_object, offset, type):
         return cap
     else:
         #END_CAP <layer> <s1> <sm> <s2> <t1> <t2>
-        cap = XPCap()
+        cap = xp_lin.cap()
         cap.l = left_vertex.u * tex_width
         cap.c = s_at_x0 * tex_width
         cap.r = right_vertex.u * tex_width
