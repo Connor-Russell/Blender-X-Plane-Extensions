@@ -8,7 +8,7 @@ import os
 import io_scene_xplane_ext.Types.xp_attached_obj as xp_attached_obj # type: ignore
 from . import geometery_utils
 
-def read_roof_from_collection(self, collection):
+def get_roof_data(collection):
         roof_scale_x = 1
         roof_scale_y = 1
         roof_objs = []
@@ -17,7 +17,7 @@ def read_roof_from_collection(self, collection):
         #Loop through and find the first mesh object
         for obj in collection.objects:
             if obj.type == 'MESH':
-                #Get the count of it's verticies. If it is not 4, skip it.
+                #Get the count of it's vertices. If it is not 4, skip it.
                 if len(obj.data.vertices) != 4:
                     continue
 

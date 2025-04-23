@@ -38,7 +38,7 @@ def get_layer_from_segment_object(in_object, offset, type):
         raise Exception(f"Error: No UV layer found on object {in_object.name}!")
         return None
     
-    #Now, we need to find the edge verticies
+    #Now, we need to find the edge vertices
     left_vertex = LineVertex()
     right_vertex = LineVertex()
     bottom_vertex = LineVertex()
@@ -91,7 +91,7 @@ def get_layer_from_segment_object(in_object, offset, type):
 
     #Now, comes the hard part. We need to find the center coordinate.
     #S = X of UV. T = Y of UV. X = X of object. Y = Y of object.
-    #Because we know the X/S of the left and right verticies, we can find a ratio of Xs to Ss
+    #Because we know the X/S of the left and right vertices, we can find a ratio of Xs to Ss
     #With this info, we can then find the S distance of X0 to the left vertex. We then add that to the S of the left to get the center S
     xs_to_1_s = abs(right_vertex.x - left_vertex.x) / abs(right_vertex.u - left_vertex.u)   #Basically, how wide wide this texture is in meters, in the context of this single layer
     ss_to_x0 = left_vertex.x / xs_to_1_s    #Basically, how much UV space is between the left vertex and the center of the world

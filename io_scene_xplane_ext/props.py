@@ -7,6 +7,7 @@
 import bpy # type: ignore
 from . import material_config
 from .Helpers import facade_utils
+from bpy.app.handlers import persistent # type: ignore
 
 #Enum for types. Can be START END or SEGMENT
 line_type = [
@@ -296,14 +297,27 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
 
 class PROP_xp_ext_scene(bpy.types.PropertyGroup):
-    collection_search: bpy.props.StringProperty(
+    lin_collection_search: bpy.props.StringProperty(
         name="Search",
         default="",
         description="Search for a collection to configure export",
         update=update_ui
     ) # type: ignore
 
-    exportable_collections_expanded: bpy.props.BoolProperty(
+    lin_exportable_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    fac_collection_search: bpy.props.StringProperty(
+        name="Search",
+        default="",
+        description="Search for a collection to configure export",
+        update=update_ui
+    ) # type: ignore
+
+    fac_disabled_collections_expanded: bpy.props.BoolProperty(
         name="Exportable Collections Expanded",
         default=False,
         update=update_ui
@@ -327,21 +341,23 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
 
 #Facade properties
 
+class PROP_fac_filetered_spelling_choices(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name")  #type: ignore
+
 class PROP_fac_spelling_entry(bpy.types.PropertyGroup):
     collection: bpy.props.EnumProperty(
         name="Collection",
-        items=get_all_collection_names,
-        update=update_ui  # type: ignore
-    )
+        items=get_all_collection_names
+    ) # type: ignore
 
 class PROP_fac_spelling(bpy.types.PropertyGroup):
     entries: bpy.props.CollectionProperty(type=PROP_fac_spelling_entry)# type: ignore
 
 class PROP_fac_wall(bpy.types.PropertyGroup):
-    min_width: bpy.props.FloatProperty(name="Min Width", description="The minimum width of the wall")# type: ignore
-    max_width: bpy.props.FloatProperty(name="Max Width", description="The maximum width of the wall")# type: ignore
-    min_heading: bpy.props.FloatProperty(name="Min Heading", description="The minimum heading of the wall")# type: ignore
-    max_heading: bpy.props.FloatProperty(name="Max Heading", description="The maximum heading of the wall")# type: ignore
+    min_length: bpy.props.FloatProperty(name="Min Length", description="The minimum length of the wall", default=0, min=0, max=10000)# type: ignore
+    max_length: bpy.props.FloatProperty(name="Max Length", description="The maximum length of the wall", default=1000, min=0, max=10000)# type: ignore
+    min_heading: bpy.props.FloatProperty(name="Min Heading", description="The minimum heading of the wall", default=0, min=0, max=360)# type: ignore
+    max_heading: bpy.props.FloatProperty(name="Max Heading", description="The maximum heading of the wall", default=360, min=0, max=360)# type: ignore
     name: bpy.props.StringProperty(name="Wall Name", default="", update=update_ui)# type: ignore
     spellings: bpy.props.CollectionProperty(type=PROP_fac_spelling)# type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the wall is expanded in the UI", default=False, update=update_ui)# type: ignore
@@ -361,7 +377,7 @@ class PROP_fac_floor(bpy.types.PropertyGroup):
 class PROP_facade(bpy.types.PropertyGroup):
 
     #Facade name
-    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the facade is exportable", default=True, update=update_ui)# type: ignore
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the facade is exportable", default=False, update=update_ui)# type: ignore
     facade_name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade")# type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the facade is expanded in the UI", default=False, update=update_ui)# type: ignore
 
@@ -380,8 +396,41 @@ class PROP_facade(bpy.types.PropertyGroup):
     #Floors
     floors: bpy.props.CollectionProperty(type=PROP_fac_floor)# type: ignore
 
+    #Eligable spelling choices
+    spelling_choices: bpy.props.CollectionProperty(type=PROP_fac_filetered_spelling_choices)# type: ignore
+
+#This code is for sad blender reasons. In Blender, Enum properties reference by *index* so if collections are added or removed, then the collection the user has selected changes
+#So we can't used indexes. But we don't want users to have to type collection names. So we have a string property that we add to the UI with a prop_search
+#Prop_serach however needs data. And that data cannot be updated in the UI due to Blender limits. Soo we have to have a handler that gets called *every time the scene changes* *cries in excess code* to keep the list up to date
+#And that is what this code is. @persistent is a decorator that makes Blender keep the function even after a file is loaded/closed or whatever vs just that session.
+@persistent
+def update_fac_spelling_choices():
+    print("Updating facade spelling choices")
+    for col in bpy.data.collections:
+        if col.xp_fac:
+            if col.xp_fac.exportable:
+                # Clear the existing list
+                col.xp_fac.spelling_choices.clear()
+
+                # Add collections that meet your criteria
+                for add_col in bpy.data.collections:
+                    if not add_col.name.endswith("_Curved"):  # Example filter
+                        item = col.xp_fac.spelling_choices.add()
+                        item.name = add_col.name
+                
+                print(str(len(col.xp_fac.spelling_choices)))
+
+@persistent
+def update_fac_spelling_choices_depgraph_handler(scene):
+    update_fac_spelling_choices()
+
+@persistent
+def update_fac_spelling_choices_load_handler(in_file_path, in_startup_file_path):
+    update_fac_spelling_choices()
+
 def register():
     
+    bpy.utils.register_class(PROP_fac_filetered_spelling_choices)
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
     bpy.utils.register_class(PROP_xp_ext_scene)
@@ -398,14 +447,20 @@ def register():
 
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
-    bpy.types.object.xp_fac_mesh = bpy.props.PointerProperty(type=PROP_fac_mesh)
+    bpy.types.Object.xp_fac_mesh = bpy.props.PointerProperty(type=PROP_fac_mesh)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Collection.xp_fac = bpy.props.PointerProperty(type=PROP_facade)
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
     bpy.types.Material.xp_materials = bpy.props.PointerProperty(type=PROP_mats)
 
-def unregister():
+    bpy.app.handlers.depsgraph_update_pre.append(update_fac_spelling_choices_depgraph_handler)
+    bpy.app.handlers.load_post.append(update_fac_spelling_choices_load_handler)
 
+def unregister():
+    bpy.app.handlers.depsgraph_update_pre.remove(update_fac_spelling_choices_depgraph_handler)
+    bpy.app.handlers.load_post.remove(update_fac_spelling_choices_load_handler)
+
+    bpy.utils.unregister_class(PROP_fac_filetered_spelling_choices)
     bpy.utils.unregister_class(PROP_lin_layer)
     bpy.utils.unregister_class(PROP_lin_collection)
     bpy.utils.unregister_class(PROP_xp_ext_scene)
@@ -423,5 +478,6 @@ def unregister():
     del bpy.types.Object.xp_attached_obj
     del bpy.types.object.xp_fac_mesh
     del bpy.types.Collection.xp_lin
+    del bpy.types.Collection.xp_fac
     del bpy.types.Scene.xp_ext
     del bpy.types.Material.xp_materials

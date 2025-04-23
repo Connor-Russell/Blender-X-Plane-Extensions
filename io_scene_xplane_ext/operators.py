@@ -297,6 +297,7 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
         if self.level == "spelling" and self.add:
             new_spelling = wall.spellings.add()
             new_spelling.name = "New Spelling"
+            new_spelling.entries.add()  #Add the first spelling entry
             return {'FINISHED'}
         
         #Get the spelling
@@ -325,11 +326,29 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
         #If we are removing an entry, do that
         if self.level == "spelling_entry" and not self.add:
             spelling.entries.remove(self.spelling_entry_index)
+            #If there are 0 entries, remove the whole spelling
+            if len(spelling.entries) == 0:
+                wall.spellings.remove(self.spelling_index)
             return {'FINISHED'}
 
         return {'FINISHED'}
 
-def menu_func_import(self, context):
+class BTN_fac_export_all(bpy.types.Operator):
+    """Export all facades in the scene"""
+    bl_idname = "xp_ext.export_facades"
+    bl_label = "Export Facades"
+
+    def execute(self, context):
+        #Iterate over all the collections in the scene
+        for col in bpy.data.collections:
+            #If the collection is a facade, and is not hidden, export it
+            if col.xp_fac.exportable and (not col.hide_viewport):
+                exporter.export_fac(col)
+
+        return {'FINISHED'}
+
+
+def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     
 def register():
@@ -340,7 +359,8 @@ def register():
     bpy.utils.register_class(BTN_bake_low_poly)
     bpy.utils.register_class(BTN_update_xp_export_settings)
     bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+    bpy.utils.register_class(BTN_fac_export_all)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
     bpy.utils.unregister_class(BTN_lin_exporter)
@@ -350,4 +370,5 @@ def unregister():
     bpy.utils.unregister_class(BTN_bake_low_poly)
     bpy.utils.unregister_class(BTN_update_xp_export_settings)
     bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+    bpy.utils.unregister_class(BTN_fac_export_all)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

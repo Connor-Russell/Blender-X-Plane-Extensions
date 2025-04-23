@@ -7,6 +7,8 @@
 #Include decal params from our material plugin
 from ..Helpers import line_utils #type: ignore
 from ..Helpers import decal_utils #type: ignore
+from ..Helpers import file_utils #type: ignore
+import os
 
 class XPSegment():
     def __init__(self):
@@ -45,6 +47,8 @@ class XPLin():
         self.decal_2 = None
 
     def write(self, output_path):
+        output_folder = os.path.dirname(output_path)
+
         #Define a string to hold the file contents
         of = ""
 
@@ -54,11 +58,11 @@ class XPLin():
         of += "#Materials\n"
 
         if self.alb_texture != "":
-            of += "TEXTURE\t\t\t\t" + self.alb_texture + "\n"
+            of += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(self.alb_texture), output_folder) + "\n"
         if self.nml_texture != "":
-            of += "TEXTURE_NORMAL\t" + str(self.normal_scale) + "\t" + self.nml_texture + "\n"
+            of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
         if self.super_rough:
-            of += "SUPER_ROUGHness\n"
+            of += "SUPER_ROUGHness "
 
         if not self.do_blend:
             of += "NO_BLEND " + str(self.blend_cutoff) + "\n"
@@ -68,9 +72,9 @@ class XPLin():
         #Write the decals
         of += "#Decals\n"
         if (self.decal_1 != None):
-            of += decal_utils.get_decal_command(self.decal_1)
+            of += decal_utils.get_decal_command(self.decal_1, output_folder)
         if (self.decal_2 != None):
-            of += decal_utils.get_decal_command(self.decal_2)
+            of += decal_utils.get_decal_command(self.decal_2, output_folder)
 
         of += "\n"
 

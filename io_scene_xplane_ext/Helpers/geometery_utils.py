@@ -72,12 +72,12 @@ def rotate_vertex_on_axis(vertex, angle, axis):
     return (new_x, new_y, new_z)
 
 #Creates a Blender mesh and object from an X-Plane draw call
-def create_obj_from_draw_call(verticies, indicies, name):
+def create_obj_from_draw_call(vertices, indicies, name):
     #Create a new bmesh
     bm = bmesh.new()
 
-    #Add all the verticies
-    for vertex in verticies:
+    #Add all the vertices
+    for vertex in vertices:
         bm.verts.new((vertex.loc_x, vertex.loc_y, vertex.loc_z))
 
     # Update the bmesh to ensure the vertices are added
@@ -86,14 +86,14 @@ def create_obj_from_draw_call(verticies, indicies, name):
     #Create a uv layer
     uv_layer = bm.loops.layers.uv.new()
 
-    #Iterate through the indicies, 3 at a time, and create a face with the verticies at specified indicies
+    #Iterate through the indicies, 3 at a time, and create a face with the vertices at specified indicies
     i = 0
 
     while i < len(indicies) - 2:
         # Add vertices to the bmesh
-        v1 = verticies[indicies[i]]
-        v2 = verticies[indicies[i + 1]]
-        v3 = verticies[indicies[i + 2]]
+        v1 = vertices[indicies[i]]
+        v2 = vertices[indicies[i + 1]]
+        v3 = vertices[indicies[i + 2]]
 
         #Create new vertices in the bmesh for each vertex
         v1 = bm.verts.new((v1.loc_x, v1.loc_y, v1.loc_z))
@@ -101,9 +101,9 @@ def create_obj_from_draw_call(verticies, indicies, name):
         v3 = bm.verts.new((v3.loc_x, v3.loc_y, v3.loc_z))
         
         #Set the normals for the vertices
-        v1.normal = (verticies[indicies[i]].normal_x, verticies[indicies[i]].normal_y, verticies[indicies[i]].normal_z)
-        v2.normal = (verticies[indicies[i + 1]].normal_x, verticies[indicies[i + 1]].normal_y, verticies[indicies[i + 1]].normal_z)
-        v3.normal = (verticies[indicies[i + 2]].normal_x, verticies[indicies[i + 2]].normal_y, verticies[indicies[i + 2]].normal_z)
+        v1.normal = (vertices[indicies[i]].normal_x, vertices[indicies[i]].normal_y, vertices[indicies[i]].normal_z)
+        v2.normal = (vertices[indicies[i + 1]].normal_x, vertices[indicies[i + 1]].normal_y, vertices[indicies[i + 1]].normal_z)
+        v3.normal = (vertices[indicies[i + 2]].normal_x, vertices[indicies[i + 2]].normal_y, vertices[indicies[i + 2]].normal_z)
 
         # Update the bmesh to ensure the vertices are added
         bm.verts.ensure_lookup_table()
@@ -112,9 +112,9 @@ def create_obj_from_draw_call(verticies, indicies, name):
         face = bm.faces.new([v1, v2, v3])
 
         #Assign the UV coordinates to the face
-        face.loops[0][uv_layer].uv = (verticies[indicies[i]].uv_x, verticies[indicies[i]].uv_y)
-        face.loops[1][uv_layer].uv = (verticies[indicies[i + 1]].uv_x, verticies[indicies[i + 1]].uv_y)
-        face.loops[2][uv_layer].uv = (verticies[indicies[i + 2]].uv_x, verticies[indicies[i + 2]].uv_y)
+        face.loops[0][uv_layer].uv = (vertices[indicies[i]].uv_x, vertices[indicies[i]].uv_y)
+        face.loops[1][uv_layer].uv = (vertices[indicies[i + 1]].uv_x, vertices[indicies[i + 1]].uv_y)
+        face.loops[2][uv_layer].uv = (vertices[indicies[i + 2]].uv_x, vertices[indicies[i + 2]].uv_y)
 
         # Update the bmesh to ensure the face is added
         bm.faces.ensure_lookup_table()
@@ -192,8 +192,8 @@ def get_draw_call_from_obj(obj):
         #Append the face to the array
         xp_triangles.append(tmp_face)
 
-    #Now that we have the faces stored, we need to actually turn them into verticies and indicies.
-    #This is a bit more complicated. We have to iterate through every face. Then we need to check if *any* of it's 3 verticies already exist - if they do, we will use the existing one instead
+    #Now that we have the faces stored, we need to actually turn them into vertices and indicies.
+    #This is a bit more complicated. We have to iterate through every face. Then we need to check if *any* of it's 3 vertices already exist - if they do, we will use the existing one instead
     #Once we know the indicies of each vertex because it's either been added, or already exists, we can do the index output array, which would be in the order of last vertex, middle, first. 
 
     #Define our output arrays
@@ -201,7 +201,7 @@ def get_draw_call_from_obj(obj):
     out_inds = []   #Ints
 
     for t in xp_triangles:
-        #Define verticies for each triangle. Then see if they exist, if they don't, add them.
+        #Define vertices for each triangle. Then see if they exist, if they don't, add them.
         v1 = xp_vertex(t.vertex_pos[0][0], t.vertex_pos[0][1], t.vertex_pos[0][2], t.vertex_nrm[0][0], t.vertex_nrm[0][1], t.vertex_nrm[0][2], t.uvs[0][0], t.uvs[0][1])
         v2 = xp_vertex(t.vertex_pos[1][0], t.vertex_pos[1][1], t.vertex_pos[1][2], t.vertex_nrm[1][0], t.vertex_nrm[1][1], t.vertex_nrm[1][2], t.uvs[1][0], t.uvs[1][1])
         v3 = xp_vertex(t.vertex_pos[2][0], t.vertex_pos[2][1], t.vertex_pos[2][2], t.vertex_nrm[2][0], t.vertex_nrm[2][1], t.vertex_nrm[2][2], t.uvs[2][0], t.uvs[2][1])
@@ -238,7 +238,7 @@ def get_draw_call_from_obj(obj):
     #Now we need to get the transform matrix for the object
     transform = obj.matrix_world
 
-    #Now we loop through the verticies and apply the transform to each one
+    #Now we loop through the vertices and apply the transform to each one
     for v in out_verts:
         #Get the local position as a vector
         local_position = mathutils.Vector((v.loc_x, v.loc_y, v.loc_z))
@@ -262,5 +262,5 @@ def get_draw_call_from_obj(obj):
         v.normal_y = transformed_normal.y
         v.normal_z = transformed_normal.z
 
-    #Return the verticies and indicies
+    #Return the vertices and indicies
     return (out_verts, out_inds)

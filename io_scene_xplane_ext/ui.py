@@ -105,7 +105,19 @@ def draw_decal_prop(layout, property_item, index):
 
 def draw_fac_spelling_entry(layout, entry, collection_name, floor_index, wall_index, spelling_index, entry_index):
     row = layout.row()
-    row.prop(entry, "collection", text="Segment")
+    #row.prop(entry, "collection", text="Segment")
+
+    #Find this collection in the collection list
+    col = None
+    for collection in bpy.data.collections:
+        if collection.name == collection_name:
+            col = collection
+            break
+    if col is None:
+        raise ValueError(f"Collection '{collection_name}' not found in bpy.data.collections.")
+        return
+
+    row.prop_search(entry, "collection", col.xp_fac, "spelling_choices")
     btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
     btn_rem.collection_name = collection_name
     btn_rem.floor_index = floor_index
@@ -285,7 +297,7 @@ class MENU_mats(bpy.types.Panel):
         xp_materials = material.xp_materials
 
         if xp_materials:
-            layout.operator("xp_mats.autodetect_texture", text="Autodetect Texture")
+            layout.operator("xp_ext.autodetect_texture", text="Autodetect Texture")
             layout.prop(xp_materials, "alb_texture", text="Albedo Texture")
             layout.prop(xp_materials, "normal_texture", text="Normal Texture")
             layout.prop(xp_materials, "lit_texture", text="Lit Texture")
@@ -300,7 +312,7 @@ class MENU_mats(bpy.types.Panel):
             layout.prop(xp_materials, "cast_shadow", text="Casts Shadows")
             layout.prop(xp_materials, "layer_group", text="Layer Group")
             layout.prop(xp_materials, "layer_group_offset", text="Layer Group Offset")
-            layout.operator("xp_mats.update_material_nodes", text="Update Material")
+            layout.operator("xp_ext.update_material_nodes", text="Update Material")
 
             layout.separator()
 
@@ -347,72 +359,86 @@ class MENU_facade(bpy.types.Panel):
 
         layout = self.layout
 
+        #Draw the export button
+        layout.operator("xp_ext.export_facades", text="Export All")
+
+        layout.separator()
+
+        layout.prop(context.scene.xp_ext, "fac_collection_search")
+        if context.scene.xp_ext.fac_collection_search != "":
+            layout.label(text="Filtered Collections")
+
+        #Function to draw all the properties for the collection. Just so we can reuse it for the disabled collections
+        def draw_collection(col, in_layout):
+            fac = col.xp_fac
+
+            box = in_layout.box()
+            top_row = box.row()
+            top_row.prop(col.xp_fac, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if col.xp_fac.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+            top_row.prop(col.xp_fac, "exportable", text="Export Enabled")
+            if col.xp_fac.is_ui_expanded:
+                box.prop(fac, "name")
+
+                box.separator()
+
+                box.label(text="Global Properties:")
+                box.prop(fac, "graded")
+                box.prop(fac, "ring")
+
+                box.separator()
+
+                #Wall properties-----------------------------------------------------------------------------------------
+
+                wall_box = box.box()
+
+                wall_box.label(text="Wall Properties:")
+                wall_box.prop(fac, "render_wall")
+                if fac.render_wall:
+                    wall_box.prop(fac, "wall_material")
+
+                box.separator()
+
+                #Roof properties-----------------------------------------------------------------------------------------
+
+                roof_box = box.box()
+
+                roof_box.label(text="Roof Properties:")
+                roof_box.prop(fac, "render_roof")
+                if fac.render_roof:
+                    roof_box.prop(fac, "roof_material")
+
+                box.separator()
+
+                #Wall spellings-----------------------------------------------------------------------------------------
+
+                spelling_box = box
+                spelling_box.label(text="Floor Definitions:")
+                for i, floor in enumerate(fac.floors):
+                    if floor.name == "":
+                        floor.name = f"Floor {i}"
+                    draw_fac_floor(spelling_box, floor, col.name, i)
+                
+                btn_add = spelling_box.operator("xp.add_rem_fac", text="Add Floor", icon='ADD')
+                btn_add.collection_name = col.name
+                btn_add.floor_index = len(fac.floors)
+                btn_add.level = "floor"
+                btn_add.add = True
+
         for col in bpy.data.collections:
             if col.xp_fac.exportable:
-                fac = col.xp_fac
+                if context.scene.xp_ext.fac_collection_search != "" and not (col.name.startswith(context.scene.xp_ext.fac_collection_search) or col.name.endswith(context.scene.xp_ext.fac_collection_search)):
+                    continue
+                draw_collection(col, layout)
+                
+        disabled_collections = layout.box()
+        disabled_collections.prop(context.scene.xp_ext, "fac_disabled_collections_expanded", text="Disabled Collections", icon='TRIA_DOWN' if context.scene.xp_ext.fac_disabled_collections_expanded else 'TRIA_RIGHT', emboss=False)
+        if context.scene.xp_ext.fac_disabled_collections_expanded:
+            for col in bpy.data.collections:
+                if not col.xp_fac.exportable:
+                    if context.scene.xp_ext.fac_collection_search != "" and not (col.name.startswith(context.scene.xp_ext.fac_collection_search) or col.name.endswith(context.scene.xp_ext.fac_collection_search)):
+                        continue
+                    draw_collection(col, disabled_collections)
 
-                box = layout.box()
-                top_row = box.row()
-                top_row.prop(col.xp_fac, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if col.xp_fac.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
-                top_row.prop(col.xp_fac, "exportable", text="Export Enabled")
-                if col.xp_fac.is_ui_expanded:
-                    box.prop(fac, "name")
-
-                    box.separator()
-
-                    box.label(text="Global Properties:")
-                    box.prop(fac, "graded")
-                    box.prop(fac, "ring")
-                    box.prop(fac, "solid")
-                    box.prop(fac, "layergroup")
-                    box.prop(fac, "layergroup_draped")
-
-                    box.separator()
-
-                    #Wall properties-----------------------------------------------------------------------------------------
-
-                    wall_box = box.box()
-
-                    wall_box.label(text="Wall Properties:")
-                    wall_box.prop(fac, "render_wall")
-                    if fac.render_wall:
-                        wall_box.prop(fac, "wall_material")
-
-                    box.separator()
-
-                    #Roof properties-----------------------------------------------------------------------------------------
-
-                    roof_box = box.box()
-
-                    roof_box.label(text="Roof Properties:")
-                    roof_box.prop(fac, "render_roof")
-                    if fac.render_roof:
-                        roof_box.prop(fac, "roof_material")
-
-                    box.separator()
-
-                    #Wall spellings-----------------------------------------------------------------------------------------
-
-                    spelling_box = box
-                    spelling_box.label(text="Floor Definitions:")
-                    for i, floor in enumerate(fac.floors):
-                        if floor.name == "":
-                            floor.name = f"Floor {i}"
-                        draw_fac_floor(spelling_box, floor, col.name, i)
-                    
-                    btn_add = spelling_box.operator("xp.add_rem_fac", text="Add Floor", icon='ADD')
-                    btn_add.collection_name = col.name
-                    btn_add.floor_index = len(fac.floors)
-                    btn_add.level = "floor"
-                    btn_add.add = True
-
-        for col in bpy.data.collections:
-            if not col.xp_fac.exportable:
-                fac = col.xp_fac
-                box = layout.box()
-                top_row = box.row()
-                top_row.label(text=col.name)
-                top_row.prop(col.xp_fac, "exportable", text="Export Enabled")
 
 class MENU_attached_object(bpy.types.Panel):
     """Creates a Panel in the object properties window"""

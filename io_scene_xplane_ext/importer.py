@@ -36,7 +36,7 @@ def import_lin(in_path):
 
     #Now we will iterate through every segment, and generate a plane for it
     for seg in lin.segments:
-        #Create the verticies
+        #Create the vertices
         LowerLeft = line_utils.LineVertex()
         LowerRight = line_utils.LineVertex()
         UpperLeft = line_utils.LineVertex()
@@ -75,7 +75,7 @@ def import_lin(in_path):
 
     #Now we will iterate through every cap, and generate a plane for it
     for cap in lin.caps:
-        #Create the verticies
+        #Create the vertices
         LowerLeft = line_utils.LineVertex()
         LowerRight = line_utils.LineVertex()
         UpperLeft = line_utils.LineVertex()

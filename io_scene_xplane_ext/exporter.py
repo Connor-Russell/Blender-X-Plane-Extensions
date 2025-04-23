@@ -7,8 +7,28 @@
 import bpy #type: ignore
 import os
 
+from .Helpers import file_utils
 from .Helpers import line_utils
 from .Types import xp_line
+from .Types import xp_fac
+
+def export_fac(in_col):
+    #Create an xp_fac, load it from the collection, and write it to a file
+    output = xp_fac.facade()
+    output.from_collection(in_col)
+    export_path = ""
+    if in_col.xp_fac.name != "":
+        export_path = file_utils.rel_to_abs(in_col.xp_fac.name + ".fac")
+    else:
+        export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".fac")
+
+    #Make sure we don't have a duplicate extension
+    if export_path.lower().endswith(".fac.fac"):
+        export_path = export_path[:-4]
+
+    #Write the file
+    output.write(export_path)
+    
 
 def export_lin(in_col):
     #First iterate through all the objects in this collection. Here we will determine a list of objects eligable for export

@@ -33,6 +33,20 @@ def resolve_relative_path(in_path, check_back_first=True):
 
     return str_out_path
 
+#Gets an absolute path out of a path that is relative to the blender file.
+def rel_to_abs(in_path):
+    """Gets an absolute path out of a path that is relative to the blender file."""
+
+    str_out_path = ""
+
+    if in_path != "":
+            if in_path.startswith("//"):
+                in_path = in_path[2:]
+
+            str_out_path = os.path.join(os.path.dirname(bpy.data.filepath), in_path)
+
+    return str_out_path
+
 def get_or_load_image(image_path, do_reload=False):
     """
     Get an existing image or load a new one if not already loaded.

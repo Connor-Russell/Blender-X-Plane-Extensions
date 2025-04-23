@@ -7,6 +7,9 @@
 from ..Helpers import facade_utils # type: ignore
 from ..Helpers import geometery_utils # type: ignore
 from ..Helpers import decal_utils # type: ignore
+from ..Helpers import file_utils # type: ignore
+from ..Helpers import misc_utils # type: ignore
+import os
 
 import bpy
 
@@ -25,9 +28,9 @@ class mesh:
         self.vertices = dc[0]
         self.indices = dc[1]
         self.name = obj.name
-        self.far_lod = obj.xp_attached_obj.far_lod
-        self.group = obj.xp_attached_obj.group
-        self.cuts = obj.xp_attached_obj.cuts
+        self.far_lod = obj.xp_fac_mesh.far_lod
+        self.group = obj.xp_fac_mesh.group
+        self.cuts = obj.xp_fac_mesh.cuts
 
 class segment:
     def __init__(self):
@@ -104,13 +107,13 @@ class floor:
             cur_wall.max_heading = wall_rule.max_heading
 
             #Load all the spelling params into this wall, and load all the names of the segments the spellings map to into our list of all segment names
-            for spelling in wall_rule.spellings:
-                cur_spelling = spelling()
-                for entry in spelling.entries:
+            for cur_spelling in wall_rule.spellings:
+                new_spelling = spelling()
+                for entry in cur_spelling.entries:
                     all_segments_names.append(entry.collection)
-                    cur_spelling.segment_names.append(entry.collection)
+                    new_spelling.segment_names.append(entry.collection)
 
-                cur_wall.spellings.append(cur_spelling)
+                cur_wall.spellings.append(new_spelling)
             
             self.walls.append(cur_wall)
 
@@ -118,21 +121,40 @@ class floor:
         all_segments_names = list(set(all_segments_names))
 
         #Iterate over all the segments and get their geometry
-        for segment in all_segments_names:
+        for cur_segment in all_segments_names:
             #Find this collection in the scene
             col = None
             for c in bpy.data.collections:
-                if c.name == segment:
+                if c.name == cur_segment:
                     col = c
                     break
 
             if col is None:
-                print("Could not find collection: " + segment)
-                raise Exception("Could not find collection: " + segment + " Maybe it was deleted?")
+                print("Could not find collection: " + cur_segment)
+                raise Exception("Could not find collection: " + cur_segment + " Maybe it was deleted?")
+            
+            #Check if there is an _Curved variant of this segment.
+            segment_curved = cur_segment + "_Curved"
+            col_curved = None
+            for c in bpy.data.collections:
+                if c.name == segment_curved:
+                    col_curved = c
+                    break
+            
+            if col_curved is not None:
+                #If there is a curved variant, we need to add it to the list of segments
+                new_segment = segment()
+                new_segment.from_collection(col_curved)
+                self.all_curved_segments.append(new_segment)
+            else:
+                #If there is no curved variant, we need to use the straight segment
+                new_segment = segment()
+                new_segment.from_collection(col)
+                self.all_curved_segments.append(new_segment)
 
-            cur_segment = segment()
-            cur_segment.from_collection(segment)
-            self.all_segments.append(cur_segment)
+            new_segment = segment()
+            new_segment.from_collection(col)
+            self.all_segments.append(new_segment)
 
         #Get the roof collection, so we can get it's parameters
         roof_col = None
@@ -146,7 +168,7 @@ class floor:
             raise Exception("Could not find roof collection: " + self.name + "_roof")
         
         #Get the roof params
-        self.roof_scale_x, self.roof_scale_y, self.roof_objs, self.roof_heights = facade_utils.get_roof_scale_and_objects(roof_col)
+        self.roof_scale_x, self.roof_scale_y, self.roof_objs, self.roof_heights = facade_utils.get_roof_data(roof_col)
 
     def append_obj_resources(self, target_list):
         for seg in self.all_segments:
@@ -173,6 +195,8 @@ class facade:
         pass
 
     def write(self, out_path):
+
+        output_folder = os.path.dirname(out_path)
         output = ""
 
         #Start with the header
@@ -199,20 +223,20 @@ class facade:
 
             #Textures
             if mat.alb_texture != "":
-                output += "TEXTURE " + mat.alb_texture + "\n"
+                output += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(mat.alb_texture), output_folder) + "\n"
             if mat.lit_texture != "":
-                output += "TEXTURE_LIT " + mat.lit_texture + "\n"
+                output += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(mat.lit_texture), output_folder) + "\n"
             if mat.normal_texture != "":
-                output += "TEXTURE_NORMAL " + mat.normal_texture + "\n"
+                output += "TEXTURE_NORMAL " + os.path.relpath(file_utils.rel_to_abs(mat.normal_texture), output_folder)+ "\n"
             if mat.decal_modulator != "":
-                output += "TEXTURE_MODULATOR " + mat.decal_modulator + "\n"
+                output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
             #Blend mode
             if not mat.blend_alpha:
                 output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
 
             #Shadows
-            if not mat.cast_shadows:
+            if not mat.cast_shadow:
                 output += "NO_SHADOW\n"
 
             #Layer group
@@ -220,44 +244,48 @@ class facade:
 
             #Decal settings
             if mat.decal_one.enabled:
-                output += decal_utils.get_decal_command(mat.decal_one) + "\n"
+                output += decal_utils.get_decal_command(mat.decal_one, output_folder) + "\n"
             if mat.decal_two.enabled:
-                output += decal_utils.get_decal_command(mat.decal_two) + "\n"
+                output += decal_utils.get_decal_command(mat.decal_two, output_folder) + "\n"
             
             output += "\n"
         
         #Roof shader
         if self.roof_material is not None and self.do_roof_mesh:
-            output += "SHADER_WALL\n"
+            output += "SHADER_ROOF\n"
 
             mat = self.roof_material.xp_materials
 
             #Textures
             if mat.alb_texture != "":
-                output += "TEXTURE " + mat.alb_texture + "\n"
+                output += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(mat.alb_texture), output_folder) + "\n"
             if mat.lit_texture != "":
-                output += "TEXTURE_LIT " + mat.lit_texture + "\n"
+                output += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(mat.lit_texture), output_folder) + "\n"
             if mat.normal_texture != "":
-                output += "TEXTURE_NORMAL " + mat.normal_texture + "\n"
+                output += "TEXTURE_NORMAL " + os.path.relpath(file_utils.rel_to_abs(mat.normal_texture), output_folder)+ "\n"
             if mat.decal_modulator != "":
-                output += "TEXTURE_MODULATOR " + mat.decal_modulator + "\n"
+                output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
             #Blend mode
             if not mat.blend_alpha:
                 output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
 
             #Shadows
-            if not mat.cast_shadows:
+            if not mat.cast_shadow:
                 output += "NO_SHADOW\n"
 
             #Layer group
             output += "LAYER_GROUP " + str(mat.layer_group) + " " + str(mat.layer_group_offset) + "\n"
+            
+            #Draped layer group. We only do this if draped
+            if not self.graded:
+                output += "LAYER_GROUP_DRAPED " + str(mat.layer_group) + " " + str(mat.layer_group_offset) + "\n"
 
             #Decal settings
             if mat.decal_one.enabled:
-                output += decal_utils.get_decal_command(mat.decal_one) + "\n"
+                output += decal_utils.get_decal_command(mat.decal_one, output_folder) + "\n"
             if mat.decal_two.enabled:
-                output += decal_utils.get_decal_command(mat.decal_two) + "\n"
+                output += decal_utils.get_decal_command(mat.decal_two, output_folder) + "\n"
 
             #Hard
             if mat.hard:
@@ -278,7 +306,7 @@ class facade:
 
         #Floors
         for cur_floor in self.floors:
-            output += "FOOR" + cur_floor.name + "\n"
+            output += "FLOOR " + cur_floor.name + "\n"
             
             #First step is to add all the roof data
             if cur_floor.roof_two_sided:
@@ -289,13 +317,14 @@ class facade:
 
             for obj in cur_floor.roof_objs:
                 obj_index = all_objects.index(obj.resource)
-                output += "ROOF_OBJ_HEADING " + str(obj_index) + " " + str(obj.heading) + " " + str(obj.loc_x) + " " + str(obj.loc_z) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                output += "ROOF_OBJ_HEADING " + str(obj_index) + " " + misc_utils.ftos(obj.heading, 4) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
             
             #Now we need to add all the segment definitions
             def write_mesh(target_mesh):
-                output += "MESH " + str(target_mesh.group) + " " + str(target_mesh.far_lod) + " " + str(len(target_mesh.verticies)) + " " + str(len(target_mesh.indices)) + "\n"
+                output = ""
+                output += "MESH " + str(target_mesh.group) + " " + str(target_mesh.far_lod) + " " + str(len(target_mesh.vertices)) + " " + str(len(target_mesh.indices)) + "\n"
                 for v in target_mesh.vertices:
-                    output += "VERTEX " + str(v.loc_x) + " " + str(v.loc_y) + " " + str(v.loc_z) + " " + str(v.normal_x) + " " + str(v.normal_z) + " " + str(v.normal_y) + " " + str(v.uv_x) + " " + str(v.uv_y) + "\n"
+                    output += "VERTEX " + misc_utils.ftos(v.loc_x, 8) + " " + misc_utils.ftos(v.loc_z, 8) + " " + misc_utils.ftos(v.loc_y, 8) + " " + misc_utils.ftos(v.normal_x, 8) + " " + misc_utils.ftos(v.normal_z, 8) + " " + misc_utils.ftos(v.normal_y, 8) + " " + misc_utils.ftos(v.uv_x, 8) + " " + misc_utils.ftos(v.uv_y, 8) + "\n"
                 cur_idx = 0
                 while cur_idx < len(target_mesh.indices):
                     if cur_idx % 10 == 0:
@@ -309,42 +338,67 @@ class facade:
                         output += " "
                     
                     cur_idx += 1
+                return output
             
             def write_segment(target_segment, seg_idx, is_curved):
+                output = ""
                 output += "# " + target_segment.name + "\n"
                 if is_curved:
                     output += "SEGMENT_CURVED " + str(seg_idx) + "\n"
                 else:    
                     output += "SEGMENT " + str(seg_idx) + "\n"
                 for cur_mesh in target_segment.meshes:
-                    write_mesh(cur_mesh)
+                    output += write_mesh(cur_mesh)
                 for obj in target_segment.attached_objects:
                     idx = all_objects.index(obj.resource)
                     if obj.draped:
-                        output += "ATTACH_DRAPED " + str(idx) + " " + str(obj.loc_x) + " " + str(obj.loc_z) + " " + str(obj.loc_y) + " " + str(obj.heading) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                        output += "ATTACH_DRAPED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(obj.heading, 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
                     else:
-                        output += "ATTACH_GRADED " + str(idx) + " " + str(obj.loc_x) + " " + str(obj.loc_z) + " " + str(obj.loc_y) + " " + str(obj.heading) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                        output += "ATTACH_GRADED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(obj.heading, 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                return output + "\n"
 
             cur_seg_idx = 0
             for cur_seg in cur_floor.all_segments:
-                write_segment(cur_seg, cur_seg_idx, False)
+                output += write_segment(cur_seg, cur_seg_idx, False)
                 cur_seg_idx += 1
 
             output += "\n"
 
             for cur_seg in cur_floor.all_curved_segments:
-                write_segment(cur_seg, cur_seg_idx, True)
+                output += write_segment(cur_seg, cur_seg_idx, True)
                 cur_seg_idx += 1
 
             output += "\n"
 
             #Now we need to add all the wall rules
+            for cur_wall in cur_floor.walls:
+                
+                output += "WALL " + str(cur_wall.min_length) + " " + str(cur_wall.max_length) + " " + str(cur_wall.min_heading) + " " + str(cur_wall.max_heading) + " " + cur_wall.name + "\n"
 
-            
-            
+                for cur_spelling in cur_wall.spellings:
 
-        
+                    output += "SPELLING "
+                    for seg_name in cur_spelling.segment_names:
 
+                        idx_cur_wall = -1
+                        for possible_idx, possible_wall in enumerate(cur_floor.all_segments):
+                            if possible_wall.name == seg_name:
+                                idx_cur_wall = possible_idx
+                                break
+
+                        if idx_cur_wall == -1:
+                            print("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?")
+                            raise Exception("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?")
+
+                        output += str(idx_cur_wall) + " "
+                    output += "\n"
+
+                output += "\n"
+
+        #Now output contains the contents of the full facade file, soo, now we just need to write it to the file
+        with open(out_path, "w") as f:
+            f.write(output)
+            f.close()
 
     def from_collection(self, in_collection):
         fac = in_collection.xp_fac
@@ -361,7 +415,7 @@ class facade:
         self.ring = fac.ring
 
         #Get the floors
-        for f in in_collection.floors:
+        for f in in_collection.xp_fac.floors:
             cur_floor = floor()
             cur_floor.from_floor_props(f)
             self.floors.append(cur_floor)
