@@ -171,27 +171,27 @@ class line():
 
             #Check for segments
             if line.startswith("S_OFFSET"):
-                seg = segment()
-                seg.layer = int(line.split()[1])
-                seg.l = float(line.split()[2]) / uv_scalar_x
-                seg.c = float(line.split()[3]) / uv_scalar_x
-                seg.r = float(line.split()[4]) / uv_scalar_x
-                self.segments.append(seg)
+                cur_seg = segment()
+                cur_seg.layer = int(line.split()[1])
+                cur_seg.l = float(line.split()[2]) / uv_scalar_x
+                cur_seg.c = float(line.split()[3]) / uv_scalar_x
+                cur_seg.r = float(line.split()[4]) / uv_scalar_x
+                self.segments.append(cur_seg)
 
             #Check for caps
             if line.startswith("START_CAP") or line.startswith("END_CAP"):
-                cap = cap()
+                cur_cap = cap()
                 if line.startswith("START_CAP"):
-                    cap.type = "START"
+                    cur_cap.type = "START"
                 else:
-                    cap.type = "END"
-                cap.layer = int(line.split()[1])
-                cap.l = float(line.split()[2]) / uv_scalar_x
-                cap.c = float(line.split()[3]) / uv_scalar_x
-                cap.r = float(line.split()[4]) / uv_scalar_x
-                cap.top = float(line.split()[5]) / uv_scalar_y
-                cap.bottom = float(line.split()[6]) / uv_scalar_y
-                self.caps.append(cap)
+                    cur_cap.type = "END"
+                cur_cap.layer = int(line.split()[1])
+                cur_cap.l = float(line.split()[2]) / uv_scalar_x
+                cur_cap.c = float(line.split()[3]) / uv_scalar_x
+                cur_cap.r = float(line.split()[4]) / uv_scalar_x
+                cur_cap.top = float(line.split()[5]) / uv_scalar_y
+                cur_cap.bottom = float(line.split()[6]) / uv_scalar_y
+                self.caps.append(cur_cap)
 
     def from_collection(self, in_collection):
         #First iterate through all the objects in this collection. Here we will determine a list of objects eligable for export
@@ -200,7 +200,7 @@ class line():
         for obj in in_collection.objects:
             if obj.type == 'MESH':
                 #Check if this object is exportable
-                if obj.xp_lin.is_exportable:
+                if obj.xp_lin.exportable:
                     exportable_objects.append(obj)
 
         #Make sure 1. We have exporable objects, and 2. At least one is a segment. In the XP format, caps are "children" of segments, so having caps without segments is a problem
@@ -215,20 +215,16 @@ class line():
         #Now we need to get the scale. We will get this from the bottom object. It is expected that all objects share the same scale
         scale_x, scale_y = 0, 0
         
-        for obj in exportable_objects:
-            if obj.xp_lin.is_exportable:
-                scale_x, scale_y = line_utils.get_scale_from_layer(obj)
-                break
+        scale_x, scale_y = line_utils.get_scale_from_layer(exportable_objects[0])
 
         #Now that we do have a scale, we will iterate over every object again and check if it's scale is within a reasonable range. If not, we will throw an error.
         max_scale_diff_x = scale_x * 0.1
         max_scale_diff_y = scale_y * 0.1
         for obj in exportable_objects:
-            if obj.xp_lin.is_exportable:
-                local_scale_x, local_scale_y = line_utils.get_scale_from_layer(obj)
-                if abs(local_scale_x - scale_x) > max_scale_diff_x or abs(local_scale_y - scale_y) > max_scale_diff_y:
-                    raise Exception("Error: Object " + obj.name + " has a different scale than the rest of the collection. Please make sure all objects share the same UV scale.")
-                break
+            local_scale_x, local_scale_y = line_utils.get_scale_from_layer(obj)
+            if abs(local_scale_x - scale_x) > max_scale_diff_x or abs(local_scale_y - scale_y) > max_scale_diff_y:
+                raise Exception("Error: Object " + obj.name + " has a different scale than the rest of the collection. Please make sure all objects share the same UV scale.")
+            break
 
         self.scale_x = scale_x
         self.scale_y = scale_y
@@ -255,9 +251,8 @@ class line():
         all_layers = []
         for obj in exportable_objects:
             if obj.xp_lin.type == "SEGMENT":
-                all_layers.append(obj.location.z)
+                all_layers.append(line_utils.get_layer_z(obj))
         all_layers.sort()
-
 
         for obj in exportable_objects:
             #Get it's type
@@ -267,7 +262,7 @@ class line():
             closest_idx = 0
             closest_dist = 9999
             for i, layer in enumerate(all_layers):
-                dist = abs(obj.location.z - layer)
+                dist = abs(line_utils.get_layer_z(obj.location.z) - layer)
                 if dist < closest_dist:
                     closest_dist = dist
                     closest_idx = i
@@ -297,15 +292,15 @@ class line():
         mat.xp_materials.layer_group_offset = int(self.layer_offset)
 
         #Call operator xp_mats.update_material_nodes
-        #bpy.ops.xp_mats.update_material_nodes(mat=mat)
+        #bpy.ops.xp_ext.update_material_nodes(override_material=mat)
 
         #Now we will iterate through every segment, and generate a plane for it
         for seg in self.segments:
             #Create the vertices
-            LowerLeft = line_utils.LineVertex()
-            LowerRight = line_utils.LineVertex()
-            UpperLeft = line_utils.LineVertex()
-            UpperRight = line_utils.LineVertex()
+            LowerLeft = line_utils.lin_vertex()
+            LowerRight = line_utils.lin_vertex()
+            UpperLeft = line_utils.lin_vertex()
+            UpperRight = line_utils.lin_vertex()
 
             LowerLeft.x = (seg.l - seg.c) * self.scale_x
             LowerLeft.y = -0.5 * self.scale_y
@@ -341,10 +336,10 @@ class line():
         #Now we will iterate through every cap, and generate a plane for it
         for cap in self.caps:
             #Create the vertices
-            LowerLeft = line_utils.LineVertex()
-            LowerRight = line_utils.LineVertex()
-            UpperLeft = line_utils.LineVertex()
-            UpperRight = line_utils.LineVertex()
+            LowerLeft = line_utils.lin_vertex()
+            LowerRight = line_utils.lin_vertex()
+            UpperLeft = line_utils.lin_vertex()
+            UpperRight = line_utils.lin_vertex()
 
             LowerLeft.x = (cap.l - cap.c) * self.scale_x
             LowerLeft.y = cap.bottom * self.scale_y

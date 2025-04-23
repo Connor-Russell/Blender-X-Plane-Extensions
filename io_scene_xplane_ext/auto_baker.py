@@ -2,19 +2,7 @@
 from .Helpers import bake_utils
 import bpy
 
-# Auto bakes the current object to the active object, for high to low poly bakes
-# Bakes the following channels into images:
-#   Base to BAKE_BUFFER_Base
-#   Normal to BAKE_BUFFER_Normal
-#   Roughness to BAKE_BUFFER_Roughness
-#   Metallic to BAKE_BUFFER_Metalness
-#   Lit to BAKE_BUFFER_Lit
-# Function then merges normal roughness and metalness into the XP format
-# The following images are then saved into the same folder as the blender file:
-#   <collection name>_low_poly.png
-#   <collection name>_low_poly_nml.png
-#   <collection name>_low_poly_lit.png
-# All materials are then reverted to their original state. A done message will be displayed when the process is complete
+# Iterates through all the channels to bake, configuring all source materials, calling blender bake, then saving the textures. Once all channels have been baked, normals are merged, then the target textures are saved the source materials reverted
 def auto_bake_current_to_active():
     #Make the active object no longer be selected (so changes don't affect it)
     bpy.context.view_layer.objects.active.select_set(False)

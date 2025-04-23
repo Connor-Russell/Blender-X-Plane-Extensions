@@ -223,42 +223,41 @@ class MENU_lin_exporter(bpy.types.Panel):
         scene = context.scene
 
         #Draw the export button
-        layout.operator("xp.lin_exporter", text="Export Lines")
+        layout.operator("xp_ext.export_lines", text="Export Lines")
         layout.separator()
-        layout.prop(scene.xp_lin, "collection_search")
+        layout.prop(scene.xp_ext, "lin_collection_search")
 
-        if scene.xp_lin.collection_search != "":
+        if scene.xp_ext.lin_collection_search != "":
             layout.label(text="Filtered Collections")
 
         #For every collection, if it exportable, draw it's params
         for col in bpy.data.collections:
-            if col.xp_lin.is_exportable:
+            if col.xp_lin.exportable:
                 #Check if the collection starts with the search name, or, the search is empty
-                if scene.xp_lin.collection_search == "" or (col.name.startswith(scene.xp_lin.collection_search) or col.name.endswith(scene.xp_lin.collection_search)):
+                if scene.xp_ext.lin_collection_search == "" or (col.name.startswith(scene.xp_ext.lin_collection_search) or col.name.endswith(scene.xp_ext.lin_collection_search)):
                     box = layout.box()
                     top_row = box.row()
                     top_row.prop(col.xp_lin, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if col.xp_lin.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
-                    top_row.prop(col.xp_lin, "is_exportable", text="Export Enabled")
+                    top_row.prop(col.xp_lin, "exportable", text="Export Enabled")
                     if col.xp_lin.is_ui_expanded:
-                        box.prop(col.xp_lin, "export_path")
+                        box.prop(col.xp_lin, "name")
                         box.prop(col.xp_lin, "mirror")
                         box.prop(col.xp_lin, "segment_count")
 
-
         #Draw a collapsable box where we can list all the collections, and whether they are exportable
         disabled_box = layout.box()
-        disabled_box.prop(scene.xp_lin, "exportable_collections_expanded", text="Disabled Collections", icon='TRIA_DOWN' if scene.xp_lin.exportable_collections_expanded else 'TRIA_RIGHT', emboss=False)
-        if scene.xp_ext.exportable_collections_expanded:
+        disabled_box.prop(scene.xp_ext, "lin_disabled_collections_expanded", text="Disabled Collections", icon='TRIA_DOWN' if scene.xp_ext.lin_disabled_collections_expanded else 'TRIA_RIGHT', emboss=False)
+        if scene.xp_ext.lin_disabled_collections_expanded:
             for col in bpy.data.collections:
-                if not col.xp_lin.is_exportable:
+                if not col.xp_lin.exportable:
                     #Check if the collection starts with the search name, or, the search is empty
-                    if scene.xp_lin.collection_search == "" or (col.name.startswith(scene.xp_lin.collection_search) or col.name.endswith(scene.xp_lin.collection_search)):
-                        box = disabled_box.box()
+                    if scene.xp_ext.lin_collection_search == "" or (col.name.startswith(scene.xp_ext.lin_collection_search) or col.name.endswith(scene.xp_ext.lin_collection_search)):
+                        box = layout.box()
                         top_row = box.row()
                         top_row.prop(col.xp_lin, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if col.xp_lin.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
-                        top_row.prop(col.xp_lin, "is_exportable", text="Export Disabled")
+                        top_row.prop(col.xp_lin, "exportable", text="Export Disabled")
                         if col.xp_lin.is_ui_expanded:
-                            box.prop(col.xp_lin, "export_path")
+                            box.prop(col.xp_lin, "name")
                             box.prop(col.xp_lin, "mirror")
                             box.prop(col.xp_lin, "segment_count")
 
@@ -274,10 +273,10 @@ class MENU_lin_layer(bpy.types.Panel):
         obj = context.active_object
 
         #Draw the exportable checkbox
-        layout.prop(obj.xp_lin, "is_exportable")
+        layout.prop(obj.xp_lin, "exportable")
 
         #If it's exportable, draw the type selector
-        if obj.xp_lin.is_exportable:
+        if obj.xp_lin.exportable:
             layout.prop(obj.xp_lin, "type")
 
 class MENU_mats(bpy.types.Panel):
@@ -439,7 +438,6 @@ class MENU_facade(bpy.types.Panel):
                         continue
                     draw_collection(col, disabled_collections)
 
-
 class MENU_attached_object(bpy.types.Panel):
     """Creates a Panel in the object properties window"""
     bl_label = "X-Plane Attached Object"
@@ -481,8 +479,8 @@ class MENU_fac_mesh(bpy.types.Panel):
             layout.prop(fac_mesh, "exportable")
 
 def register():
-    #bpy.utils.register_class(MENU_lin_exporter)
-    #bpy.utils.register_class(MENU_lin_layer)
+    bpy.utils.register_class(MENU_lin_exporter)
+    bpy.utils.register_class(MENU_lin_layer)
     bpy.utils.register_class(MENU_mats)
     bpy.utils.register_class(MENU_operations)
     bpy.utils.register_class(MENU_facade)
@@ -490,8 +488,8 @@ def register():
     bpy.utils.register_class(MENU_fac_mesh)
 
 def unregister():
-    #bpy.utils.unregister_class(MENU_lin_exporter)
-    #bpy.utils.unregister_class(MENU_lin_layer)
+    bpy.utils.unregister_class(MENU_lin_exporter)
+    bpy.utils.unregister_class(MENU_lin_layer)
     bpy.utils.unregister_class(MENU_mats)
     bpy.utils.unregister_class(MENU_operations)
     bpy.utils.unregister_class(MENU_facade)

@@ -18,6 +18,15 @@ class lin_vertex:
         self.v = 0
         self.uv_layer = 0
 
+#Gets the average Z of the object. This is used to determine the layer height.
+def get_layer_z(in_object):
+     z_sum = 0
+ 
+     for vert in in_object.data.vertices:
+         z_sum += (in_object.matrix_world @ vert.co).z
+ 
+     return z_sum / len(in_object.data.vertices)
+
 #Type is either "SEGMENT" "START" or "END"
 def get_layer_from_segment_object(in_object, offset, type):
 
@@ -114,20 +123,22 @@ def get_layer_from_segment_object(in_object, offset, type):
     elif type == "START":
         #START_CAP <layer> <s1> <sm> <s2> <t1> <t2>
         cap = xp_lin.cap()
+        cap.type = "START"
         cap.l = left_vertex.u * tex_width
         cap.c = s_at_x0 * tex_width
         cap.r = right_vertex.u * tex_width
-        cap.b = bottom_vertex.v * tex_height
-        cap.t = top_vertex.v * tex_height
+        cap.bottom = bottom_vertex.v * tex_height
+        cap.top = top_vertex.v * tex_height
         return cap
     else:
         #END_CAP <layer> <s1> <sm> <s2> <t1> <t2>
         cap = xp_lin.cap()
+        cap.type = "END"
         cap.l = left_vertex.u * tex_width
         cap.c = s_at_x0 * tex_width
         cap.r = right_vertex.u * tex_width
-        cap.b = bottom_vertex.v * tex_height
-        cap.t = top_vertex.v * tex_height
+        cap.bottom = bottom_vertex.v * tex_height
+        cap.top = top_vertex.v * tex_height
         return cap
 
 #Gets the scale of the layer based on the UVs and dimensions of the object, and texture.

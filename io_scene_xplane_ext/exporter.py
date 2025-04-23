@@ -32,7 +32,7 @@ def export_fac(in_col):
 
 def export_lin(in_col):
     #Create an xp_lin, load it from the collection, and write it to a file
-    output = xp_lin.lin()
+    output = xp_lin.line()
     output.from_collection(in_col)
 
     export_path = ""

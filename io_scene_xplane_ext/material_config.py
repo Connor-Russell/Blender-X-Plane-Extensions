@@ -8,7 +8,7 @@ import bpy # type: ignore
 from .Helpers import file_utils
 
 #Function to update settings when a property is updated:
-def update_settings(xp_material_props, selected_object):
+def update_settings(dummy1 = None, dummy2 = None):
     #Now we will update the settings.
             #Set backface culling to TRUE - .use_backface_culling
             #Set alpha blending to ALPHA_CLIP or OPAQUE - .blend_method
@@ -21,46 +21,48 @@ def update_settings(xp_material_props, selected_object):
     #Force a UI update
     bpy.context.view_layer.update()
 
-    material = bpy.context.material
+    in_material = bpy.context.material
+
+    xp_mat = in_material.xp_materials
 
     #Set backface culling to TRUE
-    material.use_backface_culling = True
+    in_material.use_backface_culling = True
 
     #Set alpha blending to ALPHA_CLIP or OPAQUE
-    if xp_material_props.blend_alpha:
-        material.blend_method = 'BLEND'
+    if xp_mat.blend_alpha:
+        in_material.blend_method = 'BLEND'
     else:
-        material.blend_method = 'CLIP'
-        material.xplane.blendRatio = xp_material_props.blend_cutoff
+        in_material.blend_method = 'CLIP'
+        in_material.xplane.blendRatio = xp_mat.blend_cutoff
 
     #Set XP draped mode based on the draped property
-    if xp_material_props.draped:
-        material.xplane.draped = True
+    if xp_mat.draped:
+        in_material.xplane.draped = True
     else:
-        material.xplane.draped = False
+        in_material.xplane.draped = False
 
     #Set XP alpha mode based on the blend_alpha property. Alpha Cutoff ("off") or Alpha Blend ("on")
-    if xp_material_props.blend_alpha:
-        material.xplane.blend_v1000 = 'on'
+    if xp_mat.blend_alpha:
+        in_material.xplane.blend_v1000 = 'on'
     else:
-        material.xplane.blend_v1000 = 'off'
+        in_material.xplane.blend_v1000 = 'off'
 
     #Set XP hard mode based on the hard property ("none" or "concrete")
-    if xp_material_props.hard:
-        material.xplane.surfaceType = 'concrete'
-        material.xplane.deck = True
+    if xp_mat.hard:
+        in_material.xplane.surfaceType = 'concrete'
+        in_material.xplane.deck = True
     else:
-        material.xplane.surfaceType = 'none'
-        material.xplane.deck = False
+        in_material.xplane.surfaceType = 'none'
+        in_material.xplane.deck = False
 
     #Set shadow mode
-    material.xplane.shadow_local = xp_material_props.cast_shadow
+    in_material.xplane.shadow_local = xp_mat.cast_shadow
 
     #Set XP polygon offset based on the polygon_offset property
-    material.xplane.poly_os = xp_material_props.polygon_offset
+    in_material.xplane.poly_os = xp_mat.polygon_offset
 
 #Function to update the nodes of a material
-def update_nodes(material):
+def update_nodes(dummy1 = None):
     #Check to make sure teh file is saved, otherwise exit and warn the user in the status bar
         if bpy.data.filepath == "":
             return
@@ -72,6 +74,8 @@ def update_nodes(material):
         str_image_alb = ""
         str_image_nml = ""
         str_image_lit = ""
+
+        material = bpy.context.material
 
         xp_material_props = material.xp_materials
 

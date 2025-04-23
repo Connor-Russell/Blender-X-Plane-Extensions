@@ -10,16 +10,19 @@ from bpy_extras.io_utils import ImportHelper # type: ignore
 from . import exporter
 from . import importer
 from . import material_config
+from .Helpers import file_utils
+from .Helpers import collection_utils
+import os
 
 class BTN_lin_exporter(bpy.types.Operator):
-    bl_idname = "xp_ext.lin_exporter"
+    bl_idname = "xp_ext.export_lines"
     bl_label = "Export X-Plane Lines"
 
     def execute(self, context):
 
         #Iterate through every collection. If it is exportable, and visible, export
         for col in bpy.data.collections:
-            if col.xp_lin.is_exportable and (not col.hide_viewport):
+            if col.xp_lin.exportable and collection_utils.get_collection_is_visible(col):
                 exporter.export_lin(col)
 
         return {'FINISHED'}
@@ -62,13 +65,13 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
             name = name.replace(".png", "")
             name = name.replace(".dds", "")
         else:
-            alb_check_path = FileUtils.resolve_relative_path(name + ".png")
+            alb_check_path = file_utils.rel_to_abs(name + ".png")
             if os.path.exists(alb_check_path):
                 material.xp_materials.alb_texture = name + ".png"
 
         #Define the paths for the NML, and LIT
-        nml_check_path = FileUtils.resolve_relative_path(name + "_NML.png")
-        lit_check_path = FileUtils.resolve_relative_path(name + "_LIT.png")
+        nml_check_path = file_utils.rel_to_abs(name + "_NML.png")
+        lit_check_path = file_utils.rel_to_abs(name + "_LIT.png")
 
         #If the paths exist, set the properties
         if os.path.exists(nml_check_path):
@@ -83,12 +86,22 @@ class BTN_mats_update_nodes(bpy.types.Operator):
     """Called when the user hits Update Nodes in the XPMaterialProperties panel. This removes all material nodes and creates new ones with the new properties."""
     bl_idname = "xp_ext.update_material_nodes"
     bl_label = "Updates material nodes"
+    bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
+
+    override_material: bpy.props.PointerProperty(type=bpy.types.Material, default=None) # type: ignore
 
     def execute(self, context):
-        #Call the function to update the settings
-        material_config.update_settings(context.material.xp_materials, bpy.context.active_object)
+        target_material = context.material
+        try:
+            if self.override_material:
+                target_material = self.override_material
+        except AttributeError:
+            pass
 
-        material_config.update_nodes(context.material)
+        #Call the function to update the settings
+        material_config.update_settings(target_material)
+
+        material_config.update_nodes(target_material)
 
         return {'FINISHED'}
 
@@ -205,7 +218,6 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
                                 DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
         return {'FINISHED'}
 
-#Class that handles the user hitting the bake to low poly button
 class BTN_bake_low_poly(bpy.types.Operator):
     """Automatically bakes selected objects to active objects for base, normal, roughness, metalness, and lit, then saves into XP formats in the same folder as the .blend"""
     bl_idname = "xp_ext.bake_low_poly"
@@ -235,7 +247,6 @@ class BTN_bake_low_poly(bpy.types.Operator):
 
         return {'FINISHED'}
 
-#Facade interface
 class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
     bl_idname = "xp.add_rem_fac"
     bl_label = "Remove Spelling"
@@ -342,11 +353,10 @@ class BTN_fac_export_all(bpy.types.Operator):
         #Iterate over all the collections in the scene
         for col in bpy.data.collections:
             #If the collection is a facade, and is not hidden, export it
-            if col.xp_fac.exportable and (not col.hide_viewport):
+            if col.xp_fac.exportable and collection_utils.get_collection_is_visible(col):
                 exporter.export_fac(col)
 
         return {'FINISHED'}
-
 
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")

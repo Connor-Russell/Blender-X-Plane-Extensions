@@ -38,7 +38,7 @@ collision_type_enum = [
     ('ASPHALT', "Asphalt", "Asphalt collision")
 ]
 
-#For facade spelling enums
+#TODO: Kill this code and all it's references. ENUMs cause problems
 def get_all_collection_names(self, context):
     enum_results = []
     for col in bpy.data.collections:
@@ -49,64 +49,59 @@ def get_all_collection_names(self, context):
 
     return enum_results
 
-#Function to force a UI update after a property has been changed
+#Triggers UI redraw
 def update_ui(self, context):
     context.area.tag_redraw()
 
-#Line properties
+#General properties
 
-class PROP_lin_layer(bpy.types.PropertyGroup):
-    is_exportable: bpy.props.BoolProperty(
-        name="Export",
-        default=True,
-        description="Whether or not this layer should be exported",
-        update=update_ui
-    ) # type: ignore
-    
-    type: bpy.props.EnumProperty(
-        name="Type",
-        items=line_type,
-        default="SEGMENT",
-        description="What part of the line this is",
+class PROP_attached_obj(bpy.types.PropertyGroup):
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
+    draped: bpy.props.BoolProperty(name="Draped", description="Whether the object is draped", default=False)    # type: ignore
+    resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
+
+class PROP_xp_ext_scene(bpy.types.PropertyGroup):
+    lin_collection_search: bpy.props.StringProperty(
+        name="Search",
+        default="",
+        description="Search for a collection to configure export",
         update=update_ui
     ) # type: ignore
 
-class PROP_lin_collection(bpy.types.PropertyGroup):
-    is_ui_expanded: bpy.props.BoolProperty(
-        name="UI Expanded",
+    lin_disabled_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
         default=False,
         update=update_ui
     ) # type: ignore
 
-    is_exportable: bpy.props.BoolProperty(
-        name="Exportable",
-        default=True,
-        description="Whether or not this layer should be exported",
-        update=update_ui
-    ) # type: ignore
-    
-    export_path: bpy.props.StringProperty(
-        name="Export Path",
+    fac_collection_search: bpy.props.StringProperty(
+        name="Search",
         default="",
-        subtype="FILE_PATH",
-        description="The path to the file to export to, and name",
+        description="Search for a collection to configure export",
         update=update_ui
     ) # type: ignore
-    
-    mirror: bpy.props.BoolProperty(
-        name="Mirror",
-        default=True,
-        description="Whether or not to mirror the line. Keep this on to avoid stretching, unless the line contains text",
+
+    fac_disabled_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
+        default=False,
         update=update_ui
     ) # type: ignore
-    
-    segment_count: bpy.props.IntProperty(
-        name="Segment Count",
-        default=0,
-        min=0,
-        description="If non-zero, X-Plane will stretch/compress the texture to always end on a subdivision. Useful for alignment with end caps",
-        update=update_ui
-    ) # type: ignore
+
+    low_poly_bake_resolution: bpy.props.FloatProperty(
+        name="Bake Resolution",
+        description="The resolution of the low poly bake",
+        default=1024,
+        min=32.0,
+        max=8192
+    ) #type: ignore
+
+    low_poly_bake_ss_factor: bpy.props.FloatProperty(
+         name="Bake Super-Sampling Factor",
+         description="The Sumper-Sampling factor of the low poly bake",
+         default=1.0,
+         min=1.0,
+         max=4.0
+     ) #type: ignore
 
 #Material properties
 
@@ -283,7 +278,62 @@ class PROP_mats(bpy.types.PropertyGroup):
     decal_one: bpy.props.PointerProperty(type=PROP_decal) # type: ignore
     decal_two: bpy.props.PointerProperty(type=PROP_decal) # type: ignore
 
-#General properties
+#Line properties
+
+class PROP_lin_layer(bpy.types.PropertyGroup):
+    exportable: bpy.props.BoolProperty(
+        name="Export",
+        default=True,
+        description="Whether or not this layer should be exported",
+        update=update_ui
+    ) # type: ignore
+    
+    type: bpy.props.EnumProperty(
+        name="Type",
+        items=line_type,
+        default="SEGMENT",
+        description="What part of the line this is",
+        update=update_ui
+    ) # type: ignore
+
+class PROP_lin_collection(bpy.types.PropertyGroup):
+    is_ui_expanded: bpy.props.BoolProperty(
+        name="UI Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    exportable: bpy.props.BoolProperty(
+        name="Exportable",
+        default=True,
+        description="Whether or not this layer should be exported",
+        update=update_ui
+    ) # type: ignore
+    
+    name: bpy.props.StringProperty(
+        name="Export Path",
+        default="",
+        subtype="FILE_PATH",
+        description="The path to the file to export to, and name",
+        update=update_ui
+    ) # type: ignore
+    
+    mirror: bpy.props.BoolProperty(
+        name="Mirror",
+        default=True,
+        description="Whether or not to mirror the line. Keep this on to avoid stretching, unless the line contains text",
+        update=update_ui
+    ) # type: ignore
+    
+    segment_count: bpy.props.IntProperty(
+        name="Segment Count",
+        default=0,
+        min=0,
+        description="If non-zero, X-Plane will stretch/compress the texture to always end on a subdivision. Useful for alignment with end caps",
+        update=update_ui
+    ) # type: ignore
+
+#Facade properties
 
 class PROP_fac_mesh(bpy.types.PropertyGroup):
     far_lod: bpy.props.IntProperty(name="Far LOD", description="The far LOD for the object", default=1000)  # type: ignore
@@ -291,57 +341,7 @@ class PROP_fac_mesh(bpy.types.PropertyGroup):
     cuts: bpy.props.IntProperty(name="Segments", description="The number of segments in the mesh (used for curves. If it is a flat plane with 3 subdivisions, you have 4 segments)")   # type: ignore
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
 
-class PROP_attached_obj(bpy.types.PropertyGroup):
-    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
-    draped: bpy.props.BoolProperty(name="Draped", description="Whether the object is draped", default=False)    # type: ignore
-    resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
-
-class PROP_xp_ext_scene(bpy.types.PropertyGroup):
-    lin_collection_search: bpy.props.StringProperty(
-        name="Search",
-        default="",
-        description="Search for a collection to configure export",
-        update=update_ui
-    ) # type: ignore
-
-    lin_exportable_collections_expanded: bpy.props.BoolProperty(
-        name="Exportable Collections Expanded",
-        default=False,
-        update=update_ui
-    ) # type: ignore
-
-    fac_collection_search: bpy.props.StringProperty(
-        name="Search",
-        default="",
-        description="Search for a collection to configure export",
-        update=update_ui
-    ) # type: ignore
-
-    fac_disabled_collections_expanded: bpy.props.BoolProperty(
-        name="Exportable Collections Expanded",
-        default=False,
-        update=update_ui
-    ) # type: ignore
-
-    low_poly_bake_resolution: bpy.props.FloatProperty(
-        name="Bake Resolution",
-        description="The resolution of the low poly bake",
-        default=1024,
-        min=32.0,
-        max=8192
-    ) #type: ignore
-
-    low_poly_bake_ss_factor: bpy.props.FloatProperty(
-         name="Bake Super-Sampling Factor",
-         description="The Sumper-Sampling factor of the low poly bake",
-         default=1.0,
-         min=1.0,
-         max=4.0
-     ) #type: ignore
-
-#Facade properties
-
-class PROP_fac_filetered_spelling_choices(bpy.types.PropertyGroup):
+class PROP_fac_filtered_spelling_choices(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name")  #type: ignore
 
 class PROP_fac_spelling_entry(bpy.types.PropertyGroup):
@@ -378,7 +378,7 @@ class PROP_facade(bpy.types.PropertyGroup):
 
     #Facade name
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the facade is exportable", default=False, update=update_ui)# type: ignore
-    facade_name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade")# type: ignore
+    name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade")# type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the facade is expanded in the UI", default=False, update=update_ui)# type: ignore
 
     #Global properties
@@ -397,7 +397,7 @@ class PROP_facade(bpy.types.PropertyGroup):
     floors: bpy.props.CollectionProperty(type=PROP_fac_floor)# type: ignore
 
     #Eligable spelling choices
-    spelling_choices: bpy.props.CollectionProperty(type=PROP_fac_filetered_spelling_choices)# type: ignore
+    spelling_choices: bpy.props.CollectionProperty(type=PROP_fac_filtered_spelling_choices)# type: ignore
 
 #This code is for sad blender reasons. In Blender, Enum properties reference by *index* so if collections are added or removed, then the collection the user has selected changes
 #So we can't used indexes. But we don't want users to have to type collection names. So we have a string property that we add to the UI with a prop_search
@@ -430,7 +430,7 @@ def update_fac_spelling_choices_load_handler(in_file_path, in_startup_file_path)
 
 def register():
     
-    bpy.utils.register_class(PROP_fac_filetered_spelling_choices)
+    bpy.utils.register_class(PROP_fac_filtered_spelling_choices)
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
     bpy.utils.register_class(PROP_xp_ext_scene)
@@ -460,7 +460,7 @@ def unregister():
     bpy.app.handlers.depsgraph_update_pre.remove(update_fac_spelling_choices_depgraph_handler)
     bpy.app.handlers.load_post.remove(update_fac_spelling_choices_load_handler)
 
-    bpy.utils.unregister_class(PROP_fac_filetered_spelling_choices)
+    bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)
     bpy.utils.unregister_class(PROP_lin_layer)
     bpy.utils.unregister_class(PROP_lin_collection)
     bpy.utils.unregister_class(PROP_xp_ext_scene)
