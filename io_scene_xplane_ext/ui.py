@@ -353,11 +353,11 @@ class MENU_mats(bpy.types.Panel):
 
 class MENU_operations(bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
-    bl_label = "X-Plane Materials"
+    bl_label = "X-Plane Extensions"
     bl_idname = "SCENE_PT_operations"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "X-Plane Materials"
+    bl_category = "X-Plane Extensions"
 
     def draw(self, context):
 
@@ -373,6 +373,9 @@ class MENU_operations(bpy.types.Panel):
 
         layout.separator()
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
+
+        #layout.separator()
+        #layout.operator("xp_ext.run_tests", text="Run Tests")
 
 class MENU_facade(bpy.types.Panel):
     """Creates a Panel in the scene properties window"""

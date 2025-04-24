@@ -270,7 +270,6 @@ class line():
                     closest_dist = dist
                     closest_idx = i
 
-            print("Closest layer: " + str(closest_idx) + " at distance " + str(closest_dist))
             #Get the segment
             if type == "SEGMENT":
                 seg = line_utils.get_layer_from_segment_object(obj, closest_idx, type)

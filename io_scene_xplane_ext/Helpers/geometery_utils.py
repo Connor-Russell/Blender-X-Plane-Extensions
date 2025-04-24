@@ -77,8 +77,11 @@ def create_obj_from_draw_call(vertices, indicies, name):
     bm = bmesh.new()
 
     #Add all the vertices
+    print(len(vertices))
     for vertex in vertices:
-        bm.verts.new((vertex.loc_x, vertex.loc_y, vertex.loc_z))
+        v = bm.verts.new((vertex.loc_x, vertex.loc_y, vertex.loc_z))
+        v.normal = (vertex.normal_x, vertex.normal_y, vertex.normal_z)
+
 
     # Update the bmesh to ensure the vertices are added
     bm.verts.ensure_lookup_table()
@@ -90,24 +93,11 @@ def create_obj_from_draw_call(vertices, indicies, name):
     i = 0
 
     while i < len(indicies) - 2:
-        # Add vertices to the bmesh
-        v1 = vertices[indicies[i]]
-        v2 = vertices[indicies[i + 1]]
-        v3 = vertices[indicies[i + 2]]
-
-        #Create new vertices in the bmesh for each vertex
-        v1 = bm.verts.new((v1.loc_x, v1.loc_y, v1.loc_z))
-        v2 = bm.verts.new((v2.loc_x, v2.loc_y, v2.loc_z))
-        v3 = bm.verts.new((v3.loc_x, v3.loc_y, v3.loc_z))
+        #Get the vertices at the indicies
+        v1 = bm.verts[indicies[i]]
+        v2 = bm.verts[indicies[i + 1]]
+        v3 = bm.verts[indicies[i + 2]]
         
-        #Set the normals for the vertices
-        v1.normal = (vertices[indicies[i]].normal_x, vertices[indicies[i]].normal_y, vertices[indicies[i]].normal_z)
-        v2.normal = (vertices[indicies[i + 1]].normal_x, vertices[indicies[i + 1]].normal_y, vertices[indicies[i + 1]].normal_z)
-        v3.normal = (vertices[indicies[i + 2]].normal_x, vertices[indicies[i + 2]].normal_y, vertices[indicies[i + 2]].normal_z)
-
-        # Update the bmesh to ensure the vertices are added
-        bm.verts.ensure_lookup_table()
-
         # Create a new face with the vertices
         face = bm.faces.new([v1, v2, v3])
 
@@ -209,9 +199,9 @@ def get_draw_call_from_obj(obj):
         try_optomize = False
 
         if try_optomize:
-            v1_index = MiscUtils.linear_search_list(out_verts, v1)
-            v2_index = MiscUtils.linear_search_list(out_verts, v2)
-            v3_index = MiscUtils.linear_search_list(out_verts, v3)
+            v1_index = misc_utils.linear_search_list(out_verts, v1)
+            v2_index = misc_utils.linear_search_list(out_verts, v2)
+            v3_index = misc_utils.linear_search_list(out_verts, v3)
 
             if v1_index == -1:
                 out_verts.append(v3)

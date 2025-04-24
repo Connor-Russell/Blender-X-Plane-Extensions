@@ -32,7 +32,7 @@ class IMPORT_lin(bpy.types.Operator, ImportHelper):
     bl_label = "Import X-Plane Lines"
     filename_ext = ".lin"
     filter_glob: bpy.props.StringProperty(default="*.lin", options={'HIDDEN'}) # type: ignore
-    files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # To support multiple files
+    files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
 
     def execute(self, context):
         # Implement your import logic here
@@ -351,6 +351,18 @@ class BTN_fac_export_all(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_run_tests(bpy.types.Operator):
+    """Run all tests in the addon"""
+    bl_idname = "xp_ext.run_tests"
+    bl_label = "Run Tests"
+
+    def execute(self, context):
+        #Import the test module and run the tests
+        from .Helpers import test_utils
+        test_utils.run_all_tests()
+
+        return {'FINISHED'}
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     
@@ -363,6 +375,7 @@ def register():
     bpy.utils.register_class(BTN_update_xp_export_settings)
     bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
     bpy.utils.register_class(BTN_fac_export_all)
+    bpy.utils.register_class(BTN_run_tests)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -374,4 +387,5 @@ def unregister():
     bpy.utils.unregister_class(BTN_update_xp_export_settings)
     bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)
     bpy.utils.unregister_class(BTN_fac_export_all)
+    bpy.utils.unregister_class(BTN_run_tests)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

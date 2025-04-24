@@ -42,28 +42,22 @@ def compare_files(file1, file2):
 def test(test_dir):
     b_pass = False
 
-    new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.fac"
+    new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.lin"
     new_file = test_dir + "/" + new_file_name
 
     if os.path.exists(new_file):
         os.remove(new_file)
 
     for col in bpy.data.collections:
-        if col.xp_fac.exportable:
-            if col.xp_fac.name == "Exporter.fac":
-                col.xp_fac.name = new_file_name
+        if col.xp_lin.exportable:
+            if col.xp_lin.name == "Exporter.lin":
+                col.xp_lin.name = new_file_name
 
-    print("Exporting facade")
-    bpy.ops.xp_ext.export_facades()
+    print("Exporting Line")
+    bpy.ops.xp_ext.export_lines()
 
-    known_good_file = test_dir + "/Exporter.good.fac"
+    known_good_file = test_dir + "/Exporter.good.lin"
     exporter_output = test_dir + "/../Test Results.csv"
-
-    #Check if this is Blender version 3.6 or greater. If so we need to check against a different file as there are tiny coordinate differences between the versions
-    if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 0:
-        known_good_file = test_dir + "/Exporter.good.40.fac"
-    elif bpy.app.version[0] >= 3 and bpy.app.version[1] >= 6:
-        known_good_file = test_dir + "/Exporter.good.36.fac"
 
     #Resolve the file paths to use \\ instead of / for windows compatibility
     new_file = new_file.replace("/", "\\")
@@ -80,9 +74,9 @@ def test(test_dir):
     #Append the test results to the exporter_output file
     with open(exporter_output, 'a') as output:
         if b_pass:
-            output.write("Facade Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%\n")
+            output.write("Line Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%\n")
         else:
-            output.write("Facade Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%\n")
+            output.write("Line Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%\n")
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":

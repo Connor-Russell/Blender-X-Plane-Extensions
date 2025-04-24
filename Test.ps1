@@ -3,7 +3,9 @@ $cd = Get-Location
 $TestDir = "$cd\Tests"
 $OutputTestDir = "$cd\Tests"
 $DateAndTime = Get-Date -Format "yyyy-MM-dd HH-mm-ss"
-$BlenderFile = "$cd\Tests\Content\FacadeExporter.blend"
+$BlenderFileFacadeExporter = "$cd\Tests\Content\FacadeExporter.blend"
+$BlenderFileLineExporter = "$cd\Tests\Content\LineExporter.blend"
+$BlenderFileInternalTests = "$cd\Tests\Content\InternalTests.blend"
 
 #Define Blender version locations
 $BlenderExe29 = "D:\Blender Versions\2.93\blender.exe"
@@ -31,6 +33,10 @@ $Test40 = $true
 $Test41 = $true
 $Test42 = $true
 
+$TestExportFacade = $true
+$TestExportLine = $true
+$InternalTest = $true
+
 #First run build our build script, which is in the same folder as this script
 & "$cd\Build.ps1"
 
@@ -45,7 +51,19 @@ function Test-Exporter {
     #Remove-Item "$OutputTestDir\Exporter.fac" -ErrorAction SilentlyContinue
 
     #Launch Blender and run the export and compare test
-    & $BlenderExe --background $BlenderFile --python "$TestDir\export_fac_test.py"
+    if ($TestExportFacade)
+    {
+        & $BlenderExe --background $BlenderFileFacadeExporter --python "$TestDir\export_fac_test.py"
+    }
+    if ($TestExportLine)
+    {
+        & $BlenderExe --background $BlenderFileLineExporter --python "$TestDir\export_lin_test.py"
+    }
+    if ($InternalTest)
+    {
+        & $BlenderExe --background $BlenderFileInternalTests --python "$TestDir\internal_tests.py"
+    }
+
 
     #Remove the old exported .fac
     #Remove-Item "$OutputTestDir\Exporter.fac" -ErrorAction SilentlyContinue
