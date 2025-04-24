@@ -118,8 +118,6 @@ def create_obj_from_draw_call(vertices, indicies, name):
 
     # Create an object with the mesh and link it to the scene
     obj = bpy.data.objects.new(name, mesh)
-    bpy.context.collection.objects.link(obj)
-    bpy.context.view_layer.objects.active = obj
 
     return obj
 

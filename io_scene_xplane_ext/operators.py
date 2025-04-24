@@ -44,6 +44,24 @@ class IMPORT_lin(bpy.types.Operator, ImportHelper):
             importer.import_lin(filepath)
 
         return {'FINISHED'}
+    
+class IMPORT_fac(bpy.types.Operator, ImportHelper):
+    bl_idname = "import_scene.xp_fac"
+    bl_label = "Import X-Plane Facade"
+    filename_ext = ".fac"
+    filter_glob: bpy.props.StringProperty(default="*.fac", options={'HIDDEN'}) # type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
+
+    def execute(self, context):
+        # Implement your import logic here
+        directory = self.filepath
+        directory = directory[:directory.rfind("\\")]
+
+        for cf in self.files:
+            filepath = f"{directory}\\{cf.name}"
+            importer.import_fac(filepath)
+
+        return {'FINISHED'}
 
 class BTN_mats_autoodetect_textures(bpy.types.Operator):
     """Autodetects the texture"""
@@ -365,10 +383,12 @@ class BTN_run_tests(bpy.types.Operator):
 
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
+    self.layout.operator(IMPORT_fac.bl_idname, text="X-Plane Facade (.fac)")
     
 def register():
     bpy.utils.register_class(BTN_lin_exporter)
     bpy.utils.register_class(IMPORT_lin)
+    bpy.utils.register_class(IMPORT_fac)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_bake_low_poly)
@@ -381,6 +401,7 @@ def register():
 def unregister():
     bpy.utils.unregister_class(BTN_lin_exporter)
     bpy.utils.unregister_class(IMPORT_lin)
+    bpy.utils.unregister_class(IMPORT_fac)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_bake_low_poly)

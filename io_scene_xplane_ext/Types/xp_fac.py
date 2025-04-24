@@ -33,6 +33,20 @@ class mesh:
         self.group = obj.xp_fac_mesh.group
         self.cuts = obj.xp_fac_mesh.cuts
 
+    def to_obj(self, name):
+        # Use the vertices and indices to generate the Blender object
+        obj = geometery_utils.create_obj_from_draw_call(self.vertices, self.indices, name)
+        
+        #Set the params of the object
+        obj.xp_fac_mesh.far_lod = int(float(self.far_lod))
+        obj.xp_fac_mesh.group = int(float(self.group))
+        obj.xp_fac_mesh.cuts = int(float(self.cuts))
+        obj.name = name
+
+        # Return the created object
+        return obj
+    
+
 class segment:
     def __init__(self):
         self.meshes = []
@@ -59,6 +73,30 @@ class segment:
 
                 if new_attached_obj.valid:
                     self.attached_objects.append(new_attached_obj)
+
+    def to_collection(self, name, in_material):
+        """
+        Converts the segment to a Blender collection, including its meshes and attached objects.
+
+        :param name: The name of the Blender collection to create.
+        :return: The created Blender collection.
+        """
+        # Create a new collection
+        collection = bpy.data.collections.new(name)
+
+        # Add meshes to the collection
+        for mesh in self.meshes:
+            obj = mesh.to_obj(mesh.name)
+            obj.data.materials.append(in_material)
+            collection.objects.link(obj)
+
+        # Add attached objects to the collection
+        for cur_obj in self.attached_objects:
+            obj = cur_obj.to_obj(os.path.basename(cur_obj.resource))
+            collection.objects.link(obj)
+
+        # Return the created collection
+        return collection
 
     def append_obj_resources(self, target_list):
         for obj in self.attached_objects:
@@ -180,7 +218,47 @@ class floor:
             seg.append_obj_resources(target_list)
         for obj in self.roof_objs:
             target_list.append(obj.resource)
-            
+
+    def to_floor_props(self, in_floor):
+        """
+        Populates a Blender floor property group (in_floor) with the data from this floor object.
+
+        :param in_floor: The Blender floor property group to populate.
+        """
+        # Set the name of the floor
+        in_floor.name = self.name
+
+        # Populate wall rules and their spellings
+        for cur_wall in self.walls:
+            wall_rule = in_floor.walls.add()
+            wall_rule.name = cur_wall.name
+            wall_rule.min_length = cur_wall.min_length
+            wall_rule.max_length = cur_wall.max_length
+            wall_rule.min_heading = cur_wall.min_heading
+            wall_rule.max_heading = cur_wall.max_heading
+
+            for cur_spelling in cur_wall.spellings:
+                spelling = wall_rule.spellings.add()
+                for segment_name in cur_spelling.segment_names:
+                    entry = spelling.entries.add()
+                    entry.collection = segment_name
+
+        # Set roof scale
+        in_floor.roof_scale_x = self.roof_scale_x
+        in_floor.roof_scale_y = self.roof_scale_y
+
+#This class is only used when importing a facade. It is to hold the material data until we create a material for it.
+class facade_material:
+    def __init__(self):
+        self.alb_texture = ""
+        self.nml_texture = ""
+        self.lit_texture = ""
+        self.do_blend_alpha = True
+        self.alpha_cutoff = 0.5
+        self.cast_shadow = True
+        self.layer_group = ""
+        self.layer_group_offset = 0
+
 class facade:
     def __init__(self):
         self.name = "" #Name of the facade, relative to the blender file
@@ -192,12 +270,222 @@ class facade:
         self.do_roof_mesh = True    #If true, the roof mesh will be generated. If false, the roof mesh will not be generated.
         self.wall_material = None   #This is a PROP_mats (bpy.types.Material.xp_materials)
         self.roof_material = None   #This is a PROP_mats (bpy.types.Material.xp_materials)
+        self.import_wall_material = None #This is a facade_material
+        self.import_roof_material = None #This is a facade_material
         self.graded = False
         self.ring = False
 
     def read(self, in_path):
-        #Todo
-        pass
+        """
+        Reads a .fac file and populates the facade object and its members.
+        """
+
+        self.name = os.path.basename(in_path)  # Get the name of the facade file
+
+        with open(in_path, "r") as f:
+            lines = f.readlines()
+
+        current_floor = None
+        current_wall = None
+        current_spelling = None
+        current_segment = None
+        current_mesh = None
+        current_material = None
+
+        for line in lines:
+            line = line.strip()
+
+            if not line or line.startswith("#"):
+                continue  # Ignore empty lines and comments
+
+            tokens = line.split()
+            command = tokens[0]
+
+            if command == "I":
+                # Header line, skip
+                continue
+
+            elif command == "FACADE":
+                # Start of a facade definition, skip
+                continue
+
+            elif command == "GRADED":
+                self.graded = True
+
+            elif command == "DRAPED":
+                self.graded = False
+
+            elif command == "RING":
+                self.ring = tokens[1] == "1"
+
+            elif command == "SHADER_WALL":
+                # Wall material data
+                current_material = facade_material()
+                self.import_wall_material = current_material
+
+            elif command == "SHADER_ROOF":
+                # Roof material data
+                current_material = facade_material()
+                self.import_roof_material = current_material
+
+            elif command == "TEXTURE":
+                if current_material:
+                    current_material.alb_texture = tokens[1]
+
+            elif command == "TEXTURE_LIT":
+                if current_material:
+                    current_material.lit_texture = tokens[1]
+
+            elif command == "TEXTURE_NORMAL":
+                if current_material:
+                    current_material.normal_texture = tokens[1]
+
+            elif command == "TEXTURE_MODULATOR":
+                if current_material:
+                    current_material.decal_modulator = tokens[1]
+
+            elif command == "NO_BLEND":
+                if current_material:
+                    current_material.blend_alpha = False
+                    current_material.blend_cutoff = float(tokens[1])
+
+            elif command == "NO_SHADOW":
+                if current_material:
+                    current_material.cast_shadow = False
+
+            elif command == "LAYER_GROUP":
+                if current_material:
+                    current_material.layer_group = tokens[1]
+                    current_material.layer_group_offset = int(tokens[2])
+
+            elif command == "ROOF_SCALE":
+                self.roof_scale_x = float(tokens[1])
+                self.roof_scale_y = float(tokens[2])
+
+            elif command == "OBJ":
+                self.all_objects.append(tokens[1])
+
+            elif command == "FLOOR":
+                current_floor = floor()
+                current_floor.name = tokens[1]
+                self.floors.append(current_floor)
+
+            elif command == "ROOF_TWO_SIDED":
+                if current_floor:
+                    current_floor.roof_two_sided = True
+
+            elif command == "ROOF_HEIGHT":
+                if current_floor:
+                    current_floor.roof_heights.append(float(tokens[1]))
+
+            elif command == "ROOF_OBJ_HEADING":
+                if current_floor:
+                    obj_index = int(tokens[1])
+                    obj_resource = self.all_objects[obj_index]
+                    attached_obj = xp_attached_obj.xp_attached_obj()
+                    attached_obj.resource = obj_resource
+                    attached_obj.rot_z = float(tokens[2])
+                    attached_obj.loc_x = float(tokens[3])
+                    attached_obj.loc_z = float(tokens[4])
+                    attached_obj.min_draw = float(tokens[5])
+                    attached_obj.max_draw = float(tokens[6])
+                    current_floor.roof_objs.append(attached_obj)
+
+            elif command == "SEGMENT":
+                current_segment = segment()
+                current_segment.name = tokens[1]
+                if current_floor:
+                    current_floor.all_segments.append(current_segment)
+
+            elif command == "SEGMENT_CURVED":
+                current_segment = segment()
+                current_segment.name = tokens[1]
+                current_segment.is_curved = True
+                if current_floor:
+                    current_floor.all_curved_segments.append(current_segment)
+
+            elif command == "MESH":
+                if current_segment:
+                    current_mesh = mesh()
+                    current_mesh.group = float(tokens[1])
+                    current_mesh.far_lod = float(tokens[2])
+                    current_segment.meshes.append(current_mesh)
+
+            elif command == "VERTEX":
+                if current_mesh:
+                    vertex = geometery_utils.xp_vertex(
+                        loc_x=float(tokens[1]),
+                        loc_y=float(tokens[3]),
+                        loc_z=float(tokens[2]),
+                        normal_x=float(tokens[4]),
+                        normal_y=float(tokens[6]),
+                        normal_z=float(tokens[5]),
+                        uv_x=float(tokens[7]),
+                        uv_y=float(tokens[8])
+                    )
+                    current_mesh.vertices.append(vertex)
+
+            elif command == "IDX":
+                if current_mesh:
+                    current_mesh.indices.extend(map(int, tokens[1:]))
+
+            elif command == "WALL":
+                current_wall = wall()
+                current_wall.min_length = float(tokens[1])
+                current_wall.max_length = float(tokens[2])
+                current_wall.min_heading = float(tokens[3])
+                current_wall.max_heading = float(tokens[4])
+                current_wall.name = tokens[5]
+                if current_floor:
+                    current_floor.walls.append(current_wall)
+
+            elif command == "SPELLING":
+                current_spelling = spelling()
+                if current_wall:
+                    current_wall.spellings.append(current_spelling)
+                for seg_idx in tokens[1:]:
+                    seg_idx = int(seg_idx)
+                    if seg_idx < len(current_floor.all_segments):
+                        segment_name = current_floor.all_segments[seg_idx].name
+                        current_spelling.segment_names.append(segment_name)
+            elif command == "ATTACH_DRAPED":
+                if current_segment:
+                    obj_index = int(tokens[1])
+                    obj_resource = self.all_objects[obj_index]
+                    attached_obj = xp_attached_obj.xp_attached_obj()
+                    attached_obj.resource = obj_resource
+                    attached_obj.loc_x = float(tokens[2])
+                    attached_obj.loc_z = float(tokens[3])
+                    attached_obj.loc_y = float(tokens[4])
+                    attached_obj.rot_z = float(tokens[5])
+                    if len(tokens) > 6:
+                        attached_obj.min_draw = float(tokens[6])
+                        attached_obj.max_draw = float(tokens[7])
+                    attached_obj.draped = True
+                    current_segment.attached_objects.append(attached_obj)
+
+            elif command == "ATTACH_GRADED":
+                if current_segment:
+                    obj_index = int(tokens[1])
+                    obj_resource = self.all_objects[obj_index]
+                    attached_obj = xp_attached_obj.xp_attached_obj()
+                    attached_obj.resource = obj_resource
+                    attached_obj.loc_x = float(tokens[2])
+                    attached_obj.loc_z = float(tokens[3])
+                    attached_obj.loc_y = float(tokens[4])
+                    attached_obj.rot_z = float(tokens[5])
+                    if len(tokens) > 6:
+                        attached_obj.min_draw = float(tokens[6])
+                        attached_obj.max_draw = float(tokens[7])
+                    attached_obj.draped = False
+                    current_segment.attached_objects.append(attached_obj)
+
+        # Sort objects and segments for consistency
+        self.all_objects.sort()
+        for cur_floor in self.floors:
+            cur_floor.all_segments.sort(key=lambda seg: seg.name)
+            cur_floor.all_curved_segments.sort(key=lambda seg: seg.name)
+            cur_floor.roof_objs.sort(key=lambda obj: obj.resource)
 
     def write(self, out_path):
 
@@ -436,7 +724,93 @@ class facade:
         self.roof_scale_x = self.floors[0].roof_scale_x
         self.roof_scale_y = self.floors[0].roof_scale_y
 
-    def to_collection(self, in_collection):
-        #Todo
-        pass
+    def to_scene(self):
+        """
+        Converts the facade object into a Blender scene.
+        This method should be called after the `read` function to populate the scene with the facade's data.
+        """
+        # Create a new collection for the facade
+        facade_collection = bpy.data.collections.new(self.name)
+        bpy.context.scene.collection.children.link(facade_collection)
+
+        # Set facade properties
+        facade_props = facade_collection.xp_fac
+        facade_props.name = self.name
+        facade_props.wall_material = self.wall_material
+        facade_props.roof_material = self.roof_material
+        facade_props.render_wall = self.do_wall_mesh
+        facade_props.render_roof = self.do_roof_mesh
+        facade_props.graded = self.graded
+        facade_props.ring = self.ring
+
+        # Set wall and roof materials
+        if self.import_wall_material:
+            wall_material = bpy.data.materials.new(name="WallMaterial")
+            wall_material.use_nodes = True
+            wall_material.xp_materials.alb_texture = self.import_wall_material.alb_texture
+            wall_material.xp_materials.normal_texture = self.import_wall_material.nml_texture
+            wall_material.xp_materials.lit_texture = self.import_wall_material.lit_texture
+            wall_material.xp_materials.blend_alpha = self.import_wall_material.do_blend_alpha
+            wall_material.xp_materials.blend_cutoff = self.import_wall_material.alpha_cutoff
+            wall_material.xp_materials.cast_shadow = self.import_wall_material.cast_shadow
+            #wall_material.xp_materials.layer_group = self.import_wall_material.layer_group
+            wall_material.xp_materials.layer_group_offset = self.import_wall_material.layer_group_offset
+            self.wall_material = wall_material
+
+        if self.import_roof_material:
+            roof_material = bpy.data.materials.new(name="RoofMaterial")
+            roof_material.use_nodes = True
+            roof_material.xp_materials.alb_texture = self.import_roof_material.alb_texture
+            roof_material.xp_materials.normal_texture = self.import_roof_material.nml_texture
+            roof_material.xp_materials.lit_texture = self.import_roof_material.lit_texture
+            roof_material.xp_materials.blend_alpha = self.import_roof_material.do_blend_alpha
+            roof_material.xp_materials.blend_cutoff = self.import_roof_material.alpha_cutoff
+            roof_material.xp_materials.cast_shadow = self.import_roof_material.cast_shadow
+            #roof_material.xp_materials.layer_group = self.import_roof_material.layer_group
+            roof_material.xp_materials.layer_group_offset = self.import_roof_material.layer_group_offset
+            self.roof_material = roof_material
+
+        # Add floors to the collection
+        for floor_obj in self.floors:
+            # Create a collection for the floor
+            floor_collection = bpy.data.collections.new(floor_obj.name)
+            facade_collection.children.link(floor_collection)
+
+            
+
+            # Add segments
+            for segment in floor_obj.all_segments:
+                segment_collection = segment.to_collection(segment.name, self.wall_material)
+                floor_collection.children.link(segment_collection)
+
+            for curved_segment in floor_obj.all_curved_segments:
+                curved_segment_collection = curved_segment.to_collection(curved_segment.name + "_Curved", self.wall_material)
+                floor_collection.children.link(curved_segment_collection)
+
+            # Set roof properties
+            facade_props.floors.add()
+            floor_props = facade_props.floors[-1]
+            floor_obj.to_floor_props(floor_props)
+
+            #Create the roof collection
+            roof_collection = bpy.data.collections.new(floor_obj.name + "_roof")
+            floor_collection.children.link(roof_collection)
+
+            #Create planes that are the size of the roof, one at each floor height, and link them to the roof collection. 
+            for i, height in enumerate(floor_obj.roof_heights):
+                verts = [geometery_utils.xp_vertex(0, 0, 0, 0, 0, 1, 0, 0),
+                        geometery_utils.xp_vertex(0, self.roof_scale_y, 0, 0, 0, 1, 0, 1),
+                        geometery_utils.xp_vertex(self.roof_scale_x, 0, 0, 0, 0, 1, 1, 0),
+                        geometery_utils.xp_vertex(self.roof_scale_x, self.roof_scale_y, 0, 0, 0, 1, 1, 1),]
+                indicies = [0, 2, 1, 2, 3, 1]
+                roof_obj = geometery_utils.create_obj_from_draw_call(verts, indicies, "Roof_" + str(i))
+                roof_obj.location.z = height
+                roof_obj.data.materials.append(self.roof_material)
+                roof_collection.objects.link(roof_obj)
+
+            for roof_obj in floor_obj.roof_objs:
+                obj = roof_obj.to_obj(roof_obj.resource)
+                roof_collection.objects.link(obj)
+            
+
         

@@ -94,3 +94,26 @@ class xp_attached_obj:
 
         self.valid = True
     
+    def to_obj(self, name):
+        # Create a new empty object
+        obj = bpy.data.objects.new(name, None)
+        #obj.type = 'EMPTY'
+
+        # Set the object's location and rotation
+        obj.location = (self.loc_x, self.loc_y, self.loc_z)
+        obj.rotation_euler = (
+            math.radians(self.rot_x),
+            math.radians(self.rot_y),
+            math.radians(self.rot_z)
+        )
+
+        # Set the object's display type to plain axes
+        obj.empty_display_type = 'PLAIN_AXES'
+
+        # Set custom properties for exportable and resource
+        obj.xp_attached_obj.exportable = True
+        obj.xp_attached_obj.resource = self.resource
+        obj.xp_attached_obj.draped = self.draped
+
+        # Return the created object
+        return obj

@@ -8,6 +8,7 @@ import bpy #type: ignore
 
 from .Helpers import line_utils
 from .Types import xp_lin
+from .Types import xp_fac
 
 def import_lin(in_path):
     #Define just the file name from the path
@@ -19,6 +20,15 @@ def import_lin(in_path):
     lin.read(in_path)
     lin.to_collection(in_name)
 
-    
+def import_fac(in_path):
+    #Define just the file name from the path
+    in_name = in_path
+    in_name = in_path.split("\\")[-1]
+
+    #Read it
+    fac = xp_fac.facade()
+    print(f"Importing {in_name}...")
+    fac.read(in_path)
+    fac.to_scene()
 
     
