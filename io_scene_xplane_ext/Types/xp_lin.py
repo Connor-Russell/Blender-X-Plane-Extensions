@@ -8,6 +8,7 @@
 from ..Helpers import line_utils #type: ignore
 from ..Helpers import decal_utils #type: ignore
 from ..Helpers import file_utils #type: ignore
+from ..Helpers import misc_utils #type: ignore
 import bpy #type: ignore
 import os
 
@@ -63,21 +64,23 @@ class line():
         if self.nml_texture != "":
             of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
         if self.super_rough:
-            of += "SUPER_ROUGHness "
+            of += "SUPER_ROUGHNESS\n"
 
         if not self.do_blend:
-            of += "NO_BLEND " + str(self.blend_cutoff) + "\n"
+            of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
         
         of += "\n"
 
         #Write the decals
-        of += "#Decals\n"
-        if (self.decal_1 != None):
-            of += decal_utils.get_decal_command(self.decal_1, output_folder)
-        if (self.decal_2 != None):
-            of += decal_utils.get_decal_command(self.decal_2, output_folder)
-
-        of += "\n"
+        if self.decal_1.enabled or self.decal_2.enabled:
+            of += "#Decals\n"
+            if self.decal_1.enabled:
+                of += decal_utils.get_decal_command(self.decal_1, output_folder)
+                of += "\n"
+            if self.decal_2.enabled:
+                of += decal_utils.get_decal_command(self.decal_2, output_folder)
+                of += "\n"
+            of += "\n"
 
         of += "#Position Params\n"
 
@@ -262,11 +265,12 @@ class line():
             closest_idx = 0
             closest_dist = 9999
             for i, layer in enumerate(all_layers):
-                dist = abs(line_utils.get_layer_z(obj.location.z) - layer)
+                dist = abs(line_utils.get_layer_z(obj) - layer)
                 if dist < closest_dist:
                     closest_dist = dist
                     closest_idx = i
 
+            print("Closest layer: " + str(closest_idx) + " at distance " + str(closest_dist))
             #Get the segment
             if type == "SEGMENT":
                 seg = line_utils.get_layer_from_segment_object(obj, closest_idx, type)
@@ -304,25 +308,25 @@ class line():
 
             LowerLeft.x = (seg.l - seg.c) * self.scale_x
             LowerLeft.y = -0.5 * self.scale_y
-            LowerLeft.z = 0
+            LowerLeft.z = seg.layer
             LowerLeft.u = seg.l
             LowerLeft.v = 0
 
             LowerRight.x = (seg.r - seg.c) * self.scale_x
             LowerRight.y = -0.5 * self.scale_y
-            LowerRight.z = 0
+            LowerRight.z = seg.layer
             LowerRight.u = seg.r
             LowerRight.v = 0
 
             UpperLeft.x = (seg.l - seg.c) * self.scale_x
             UpperLeft.y = 0.5 * self.scale_y
-            UpperLeft.z = 0
+            UpperLeft.z = seg.layer
             UpperLeft.u = seg.l
             UpperLeft.v = 1
 
             UpperRight.x = (seg.r - seg.c) * self.scale_x
             UpperRight.y = 0.5 * self.scale_y
-            UpperRight.z = 0
+            UpperRight.z = seg.layer
             UpperRight.u = seg.r
             UpperRight.v = 1
 
@@ -334,40 +338,45 @@ class line():
             new_collection.objects.link(new_plane)
 
         #Now we will iterate through every cap, and generate a plane for it
-        for cap in self.caps:
+        for cur_cap in self.caps:
             #Create the vertices
             LowerLeft = line_utils.lin_vertex()
             LowerRight = line_utils.lin_vertex()
             UpperLeft = line_utils.lin_vertex()
             UpperRight = line_utils.lin_vertex()
 
-            LowerLeft.x = (cap.l - cap.c) * self.scale_x
-            LowerLeft.y = cap.bottom * self.scale_y
-            LowerLeft.z = 0
-            LowerLeft.u = cap.l
-            LowerLeft.v = cap.bottom
+            LowerLeft.x = (cur_cap.l - cur_cap.c) * self.scale_x
+            LowerLeft.y = cur_cap.bottom * self.scale_y
+            LowerLeft.z = cur_cap.layer
+            LowerLeft.u = cur_cap.l
+            LowerLeft.v = cur_cap.bottom
 
-            LowerRight.x = (cap.r - cap.c) * self.scale_x
-            LowerRight.y = cap.bottom * self.scale_y
-            LowerRight.z = 0
-            LowerRight.u = cap.r
-            LowerRight.v = cap.bottom
+            LowerRight.x = (cur_cap.r - cur_cap.c) * self.scale_x
+            LowerRight.y = cur_cap.bottom * self.scale_y
+            LowerRight.z = cur_cap.layer
+            LowerRight.u = cur_cap.r
+            LowerRight.v = cur_cap.bottom
 
-            UpperLeft.x = (cap.l - cap.c) * self.scale_x
-            UpperLeft.y = cap.top * self.scale_y
-            UpperLeft.z = 0
-            UpperLeft.u = cap.l
-            UpperLeft.v = cap.top
+            UpperLeft.x = (cur_cap.l - cur_cap.c) * self.scale_x
+            UpperLeft.y = cur_cap.top * self.scale_y
+            UpperLeft.z = cur_cap.layer
+            UpperLeft.u = cur_cap.l
+            UpperLeft.v = cur_cap.top
 
-            UpperRight.x = (cap.r - cap.c) * self.scale_x
-            UpperRight.y = cap.top * self.scale_y
-            UpperRight.z = 0
-            UpperRight.u = cap.r
-            UpperRight.v = cap.top
+            UpperRight.x = (cur_cap.r - cur_cap.c) * self.scale_x
+            UpperRight.y = cur_cap.top * self.scale_y
+            UpperRight.z = cur_cap.layer
+            UpperRight.u = cur_cap.r
+            UpperRight.v = cur_cap.top
 
             #Create the faces
             new_plane = line_utils.gen_plane_from_verts([LowerLeft, LowerRight, UpperRight, UpperLeft])
             new_plane.data.materials.append(mat)
+        
+            if cur_cap.type == "START":
+                new_plane.xp_lin.type = "START"
+            elif cur_cap.type == "END":
+                new_plane.xp_lin.type = "END"
 
             #Link it to the scene and new collection
             new_collection.objects.link(new_plane)

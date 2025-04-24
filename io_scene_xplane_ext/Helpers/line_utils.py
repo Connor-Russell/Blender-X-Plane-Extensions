@@ -129,6 +129,7 @@ def get_layer_from_segment_object(in_object, offset, type):
         cap.r = right_vertex.u * tex_width
         cap.bottom = bottom_vertex.v * tex_height
         cap.top = top_vertex.v * tex_height
+        cap.layer = offset
         return cap
     else:
         #END_CAP <layer> <s1> <sm> <s2> <t1> <t2>
@@ -139,6 +140,7 @@ def get_layer_from_segment_object(in_object, offset, type):
         cap.r = right_vertex.u * tex_width
         cap.bottom = bottom_vertex.v * tex_height
         cap.top = top_vertex.v * tex_height
+        cap.layer = offset
         return cap
 
 #Gets the scale of the layer based on the UVs and dimensions of the object, and texture.

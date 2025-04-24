@@ -45,7 +45,7 @@ function Test-Exporter {
     #Remove-Item "$OutputTestDir\Exporter.fac" -ErrorAction SilentlyContinue
 
     #Launch Blender and run the export and compare test
-    & $BlenderExe --background $BlenderFile --python "$TestDir\export_tests.py"
+    & $BlenderExe --background $BlenderFile --python "$TestDir\export_fac_test.py"
 
     #Remove the old exported .fac
     #Remove-Item "$OutputTestDir\Exporter.fac" -ErrorAction SilentlyContinue

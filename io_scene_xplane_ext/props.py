@@ -313,7 +313,7 @@ class PROP_lin_collection(bpy.types.PropertyGroup):
 
     exportable: bpy.props.BoolProperty(
         name="Exportable",
-        default=True,
+        default=False,
         description="Whether or not this layer should be exported",
         update=update_ui
     ) # type: ignore

@@ -134,6 +134,9 @@ def get_decal_command(in_decal, in_output_folder):
         else:
             #Format: DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <alpha r key> <alpha g key> <alpha b key> <alpha alpha key> <alpha modulator> <alpha constant> <file>
             alb_decal = f"DECAL_PARAMS {in_decal.tile_ratio} {in_decal.dither_ratio} {in_decal.rgb_decal_key_red} {in_decal.rgb_decal_key_green} {in_decal.rgb_decal_key_blue} {in_decal.rgb_decal_key_alpha} {in_decal.rgb_strength_modulator} {in_decal.rgb_strength_constant} {in_decal.alpha_decal_key_red} {in_decal.alpha_decal_key_green} {in_decal.alpha_decal_key_blue} {in_decal.alpha_decal_key_alpha} {in_decal.alpha_strength_modulator} {in_decal.alpha_strength_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.alb), in_output_folder)}"
+
+        if in_decal.nml != "":
+            alb_decal += "\n"
     #Normal
 
     nml_decal = ""
@@ -145,7 +148,7 @@ def get_decal_command(in_decal, in_output_folder):
         else:
             #Format: NORMAL_DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <file>
             nml_decal = f"NORMAL_DECAL_PARAMS {in_decal.tile_ratio} {in_decal.rgb_decal_key_red} {in_decal.rgb_decal_key_green} {in_decal.rgb_decal_key_blue} {in_decal.rgb_decal_key_alpha} {in_decal.rgb_strength_modulator} {in_decal.rgb_strength_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.nml), in_output_folder)}"
-    else:
+    elif in_decal.nml != "":
         if in_decal.projected:
             #Format: NORMAL_DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <file>
             nml_decal = f"NORMAL_DECAL_PARAMS_PROJ {in_decal.nml_scale_x} {in_decal.nml_scale_y} {in_decal.nml_decal_key_red} {in_decal.nml_decal_key_green} {in_decal.nml_decal_key_blue} {in_decal.nml_decal_key_alpha} {in_decal.nml_strength_modulator} {in_decal.nml_strength_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.nml), in_output_folder)}"
@@ -153,4 +156,4 @@ def get_decal_command(in_decal, in_output_folder):
             #Format: NORMAL_DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <file>
             nml_decal = f"NORMAL_DECAL_PARAMS {in_decal.nml_tile_ratio} {in_decal.nml_decal_key_red} {in_decal.nml_decal_key_green} {in_decal.nml_decal_key_blue} {in_decal.nml_decal_key_alpha} {in_decal.nml_strength_modulator} {in_decal.nml_strength_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.nml), in_output_folder)}"
     
-    return alb_decal + "\n" + nml_decal
+    return alb_decal + nml_decal

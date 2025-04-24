@@ -65,6 +65,12 @@ def update_settings(dummy1 = None, dummy2 = None):
 def update_nodes(dummy1 = None):
     #Check to make sure teh file is saved, otherwise exit and warn the user in the status bar
         if bpy.data.filepath == "":
+            raise Exception("Please save the file before attempting to update materials. Textures are relative to the blender file, so if the file isn't saved I can't find your textures!")
+            return
+        
+        #Check to make sure the material is set to use nodes, otherwise exit and warn the user in the status bar
+        if bpy.context.material.use_nodes == False:
+            raise Exception("Please set the material to use nodes before attempting to update materials.")
             return
         
         #Define variables to hold the imagese
