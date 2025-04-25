@@ -41,6 +41,9 @@ class object:
             line = line.strip()
             tokens = line.split()
 
+            if len(tokens) == 0:
+                continue
+
             if tokens[0] == "VT":
                 #We flip Y and Z because of the way Blender and X-Plane handle coordinates
                 vert = geometery_utils.xp_vertex(
