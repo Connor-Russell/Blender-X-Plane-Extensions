@@ -12,6 +12,7 @@ from . import importer
 from . import material_config
 from .Helpers import file_utils
 from .Helpers import collection_utils
+from . import auto_baker
 import os
 
 class BTN_lin_exporter(bpy.types.Operator):
@@ -128,9 +129,9 @@ class BTN_mats_update_nodes(bpy.types.Operator):
 
         #Call the function to update the settings. Currently these functions just take None as argument, they get the material from context because when they are called from an update param, they can't get the appropraite args anyway. 
         #In the future we will wrap them for the update call so we can pass the material as an argument here and override materials, but that is a job for another day
-        material_config.update_settings(None)
+        material_config.operator_wrapped_update_settings(None)
 
-        material_config.update_nodes(None)
+        material_config.operator_wrapped_update_nodes(None)
 
         return {'FINISHED'}
 
@@ -272,7 +273,7 @@ class BTN_bake_low_poly(bpy.types.Operator):
 
 
         #Bake the object to low poly
-        AutoBaker.auto_bake_current_to_active()
+        auto_baker.auto_bake_current_to_active()
 
         return {'FINISHED'}
 
@@ -399,6 +400,39 @@ class BTN_run_tests(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_TEST_config_bake_settings(bpy.types.Operator):
+    """Test the config_bake_settings function"""
+    bl_idname = "xp_ext.test_config_bake_settings"
+    bl_label = "Test Config Bake Settings"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    bake_type: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        from .Helpers import bake_utils
+        mats = bake_utils.get_source_materials()
+
+        if self.bake_type == "BASE":
+            print("Testing config for base bake settings")
+            bake_utils.config_source_materials(bake_utils.BakeType.BASE, mats)
+        elif self.bake_type == "NORMAL":
+            print("Testing config for normal bake settings")
+            bake_utils.config_source_materials(bake_utils.BakeType.NORMAL, mats)
+        elif self.bake_type == "ROUGHNESS":
+            print("Testing config for roughness bake settings")
+            bake_utils.config_source_materials(bake_utils.BakeType.ROUGHNESS, mats)
+        elif self.bake_type == "METALNESS":
+            print("Testing config for metalness bake settings")
+            bake_utils.config_source_materials(bake_utils.BakeType.METALNESS, mats)
+        elif self.bake_type == "LIT":
+            print("Testing config for lit bake settings")
+            bake_utils.config_source_materials(bake_utils.BakeType.LIT, mats)
+        else:
+            print("Resetting material settings")
+            bake_utils.reset_source_materials(mats)
+
+        return {'FINISHED'}
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_fac.bl_idname, text="X-Plane Facade (.fac)")
@@ -416,6 +450,7 @@ def register():
     bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
     bpy.utils.register_class(BTN_fac_export_all)
     bpy.utils.register_class(BTN_run_tests)
+    bpy.utils.register_class(BTN_TEST_config_bake_settings)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -430,4 +465,5 @@ def unregister():
     bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)
     bpy.utils.unregister_class(BTN_fac_export_all)
     bpy.utils.unregister_class(BTN_run_tests)
+    bpy.utils.unregister_class(BTN_TEST_config_bake_settings)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

@@ -7,8 +7,32 @@
 import bpy # type: ignore
 from .Helpers import file_utils
 
+def operator_wrapped_update_settings(self = None, context = None):
+    #This function is called when the user updates a property in the UI. It will call the update_settings function to update the material settings.
+    #Get the material from the context
+    in_material = bpy.context.active_object.active_material
+
+    #Check to make sure the material is not None
+    if in_material == None:
+        return
+
+    #Call the update_settings function to update the material settings
+    update_settings(in_material)
+
+def operator_wrapped_update_nodes(self = None, context = None):
+    #This function is called when the user updates a property in the UI. It will call the update_nodes function to update the material nodes.
+    #Get the material from the context
+    in_material = bpy.context.active_object.active_material
+
+    #Check to make sure the material is not None
+    if in_material == None:
+        return
+
+    #Call the update_nodes function to update the material nodes
+    update_nodes(in_material)
+
 #Function to update settings when a property is updated:
-def update_settings(dummy1 = None, dummy2 = None):
+def update_settings(in_material):
     #Now we will update the settings.
             #Set backface culling to TRUE - .use_backface_culling
             #Set alpha blending to ALPHA_CLIP or OPAQUE - .blend_method
@@ -21,8 +45,6 @@ def update_settings(dummy1 = None, dummy2 = None):
     #Force a UI update
     bpy.context.view_layer.update()
 
-    in_material = bpy.context.material
-
     xp_mat = in_material.xp_materials
 
     #Set backface culling to TRUE
@@ -33,43 +55,63 @@ def update_settings(dummy1 = None, dummy2 = None):
         in_material.blend_method = 'BLEND'
     else:
         in_material.blend_method = 'CLIP'
-        in_material.xplane.blendRatio = xp_mat.blend_cutoff
+        try:
+            in_material.xplane.blendRatio = xp_mat.blend_cutoff
+        except:
+            pass
 
     #Set XP draped mode based on the draped property
-    if xp_mat.draped:
-        in_material.xplane.draped = True
-    else:
-        in_material.xplane.draped = False
+    try:
+        if xp_mat.draped:
+            in_material.xplane.draped = True
+        else:
+            in_material.xplane.draped = False
+    except:
+        pass
 
     #Set XP alpha mode based on the blend_alpha property. Alpha Cutoff ("off") or Alpha Blend ("on")
-    if xp_mat.blend_alpha:
-        in_material.xplane.blend_v1000 = 'on'
-    else:
-        in_material.xplane.blend_v1000 = 'off'
+    try:
+        if xp_mat.blend_alpha:
+            in_material.xplane.blend_v1000 = 'on'
+        else:
+            in_material.xplane.blend_v1000 = 'off'
+    except:
+        pass
 
     #Set XP hard mode based on the hard property ("none" or "concrete")
-    if xp_mat.hard:
-        in_material.xplane.surfaceType = 'concrete'
-        in_material.xplane.deck = True
-    else:
-        in_material.xplane.surfaceType = 'none'
-        in_material.xplane.deck = False
+    try:
+        if xp_mat.hard:
+            in_material.xplane.surfaceType = 'concrete'
+            in_material.xplane.deck = True
+        else:
+            in_material.xplane.surfaceType = 'none'
+            in_material.xplane.deck = False
+    except:
+        pass
 
     #Set shadow mode
-    in_material.xplane.shadow_local = xp_mat.cast_shadow
+    try:
+        if in_material.xplane:
+            in_material.xplane.shadow_local = xp_mat.cast_shadow
+    except:
+        pass
 
     #Set XP polygon offset based on the polygon_offset property
-    in_material.xplane.poly_os = xp_mat.polygon_offset
+    try:
+        if in_material.xplane:
+            in_material.xplane.poly_os = xp_mat.polygon_offset
+    except:
+        pass
 
 #Function to update the nodes of a material
-def update_nodes(dummy1 = None):
+def update_nodes(material):
     #Check to make sure teh file is saved, otherwise exit and warn the user in the status bar
         if bpy.data.filepath == "":
             raise Exception("Please save the file before attempting to update materials. Textures are relative to the blender file, so if the file isn't saved I can't find your textures!")
             return
         
         #Check to make sure the material is set to use nodes, otherwise exit and warn the user in the status bar
-        if bpy.context.material.use_nodes == False:
+        if material.use_nodes == False:
             raise Exception("Please set the material to use nodes before attempting to update materials.")
             return
         
@@ -80,8 +122,6 @@ def update_nodes(dummy1 = None):
         str_image_alb = ""
         str_image_nml = ""
         str_image_lit = ""
-
-        material = bpy.context.material
 
         xp_material_props = material.xp_materials
 
@@ -148,10 +188,16 @@ def update_nodes(dummy1 = None):
             node_clamp.inputs[2].default_value = 1
 
             #Connect the nodes. Color to base color, alpha to add, add to principled alpha
-            material.node_tree.links.new(node_alb.outputs[0], node_principled.inputs[0])
+            material.node_tree.links.new(node_alb.outputs[0], node_principled.inputs[0])    #Alb color to alb
             material.node_tree.links.new(node_alb.outputs[1], node_add.inputs[0])
             material.node_tree.links.new(node_add.outputs[0], node_clamp.inputs[0])
-            material.node_tree.links.new(node_clamp.outputs[0], node_principled.inputs[21])
+            
+            if bpy.app.version < (3, 0, 0):
+                material.node_tree.links.new(node_clamp.outputs[0], node_principled.inputs[19]) #Clamped alpha to alpha
+            elif bpy.app.version < (4, 0, 0):
+                material.node_tree.links.new(node_clamp.outputs[0], node_principled.inputs[21]) #Clamped alpha to alpha
+            else:
+                material.node_tree.links.new(node_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
 
         #Set up nml nodes
         if image_nml != None:
@@ -182,12 +228,25 @@ def update_nodes(dummy1 = None):
             material.node_tree.links.new(node_nml.outputs[0], node_seperate_rgb.inputs[0])
             material.node_tree.links.new(node_seperate_rgb.outputs[0], node_combine_rgb.inputs[0])
             material.node_tree.links.new(node_seperate_rgb.outputs[1], node_combine_rgb.inputs[1])
-            material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[6])
+            
             node_combine_rgb.inputs[2].default_value = 1
             material.node_tree.links.new(node_combine_rgb.outputs[0], node_normal_map.inputs[1])
-            material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[22])
+            
             material.node_tree.links.new(node_nml.outputs[1], node_rough_invert.inputs[1])
-            material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[9])
+
+            if bpy.app.version < (3, 0, 0):
+                material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[20])    #Reconstructed normal to normal
+                material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[7])   #Inverted normal roughness to roughness
+                material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[4])   #Seperate normal B to metalness
+            elif bpy.app.version < (3, 0, 0):
+                material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[22])    #Reconstructed normal to normal
+                material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[9])   #Inverted normal roughness to roughness
+                material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[6])   #Seperate normal B to metalness
+            else:
+                material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[5])    #Reconstructed normal to normal
+                material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[2])   #Inverted normal roughness to roughness
+                material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[1])   #Seperate normal B to metalness
+            
 
         #Set up lit nodes
         if image_lit != None:
@@ -196,7 +255,13 @@ def update_nodes(dummy1 = None):
             node_lit.image = image_lit
 
             #Connect the color to the principled emission
-            material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[19])
+            if bpy.app.version < (3, 0, 0):
+                material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[17])   #Lit color to emission
+            elif bpy.app.version < (4, 0, 0):
+                material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[19])   #Lit color to emission
+            else:
+                material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[26])   #Lit color to emission
+                node_principled.inputs[27].default_value = (1) #Set the emission intensity to 1
 
             #If there is an alb, connect the alpha to it's add so it can impact the alpha
             if node_add != None:

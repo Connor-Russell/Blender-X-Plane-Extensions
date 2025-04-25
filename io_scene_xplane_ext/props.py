@@ -166,7 +166,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The albedo texture",
         default="",
         subtype='FILE_PATH',
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     normal_texture: bpy.props.StringProperty(
@@ -174,7 +174,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The normal texture",
         default="",
         subtype='FILE_PATH',
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     normal_tile_ratio: bpy.props.FloatProperty(
@@ -182,7 +182,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The number of times the normal tiles to the albedo",
         default=1,
         min=0,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     lit_texture: bpy.props.StringProperty(
@@ -190,35 +190,35 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The lit texture",
         default="",
         subtype='FILE_PATH',
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     brightness: bpy.props.FloatProperty(
         name="Brightness",
         description="The brightness of the LIT texture in NITs. -1 to leave default",
         default=-1,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     draped: bpy.props.BoolProperty(
         name="Draped",
         description="Is the material draped?",
         default=False,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     hard: bpy.props.BoolProperty(
         name="Hard",
         description="Is the material hard?",
         default=False,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     blend_alpha: bpy.props.BoolProperty(
         name="Blend Alpha",
         description="Does the material have blended alpha?",
         default=False,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     blend_cutoff: bpy.props.FloatProperty(
@@ -227,14 +227,14 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0.5,
         min=0,
         max=1,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     cast_shadow: bpy.props.BoolProperty(
         name="Casts Shadows",
         description="Does the material cast shadows?",
         default=True,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     polygon_offset: bpy.props.IntProperty(
@@ -243,7 +243,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0,
         min=0,
         max=3,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     #Layer group property
@@ -252,7 +252,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="Select the layer group",
         items=layer_group_enum,
         default='OBJECTS',
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     #Layer group offset property
@@ -262,7 +262,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0,
         min=-5,
         max=5,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     #Bool seperate normal and albedo decals
@@ -270,7 +270,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         name="Seperate Normal and Albedo Decals",
         description="Seperate the normal and albedo decals",
         default=False,
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     #String modulator texture for the decals
@@ -279,7 +279,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The modulator texture for the decals",
         default="",
         subtype='FILE_PATH',
-        update=material_config.update_settings
+        update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
     #Decal properties

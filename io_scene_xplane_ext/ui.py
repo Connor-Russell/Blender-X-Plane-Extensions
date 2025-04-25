@@ -372,10 +372,28 @@ class MENU_operations(bpy.types.Panel):
         layout.operator("xp_ext.bake_low_poly", text="Bake to Selected to Low Poly")
 
         layout.separator()
+        layout.label(text="X-Plane Exporter Sync")
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
 
-        #layout.separator()
-        #layout.operator("xp_ext.run_tests", text="Run Tests")
+        do_test_operators = False
+        if do_test_operators:
+            layout.separator()
+            layout.label(text="Test Operators")
+            layout.operator("xp_ext.run_tests", text="Run Tests")
+
+            layout.separator()
+            btn_bake_test_base = layout.operator("xp_ext.test_config_bake_settings", text="Config Base Bake Settings")
+            btn_bake_test_base.bake_type = "BASE"
+            btn_bake_test_normal = layout.operator("xp_ext.test_config_bake_settings", text="Config Normal Bake Settings")
+            btn_bake_test_normal.bake_type = "NORMAL"
+            btn_bake_test_roughness = layout.operator("xp_ext.test_config_bake_settings", text="Config Roughness Bake Settings")
+            btn_bake_test_roughness.bake_type = "ROUGHNESS"
+            btn_bake_test_metalness = layout.operator("xp_ext.test_config_bake_settings", text="Config Metalness Bake Settings")
+            btn_bake_test_metalness.bake_type = "METALNESS"
+            btn_bake_test_lit = layout.operator("xp_ext.test_config_bake_settings", text="Config Lit Bake Settings")
+            btn_bake_test_lit.bake_type = "LIT"
+            btn_bake_test_reset = layout.operator("xp_ext.test_config_bake_settings", text="Reset Bake Settings")
+            btn_bake_test_reset.bake_type = "RESET"
 
 class MENU_facade(bpy.types.Panel):
     """Creates a Panel in the scene properties window"""

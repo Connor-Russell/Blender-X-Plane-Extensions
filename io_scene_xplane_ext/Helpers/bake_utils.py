@@ -8,7 +8,7 @@ import bpy
 import os
 from enum import Enum
 from . import file_utils
-from . import MaterialPanel
+from .. import material_config
 import time
 import shutil
 import subprocess
@@ -35,7 +35,7 @@ import numpy as np
 # - Create a new final NML material
 # - Merge normal metalness and roughness textures into the final NML material (done externally)
 # - Save the baked base and final NML textures to disk
-# - Reset the source materials by iteratting through and calling the blender_utils.update_material_nodes() operator
+# - Reset the source materials
 #
 # Functions:
 # Enums: BakeType 0 = base, 1 = normal, 2 = roughness, 3 = metalness, 4 = lit
@@ -45,7 +45,7 @@ import numpy as np
 # - config_target_bake_texture(type) Creates a new target texture and selects it for baking
 # - bake_texture() Bakes the texture
 # - save_baked_textures() Saves the baked base, nml, roughness, metalness, and lit textures to disk. Then invokes standalone exe to merge the normal, metalness, and roughness textures into the final nml texture and removes those temp files
-# - reset_source_materials() Resets the source materials by iteratting through and calling the blender_utils.update_material_nodes() operator
+# - reset_source_materials() Resets the source materials
 
 #Enums
 class BakeType(Enum):
@@ -279,12 +279,12 @@ def save_baked_textures(target_obj):
     metalness_image = bpy.data.images.get("BAKE_BUFFER_Metalness")
     lit_image = bpy.data.images.get("BAKE_BUFFER_Lit")
 
-    #Resize all the images to their current size / bpy.context.scene.xp_mats.low_poly_bake_ss_factor
-    base_image.scale(int(base_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(base_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
-    nml_image.scale(int(nml_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(nml_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
-    roughness_image.scale(int(roughness_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(roughness_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
-    metalness_image.scale(int(metalness_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(metalness_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
-    lit_image.scale(int(lit_image.size[0] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor), int(lit_image.size[1] / bpy.context.scene.xp_mats.low_poly_bake_ss_factor))
+    #Resize all the images to their current size / bpy.context.scene.xp_ext.low_poly_bake_ss_factor
+    base_image.scale(int(base_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(base_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
+    nml_image.scale(int(nml_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(nml_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
+    roughness_image.scale(int(roughness_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(roughness_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
+    metalness_image.scale(int(metalness_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(metalness_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
+    #lit_image.scale(int(lit_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(lit_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
 
     #Get the file path. This is the file path of the current blend file + the name of the collection of the target object + _low_poly_<type>.png
     file_path = bpy.data.filepath
@@ -331,8 +331,8 @@ def save_baked_textures(target_obj):
     if adjusted_name.endswith("_LOD01"):
         adjusted_name = adjusted_name[:-6]
     base_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LOD01.png")
-    nml_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_NML_LOD01.png")
-    lit_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LIT_LOD01.png")
+    nml_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LOD01_NML.png")
+    lit_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LOD01_LIT.png")
 
     #Save the images
     print("Saving base image to " + base_output_path)
@@ -344,7 +344,7 @@ def save_baked_textures(target_obj):
     nml_image.filepath_raw = nml_output_path
     nml_image.file_format = 'PNG'
     nml_image.save()
-    lit_image.filepath = lit_output_path
+    lit_image.filepath_raw = lit_output_path
     lit_image.file_format = 'PNG'
     lit_image.save()
 
@@ -357,7 +357,7 @@ def save_baked_textures(target_obj):
 
 def reset_source_materials(mats):
     for mat in mats:
-        MaterialPanel.update_nodes(mat)
+        material_config.update_nodes(mat)
 
 def config_target_object_with_new_textures(target_obj):
     #Get the material
@@ -379,4 +379,4 @@ def config_target_object_with_new_textures(target_obj):
     mat.xp_materials.lit_texture = parent_collections[0].name + "_LOD01_LIT.png"
 
     #Set the active material, then call the update material nodes operator
-    MaterialPanel.update_nodes(mat)
+    material_config.update_nodes(mat)
