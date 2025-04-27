@@ -50,8 +50,8 @@ class anim_loc_table:
     """
 
     #Define instance variables
-    def __init__(self, name):
-        self.name = name  #Name of the animation
+    def __init__(self):
+        self.dataref = ""  #Name of the animation
         self.keyframes = []  #List of keyframes for the animation
 
     def add_keyframe(self, time, loc):
@@ -167,6 +167,49 @@ class object:
                 #Append it to the current animation tree
                 cur_anim_tree.append(new_anim)
             
+            elif tokens[0] == "ANIM_trans":
+                #If this command is missing the dataref, we assume it is a static translation
+                if len(tokens) < 10:
+                    #ANIM_trans <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
+                    cur_static_translation = anim_loc_keyframe()
+                    cur_static_translation.time = 0
+                    cur_static_translation.loc = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+                #Otherwise, we assume this is a shortened keyframe table
+                elif len(tokens) == 10:
+                    #ANIM_trans <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
+                    cur_table = anim_loc_table()
+                    cur_table.dataref = tokens[9]
+
+                    key1 = anim_loc_keyframe()
+                    key1.time = int(tokens[7])
+                    key1.loc = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+                    cur_table.add_keyframe(key1.time, key1.loc)
+
+                    key2 = anim_loc_keyframe()
+                    key2.time = int(tokens[8])
+                    key2.loc = (float(tokens[4]), float(tokens[6]), float(tokens[5]))
+                    cur_table.add_keyframe(key2.time, key2.loc)
+            elif tokens[0] == "ANIM_rotate":
+                #This is the same as the translation, but for rotation
+                if len(tokens) < 10:
+                    #ANIM_rotate <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
+                    cur_static_rotation = anim_rot_keyframe()
+                    cur_static_rotation.time = 0
+                    cur_static_rotation.rot = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+                elif len(tokens) == 10:
+                    #ANIM_rotate <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
+                    cur_table = anim_rot_table()
+                    cur_table.name = tokens[9]
+
+                    key1 = anim_rot_keyframe()
+                    key1.time = int(tokens[7])
+                    key1.rot = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+                    cur_table.add_keyframe(key1.time, key1.rot)
+
+                    key2 = anim_rot_keyframe()
+                    key2.time = int(tokens[8])
+                    key2.rot = (float(tokens[4]), float(tokens[6]), float(tokens[5]))
+                    cur_table.add_keyframe(key2.time, key2.rot)
             elif tokens[0] == "ANIM_end":
                 #Pop the current animation tree
                 cur_anim_tree.pop()
