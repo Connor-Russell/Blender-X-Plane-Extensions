@@ -7,6 +7,7 @@
 import bpy
 from ..Helpers import collection_utils
 from ..Helpers import file_utils
+from ..Helpers import anim_utils
 
 #---------------------------------------------------------------------------------
 #collection_utils.py tests
@@ -116,7 +117,6 @@ def TEST_get_roof_data():
 
     return "PASS"  # If all checks pass, return "PASS"
 
-
 #----------------------------------------------------------------------------------
 # geometery_utils.py tests
 #----------------------------------------------------------------------------------
@@ -181,6 +181,79 @@ def TEST_draw_call_round_trip():
         return result
 
 #----------------------------------------------------------------------------------
+# anim_utils.py tests
+#----------------------------------------------------------------------------------
+
+def TEST_keyframing():
+    """
+    Test the keyframing functionality in Blender.
+    This test creates a cube, sets its location, and keyframes it.
+    """
+    result = "PASS"
+
+    #Add an empty object to the scene
+    empty = bpy.data.objects.new("TestEmpty", None)
+    empty.empty_display_size = 1
+    empty.empty_display_type = 'PLAIN_AXES'
+    bpy.context.scene.collection.objects.link(empty)
+
+    #Define start and end positions, rotations, and keyframes
+    start_pos = (0, 0, 0)
+    end_pos = (1, 1, 1)
+    start_rot = (0, 0, 0)
+    end_rot = (45, 45, 45)
+    start_frame = 1
+    end_frame = 10
+
+    #Set the frame, loc, and rot to 
+    anim_utils.goto_frame(start_frame)
+    anim_utils.set_obj_position(empty, start_pos)
+    anim_utils.set_obj_rotation(empty, start_rot)
+    anim_utils.keyframe_obj_location(empty)
+    anim_utils.keyframe_obj_rotation(empty)
+
+    #Goto the end frame and set the position and rotation
+    anim_utils.goto_frame(end_frame)
+    anim_utils.set_obj_position(empty, end_pos)
+    anim_utils.set_obj_rotation(empty, end_rot)
+    anim_utils.keyframe_obj_location(empty)
+    anim_utils.keyframe_obj_rotation(empty)
+
+    #Now check if the first keyframe is set properly
+    anim_utils.goto_frame(start_frame)
+    cur_frame = anim_utils.get_current_frame()
+    check_start_pos = anim_utils.get_obj_position(empty)
+    check_start_rot = anim_utils.get_obj_rotation(empty)
+    if cur_frame != start_frame:
+        result = f"FAIL: Expected frame {start_frame}, got {cur_frame}."
+    if abs(check_start_pos[0] - start_pos[0]) > 0.0001 or \
+       abs(check_start_pos[1] - start_pos[1]) > 0.0001 or \
+       abs(check_start_pos[2] - start_pos[2]) > 0.0001:
+        result = f"FAIL: Expected start position {start_pos}, got {check_start_pos}."
+    if abs(check_start_rot[0] - start_rot[0]) > 0.0001 or \
+       abs(check_start_rot[1] - start_rot[1]) > 0.0001 or \
+       abs(check_start_rot[2] - start_rot[2]) > 0.0001:
+        result = f"FAIL: Expected start rotation {start_rot}, got {check_start_rot}."    
+
+    #Now check the last keyframe
+    anim_utils.goto_frame(end_frame)
+    cur_frame = anim_utils.get_current_frame()
+    check_end_pos = anim_utils.get_obj_position(empty)
+    check_end_rot = anim_utils.get_obj_rotation(empty)
+    if cur_frame != end_frame:
+        result = f"FAIL: Expected frame {end_frame}, got {cur_frame}."
+    if abs(check_end_pos[0] - end_pos[0]) > 0.0001 or \
+       abs(check_end_pos[1] - end_pos[1]) > 0.0001 or \
+       abs(check_end_pos[2] - end_pos[2]) > 0.0001:
+        result = f"FAIL: Expected end position {end_pos}, got {check_end_pos}."
+    if abs(check_end_rot[0] - end_rot[0]) > 0.0001 or \
+       abs(check_end_rot[1] - end_rot[1]) > 0.0001 or \
+       abs(check_end_rot[2] - end_rot[2]) > 0.0001:
+        result = f"FAIL: Expected end rotation {end_rot}, got {check_end_rot}."
+
+    return result
+
+#----------------------------------------------------------------------------------
 # Main function to run all tests
 #----------------------------------------------------------------------------------
 
@@ -196,12 +269,16 @@ def run_all_tests():
     print(f"TEST_get_roof_data: {result2}")
 
     result3 = TEST_draw_call_round_trip()
-    print(f"test_get_draw_call_from_obj: {result3}")
+    print(f"TEST_get_draw_call_from_obj: {result3}")
+
+    result4 = TEST_keyframing()
+    print(f"TEST_keyframing: {result4}")
 
     #Open the test results csv and print the results
     test_results_file = file_utils.rel_to_abs("../Test Results.csv")
     with open(test_results_file, 'a') as output:
         output.write(f"TEST_get_all_collections_from_view_layer,{result1}\n")
         output.write(f"TEST_get_roof_data,{result2}\n")
-        output.write(f"test_get_draw_call_from_obj,{result3}\n")
+        output.write(f"TEST_get_draw_call_from_obj,{result3}\n")
+        output.write(f"TEST_keyframing,{result4}\n")
 

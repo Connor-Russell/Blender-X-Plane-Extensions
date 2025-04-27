@@ -5,6 +5,6 @@ $TargetPath2 = "D:\Blender Versions\scripts\addons\io_scene_xplane_ext"
 
 #Copy the source path to the target path, creating dirs if needed
 Remove-Item -Path $TargetPath -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item -Path $SourcePath -Destination $TargetPath -Recurse -Force
+Copy-Item -Path $SourcePath -Destination $TargetPath -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -Path $TargetPath2 -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item -Path $SourcePath -Destination $TargetPath2 -Recurse -Force
+Copy-Item -Path $SourcePath -Destination $TargetPath2 -Recurse -Force -ErrorAction SilentlyContinue
