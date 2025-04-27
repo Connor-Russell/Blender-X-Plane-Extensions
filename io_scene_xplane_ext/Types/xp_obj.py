@@ -9,6 +9,71 @@ import os
 
 from ..Helpers import geometery_utils
 
+class anim_loc_keyframe:
+    """
+    Class to represent a keyframe for an animation. This class is used to store the keyframes for an animation.
+    """
+
+    #Define instance variables
+    def __init__(self, time, loc):
+        self.time = time  #Time of the keyframe
+        self.loc = loc  #Location of the keyframe
+
+class anim_rot_keyframe:
+    """
+    Class to represent a keyframe for an animation. This class is used to store the keyframes for an animation.
+    """
+
+    #Define instance variables
+    def __init__(self, time, rot):
+        self.time = time  #Time of the keyframe
+        self.rot = rot  #Rotation of the keyframe
+
+class anim_rot_table:
+    """
+    Class to represent a table of keyframes for an animation. This class is used to store the keyframes for an animation.
+    """
+
+    #Define instance variables
+    def __init__(self, name):
+        self.name = name  #Name of the animation
+        self.keyframes = []  #List of keyframes for the animation
+
+    def add_keyframe(self, time, rot):
+        #Add a keyframe to the list of keyframes
+        kf = anim_rot_keyframe(time, rot)
+        self.keyframes.append(kf)
+
+class anim_loc_table:
+    """
+    Class to represent a table of keyframes for an animation. This class is used to store the keyframes for an animation.
+    """
+
+    #Define instance variables
+    def __init__(self, name):
+        self.name = name  #Name of the animation
+        self.keyframes = []  #List of keyframes for the animation
+
+    def add_keyframe(self, time, loc):
+        #Add a keyframe to the list of keyframes
+        kf = anim_loc_keyframe(time, loc)
+        self.keyframes.append(kf)
+
+class anim_level:
+    """
+    Class to represent a level of animation. This class is used to store the keyframes for an animation.
+    """
+
+    #Define instance variables
+    def __init__(self, name):
+        self.driver #This is an empty that all children are linked to. This is what is keyframed and "drives" the animation
+        self.static_loc_keyframes = []  #List of static location keyframes for the animation
+        self.static_rot_keyframes = []  #List of static rotation keyframes for the animation
+        self.loc_tables = []  #List of location tables for the animation
+        self.rot_tables = []  #List of rotation tables for the animation
+        self.draw_calls = []  #List of draw calls for the animation
+        self.children = []  #List of children anim_levels for the animation
+
 class object:
     """
     Class to represent an X-Plane object. This class provides functions to import the object into Blender.

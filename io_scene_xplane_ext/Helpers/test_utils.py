@@ -198,12 +198,18 @@ def TEST_keyframing():
     bpy.context.scene.collection.objects.link(empty)
 
     #Define start and end positions, rotations, and keyframes
+    dref_name = "TestEmpty"
     start_pos = (0, 0, 0)
     end_pos = (1, 1, 1)
     start_rot = (0, 0, 0)
     end_rot = (45, 45, 45)
+    start_dref_value = 0.0
+    end_dref_value = 1.0
     start_frame = 1
     end_frame = 10
+
+    #Add the X-Plane
+    anim_utils.add_xp_dataref_track(empty, dref_name)
 
     #Set the frame, loc, and rot to 
     anim_utils.goto_frame(start_frame)
@@ -211,6 +217,7 @@ def TEST_keyframing():
     anim_utils.set_obj_rotation(empty, start_rot)
     anim_utils.keyframe_obj_location(empty)
     anim_utils.keyframe_obj_rotation(empty)
+    anim_utils.keyframe_xp_dataref(empty, dref_name, start_dref_value)
 
     #Goto the end frame and set the position and rotation
     anim_utils.goto_frame(end_frame)
@@ -218,14 +225,18 @@ def TEST_keyframing():
     anim_utils.set_obj_rotation(empty, end_rot)
     anim_utils.keyframe_obj_location(empty)
     anim_utils.keyframe_obj_rotation(empty)
+    anim_utils.keyframe_xp_dataref(empty, dref_name, end_dref_value)
 
     #Now check if the first keyframe is set properly
     anim_utils.goto_frame(start_frame)
     cur_frame = anim_utils.get_current_frame()
     check_start_pos = anim_utils.get_obj_position(empty)
     check_start_rot = anim_utils.get_obj_rotation(empty)
+    check_start_dref_value = anim_utils.get_xp_dataref(empty, dref_name)
     if cur_frame != start_frame:
         result = f"FAIL: Expected frame {start_frame}, got {cur_frame}."
+    if abs(check_start_dref_value - start_dref_value) > 0.0001:
+        result = f"FAIL: Expected dataref value {start_dref_value}, got {check_start_dref_value}."
     if abs(check_start_pos[0] - start_pos[0]) > 0.0001 or \
        abs(check_start_pos[1] - start_pos[1]) > 0.0001 or \
        abs(check_start_pos[2] - start_pos[2]) > 0.0001:
@@ -240,8 +251,11 @@ def TEST_keyframing():
     cur_frame = anim_utils.get_current_frame()
     check_end_pos = anim_utils.get_obj_position(empty)
     check_end_rot = anim_utils.get_obj_rotation(empty)
+    check_end_dref_value = anim_utils.get_xp_dataref(empty, dref_name)
     if cur_frame != end_frame:
         result = f"FAIL: Expected frame {end_frame}, got {cur_frame}."
+    if abs(check_end_dref_value - end_dref_value) > 0.0001:
+        result = f"FAIL: Expected dataref value {end_dref_value}, got {check_end_dref_value}."
     if abs(check_end_pos[0] - end_pos[0]) > 0.0001 or \
        abs(check_end_pos[1] - end_pos[1]) > 0.0001 or \
        abs(check_end_pos[2] - end_pos[2]) > 0.0001:
