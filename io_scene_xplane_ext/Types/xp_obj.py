@@ -79,14 +79,12 @@ class object:
     Class to represent an X-Plane object. This class provides functions to import the object into Blender.
     """
 
-    #Class variables
-    all_objects = []  #List of all objects in the scene. This is used to get the index of the object in the list.
-
     #Define instance variables
     def __init__(self):
         self.verticies = []  #List of vertices in the object. geometery_utils.xp_vertex
         self.indicies = []  #List of indices in the object
         self.draw_calls = [] #List of "draw calls". These are pairs of start indicies and lengths
+        self.anims = []  #List of animations in the object. This is a list of anim_levels
         self.alb_texture = ""
         self.nml_texture = ""
         self.lit_texture = ""
@@ -97,6 +95,8 @@ class object:
 
     def read(self, in_obj_path):
         self.name = os.path.basename(in_obj_path)
+        #Stack for the current animation tree. This is used to keep track of the current animation level
+        cur_anim_tree = []
 
         with open(in_obj_path, "r") as f:
             lines = f.readlines()
@@ -131,7 +131,13 @@ class object:
                 #Draw call. Start index and length
                 start_index = int(tokens[1])
                 length = int(tokens[2])
-                self.draw_calls.append((start_index, length))
+
+                #Add the draw call to the list of draw calls. This is the current animation in the tree, or the list of static draw calls it there is no current animation
+                if len(cur_anim_tree) > 0:
+                    #If we are in an animation tree, add this draw call to the current animation tree
+                    cur_anim_tree[-1].draw_calls.append((start_index, length))
+                else:
+                    self.draw_calls.append((start_index, length))
 
             elif tokens[0] == "TEXTURE":
                 self.alb_texture = tokens[1]
@@ -148,6 +154,22 @@ class object:
 
             elif tokens[0] == "GLOBAL_no_shadow":
                 self.cast_shadows = False
+
+            elif tokens[0] == "ANIM_begin": 
+                new_anim = anim_level()
+
+                #If we are in an animation tree, add this animation to the current animation tree. Otherwise, add it directly to the anim list
+                if len(cur_anim_tree) > 0:
+                    cur_anim_tree[-1].children.append(new_anim)
+                else:
+                    self.anims.append(new_anim)
+
+                #Append it to the current animation tree
+                cur_anim_tree.append(new_anim)
+            
+            elif tokens[0] == "ANIM_end":
+                #Pop the current animation tree
+                cur_anim_tree.pop()
 
     def to_scene(self):
         #Create a new collection for this object
