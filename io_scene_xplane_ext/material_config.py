@@ -238,7 +238,7 @@ def update_nodes(material):
                 material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[20])    #Reconstructed normal to normal
                 material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[7])   #Inverted normal roughness to roughness
                 material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[4])   #Seperate normal B to metalness
-            elif bpy.app.version < (3, 0, 0):
+            elif bpy.app.version < (4, 0, 0):
                 material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[22])    #Reconstructed normal to normal
                 material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[9])   #Inverted normal roughness to roughness
                 material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[6])   #Seperate normal B to metalness
