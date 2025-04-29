@@ -12,20 +12,12 @@ Additional features planned include:
 - Polygon Importer
 - Autogen Point Exporter with auto-splitting of multiple material objects into different .objs
 
-# X-Plane Materials
-TODO
+Releases can be found on the release page. Alternatively, to get the latest version, clone the repository, and copy "io_scene_xplane_ext" into your Blender script folder.
 
-# Facade Exporter
-TODO
+# [X-Plane Materials](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Materials)
 
-# Facade Importer
-TODO
+# [Facades](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Facades)
 
-# Line Exporter
-TODO
+# [Lines](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Line)
 
-# Line Importer
-TODO
-
-# Object Importer (basic)
-TODO
+# [Object Importer](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Object-Importing)
