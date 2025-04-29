@@ -90,7 +90,7 @@ class anim_loc_table:
         #Find the highest, and lowest times in all the frames
         min_time = 9999999999
         max_time = -9999999999
-        min_frame = 0
+        min_frame = 2
         max_frame = 250
 
         for kf in self.keyframes:
@@ -247,6 +247,9 @@ class object:
 
     def read(self, in_obj_path):
         self.name = os.path.basename(in_obj_path)
+
+        trans_matrix = [1, -1, 1]
+
         #Stack for the current animation tree. This is used to keep track of the current animation level
         cur_anim_tree = []
         cur_rotate_keyframe_do_x = False
@@ -267,8 +270,8 @@ class object:
             if tokens[0] == "VT":
                 #We flip Y and Z because of the way Blender and X-Plane handle coordinates
                 vert = geometery_utils.xp_vertex(
-                    float(tokens[1]), float(tokens[3]), float(tokens[2]), 
-                    float(tokens[4]), float(tokens[6]), float(tokens[5]), 
+                    float(tokens[1]) * trans_matrix[0], float(tokens[3]) * trans_matrix[1], float(tokens[2]) * trans_matrix[2], 
+                    float(tokens[4]) * trans_matrix[0], float(tokens[6]) * trans_matrix[1], float(tokens[5]) * trans_matrix[2], 
                     float(tokens[7]), float(tokens[8])
                 )
                 self.verticies.append(vert)
@@ -328,7 +331,7 @@ class object:
                     #ANIM_trans <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
                     cur_static_translation = anim_loc_keyframe()
                     cur_static_translation.time = 0
-                    cur_static_translation.loc = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+                    cur_static_translation.loc = (float(tokens[1]) * trans_matrix[0], float(tokens[3]) * trans_matrix[1], float(tokens[2] * trans_matrix[2]))
                     cur_anim_tree[-1].static_loc_keyframes.append(cur_static_translation)
 
                 #Otherwise, we assume this is a shortened keyframe table
@@ -339,12 +342,12 @@ class object:
 
                     key1 = anim_loc_keyframe()
                     key1.time = int(tokens[7])
-                    key1.loc = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+                    key1.loc = (float(tokens[1]) * trans_matrix[0], float(tokens[3]) * trans_matrix[1], float(tokens[2]) * trans_matrix[2])
                     cur_table.add_keyframe(key1.time, key1.loc)
 
                     key2 = anim_loc_keyframe()
                     key2.time = int(tokens[8])
-                    key2.loc = (float(tokens[4]), float(tokens[6]), float(tokens[5]))
+                    key2.loc = (float(tokens[4]) * trans_matrix[0], float(tokens[6]) * trans_matrix[1], float(tokens[5]) * trans_matrix[2])
                     cur_table.add_keyframe(key2.time, key2.loc)
 
                     cur_anim_tree[-1].loc_tables.append(cur_table)
@@ -417,7 +420,7 @@ class object:
                 cur_keyframe = anim_loc_keyframe()
                 cur_keyframe.time = int(tokens[1])
                 cur_keyframe.loc = (0, 0, 0)
-                new_pos = (float(tokens[2]), float(tokens[4]), float(tokens[3]))
+                new_pos = (float(tokens[2]) * trans_matrix[0], float(tokens[4]) * trans_matrix[1], float(tokens[3]) * trans_matrix[2])
                 cur_keyframe.loc = new_pos
 
                 cur_anim_tree[-1].loc_tables[-1].keyframes.append(cur_keyframe)
