@@ -152,6 +152,9 @@ class anim_level:
                 dc_verticies.append(all_verts[dc_indicies[i]])
                 dc_indicies[i] = i
 
+            #To fix flipped normals
+            dc_indicies.reverse()
+
             #Create the object for this draw call
             dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {start_index} {length}")
             dc_obj.data.materials.append(in_mat)
@@ -174,7 +177,7 @@ class anim_level:
 
         for kf in self.static_rot_keyframes:
             base_rot = anim_utils.get_obj_rotation(anim_empty)
-            new_rot = (base_rot[0] - kf.rot[0], base_rot[1] - kf.rot[1], base_rot[2] - kf.rot[2])
+            new_rot = (base_rot[0] + kf.rot[0], base_rot[1] + kf.rot[1], base_rot[2] + kf.rot[2])
             anim_utils.set_obj_rotation(anim_empty, new_rot)
 
         #Store the object's base position and rotation
@@ -219,7 +222,7 @@ class anim_level:
                 anim_utils.goto_frame(kf.frame)
 
                 #Set the rotation of the empty to the keyframe value
-                new_rot = (base_rot[0] - kf.rot[0], base_rot[1] - kf.rot[1], base_rot[2] - kf.rot[2])
+                new_rot = (base_rot[0] + kf.rot[0], base_rot[1] + kf.rot[1], base_rot[2] + kf.rot[2])
                 anim_utils.set_obj_rotation(anim_empty, new_rot)
 
                 #Set the value of the dataref to the keyframe value
@@ -455,6 +458,9 @@ class object:
             for i in range(len(dc_indicies)):
                 dc_verticies.append(self.verticies[dc_indicies[i]])
                 dc_indicies[i] = i
+
+            #To fix flipped normals
+            dc_indicies.reverse()
 
             #Create the object for this draw call
             dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {start_index} {length}")
