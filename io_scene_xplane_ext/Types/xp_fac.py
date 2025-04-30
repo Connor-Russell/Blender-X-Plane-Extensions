@@ -457,7 +457,7 @@ class facade:
                     attached_obj.loc_x = float(tokens[2])
                     attached_obj.loc_z = float(tokens[3])
                     attached_obj.loc_y = float(tokens[4])
-                    attached_obj.rot_z = float(tokens[5])
+                    attached_obj.rot_z = misc_utils.resolve_heading(float(tokens[5]) + 180)
                     if len(tokens) > 6:
                         attached_obj.min_draw = float(tokens[6])
                         attached_obj.max_draw = float(tokens[7])
@@ -473,7 +473,7 @@ class facade:
                     attached_obj.loc_x = float(tokens[2])
                     attached_obj.loc_z = float(tokens[3])
                     attached_obj.loc_y = float(tokens[4])
-                    attached_obj.rot_z = float(tokens[5])
+                    attached_obj.rot_z = misc_utils.resolve_heading(float(tokens[5]) + 180)
                     if len(tokens) > 6:
                         attached_obj.min_draw = float(tokens[6])
                         attached_obj.max_draw = float(tokens[7])
@@ -646,9 +646,9 @@ class facade:
                 for obj in target_segment.attached_objects:
                     idx = all_objects.index(obj.resource)
                     if obj.draped:
-                        output += "ATTACH_DRAPED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(obj.rot_z, 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                        output += "ATTACH_DRAPED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(misc_utils.resolve_heading(obj.rot_z + 180), 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
                     else:
-                        output += "ATTACH_GRADED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(obj.rot_z, 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                        output += "ATTACH_GRADED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(misc_utils.resolve_heading(obj.rot_z + 180), 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
                 return output + "\n"
 
             cur_seg_idx = 0

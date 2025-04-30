@@ -359,6 +359,7 @@ class PROP_fac_spelling_entry(bpy.types.PropertyGroup):
     ) # type: ignore
 
 class PROP_fac_spelling(bpy.types.PropertyGroup):
+    is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the spelling is expanded in the UI", default=False, update=update_ui)# type: ignore
     entries: bpy.props.CollectionProperty(type=PROP_fac_spelling_entry)# type: ignore
 
 class PROP_fac_wall(bpy.types.PropertyGroup):

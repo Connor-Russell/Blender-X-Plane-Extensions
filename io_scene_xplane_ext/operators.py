@@ -12,6 +12,7 @@ from . import importer
 from . import material_config
 from .Helpers import file_utils
 from .Helpers import collection_utils
+from .Helpers import decal_utils
 from . import auto_baker
 import os
 
@@ -218,13 +219,13 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
                                 col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
                             if xp_props.seperate_decals:
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_three, 1)
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_four, 2)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_three, 1)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_four, 2)
                             else:
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
 
                         #If we have updated, but this one is draped, update with this one. Then we can skip the rest of the objects in this collection
                         if xp_props.draped:
@@ -239,13 +240,13 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
                             col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
                             if xp_props.seperate_decals:
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_three, 1)
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_four, 2)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_three, 1)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_four, 2)
                             else:
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                                DecalProperties.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
+                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
         return {'FINISHED'}
 
 class BTN_bake_low_poly(bpy.types.Operator):
@@ -279,7 +280,7 @@ class BTN_bake_low_poly(bpy.types.Operator):
 
 class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
     bl_idname = "xp.add_rem_fac"
-    bl_label = "Remove Spelling"
+    bl_label = "Spelling Operation"
     bl_options = {'REGISTER', 'UNDO'}
 
     collection_name: bpy.props.StringProperty() # type: ignore
@@ -288,7 +289,8 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
     spelling_index: bpy.props.IntProperty() # type: ignore
     spelling_entry_index: bpy.props.IntProperty() # type: ignore
     level: bpy.props.StringProperty() # type: ignore    spelling, wall, or floor
-    add: bpy.props.BoolProperty() # type: ignore true to add a new item after the target, false to remove the target
+    add: bpy.props.BoolProperty() # type: ignore . True to add a new item after the target, false to remove the target
+    duplicate: bpy.props.BoolProperty() # type: ignore . True to duplicate the target when adding. Can only be done for spellings
 
     def execute(self, context):
         #Get the collection
@@ -336,10 +338,25 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
         
         #Add a new spelling if desired
         if self.level == "spelling" and self.add:
-            new_spelling = wall.spellings.add()
-            new_spelling.name = "New Spelling"
-            new_spelling.entries.add()  #Add the first spelling entry
-            return {'FINISHED'}
+            if not self.duplicate:
+                new_spelling = wall.spellings.add()
+                new_spelling.name = "New Spelling"
+                new_spelling.entries.add()  #Add the first spelling entry
+                return {'FINISHED'}
+            else:
+                #If we are duplicating, we need to get the spelling, and duplicate it
+                spelling = wall.spellings[self.spelling_index]
+                if spelling is None:
+                    self.report({'ERROR'}, "Spelling not found")
+                    return {'CANCELLED'}
+                
+                new_spelling = wall.spellings.add()
+                new_spelling.name = "New Spelling"
+                for e in spelling.entries:
+                    new_entry = new_spelling.entries.add()
+                    new_entry.collection = e.collection
+                
+                return {'FINISHED'}
         
         #Get the spelling
         spelling = wall.spellings[self.spelling_index]
