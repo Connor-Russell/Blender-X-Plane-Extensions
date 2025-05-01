@@ -116,6 +116,22 @@ def create_obj_from_draw_call(vertices, indicies, name):
     bm.to_mesh(mesh)
     bm.free()
 
+    # Set the custom normals
+    loop_normals = []
+    for i in range(0, len(indicies), 3):
+        nml1 = (vertices[indicies[i]].normal_x, vertices[indicies[i]].normal_y, vertices[indicies[i]].normal_z)
+        nml2 = (vertices[indicies[i + 1]].normal_x, vertices[indicies[i + 1]].normal_y, vertices[indicies[i + 1]].normal_z)
+        nml3 = (vertices[indicies[i + 2]].normal_x, vertices[indicies[i + 2]].normal_y, vertices[indicies[i + 2]].normal_z)
+        nml1 = mathutils.Vector(nml1).normalized()
+        nml2 = mathutils.Vector(nml2).normalized()
+        nml3 = mathutils.Vector(nml3).normalized()
+        loop_normals.append(nml1)
+        loop_normals.append(nml2)
+        loop_normals.append(nml3)
+
+    mesh.normals_split_custom_set(loop_normals)
+    mesh.use_auto_smooth = True  # Enable auto-smooth to use custom normals
+
     # Create an object with the mesh and link it to the scene
     obj = bpy.data.objects.new(name, mesh)
 
@@ -166,8 +182,8 @@ def get_draw_call_from_obj(obj):
             xp_triangle_uvs = (uv_layer.data[tri.loops[0]].uv, uv_layer.data[tri.loops[1]].uv, uv_layer.data[tri.loops[2]].uv)
 
         xp_triangles_normals = (tri.split_normals[0], tri.split_normals[1], tri.split_normals[2])
-        if not tri.use_smooth:
-            xp_triangles_normals = (tri.normal, tri.normal, tri.normal)
+        #if not tri.use_smooth:
+            #xp_triangles_normals = (tri.normal[0], tri.normal[1], tri.normal[2])
 
 
         #Define a temporary face with the data from the loop triangle. UVs default to none so we can add them IF we do have a uv layer

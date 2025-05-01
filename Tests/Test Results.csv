@@ -1,11 +1,12 @@
-2025-04-25 12-56-26
+2025-05-01 15-50-31
 Test Name,Result
 2.9 Tests
 Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
@@ -14,7 +15,8 @@ Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,PASS
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
@@ -23,7 +25,8 @@ Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
@@ -32,7 +35,8 @@ Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
@@ -41,7 +45,8 @@ Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
@@ -50,7 +55,8 @@ Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
@@ -59,7 +65,8 @@ Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,PASS
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
@@ -68,7 +75,8 @@ Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,PASS
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
@@ -77,25 +85,28 @@ Facade Exporter,PASS,100.0000%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,PASS
+TEST_get_draw_call_from_obj,PASS
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
 4.1 Tests
-Facade Exporter,FAIL,92.4469%
+Facade Exporter,FAIL,92.4475%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,PASS
+TEST_get_draw_call_from_obj,FAIL,Exception: 'Mesh' object has no attribute 'use_auto_smooth'
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
 4.2 Tests
-Facade Exporter,FAIL,92.4469%
+Facade Exporter,FAIL,92.4475%
 Line Exporter,PASS,100.0000%
 TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
-test_get_draw_call_from_obj,PASS
+TEST_keyframing,PASS
+TEST_get_draw_call_from_obj,FAIL,Exception: 'Mesh' object has no attribute 'use_auto_smooth'
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
