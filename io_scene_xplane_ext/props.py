@@ -34,8 +34,15 @@ layer_group_enum = [
 #Enum for collision types
 collision_type_enum = [
     ('NONE', "None", "No collision"),
-    ('CONCRETE', "Concrete", "Concrete collision"),
-    ('ASPHALT', "Asphalt", "Asphalt collision")
+    ('CONCRETE', "Concrete", "Concrete"),
+    ('ASPHALT', "Asphalt", "Asphalt"),
+    ('GRASS', "Grass", "Grass"),
+    ('DIRT', "Dirt", "Dirt"),
+    ('GRAVEL', "Gravel", "Gravel"),
+    ('LAKEBED', "Lakebed", "Lakebed"),
+    ('SNOW', "Snow", "Snow"),
+    ('SHOULDER', "Shoulder", "Shoulder"),
+    ('BLASTPAD', "Blastpad", "Blastpad"),
 ]
 
 #TODO: Kill this code and all it's references. ENUMs cause problems
@@ -207,10 +214,11 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
-    hard: bpy.props.BoolProperty(
-        name="Hard",
-        description="Is the material hard?",
-        default=False,
+    surface_type: bpy.props.EnumProperty(
+        name="Surface Type",
+        description="The surface type of the material",
+        items=material_config.surface_type_enum,
+        default="NONE",
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -340,6 +348,23 @@ class PROP_lin_collection(bpy.types.PropertyGroup):
         description="If non-zero, X-Plane will stretch/compress the texture to always end on a subdivision. Useful for alignment with end caps",
         update=update_ui
     ) # type: ignore
+
+#Polygon properties
+
+class PROP_pol_layer(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", description="The name of the polygon layer") # type: ignore
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the polygon is exportable", default=True) # type: ignore
+    is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the polygon is expanded in the UI", default=False, update=update_ui) # type: ignore
+    
+    material: bpy.props.PointerProperty(type=bpy.types.Material, name="Material", description="The material to use for the polygon", update=update_ui) # type: ignore
+    texture_is_nowrap: bpy.props.BoolProperty(name="Nowrap textures", description="Whether the texture can tile or not", default=False) # type: ignore
+    no_alpha: bpy.props.BoolProperty(name="No Alpha", description="Whether the texture has no alpha", default=False) # type: ignore
+
+    is_load_centered: bpy.props.BoolProperty(name="Enable Load Center", description="Whether the polygon uses location base texture scaling", default=False) # type: ignore
+    load_center_lat: bpy.props.FloatProperty(name="Load Center Latitude", description="The latitude used for texture scaling", default=0.0) # type: ignore
+    load_center_lon: bpy.props.FloatProperty(name="Load Center Longitude", description="The longitude used for texture scaling", default=0.0) # type: ignore
+    load_center_resolution: bpy.props.IntProperty(name="Load Center Resolution", description="The resolution used for texture scaling", default=4096) # type: ignore
+    load_center_size: bpy.props.FloatProperty(name="Load Center Size", description="The size used for texture scaling", default=1000) # type: ignore
 
 #Facade properties
 

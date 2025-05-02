@@ -345,7 +345,7 @@ class MENU_mats(bpy.types.Panel):
             if (xp_materials.lit_texture != ""):
                 layout.prop(xp_materials, "brightness", text="Brightness")
             layout.prop(xp_materials, "draped", text="Draped")
-            layout.prop(xp_materials, "hard", text="Hard")
+            layout.prop(xp_materials, "surface_type", text="Surface Type")
             layout.prop(xp_materials, "blend_alpha", text="Blend Alpha")
             if (not xp_materials.blend_alpha):
                 layout.prop(xp_materials, "blend_cutoff", text="Blend Cutoff")
