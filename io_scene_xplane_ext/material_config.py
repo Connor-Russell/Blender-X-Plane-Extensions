@@ -527,14 +527,14 @@ def update_nodes(material):
         #Add the modulator
         if image_mod != None:
             node_mod = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_mod.location = (-5600, 0)
+            node_mod.location = (-4600, 0)
             node_mod.image = image_mod
             image_mod.colorspace_settings.name = 'Non-Color'
             node_mod.image.colorspace_settings.name = 'Non-Color'
             node_mod.label = "Modulator"
 
             node_mod_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
-            node_mod_split_rgb.location = (-5250, 0)
+            node_mod_split_rgb.location = (-4250, 0)
             node_mod_split_rgb.label = "Mod Split RGB"
             material.node_tree.links.new(node_mod.outputs[0], node_mod_split_rgb.inputs[0])
             output_mod_r = node_mod_split_rgb.outputs[0]
@@ -542,12 +542,12 @@ def update_nodes(material):
 
         #Now we will add out keying nodes.
         if image_decal_1_alb != None:
-            output_key_1_alb_rgb = create_decal_key_nodes(material, -5000, 6000, output_mod_r, node_alb, \
+            output_key_1_alb_rgb = create_decal_key_nodes(material, -4000, 6000, output_mod_r, node_alb, \
                 xp_material_props.decal_one.rgb_decal_key_red, xp_material_props.decal_one.rgb_decal_key_green, \
                 xp_material_props.decal_one.rgb_decal_key_blue, xp_material_props.decal_one.rgb_decal_key_alpha, \
                 xp_material_props.decal_one.rgb_strength_constant, xp_material_props.decal_one.rgb_strength_modulator)
             
-            output_key_1_alb_alpha = create_decal_key_nodes(material, -5000, 5000, output_mod_r, node_alb, \
+            output_key_1_alb_alpha = create_decal_key_nodes(material, -4000, 5000, output_mod_r, node_alb, \
                 xp_material_props.decal_one.alpha_decal_key_red, xp_material_props.decal_one.alpha_decal_key_green, \
                 xp_material_props.decal_one.alpha_decal_key_blue, xp_material_props.decal_one.alpha_decal_key_alpha, \
                 xp_material_props.decal_one.alpha_strength_constant, xp_material_props.decal_one.alpha_strength_modulator)
@@ -556,18 +556,18 @@ def update_nodes(material):
             if xp_material_props.decal_one.normal_follows_albedo:
                 output_key_1_nml = output_key_1_alb_alpha
             else:
-                output_key_1_nml = create_decal_key_nodes(material, -5000, 4000, output_mod_r, node_alb, \
+                output_key_1_nml = create_decal_key_nodes(material, -4000, 4000, output_mod_r, node_alb, \
                     xp_material_props.decal_one.nml_decal_key_red, xp_material_props.decal_one.nml_decal_key_green, \
                     xp_material_props.decal_one.nml_decal_key_blue, xp_material_props.decal_one.nml_decal_key_alpha, \
                     xp_material_props.decal_one.nml_strength_constant, xp_material_props.decal_one.nml_strength_modulator)
                 
         if image_decal_2_alb != None:
-            output_key_2_alb_rgb = create_decal_key_nodes(material, -5000, 3000, output_mod_g, node_alb, \
+            output_key_2_alb_rgb = create_decal_key_nodes(material, -4000, 3000, output_mod_g, node_alb, \
                 xp_material_props.decal_two.rgb_decal_key_red, xp_material_props.decal_two.rgb_decal_key_green, \
                 xp_material_props.decal_two.rgb_decal_key_blue, xp_material_props.decal_two.rgb_decal_key_alpha, \
                 xp_material_props.decal_two.rgb_strength_constant, xp_material_props.decal_two.rgb_strength_modulator)
             
-            output_key_2_alb_alpha = create_decal_key_nodes(material, -5000, 2000, output_mod_g, node_alb, \
+            output_key_2_alb_alpha = create_decal_key_nodes(material, -4000, 2000, output_mod_g, node_alb, \
                 xp_material_props.decal_two.alpha_decal_key_red, xp_material_props.decal_two.alpha_decal_key_green, \
                 xp_material_props.decal_two.alpha_decal_key_blue, xp_material_props.decal_two.alpha_decal_key_alpha, \
                 xp_material_props.decal_two.alpha_strength_constant, xp_material_props.decal_two.alpha_strength_modulator)
@@ -576,7 +576,7 @@ def update_nodes(material):
             if xp_material_props.decal_two.normal_follows_albedo:
                 output_key_2_nml = output_key_2_alb_alpha
             else:
-                output_key_2_nml = create_decal_key_nodes(material, -5000, 1000, output_mod_g, node_alb, \
+                output_key_2_nml = create_decal_key_nodes(material, -4000, 1000, output_mod_g, node_alb, \
                     xp_material_props.decal_two.nml_decal_key_red, xp_material_props.decal_two.nml_decal_key_green, \
                     xp_material_props.decal_two.nml_decal_key_blue, xp_material_props.decal_two.nml_decal_key_alpha, \
                     xp_material_props.decal_two.nml_strength_constant, xp_material_props.decal_two.nml_strength_modulator)
@@ -586,12 +586,12 @@ def update_nodes(material):
         # So first off, we'll need to get the UV map, then we need vector math nodes to multiply the UVs by the decal scale. We'll need a single UV node, and up to 4 vector math nodes (alb 1, nml1, alb2, nml2)
 
         node_uv = material.node_tree.nodes.new(type="ShaderNodeUVMap")
-        node_uv.location = (-6000, -500)
+        node_uv.location = (-5000, -500)
         node_uv.label = "UV Map"
 
         if image_decal_1_alb != None:
             node_uv_decal_alb_1 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
-            node_uv_decal_alb_1.location = (-5750, -500)
+            node_uv_decal_alb_1.location = (-4750, -500)
             node_uv_decal_alb_1.label = "UV Scale Alb 1"
             node_uv_decal_alb_1.operation = 'MULTIPLY'
             node_uv_decal_alb_1.inputs[1].default_value = (xp_material_props.decal_one.tile_ratio, xp_material_props.decal_one.tile_ratio, xp_material_props.decal_one.tile_ratio)
@@ -604,7 +604,7 @@ def update_nodes(material):
                 output_uv_decal_nml_1 = output_uv_decal_alb_1
             else:
                 node_uv_decal_nml_1 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
-                node_uv_decal_nml_1.location = (-5750, -750)
+                node_uv_decal_nml_1.location = (-4750, -750)
                 node_uv_decal_nml_1.label = "UV Scale Nml 1"
                 node_uv_decal_nml_1.operation = 'MULTIPLY'
                 node_uv_decal_nml_1.inputs[1].default_value = (xp_material_props.decal_one.nml_tile_ratio, xp_material_props.decal_one.nml_tile_ratio, xp_material_props.decal_one.nml_tile_ratio)
@@ -614,7 +614,7 @@ def update_nodes(material):
 
         if image_decal_2_alb != None:
             node_uv_decal_alb_2 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
-            node_uv_decal_alb_2.location = (-5750, -1000)
+            node_uv_decal_alb_2.location = (-4750, -1000)
             node_uv_decal_alb_2.label = "UV Scale Alb 2"
             node_uv_decal_alb_2.operation = 'MULTIPLY'
             node_uv_decal_alb_2.inputs[1].default_value = (xp_material_props.decal_two.tile_ratio, xp_material_props.decal_two.tile_ratio, xp_material_props.decal_two.tile_ratio)
@@ -627,7 +627,7 @@ def update_nodes(material):
                 output_uv_decal_nml_2 = output_uv_decal_alb_2
             else:
                 node_uv_decal_nml_2 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
-                node_uv_decal_nml_2.location = (-5750, -1250)
+                node_uv_decal_nml_2.location = (-4750, -1250)
                 node_uv_decal_nml_2.label = "UV Scale Nml 2"
                 node_uv_decal_nml_2.operation = 'MULTIPLY'
                 node_uv_decal_nml_2.inputs[1].default_value = (xp_material_props.decal_two.nml_tile_ratio, xp_material_props.decal_two.nml_tile_ratio, xp_material_props.decal_two.nml_tile_ratio)
@@ -641,7 +641,7 @@ def update_nodes(material):
 
         if image_decal_1_alb != None:
             node_decal_1_alb = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_decal_1_alb.location = (-5000, 0)
+            node_decal_1_alb.location = (-4000, 0)
             node_decal_1_alb.label = "Decal 1 Alb"
             node_decal_1_alb.image = image_decal_1_alb
             node_decal_1_alb.image.colorspace_settings.name = 'Non-Color'
@@ -649,14 +649,14 @@ def update_nodes(material):
 
             #Now we need to subtract 0.5 from the rgb and the alpha
             node_decal_1_subtract_rgb = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_1_subtract_rgb.location = (-4750, 0)
+            node_decal_1_subtract_rgb.location = (-3750, 0)
             node_decal_1_subtract_rgb.label = "Decal 1 Subtract RGB"
             node_decal_1_subtract_rgb.operation = 'SUBTRACT'
             node_decal_1_subtract_rgb.inputs[1].default_value = 0.5
             material.node_tree.links.new(node_decal_1_alb.outputs[0], node_decal_1_subtract_rgb.inputs[0])
 
             node_decal_1_subtract_alpha = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_1_subtract_alpha.location = (-4750, -250)
+            node_decal_1_subtract_alpha.location = (-3750, -250)
             node_decal_1_subtract_alpha.label = "Decal 1 Subtract Alpha"
             node_decal_1_subtract_alpha.operation = 'SUBTRACT'
             node_decal_1_subtract_alpha.inputs[1].default_value = 0.5
@@ -664,7 +664,7 @@ def update_nodes(material):
 
             #Now for the dither, we need to add a math node to multiply the alpha by the dither ratio
             node_decal_1_dither = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_1_dither.location = (-4500, -250)
+            node_decal_1_dither.location = (-3500, -250)
             node_decal_1_dither.label = "Decal 1 Dither"
             node_decal_1_dither.operation = 'MULTIPLY'
             node_decal_1_dither.inputs[1].default_value = xp_material_props.decal_one.dither_ratio
@@ -676,26 +676,26 @@ def update_nodes(material):
 
         if image_decal_1_nml != None:
             node_decal_1_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_decal_1_nml.location = (-5000, -500)
+            node_decal_1_nml.location = (-4000, -500)
             node_decal_1_nml.label = "Decal 1 Nml"
             node_decal_1_nml.image = image_decal_1_nml
             image_decal_1_nml.colorspace_settings.name = 'Non-Color'
             material.node_tree.links.new(output_uv_decal_nml_1, node_decal_1_nml.inputs[0])
 
             node_decal_1_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
-            node_decal_1_split_rgb.location = (-4750, -500)
+            node_decal_1_split_rgb.location = (-3750, -500)
             node_decal_1_split_rgb.label = "Decal 1 Split RGB"
             material.node_tree.links.new(node_decal_1_nml.outputs[0], node_decal_1_split_rgb.inputs[0])
 
             node_decal_1_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
-            node_decal_1_combine_rgb.location = (-4500, -500)
+            node_decal_1_combine_rgb.location = (-3500, -500)
             node_decal_1_combine_rgb.label = "Decal 1 Combine RGB"
             material.node_tree.links.new(node_decal_1_split_rgb.outputs[0], node_decal_1_combine_rgb.inputs[0])
             material.node_tree.links.new(node_decal_1_split_rgb.outputs[1], node_decal_1_combine_rgb.inputs[1])
             node_decal_1_combine_rgb.inputs[2].default_value = 1
 
             node_decal_1_normal_map = material.node_tree.nodes.new(type="ShaderNodeNormalMap")
-            node_decal_1_normal_map.location = (-4250, -500)
+            node_decal_1_normal_map.location = (-3250, -500)
             node_decal_1_normal_map.label = "Decal 1 Normal Map"
             material.node_tree.links.new(node_decal_1_combine_rgb.outputs[0], node_decal_1_normal_map.inputs[1])
 
@@ -703,7 +703,7 @@ def update_nodes(material):
 
         if image_decal_2_alb != None:
             node_decal_2_alb = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_decal_2_alb.location = (-5000, -1000)
+            node_decal_2_alb.location = (-4000, -1000)
             node_decal_2_alb.label = "Decal 2 Alb"
             node_decal_2_alb.image = image_decal_2_alb
             node_decal_2_alb.image.colorspace_settings.name = 'Non-Color'
@@ -711,14 +711,14 @@ def update_nodes(material):
 
             #Now we need to subtract 0.5 from the rgb and the alpha
             node_decal_2_subtract_rgb = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_2_subtract_rgb.location = (-4750, -1000)
+            node_decal_2_subtract_rgb.location = (-3750, -1000)
             node_decal_2_subtract_rgb.label = "Decal 2 Subtract RGB"
             node_decal_2_subtract_rgb.operation = 'SUBTRACT'
             node_decal_2_subtract_rgb.inputs[1].default_value = 0.5
             material.node_tree.links.new(node_decal_2_alb.outputs[0], node_decal_2_subtract_rgb.inputs[0])
 
             node_decal_2_subtract_alpha = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_2_subtract_alpha.location = (-4750, -1250)
+            node_decal_2_subtract_alpha.location = (-3750, -1250)
             node_decal_2_subtract_alpha.label = "Decal 2 Subtract Alpha"
             node_decal_2_subtract_alpha.operation = 'SUBTRACT'
             node_decal_2_subtract_alpha.inputs[1].default_value = 0.5
@@ -726,7 +726,7 @@ def update_nodes(material):
 
             #Now for the dither, we need to add a math node to multiply the alpha by the dither ratio
             node_decal_2_dither = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_2_dither.location = (-4500, -1250)
+            node_decal_2_dither.location = (-3500, -1250)
             node_decal_2_dither.label = "Decal 2 Dither"
             node_decal_2_dither.operation = 'MULTIPLY'
             node_decal_2_dither.inputs[1].default_value = xp_material_props.decal_two.dither_ratio
@@ -739,26 +739,26 @@ def update_nodes(material):
 
         if image_decal_2_nml != None:
             node_decal_2_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_decal_2_nml.location = (-5000, -1500)
+            node_decal_2_nml.location = (-4000, -1500)
             node_decal_2_nml.label = "Decal 2 Nml"
             node_decal_2_nml.image = image_decal_2_nml
             image_decal_2_nml.colorspace_settings.name = 'Non-Color'
             material.node_tree.links.new(output_uv_decal_nml_2, node_decal_2_nml.inputs[0])
 
             node_decal_2_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
-            node_decal_2_split_rgb.location = (-4750, -1500)
+            node_decal_2_split_rgb.location = (-3750, -1500)
             node_decal_2_split_rgb.label = "Decal 2 Split RGB"
             material.node_tree.links.new(node_decal_2_nml.outputs[0], node_decal_2_split_rgb.inputs[0])
 
             node_decal_2_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
-            node_decal_2_combine_rgb.location = (-4500, -1500)
+            node_decal_2_combine_rgb.location = (-3500, -1500)
             node_decal_2_combine_rgb.label = "Decal 2 Combine RGB"
             material.node_tree.links.new(node_decal_2_split_rgb.outputs[0], node_decal_2_combine_rgb.inputs[0])
             material.node_tree.links.new(node_decal_2_split_rgb.outputs[1], node_decal_2_combine_rgb.inputs[1])
             node_decal_2_combine_rgb.inputs[2].default_value = 1
 
             node_decal_2_normal_map = material.node_tree.nodes.new(type="ShaderNodeNormalMap")
-            node_decal_2_normal_map.location = (-4250, -1500)
+            node_decal_2_normal_map.location = (-3250, -1500)
             node_decal_2_normal_map.label = "Decal 2 Normal Map"
             material.node_tree.links.new(node_decal_2_combine_rgb.outputs[0], node_decal_2_normal_map.inputs[1])
 
