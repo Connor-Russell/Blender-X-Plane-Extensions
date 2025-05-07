@@ -392,35 +392,35 @@ def update_nodes(material):
         node_nml_out = None
 
         #This is for the additive alpha between the alb and the lit, since both need it, it needs to be defined in advance
-        node_add = None
-        node_clamp = None
+        node_alpha_add_lit = None
+        node_alpha_clamp = None
 
         #Set up alb nodes
         if image_alb != None:
             node_alb = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_add = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_clamp = material.node_tree.nodes.new(type="ShaderNodeClamp")
+            node_alpha_add_lit = material.node_tree.nodes.new(type="ShaderNodeMath")
+            node_alpha_clamp = material.node_tree.nodes.new(type="ShaderNodeClamp")
             node_alb.location = (-2600, 0)
-            node_add.location = (-2250, 0)
-            node_clamp.location = (-2000, 0)
+            node_alpha_add_lit.location = (-2250, 0)
+            node_alpha_clamp.location = (-2000, -0)
             node_alb.image = image_alb
-            node_add.operation = 'ADD'
-            node_add.inputs[1].default_value = 0
-            node_add.inputs[0].default_value = 0
-            node_clamp.inputs[1].default_value = 0
-            node_clamp.inputs[2].default_value = 1
+            node_alpha_add_lit.operation = 'ADD'
+            node_alpha_add_lit.inputs[1].default_value = 0
+            node_alpha_add_lit.inputs[0].default_value = 0
+            node_alpha_clamp.inputs[1].default_value = 0
+            node_alpha_clamp.inputs[2].default_value = 1
 
             #Connect the nodes. Color to base color, alpha to add, add to principled alpha
             material.node_tree.links.new(node_alb.outputs[0], node_principled.inputs[0])    #Alb color to alb
-            material.node_tree.links.new(node_alb.outputs[1], node_add.inputs[0])
-            material.node_tree.links.new(node_add.outputs[0], node_clamp.inputs[0])
+            material.node_tree.links.new(node_alb.outputs[1], node_alpha_add_lit.inputs[0])
+            material.node_tree.links.new(node_alpha_add_lit.outputs[0], node_alpha_clamp.inputs[0])
             
             if bpy.app.version < (3, 0, 0):
-                material.node_tree.links.new(node_clamp.outputs[0], node_principled.inputs[19]) #Clamped alpha to alpha
+                material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[19]) #Clamped alpha to alpha
             elif bpy.app.version < (4, 0, 0):
-                material.node_tree.links.new(node_clamp.outputs[0], node_principled.inputs[21]) #Clamped alpha to alpha
+                material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[21]) #Clamped alpha to alpha
             else:
-                material.node_tree.links.new(node_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
+                material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
 
         #Set up nml nodes
         if image_nml != None:
@@ -488,8 +488,8 @@ def update_nodes(material):
                 node_principled.inputs[27].default_value = (1) #Set the emission intensity to 1
 
             #If there is an alb, connect the alpha to it's add so it can impact the alpha
-            if node_add != None:
-                material.node_tree.links.new(node_lit.outputs[1], node_add.inputs[1])
+            if node_alpha_add_lit != None:
+                material.node_tree.links.new(node_lit.outputs[1], node_alpha_add_lit.inputs[1])
 
         # Now we have the absolute joy of setting up decals! By joy I mean utter INSANITY *evil laughter*
         # We can have up to 2 decal sets. Each decal set can have an albedo rgb portion, albedo alpha portion, and a normal map portion.
@@ -507,9 +507,11 @@ def update_nodes(material):
         output_mod_g = None
         output_src_1_alb_rgb = None
         output_src_1_alb_alpha = None
+        output_src_1_dither = None
         output_src_1_nml = None
         output_src_2_alb_rgb = None
         output_src_2_alb_alpha = None
+        output_src_2_dither = None
         output_src_2_nml = None
         output_key_1_alb_rgb = None
         output_key_1_alb_alpha = None
@@ -660,31 +662,40 @@ def update_nodes(material):
             node_decal_1_subtract_alpha.inputs[1].default_value = 0.5
             material.node_tree.links.new(node_decal_1_alb.outputs[1], node_decal_1_subtract_alpha.inputs[0])
 
+            #Now for the dither, we need to add a math node to multiply the alpha by the dither ratio
+            node_decal_1_dither = material.node_tree.nodes.new(type="ShaderNodeMath")
+            node_decal_1_dither.location = (-4500, -250)
+            node_decal_1_dither.label = "Decal 1 Dither"
+            node_decal_1_dither.operation = 'MULTIPLY'
+            node_decal_1_dither.inputs[1].default_value = xp_material_props.decal_one.dither_ratio
+            material.node_tree.links.new(node_decal_1_subtract_alpha.outputs[0], node_decal_1_dither.inputs[0])
+
             output_src_1_alb_rgb = node_decal_1_subtract_rgb.outputs[0]
             output_src_1_alb_alpha = node_decal_1_subtract_alpha.outputs[0]
+            output_src_1_dither = node_decal_1_dither.outputs[0]
 
         if image_decal_1_nml != None:
             node_decal_1_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_decal_1_nml.location = (-5000, -250)
+            node_decal_1_nml.location = (-5000, -500)
             node_decal_1_nml.label = "Decal 1 Nml"
             node_decal_1_nml.image = image_decal_1_nml
             image_decal_1_nml.colorspace_settings.name = 'Non-Color'
             material.node_tree.links.new(output_uv_decal_nml_1, node_decal_1_nml.inputs[0])
 
             node_decal_1_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
-            node_decal_1_split_rgb.location = (-4750, -250)
+            node_decal_1_split_rgb.location = (-4750, -500)
             node_decal_1_split_rgb.label = "Decal 1 Split RGB"
             material.node_tree.links.new(node_decal_1_nml.outputs[0], node_decal_1_split_rgb.inputs[0])
 
             node_decal_1_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
-            node_decal_1_combine_rgb.location = (-4500, -250)
+            node_decal_1_combine_rgb.location = (-4500, -500)
             node_decal_1_combine_rgb.label = "Decal 1 Combine RGB"
             material.node_tree.links.new(node_decal_1_split_rgb.outputs[0], node_decal_1_combine_rgb.inputs[0])
             material.node_tree.links.new(node_decal_1_split_rgb.outputs[1], node_decal_1_combine_rgb.inputs[1])
             node_decal_1_combine_rgb.inputs[2].default_value = 1
 
             node_decal_1_normal_map = material.node_tree.nodes.new(type="ShaderNodeNormalMap")
-            node_decal_1_normal_map.location = (-4250, -250)
+            node_decal_1_normal_map.location = (-4250, -500)
             node_decal_1_normal_map.label = "Decal 1 Normal Map"
             material.node_tree.links.new(node_decal_1_combine_rgb.outputs[0], node_decal_1_normal_map.inputs[1])
 
@@ -713,32 +724,41 @@ def update_nodes(material):
             node_decal_2_subtract_alpha.inputs[1].default_value = 0.5
             material.node_tree.links.new(node_decal_2_alb.outputs[1], node_decal_2_subtract_alpha.inputs[0])
 
+            #Now for the dither, we need to add a math node to multiply the alpha by the dither ratio
+            node_decal_2_dither = material.node_tree.nodes.new(type="ShaderNodeMath")
+            node_decal_2_dither.location = (-4500, -1250)
+            node_decal_2_dither.label = "Decal 2 Dither"
+            node_decal_2_dither.operation = 'MULTIPLY'
+            node_decal_2_dither.inputs[1].default_value = xp_material_props.decal_two.dither_ratio
+            material.node_tree.links.new(node_decal_2_subtract_alpha.outputs[0], node_decal_2_dither.inputs[0])
 
             output_src_2_alb_rgb = node_decal_2_subtract_rgb.outputs[0]
             output_src_2_alb_alpha = node_decal_2_subtract_alpha.outputs[0]
 
+            output_src_2_dither = node_decal_2_dither.outputs[0]
+
         if image_decal_2_nml != None:
             node_decal_2_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_decal_2_nml.location = (-5000, -1250)
+            node_decal_2_nml.location = (-5000, -1500)
             node_decal_2_nml.label = "Decal 2 Nml"
             node_decal_2_nml.image = image_decal_2_nml
             image_decal_2_nml.colorspace_settings.name = 'Non-Color'
             material.node_tree.links.new(output_uv_decal_nml_2, node_decal_2_nml.inputs[0])
 
             node_decal_2_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
-            node_decal_2_split_rgb.location = (-4750, -1250)
+            node_decal_2_split_rgb.location = (-4750, -1500)
             node_decal_2_split_rgb.label = "Decal 2 Split RGB"
             material.node_tree.links.new(node_decal_2_nml.outputs[0], node_decal_2_split_rgb.inputs[0])
 
             node_decal_2_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
-            node_decal_2_combine_rgb.location = (-4500, -1250)
+            node_decal_2_combine_rgb.location = (-4500, -1500)
             node_decal_2_combine_rgb.label = "Decal 2 Combine RGB"
             material.node_tree.links.new(node_decal_2_split_rgb.outputs[0], node_decal_2_combine_rgb.inputs[0])
             material.node_tree.links.new(node_decal_2_split_rgb.outputs[1], node_decal_2_combine_rgb.inputs[1])
             node_decal_2_combine_rgb.inputs[2].default_value = 1
 
             node_decal_2_normal_map = material.node_tree.nodes.new(type="ShaderNodeNormalMap")
-            node_decal_2_normal_map.location = (-4250, -1250)
+            node_decal_2_normal_map.location = (-4250, -1500)
             node_decal_2_normal_map.label = "Decal 2 Normal Map"
             material.node_tree.links.new(node_decal_2_combine_rgb.outputs[0], node_decal_2_normal_map.inputs[1])
 
@@ -750,6 +770,7 @@ def update_nodes(material):
 
         node_alb_post_mix_1 = node_alb #This defaults to alb because if we have a decal 2 and not decal 1, we still need an input for the decal 2 input
         node_nml_post_mix_1 = node_nml_out #This defaults to nml because if we have a decal 2 and not decal 1, we still need an input for the decal 2 input
+        node_alpha_post_mix = node_alpha_clamp #This defaults to add because if we have a decal 2 and not decal 1, we still need an input for the decal 2 input
 
         if image_decal_1_alb != None:
             node_mix_1 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
@@ -771,6 +792,16 @@ def update_nodes(material):
             material.node_tree.links.new(output_src_1_alb_alpha, node_mix_2.inputs[2])
 
             node_alb_post_mix_1 = node_mix_2
+
+            #Now we need to mix in the dither. This is just adding to the alpha (node_alpha_post_mix)
+            node_dither_mix_1 = material.node_tree.nodes.new(type="ShaderNodeMath")
+            node_dither_mix_1.location = (-1250, -250)
+            node_dither_mix_1.label = "Mix Decal 1 Dither"
+            node_dither_mix_1.operation = 'ADD'
+            material.node_tree.links.new(node_alpha_post_mix.outputs[0], node_dither_mix_1.inputs[0])
+            material.node_tree.links.new(output_src_1_dither, node_dither_mix_1.inputs[1])
+
+            node_alpha_post_mix = node_dither_mix_1
 
         if image_decal_1_nml != None:
             node_nml_mix_1 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
@@ -805,6 +836,16 @@ def update_nodes(material):
 
             node_alb_post_mix_1 = node_mix_4
 
+            # Now we need to mix in the dither. This is just adding to the alpha (node_alpha_post_mix)
+            node_dither_mix_2 = material.node_tree.nodes.new(type="ShaderNodeMath")
+            node_dither_mix_2.location = (-1000, -250)
+            node_dither_mix_2.label = "Mix Decal 2 Dither"
+            node_dither_mix_2.operation = 'ADD'
+            material.node_tree.links.new(node_alpha_post_mix.outputs[0], node_dither_mix_2.inputs[0])
+            material.node_tree.links.new(output_src_2_dither, node_dither_mix_2.inputs[1])
+
+            node_alpha_post_mix = node_dither_mix_2
+
         if image_decal_2_nml != None:
             node_nml_mix_2 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
             node_nml_mix_2.location = (-1000, -500)
@@ -827,7 +868,20 @@ def update_nodes(material):
         else:
             material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[5])    #Reconstructed normal to normal
 
+        #Add a final clamp node to clamp the alpha to 0-1
+        if node_alpha_post_mix != node_alpha_clamp:
+            
+            node_alpha_clamp = material.node_tree.nodes.new(type="ShaderNodeClamp")
+            node_alpha_clamp.location = (-750, -250)
+            node_alpha_clamp.label = "Clamp Alpha"
+            material.node_tree.links.new(node_alpha_post_mix.outputs[0], node_alpha_clamp.inputs[0])
 
+            if bpy.app.version < (3, 0, 0):
+                material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[19]) #Clamped alpha to alpha
+            elif bpy.app.version < (4, 0, 0):
+                material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[21]) #Clamped alpha to alpha
+            else:
+                material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
 
             
 
