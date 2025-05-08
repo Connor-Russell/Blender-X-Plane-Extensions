@@ -29,6 +29,19 @@ class BTN_lin_exporter(bpy.types.Operator):
 
         return {'FINISHED'}
     
+class BTN_pol_exporter(bpy.types.Operator):
+    bl_idname = "xp_ext.export_polygons"
+    bl_label = "Export X-Plane Polygons"
+
+    def execute(self, context):
+
+        # Iterate through every collection. If it is exportable and visible, export
+        for col in bpy.data.collections:
+            if col.xp_pol.exportable and collection_utils.get_collection_is_visible(col):
+                exporter.export_pol(col)
+
+        return {'FINISHED'}
+    
 class IMPORT_lin(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_lin"
     bl_label = "Import X-Plane Lines"
@@ -457,6 +470,7 @@ def menu_func_import_options(self, context):
     
 def register():
     bpy.utils.register_class(BTN_lin_exporter)
+    bpy.utils.register_class(BTN_pol_exporter)
     bpy.utils.register_class(IMPORT_lin)
     bpy.utils.register_class(IMPORT_fac)
     bpy.utils.register_class(IMPORT_obj)
@@ -472,6 +486,7 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(BTN_lin_exporter)
+    bpy.utils.unregister_class(BTN_pol_exporter)
     bpy.utils.unregister_class(IMPORT_lin)
     bpy.utils.unregister_class(IMPORT_fac)
     bpy.utils.unregister_class(IMPORT_obj)
