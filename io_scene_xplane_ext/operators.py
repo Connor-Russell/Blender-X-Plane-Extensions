@@ -59,7 +59,25 @@ class IMPORT_lin(bpy.types.Operator, ImportHelper):
             importer.import_lin(filepath)
 
         return {'FINISHED'}
-    
+
+class IMPORT_pol(bpy.types.Operator, ImportHelper):
+    bl_idname = "import_scene.xp_pol"
+    bl_label = "Import X-Plane Polygons"
+    filename_ext = ".pol"
+    filter_glob: bpy.props.StringProperty(default="*.pol", options={'HIDDEN'}) # type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
+
+    def execute(self, context):
+        # Implement your import logic here
+        directory = self.filepath
+        directory = directory[:directory.rfind("\\")]
+
+        for cf in self.files:
+            filepath = f"{directory}\\{cf.name}"
+            importer.import_pol(filepath)
+
+        return {'FINISHED'}
+
 class IMPORT_fac(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_fac"
     bl_label = "Import X-Plane Facade"
@@ -465,6 +483,7 @@ class BTN_TEST_config_bake_settings(bpy.types.Operator):
 
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
+    self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
     self.layout.operator(IMPORT_fac.bl_idname, text="X-Plane Facade (.fac)")
     self.layout.operator(IMPORT_obj.bl_idname, text="X-Plane Object (.obj)")
     
@@ -472,6 +491,7 @@ def register():
     bpy.utils.register_class(BTN_lin_exporter)
     bpy.utils.register_class(BTN_pol_exporter)
     bpy.utils.register_class(IMPORT_lin)
+    bpy.utils.register_class(IMPORT_pol)
     bpy.utils.register_class(IMPORT_fac)
     bpy.utils.register_class(IMPORT_obj)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
@@ -488,6 +508,7 @@ def unregister():
     bpy.utils.unregister_class(BTN_lin_exporter)
     bpy.utils.unregister_class(BTN_pol_exporter)
     bpy.utils.unregister_class(IMPORT_lin)
+    bpy.utils.unregister_class(IMPORT_pol)
     bpy.utils.unregister_class(IMPORT_fac)
     bpy.utils.unregister_class(IMPORT_obj)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)

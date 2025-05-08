@@ -563,9 +563,10 @@ class MENU_pol_exporter(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
 
-        # Draw the export button
+        #Export button
         layout.operator("xp_ext.export_polygons", text="Export Polygons")
         layout.separator()
+
         layout.prop(scene.xp_ext, "pol_collection_search")
 
         if scene.xp_ext.pol_collection_search != "":
@@ -615,9 +616,6 @@ class MENU_pol_exporter(bpy.types.Panel):
                     row.prop(pol, "runway_markings_b")
                     row.prop(pol, "runway_markings_a")
                     box.prop(pol, "runway_markings_texture")
-
-        #Export button
-        layout.operator("xp_ext.export_polygons", text="Export Polygons")
 
         # Draw enabled collections
         for col in bpy.data.collections:

@@ -9,11 +9,13 @@ from ..Helpers import pol_utils #type: ignore
 from ..Helpers import decal_utils #type: ignore
 from ..Helpers import file_utils #type: ignore
 from ..Helpers import misc_utils #type: ignore
+from ..Helpers import geometery_utils
 import bpy #type: ignore
 import os
 
 class polygon():
     def __init__(self):
+        self.name = ""
         self.nowrap = False
         self.alb_texture = ""
         self.lit_texture = ""
@@ -61,7 +63,7 @@ class polygon():
         #Define a string to hold the file contents
         of = ""
 
-        of += "A\n850\DRAPED_POLYGON\n\n"
+        of += "A\n850\nDRAPED_POLYGON\n\n"
 
         #Write the material data
         of += "#Materials\n"
@@ -110,32 +112,33 @@ class polygon():
         if self.surface != None:
             of += "SURFACE " + self.surface + "\n"
         if self.do_load_center:
-            of += "LOAD_CENTER " + str(self.load_center_lat) + " " + str(self.load_center_lon) + " " + str(self.load_center_size) + " " + str(self.load_center_res) + "\n"
+            of += "LOAD_CENTER " + misc_utils.ftos(self.load_center_lat, 8) + " " + misc_utils.ftos(self.load_center_lon, 8) + " " + str(int(self.load_center_size)) + " " + str(int(self.load_center_res)) + "\n"
         if self.do_tiling:
-            of += "TEXTURE_TILE " + str(self.tiling_x_pages) + " " + str(self.tiling_y_pages) + " " + str(self.tiling_map_x_res) + " " + str(self.tiling_map_y_res) + " " + os.path.relpath(file_utils.rel_to_abs(self.tiling_map_texture), output_folder) + "\n"
+            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.rel_to_abs(self.tiling_map_texture), output_folder) + "\n"
         if self.do_runway_markings:
-            of += "RUNWAY_MARKINGS " + str(self.runway_r) + " " + str(self.runway_g) + " " + str(self.runway_b) + " " + str(self.runway_a) + " " + os.path.relpath(file_utils.rel_to_abs(self.runway_marking_texture), output_folder) + "\n"
+            of += "RUNWAY_MARKINGS " + misc_utils.ftos(self.runway_r, 4) + " " + misc_utils.ftos(self.runway_g, 4) + " " + misc_utils.ftos(self.runway_b, 4) + " " + misc_utils.ftos(self.runway_a, 4) + " " + os.path.relpath(file_utils.rel_to_abs(self.runway_marking_texture), output_folder) + "\n"
         if self.do_runway_noise:
             of += "RUNWAY_NOISE\n"
 
         of += "\n"
 
         #Write subtextures
-        of += "\n#Subtextures\n"
+        if len(self.subtextures) > 0:
+            of += "#Subtextures\n"
         for subtexture in self.subtextures:
             if len(subtexture) != 4:
                 continue
 
             #Write the subtexture
-            of += "SUBTEXTURE " + misc_utils.ftos(subtexture[0], 4) + " " + misc_utils.ftos(subtexture[1], 4) + " " + misc_utils.ftos(subtexture[2], 4) + " " + misc_utils.ftos(subtexture[3], 4) + "\n"
-
-        of += "\n"
+            of += "#subtex " + misc_utils.ftos(subtexture[0], 4) + " " + misc_utils.ftos(subtexture[1], 4) + " " + misc_utils.ftos(subtexture[2], 4) + " " + misc_utils.ftos(subtexture[3], 4) + "\n"
 
         #Open the output file and write the contents
         with open(output_path, 'w') as f:
             f.write(of)
 
     def read(self, in_file):
+        self.name = in_file.split("\\")[-1]
+
         # Read the file
         with open(in_file, 'r') as f:
             lines = f.readlines()
@@ -144,10 +147,6 @@ class polygon():
         for line in lines:
             # Get the line
             line = line.strip()
-
-            # Check for comments
-            if line.startswith("#"):
-                continue
 
             # Check for material data
             if line.startswith("TEXTURE_NOWRAP"):
@@ -163,10 +162,10 @@ class polygon():
                 self.alb_texture = line.split()[1]
             elif line.startswith("TEXTURE_LIT"):
                 self.lit_texture = line.split()[1]
-            elif line.startswith("WEATHER"):
-                self.weather_texture = line.split()[1]
             elif line.startswith("WEATHER_TRANSPARENT"):
                 self.weather_texture = ""
+            elif line.startswith("WEATHER"):
+                self.weather_texture = line.split()[1]
             elif line.startswith("SUPER_ROUGHNESS"):
                 self.super_rough = True
             elif line.startswith("NO_BLEND"):
@@ -181,14 +180,17 @@ class polygon():
             #         self.decal_2 = decal_utils.get_decal_from_command(line)
 
             # Check for main polygon params
-            if line.startswith("LAYER_GROUP"):
-                self.layer = line.split()[1].upper()
-                self.layer_offset = int(line.split()[2])
+            elif line.startswith("LAYER_GROUP"):
+                parts = line.split()
+                self.layer = parts[1].upper()
+                if len(parts) > 2:
+                    self.layer_offset = parts[2]
             elif line.startswith("SCALE"):
                 self.scale_x = int(line.split()[1])
                 self.scale_y = int(line.split()[2])
             elif line.startswith("SURFACE"):
                 self.surface = line.split()[1]
+                self.surface = self.surface.upper()
             elif line.startswith("LOAD_CENTER"):
                 self.do_load_center = True
                 self.load_center_lat = float(line.split()[1])
@@ -211,6 +213,15 @@ class polygon():
                 self.runway_marking_texture = line.split()[5]
             elif line.startswith("RUNWAY_NOISE"):
                 self.do_runway_noise = True
+            elif line.startswith("#subtex"):
+                # Get the subtexture values
+                subtexture = line.split()[1:]
+                if len(subtexture) != 4:
+                    continue
+
+                # Convert to float and append to the list
+                subtexture = [float(i) for i in subtexture]
+                self.subtextures.append(subtexture)
 
     def from_collection(self, in_collection):
         # Check if the collection is exportable
@@ -237,6 +248,7 @@ class polygon():
 
         # Set runway markings properties
         self.do_runway_markings = in_collection.xp_pol.is_runway_markings
+        self.do_runway_noise = in_collection.xp_pol.is_runway_markings  #This is automatic if you need runway markings. I believe XP requires this. We just use the same values as default to keep the sim happy. Idk if it actually does antyhing in sim
         self.runway_r = in_collection.xp_pol.runway_markings_r
         self.runway_g = in_collection.xp_pol.runway_markings_g
         self.runway_b = in_collection.xp_pol.runway_markings_b
@@ -253,7 +265,7 @@ class polygon():
         self.layer_offset = mat.layer_group_offset
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
-        self.nml_texture = mat.nml_texture
+        self.nml_texture = mat.normal_texture
         self.weather_texture = mat.weather_texture
         self.do_blend = mat.blend_alpha
         self.blend_cutoff = mat.blend_cutoff
@@ -292,3 +304,157 @@ class polygon():
                     #Convert this to the subtexture format (left bottom right top), and save
                     subtexture = [uvs[0], uvs[2], uvs[1], uvs[3]]
                     self.subtextures.append(subtexture)
+
+    def to_scene(self):
+        in_name = self.name.split(".")[0]
+
+        # Define a new collection with the same name as the file
+        new_collection = bpy.data.collections.new(name=in_name)
+        bpy.context.scene.collection.children.link(new_collection)
+
+        # Create a new material for the polygon
+        mat = bpy.data.materials.new(name=in_name)
+        mat.xp_materials.alb_texture = self.alb_texture
+        mat.xp_materials.lit_texture = self.lit_texture
+        mat.xp_materials.normal_texture = self.nml_texture
+        mat.xp_materials.weather_texture = self.weather_texture
+        mat.xp_materials.blend_alpha = self.do_blend
+        mat.xp_materials.blend_cutoff = self.blend_cutoff
+        mat.xp_materials.layer_group = self.layer.upper()
+        mat.xp_materials.layer_group_offset = int(self.layer_offset)
+        mat.xp_materials.surface_type = self.surface
+
+        # Assign material to the collection
+        new_collection.xp_pol.material = mat
+
+        # Set collection properties
+        new_collection.xp_pol.texture_is_nowrap = self.nowrap
+        new_collection.xp_pol.is_load_centered = self.do_load_center
+        new_collection.xp_pol.load_center_lat = self.load_center_lat
+        new_collection.xp_pol.load_center_lon = self.load_center_lon
+        new_collection.xp_pol.load_center_size = self.load_center_size
+        new_collection.xp_pol.load_center_resolution = self.load_center_res
+        new_collection.xp_pol.is_texture_tiling = self.do_tiling
+        new_collection.xp_pol.texture_tiling_x_pages = self.tiling_x_pages
+        new_collection.xp_pol.texture_tiling_y_pages = self.tiling_y_pages
+        new_collection.xp_pol.texture_tiling_map_x_res = self.tiling_map_x_res
+        new_collection.xp_pol.texture_tiling_map_y_res = self.tiling_map_y_res
+        new_collection.xp_pol.texture_tiling_map_texture = self.tiling_map_texture
+        new_collection.xp_pol.is_runway_markings = self.do_runway_markings
+        new_collection.xp_pol.runway_markings_r = self.runway_r
+        new_collection.xp_pol.runway_markings_g = self.runway_g
+        new_collection.xp_pol.runway_markings_b = self.runway_b
+        new_collection.xp_pol.runway_markings_a = self.runway_a
+        new_collection.xp_pol.runway_markings_texture = self.runway_marking_texture
+
+        #Get rid of any subtextures that don't have 4 values. This is a safety check.
+        self.subtextures = [subtexture for subtexture in self.subtextures if len(subtexture) == 4]
+
+        #Sort the subtextures by area (largest to smallest). This lets us layer them nicer so they're all visible.
+        self.subtextures.sort(key=lambda x: (x[2] - x[0]) * (x[3] - x[1]), reverse=True)
+
+        #Generate the base object
+        if True:    #So we can collapse this code
+            v1 = geometery_utils.xp_vertex(
+                loc_x=0,
+                loc_y=0,
+                loc_z=0,
+                normal_x=0,
+                normal_y=0,
+                normal_z=1,
+                uv_x=0,
+                uv_y=0
+            )
+
+            v2 = geometery_utils.xp_vertex(
+                loc_x=0,
+                loc_y=self.scale_y,
+                loc_z=0,
+                normal_x=0,
+                normal_y=0,
+                normal_z=1,
+                uv_x=0, 
+                uv_y=1
+            )
+
+            v3 = geometery_utils.xp_vertex(
+                loc_x=self.scale_x,
+                loc_y=self.scale_y,
+                loc_z=0,
+                normal_x=0,
+                normal_y=0,
+                normal_z=1,
+                uv_x=1,
+                uv_y=1
+            )
+
+            v4 = geometery_utils.xp_vertex(
+                loc_x=self.scale_x,
+                loc_y=0,
+                loc_z=0,
+                normal_x=0,
+                normal_y=0,
+                normal_z=1,
+                uv_x=1,
+                uv_y=0
+            )
+
+            indicies = [2, 1, 0, 3, 2, 0]
+            new_obj = geometery_utils.create_obj_from_draw_call([v1, v2, v3, v4], indicies, new_collection.name)
+            new_obj.data.materials.append(mat)
+
+            #Link the new object to the collection
+            new_collection.objects.link(new_obj)
+
+        # Generate objects for subtextures
+        for i, subtexture in enumerate(self.subtextures):
+
+            v1 = geometery_utils.xp_vertex(
+                loc_x=subtexture[0] * self.scale_x,
+                loc_y=subtexture[1] * self.scale_y,
+                loc_z=1 + (float(i) * 0.01),
+                normal_x=0,
+                normal_y=0,
+                normal_z=1,
+                uv_x=subtexture[0],
+                uv_y=subtexture[1]
+            )
+
+            v2 = geometery_utils.xp_vertex(
+                loc_x=subtexture[0] * self.scale_x,
+                loc_y=subtexture[3] * self.scale_y,
+                loc_z=1 + (float(i) * 0.01),
+                normal_x=0,
+                normal_y=0,
+                normal_z=1,
+                uv_x=subtexture[0],
+                uv_y=subtexture[3]
+            )
+
+            v3 = geometery_utils.xp_vertex(
+                loc_x=subtexture[2] * self.scale_x,
+                loc_y=subtexture[3] * self.scale_y,
+                loc_z=1 + (float(i) * 0.01),
+                normal_x=0,
+                normal_y=0,
+                normal_z=1,
+                uv_x=subtexture[2],
+                uv_y=subtexture[3]
+            )
+
+            v4 = geometery_utils.xp_vertex(
+                loc_x=subtexture[2] * self.scale_x,
+                loc_y=subtexture[1] * self.scale_y,
+                loc_z=1 + (float(i) * 0.01),
+                normal_x=0,
+                normal_y=0,
+                normal_z=1,
+                uv_x=subtexture[2],
+                uv_y=subtexture[1]
+            )
+
+            indicies = [2, 1, 0, 3, 2, 0]
+
+            new_obj = geometery_utils.create_obj_from_draw_call([v1, v2, v3, v4], indicies, new_collection.name + "_subtexture")
+            new_obj.data.materials.append(mat)
+            new_collection.objects.link(new_obj)

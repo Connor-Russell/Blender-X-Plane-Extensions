@@ -1,112 +1,123 @@
-2025-05-01 15-50-31
-Test Name,Result
-2.9 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
+2025-05-08 15-23-28,,
+Test Name,Result,
+2.9 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
 TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,100.0000%
-Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
-3.0 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,100.0000%
-Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
-3.1 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+3.0 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
+TEST_keyframing,PASS,
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+3.1 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
 TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,100.0000%
-Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
-3.2 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+3.2 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
 TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,100.0000%
-Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
-3.3 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+3.3 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
 TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,100.0000%
-Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
-3.4 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+3.4 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
 TEST_keyframing,FAIL,Exception: 'Object' object has no attribute 'xplane'
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,100.0000%
-Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
-3.5 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,100.0000%
-Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
-3.6 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,100.0000%
-Bake Test Normal,PASS,99.9996%
-Bake Test Lit,PASS,100.0000%
-4.0 Tests
-Facade Exporter,PASS,100.0000%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-Bake Test Albedo,PASS,99.9973%
-Bake Test Normal,PASS,99.9996%
-Bake Test Lit,PASS,100.0000%
-4.1 Tests
-Facade Exporter,FAIL,92.4475%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+3.5 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
+TEST_keyframing,PASS,
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+3.6 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
+TEST_keyframing,PASS,
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+4.0 Tests,,
+Facade Exporter,PASS,100.00%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
+TEST_keyframing,PASS,
+TEST_get_draw_call_from_obj,PASS,
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+4.1 Tests,,
+Facade Exporter,FAIL,92.45%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
+TEST_keyframing,PASS,
 TEST_get_draw_call_from_obj,FAIL,Exception: 'Mesh' object has no attribute 'use_auto_smooth'
-Bake Test Albedo,PASS,99.9973%
-Bake Test Normal,PASS,99.9996%
-Bake Test Lit,PASS,100.0000%
-4.2 Tests
-Facade Exporter,FAIL,92.4475%
-Line Exporter,PASS,100.0000%
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%
+4.2 Tests,,
+Facade Exporter,FAIL,92.45%
+Line Exporter,PASS,100.00%
+Polygon Exporter,PASS,100.00%
+TEST_get_all_collections_from_view_layer,PASS,
+TEST_get_roof_data,PASS,
+TEST_keyframing,PASS,
 TEST_get_draw_call_from_obj,FAIL,Exception: 'Mesh' object has no attribute 'use_auto_smooth'
-Bake Test Albedo,PASS,99.9973%
-Bake Test Normal,PASS,99.9996%
-Bake Test Lit,PASS,100.0000%
+Bake Test Albedo,PASS,100.00%
+Bake Test Normal,PASS,100.00%
+Bake Test Lit,PASS,100.00%

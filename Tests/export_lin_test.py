@@ -12,71 +12,81 @@ def compare_files(file1, file2):
     b_pass = True
     chr_same = 0
     chr_total = 0
-    with open(file1, 'r') as new, open(file2, 'r') as good:
-        f_new = new.read()
-        f_good = good.read()
-
-        #Iterate over each line in both file. Then compare the characters in each line one by one
-        new_lines = f_new.splitlines()
-        good_lines = f_good.splitlines()
-
-        for i in range(len(new_lines)):
-            new_line_len = len(new_lines[i])
-            good_line_len = len(good_lines[i])
-
-            for j in range(min(new_line_len, good_line_len)):
-                chr_total += 1
-                if new_lines[i][j] == good_lines[i][j]:
-                    chr_same += 1
-            
-            chr_total += abs(new_line_len - good_line_len)
-            
+    similarity = 0.0
     
     try:
+        with open(file1, 'r') as new, open(file2, 'r') as good:
+            f_new = new.read()
+            f_good = good.read()
+
+            #Iterate over each line in both file. Then compare the characters in each line one by one
+            new_lines = f_new.splitlines()
+            good_lines = f_good.splitlines()
+
+            for i in range(min(len(new_lines), len(good_lines))):
+                new_line_len = len(new_lines[i])
+                good_line_len = len(good_lines[i])
+
+                for j in range(min(new_line_len, good_line_len)):
+                    chr_total += 1
+                    if new_lines[i][j] == good_lines[i][j]:
+                        chr_same += 1
+                
+                chr_total += abs(new_line_len - good_line_len)
+                
+        
         similarity = chr_same / chr_total
+        similarity *= (abs(len(new_lines) - len(good_lines)) / max(len(new_lines) - len(good_lines)))
     except:
-        similarity = 0
+        pass
 
     return similarity
 
 def test(test_dir):
     b_pass = False
+    similarity = 0.0
+    error_message = ""
+    try:
 
-    new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.lin"
-    new_file = test_dir + "/" + new_file_name
+        new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.lin"
+        new_file = test_dir + "/" + new_file_name
 
-    if os.path.exists(new_file):
-        os.remove(new_file)
+        if os.path.exists(new_file):
+            os.remove(new_file)
 
-    for col in bpy.data.collections:
-        if col.xp_lin.exportable:
-            if col.xp_lin.name == "Exporter.lin":
-                col.xp_lin.name = new_file_name
+        for col in bpy.data.collections:
+            if col.xp_lin.exportable:
+                if col.xp_lin.name == "Exporter.lin":
+                    col.xp_lin.name = new_file_name
 
-    print("Exporting Line")
-    bpy.ops.xp_ext.export_lines()
+        print("Exporting Line")
+        bpy.ops.xp_ext.export_lines()
 
-    known_good_file = test_dir + "/Exporter.good.lin"
-    exporter_output = test_dir + "/../Test Results.csv"
+        known_good_file = test_dir + "/Exporter.good.lin"
+        exporter_output = test_dir + "/../Test Results.csv"
 
-    #Resolve the file paths to use \\ instead of / for windows compatibility
-    new_file = new_file.replace("/", "\\")
-    known_good_file = known_good_file.replace("/", "\\")
+        #Resolve the file paths to use \\ instead of / for windows compatibility
+        new_file = new_file.replace("/", "\\")
+        known_good_file = known_good_file.replace("/", "\\")
 
-    print("Comparing files" + new_file + " and " + known_good_file)
+        print("Comparing files" + new_file + " and " + known_good_file)
 
-    #Compare the exported file with the known good file
-    b_pass = True
-    similarity = compare_files(new_file, known_good_file)
+        #Compare the exported file with the known good file
+        b_pass = True
+        similarity = compare_files(new_file, known_good_file)
+    except Exception as e:
+        error_message = str(e)
+        pass
+
     if similarity < 1.0:
         b_pass = False
 
     #Append the test results to the exporter_output file
     with open(exporter_output, 'a') as output:
         if b_pass:
-            output.write("Line Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%\n")
+            output.write("Line Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + error_message + "\n")
         else:
-            output.write("Line Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%\n")
+            output.write("Line Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + error_message + "\n")
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":

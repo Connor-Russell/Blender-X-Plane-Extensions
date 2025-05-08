@@ -10,6 +10,7 @@ from .Helpers import line_utils
 from .Types import xp_lin
 from .Types import xp_fac
 from .Types import xp_obj
+from .Types import xp_pol
 
 def import_lin(in_path):
     #Define just the file name from the path
@@ -20,6 +21,17 @@ def import_lin(in_path):
     lin = xp_lin.line()
     lin.read(in_path)
     lin.to_collection(in_name)
+
+def import_pol(in_path):
+    #Define just the file name from the path
+    in_name = in_path
+    in_name = in_path.split("\\")[-1]
+
+    #Read it
+    pol = xp_pol.polygon()
+    print(f"Importing {in_name}...")
+    pol.read(in_path)
+    pol.to_scene()
 
 def import_fac(in_path):
     #Define just the file name from the path
