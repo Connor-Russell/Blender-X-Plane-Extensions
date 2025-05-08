@@ -344,8 +344,9 @@ class MENU_mats(bpy.types.Panel):
             layout.prop(xp_materials, "lit_texture", text="Lit Texture")
             if (xp_materials.lit_texture != ""):
                 layout.prop(xp_materials, "brightness", text="Brightness")
+            layout.prop(xp_materials, "weather_texture", text="Weather Texture")
             layout.prop(xp_materials, "draped", text="Draped")
-            layout.prop(xp_materials, "hard", text="Hard")
+            layout.prop(xp_materials, "surface_type", text="Surface Type")
             layout.prop(xp_materials, "blend_alpha", text="Blend Alpha")
             if (not xp_materials.blend_alpha):
                 layout.prop(xp_materials, "blend_cutoff", text="Blend Cutoff")
@@ -551,6 +552,88 @@ class MENU_fac_mesh(bpy.types.Panel):
             layout.prop(fac_mesh, "cuts")
             layout.prop(fac_mesh, "exportable")
 
+class MENU_pol_exporter(bpy.types.Panel):
+    bl_label = "X-Plane Polygon Exporter"
+    bl_idname = "SCENE_PT_pol_exporter"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+
+        #Export button
+        layout.operator("xp_ext.export_polygons", text="Export Polygons")
+        layout.separator()
+
+        layout.prop(scene.xp_ext, "pol_collection_search")
+
+        if scene.xp_ext.pol_collection_search != "":
+            layout.label(text="Filtered Collections")
+
+        # Function to draw all the properties for the collection. Just so we can reuse it for the disabled collections
+        def draw_collection(col, in_layout):
+            pol = col.xp_pol
+
+            box = in_layout.box()
+            top_row = box.row()
+            top_row.prop(col.xp_pol, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if col.xp_pol.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+            top_row.prop(col.xp_pol, "exportable", text="Export Enabled")
+            if col.xp_pol.is_ui_expanded:
+                box.prop(pol, "name")
+                box.prop(pol, "material")
+                box.prop(pol, "texture_is_nowrap")
+                box.separator()
+                box.prop(pol, "is_load_centered")
+
+                if pol.is_load_centered:
+                    row = box.row()
+                    row.prop(pol, "load_center_lat")
+                    row.prop(pol, "load_center_lon")
+                    box.prop(pol, "load_center_resolution")
+                    box.prop(pol, "load_center_size")
+
+                box.separator()
+                box.prop(pol, "is_texture_tiling")
+                
+                if pol.is_texture_tiling:
+                    row = box.row()
+                    row.prop(pol, "texture_tiling_x_pages")
+                    row.prop(pol, "texture_tiling_y_pages")
+                    row = box.row()
+                    row.prop(pol, "texture_tiling_map_x_res")
+                    row.prop(pol, "texture_tiling_map_y_res")
+                    box.prop(pol, "texture_tiling_map_texture")
+
+                box.separator()
+                box.prop(pol, "is_runway_markings")
+
+                if pol.is_runway_markings:
+                    row = box.row()
+                    row.prop(pol, "runway_markings_r")
+                    row.prop(pol, "runway_markings_g")
+                    row.prop(pol, "runway_markings_b")
+                    row.prop(pol, "runway_markings_a")
+                    box.prop(pol, "runway_markings_texture")
+
+        # Draw enabled collections
+        for col in bpy.data.collections:
+            if col.xp_pol.exportable:
+                if scene.xp_ext.pol_collection_search != "" and not (col.name.startswith(scene.xp_ext.pol_collection_search) or col.name.endswith(scene.xp_ext.pol_collection_search)):
+                    continue
+                draw_collection(col, layout)
+
+        # Draw disabled collections
+        disabled_collections = layout.box()
+        disabled_collections.prop(scene.xp_ext, "pol_disabled_collections_expanded", text="Disabled Collections", icon='TRIA_DOWN' if scene.xp_ext.pol_disabled_collections_expanded else 'TRIA_RIGHT', emboss=False)
+        if scene.xp_ext.pol_disabled_collections_expanded:
+            for col in bpy.data.collections:
+                if not col.xp_pol.exportable:
+                    if scene.xp_ext.pol_collection_search != "" and not (col.name.startswith(scene.xp_ext.pol_collection_search) or col.name.endswith(scene.xp_ext.pol_collection_search)):
+                        continue
+                    draw_collection(col, disabled_collections)
+
 def register():
     bpy.utils.register_class(MENU_lin_exporter)
     bpy.utils.register_class(MENU_lin_layer)
@@ -559,6 +642,7 @@ def register():
     bpy.utils.register_class(MENU_facade)
     bpy.utils.register_class(MENU_attached_object)
     bpy.utils.register_class(MENU_fac_mesh)
+    bpy.utils.register_class(MENU_pol_exporter)
 
 def unregister():
     bpy.utils.unregister_class(MENU_lin_exporter)
@@ -568,3 +652,4 @@ def unregister():
     bpy.utils.unregister_class(MENU_facade)
     bpy.utils.unregister_class(MENU_attached_object)
     bpy.utils.unregister_class(MENU_fac_mesh)
+    bpy.utils.unregister_class(MENU_pol_exporter)

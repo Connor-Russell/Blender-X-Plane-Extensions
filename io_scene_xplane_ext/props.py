@@ -34,8 +34,15 @@ layer_group_enum = [
 #Enum for collision types
 collision_type_enum = [
     ('NONE', "None", "No collision"),
-    ('CONCRETE', "Concrete", "Concrete collision"),
-    ('ASPHALT', "Asphalt", "Asphalt collision")
+    ('CONCRETE', "Concrete", "Concrete"),
+    ('ASPHALT', "Asphalt", "Asphalt"),
+    ('GRASS', "Grass", "Grass"),
+    ('DIRT', "Dirt", "Dirt"),
+    ('GRAVEL', "Gravel", "Gravel"),
+    ('LAKEBED', "Lakebed", "Lakebed"),
+    ('SNOW', "Snow", "Snow"),
+    ('SHOULDER', "Shoulder", "Shoulder"),
+    ('BLASTPAD', "Blastpad", "Blastpad"),
 ]
 
 #TODO: Kill this code and all it's references. ENUMs cause problems
@@ -61,6 +68,19 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
 
 class PROP_xp_ext_scene(bpy.types.PropertyGroup):
+    pol_collection_search: bpy.props.StringProperty(
+        name="Search",
+        default="",
+        description="Search for a collection to configure export",
+        update=update_ui
+    ) # type: ignore
+
+    pol_disabled_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
     lin_collection_search: bpy.props.StringProperty(
         name="Search",
         default="",
@@ -193,6 +213,14 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
+    weather_texture: bpy.props.StringProperty(
+        name="Weather Texture",
+        description="The texture used to control weather effects",
+        default="",
+        subtype='FILE_PATH',
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
     brightness: bpy.props.FloatProperty(
         name="Brightness",
         description="The brightness of the LIT texture in NITs. -1 to leave default",
@@ -207,10 +235,11 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
-    hard: bpy.props.BoolProperty(
-        name="Hard",
-        description="Is the material hard?",
-        default=False,
+    surface_type: bpy.props.EnumProperty(
+        name="Surface Type",
+        description="The surface type of the material",
+        items=collision_type_enum,
+        default="NONE",
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -262,14 +291,6 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0,
         min=-5,
         max=5,
-        update=material_config.operator_wrapped_update_settings
-    ) # type: ignore
-
-    #Bool seperate normal and albedo decals
-    seperate_decals: bpy.props.BoolProperty(
-        name="Seperate Normal and Albedo Decals",
-        description="Seperate the normal and albedo decals",
-        default=False,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -340,6 +361,36 @@ class PROP_lin_collection(bpy.types.PropertyGroup):
         description="If non-zero, X-Plane will stretch/compress the texture to always end on a subdivision. Useful for alignment with end caps",
         update=update_ui
     ) # type: ignore
+
+#Polygon properties
+
+class PROP_pol_collection(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", description="The name of the polygon layer") # type: ignore
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the polygon is exportable", default=False) # type: ignore
+    is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the polygon is expanded in the UI", default=False, update=update_ui) # type: ignore
+    
+    material: bpy.props.PointerProperty(type=bpy.types.Material, name="Material", description="The material to use for the polygon", update=update_ui) # type: ignore
+    texture_is_nowrap: bpy.props.BoolProperty(name="Non-tiling textures", description="Whether the texture can tile or not", default=False) # type: ignore
+
+    is_load_centered: bpy.props.BoolProperty(name="Enable Load Center", description="Whether the polygon uses location base texture scaling", default=False) # type: ignore
+    load_center_lat: bpy.props.FloatProperty(name="Load Center Latitude", description="The latitude used for texture scaling", default=0.0) # type: ignore
+    load_center_lon: bpy.props.FloatProperty(name="Load Center Longitude", description="The longitude used for texture scaling", default=0.0) # type: ignore
+    load_center_resolution: bpy.props.IntProperty(name="Load Center Resolution", description="The resolution used for texture scaling", default=4096) # type: ignore
+    load_center_size: bpy.props.FloatProperty(name="Load Center Size", description="The size used for texture scaling", default=1000) # type: ignore
+
+    is_texture_tiling: bpy.props.BoolProperty(name="Enable Texture Tiling", description="Whether the polygon uses texture tiling", default=False) # type: ignore
+    texture_tiling_x_pages: bpy.props.IntProperty(name="Texture Tiling X Pages", description="The number of pages in the x direction", default=1) # type: ignore
+    texture_tiling_y_pages: bpy.props.IntProperty(name="Texture Tiling Y Pages", description="The number of pages in the y direction", default=1) # type: ignore
+    texture_tiling_map_x_res: bpy.props.IntProperty(name="Texture Tiling Map X Resolution", description="The resolution of the texture tiling map in the x direction", default=4096) # type: ignore
+    texture_tiling_map_y_res: bpy.props.IntProperty(name="Texture Tiling Map Y Resolution", description="The resolution of the texture tiling map in the y direction", default=4096) # type: ignore
+    texture_tiling_map_texture: bpy.props.StringProperty(name="Texture Tiling Map Texture", description="The texture used for the texture tiling map", default="", subtype="FILE_PATH") # type: ignore
+
+    is_runway_markings: bpy.props.BoolProperty(name="LR Runway Markings (Advanced)", description="Whether the polygon uses runway markings. These can only be used for polygons used by X-Plane runways, which currently are only default polygons", default=False) # type: ignore
+    runway_markings_r: bpy.props.FloatProperty(name="Runway Markings Red", description="The red value for the runway markings", default=1.0) # type: ignore
+    runway_markings_g: bpy.props.FloatProperty(name="Runway Markings Green", description="The green value for the runway markings", default=1.0) # type: ignore
+    runway_markings_b: bpy.props.FloatProperty(name="Runway Markings Blue", description="The blue value for the runway markings", default=1.0) # type: ignore
+    runway_markings_a: bpy.props.FloatProperty(name="Runway Markings Alpha", description="The alpha value for the runway markings", default=1.0) # type: ignore
+    runway_markings_texture: bpy.props.StringProperty(name="Runway Markings Texture", description="The texture used for the runway markings", default="", subtype="FILE_PATH") # type: ignore
 
 #Facade properties
 
@@ -437,6 +488,7 @@ def update_fac_spelling_choices_load_handler(in_file_path, in_startup_file_path)
 def register():
     
     bpy.utils.register_class(PROP_fac_filtered_spelling_choices)
+    bpy.utils.register_class(PROP_pol_collection)
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
     bpy.utils.register_class(PROP_xp_ext_scene)
@@ -454,6 +506,7 @@ def register():
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
     bpy.types.Object.xp_fac_mesh = bpy.props.PointerProperty(type=PROP_fac_mesh)
+    bpy.types.Collection.xp_pol = bpy.props.PointerProperty(type=PROP_pol_collection)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Collection.xp_fac = bpy.props.PointerProperty(type=PROP_facade)
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
@@ -470,6 +523,7 @@ def unregister():
     del bpy.types.Scene.xp_ext
     del bpy.types.Collection.xp_fac
     del bpy.types.Collection.xp_lin
+    del bpy.types.Collection.xp_pol
     del bpy.types.Object.xp_fac_mesh
     del bpy.types.Object.xp_attached_obj
     del bpy.types.Object.xp_lin
@@ -483,6 +537,7 @@ def unregister():
     bpy.utils.unregister_class(PROP_mats)
     bpy.utils.unregister_class(PROP_decal)
     bpy.utils.unregister_class(PROP_xp_ext_scene)
+    bpy.utils.unregister_class(PROP_pol_collection)
     bpy.utils.unregister_class(PROP_lin_collection)
     bpy.utils.unregister_class(PROP_lin_layer)
     bpy.utils.unregister_class(PROP_attached_obj)

@@ -5,6 +5,7 @@ $OutputTestDir = "$cd\Tests"
 $DateAndTime = Get-Date -Format "yyyy-MM-dd HH-mm-ss"
 $BlenderFileFacadeExporter = "$cd\Tests\Content\FacadeExporter.blend"
 $BlenderFileLineExporter = "$cd\Tests\Content\LineExporter.blend"
+$BlenderFilePolygonExporter = "$cd\Tests\Content\PolygonExporter.blend"
 $BlenderFileInternalTests = "$cd\Tests\Content\InternalTests.blend"
 $BlenderFileBakeTest = "$cd\Tests\Content\BakeTest.blend"
 
@@ -36,6 +37,7 @@ $Test42 = $true
 
 $TestExportFacade = $true
 $TestExportLine = $true
+$TestExportPolygon = $true
 $InternalTest = $true
 $TestBaker = $true
 
@@ -57,6 +59,10 @@ function Test-All {
     if ($TestExportLine)
     {
         & $BlenderExe --background $BlenderFileLineExporter --python "$TestDir\export_lin_test.py"
+    }
+    if ($TestExportPolygon)
+    {
+        & $BlenderExe --background $BlenderFilePolygonExporter --python "$TestDir\export_pol_test.py"
     }
     if ($InternalTest)
     {

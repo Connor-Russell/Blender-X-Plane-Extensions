@@ -581,7 +581,7 @@ class facade:
                 output += decal_utils.get_decal_command(mat.decal_two, output_folder) + "\n"
 
             #Hard
-            if mat.hard:
+            if mat.surface_type != "NONE":
                 output += "ROOF_HARD concrete\n"
 
         #Roof scale

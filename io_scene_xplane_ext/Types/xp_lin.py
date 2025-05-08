@@ -35,6 +35,8 @@ class line():
         self.caps = []
         self.alb_texture = ""
         self.nml_texture = ""
+        self.lit_texture = ""
+        self.weather_texture = ""
         self.layer = "MARKINGS"
         self.layer_offset = 0
         self.scale_x = 0
@@ -47,6 +49,7 @@ class line():
         self.super_rough = False
         self.decal_1 = None
         self.decal_2 = None
+        self.surface = None
 
     def write(self, output_path):
         output_folder = os.path.dirname(output_path)
@@ -61,8 +64,14 @@ class line():
 
         if self.alb_texture != "":
             of += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(self.alb_texture), output_folder) + "\n"
+        if self.lit_texture != "":
+            of += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(self.lit_texture), output_folder) + "\n"
         if self.nml_texture != "":
             of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
+        if self.weather_texture != "":
+                of += "WEATHER " + os.path.relpath(file_utils.rel_to_abs(self.weather_texture), output_folder) + "\n"
+        else:
+            of += "WEATHER_TRANSPARENT\n"
         if self.super_rough:
             of += "SUPER_ROUGHNESS\n"
 
@@ -139,9 +148,13 @@ class line():
             #Check for material data
             if line.startswith("TEXTURE_NORMAL"):
                 self.nml_texture = line.split()[2]
+            elif line.startswith("TEXTURE_LIT"):
+                self.lit_texture = line.split()[1]
             elif line.startswith("TEXTURE"):
                 self.alb_texture = line.split()[1]
-            elif line.startswith("SUPER_ROUGHness"):
+            elif line.startswith("WEATHER"):
+                self.weather_texture = line.split()[1]
+            elif line.startswith("SUPER_ROUGHNESS"):
                 self.super_rough = True
             elif line.startswith("NO_BLEND"):
                 self.do_blend = False
@@ -171,6 +184,8 @@ class line():
             if line.startswith("SCALE"):
                 self.scale_x = float(line.split()[1])
                 self.scale_y = float(line.split()[2])
+            if line.startswith("SURFACE"):
+                self.surface = line.split()[1]
 
             #Check for segments
             if line.startswith("S_OFFSET"):
@@ -243,11 +258,14 @@ class line():
         self.layer = mat.layer_group
         self.layer_offset = mat.layer_group_offset
         self.alb_texture = mat.alb_texture
+        self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
+        self.weather_texture = mat.weather_texture
         self.do_blend = mat.blend_alpha
         self.blend_cutoff = mat.blend_cutoff
         self.decal_1 = mat.decal_one
         self.decal_2 = mat.decal_two
+        self.surface = mat.surface_type
 
         # Next we need to get segment commands. We treat the Z position as layer, so things are layered intuitively. But Z position can be *anything*.
         # So we need to sort the Z positions, then get the *index* of that Z position, so we have a 0-top continuous range of layers.
@@ -288,11 +306,14 @@ class line():
         #First create a new material for the line
         mat = bpy.data.materials.new(name=in_name)
         mat.xp_materials.alb_texture = self.alb_texture
+        mat.xp_materials.lit_texture = self.lit_texture
         mat.xp_materials.normal_texture = self.nml_texture
+        mat.xp_materials.weather_texture = self.weather_texture
         mat.xp_materials.blend_alpha = self.do_blend
         mat.xp_materials.blend_cutoff = self.blend_cutoff
         mat.xp_materials.layer_group = self.layer.upper()
         mat.xp_materials.layer_group_offset = int(self.layer_offset)
+        mat.xp_materials.surface_type = self.surface
 
         #Call operator xp_mats.update_material_nodes
         #bpy.ops.xp_ext.update_material_nodes(override_material=mat)

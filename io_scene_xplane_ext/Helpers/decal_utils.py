@@ -157,3 +157,73 @@ def get_decal_command(in_decal, in_output_folder):
             nml_decal = f"NORMAL_DECAL_PARAMS {in_decal.nml_tile_ratio} {in_decal.nml_decal_key_red} {in_decal.nml_decal_key_green} {in_decal.nml_decal_key_blue} {in_decal.nml_decal_key_alpha} {in_decal.nml_strength_modulator} {in_decal.nml_strength_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.nml), in_output_folder)}"
     
     return alb_decal + nml_decal
+
+def get_decal_from_command(in_command, in_decal_prop):
+    #Split the command into parts
+    parts = in_command.split(" ")
+
+    #Get the type of decal
+    if parts[0] == "DECAL_PARAMS":
+        #Get the parameters
+        in_decal_prop.tile_ratio = float(parts[1])
+        in_decal_prop.dither_ratio = float(parts[2])
+        in_decal_prop.rgb_decal_key_red = float(parts[3])
+        in_decal_prop.rgb_decal_key_green = float(parts[4])
+        in_decal_prop.rgb_decal_key_blue = float(parts[5])
+        in_decal_prop.rgb_decal_key_alpha = float(parts[6])
+        in_decal_prop.rgb_strength_modulator = float(parts[7])
+        in_decal_prop.rgb_strength_constant = float(parts[8])
+        in_decal_prop.alpha_decal_key_red = float(parts[9])
+        in_decal_prop.alpha_decal_key_green = float(parts[10])
+        in_decal_prop.alpha_decal_key_blue = float(parts[11])
+        in_decal_prop.alpha_decal_key_alpha = float(parts[12])
+        in_decal_prop.alpha_strength_modulator = float(parts[13])
+        in_decal_prop.alpha_strength_constant = float(parts[14])
+        in_decal_prop.alb = parts[15]
+        in_decal_prop.projected = False
+
+    elif parts[0] == "DECAL_PARAMS_PROJ":
+        #Get the parameters
+        in_decal_prop.scale_x = float(parts[1])
+        in_decal_prop.scale_y = float(parts[2])
+        in_decal_prop.dither_ratio = float(parts[3])
+        in_decal_prop.rgb_decal_key_red = float(parts[4])
+        in_decal_prop.rgb_decal_key_green = float(parts[5])
+        in_decal_prop.rgb_decal_key_blue = float(parts[6])
+        in_decal_prop.rgb_decal_key_alpha = float(parts[7])
+        in_decal_prop.rgb_strength_modulator = float(parts[8])
+        in_decal_prop.rgb_strength_constant = float(parts[9])
+        in_decal_prop.alpha_decal_key_red = float(parts[10])
+        in_decal_prop.alpha_decal_key_green = float(parts[11])
+        in_decal_prop.alpha_decal_key_blue = float(parts[12])
+        in_decal_prop.alpha_decal_key_alpha = float(parts[13])
+        in_decal_prop.alpha_strength_modulator = float(parts[14])
+        in_decal_prop.alpha_strength_constant = float(parts[15])
+        in_decal_prop.alb = parts[16]
+        in_decal_prop.projected = True
+
+    elif parts[0] == "NORMAL_DECAL_PARAMS":
+        #Get the parameters
+        in_decal_prop.nml_tile_ratio = float(parts[1])
+        in_decal_prop.nml_decal_key_red = float(parts[2])
+        in_decal_prop.nml_decal_key_green = float(parts[3])
+        in_decal_prop.nml_decal_key_blue = float(parts[4])
+        in_decal_prop.nml_decal_key_alpha = float(parts[5])
+        in_decal_prop.nml_strength_modulator = float(parts[6])
+        in_decal_prop.nml_strength_constant = float(parts[7])
+        in_decal_prop.nml = parts[8]
+        in_decal_prop.projected = False
+
+    elif parts[0] == "NORMAL_DECAL_PARAMS_PROJ":
+        #Get the parameters
+        in_decal_prop.nml_scale_x = float(parts[1])
+        in_decal_prop.nml_scale_y = float(parts[2])
+        in_decal_prop.nml_decal_key_red = float(parts[3])
+        in_decal_prop.nml_decal_key_green = float(parts[4])
+        in_decal_prop.nml_decal_key_blue = float(parts[5])
+        in_decal_prop.nml_decal_key_alpha = float(parts[6])
+        in_decal_prop.nml_strength_modulator = float(parts[7])
+        in_decal_prop.nml_strength_constant = float(parts[8])
+        in_decal_prop.nml = parts[9]
+        in_decal_prop.projected = True
+    
