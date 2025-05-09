@@ -49,7 +49,7 @@ class line():
         self.super_rough = False
         self.decal_1 = None
         self.decal_2 = None
-        self.surface = None
+        self.surface = "NONE"
 
     def write(self, output_path):
         output_folder = os.path.dirname(output_path)
@@ -122,7 +122,7 @@ class line():
             else:
                 of += "END_CAP "
 
-            of += str(int(cap.layer)) + " " + str(int(cap.l)) + " " + str(int(cap.c)) + " " + str(int(cap.r)) + " " + str(int(cap.top)) + " " + str(int(cap.bottom)) + "\n"
+            of += str(int(cap.layer)) + " " + str(int(cap.l)) + " " + str(int(cap.c)) + " " + str(int(cap.r)) + " " + str(int(cap.bottom)) + " " + str(int(cap.top)) + "\n"
 
         #Open the output file and write the contents
         with open(output_path, 'w') as f:
@@ -207,8 +207,8 @@ class line():
                 cur_cap.l = float(line.split()[2]) / uv_scalar_x
                 cur_cap.c = float(line.split()[3]) / uv_scalar_x
                 cur_cap.r = float(line.split()[4]) / uv_scalar_x
-                cur_cap.top = float(line.split()[5]) / uv_scalar_y
-                cur_cap.bottom = float(line.split()[6]) / uv_scalar_y
+                cur_cap.bottom = float(line.split()[5]) / uv_scalar_y
+                cur_cap.top = float(line.split()[6]) / uv_scalar_y
                 self.caps.append(cur_cap)
 
     def from_collection(self, in_collection):

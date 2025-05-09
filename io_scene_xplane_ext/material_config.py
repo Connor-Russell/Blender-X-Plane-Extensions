@@ -772,7 +772,7 @@ def update_nodes(material):
         node_nml_post_mix_1 = node_nml_out #This defaults to nml because if we have a decal 2 and not decal 1, we still need an input for the decal 2 input
         node_alpha_post_mix = node_alpha_clamp #This defaults to add because if we have a decal 2 and not decal 1, we still need an input for the decal 2 input
 
-        if image_decal_1_alb != None:
+        if image_decal_1_alb != None and node_alb_post_mix_1 != None:
             node_mix_1 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
             node_mix_1.location = (-1500, 0)
             node_mix_1.label = "Mix Decal 1 Alb RGB"
@@ -803,7 +803,7 @@ def update_nodes(material):
 
             node_alpha_post_mix = node_dither_mix_1
 
-        if image_decal_1_nml != None:
+        if image_decal_1_nml != None and node_nml_post_mix_1 != None:
             node_nml_mix_1 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
             node_nml_mix_1.location = (-1500, -500)
             node_nml_mix_1.label = "Mix Decal 1 Nml"
@@ -815,7 +815,7 @@ def update_nodes(material):
 
             node_nml_post_mix_1 = node_nml_mix_1
 
-        if image_decal_2_alb != None:
+        if image_decal_2_alb != None and node_alb_post_mix_1 != None:
             node_mix_3 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
             node_mix_3.location = (-1000, 0)
             node_mix_3.label = "Mix Decal 2 Alb RGB"
@@ -846,7 +846,7 @@ def update_nodes(material):
 
             node_alpha_post_mix = node_dither_mix_2
 
-        if image_decal_2_nml != None:
+        if image_decal_2_nml != None and node_nml_post_mix_1 != None:
             node_nml_mix_2 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
             node_nml_mix_2.location = (-1000, -500)
             node_nml_mix_2.label = "Mix Decal 2 Nml"
@@ -859,17 +859,18 @@ def update_nodes(material):
             node_nml_post_mix_1 = node_nml_mix_2
 
         #Now finally we will link the post-mix nodes to the principled node!
-        material.node_tree.links.new(node_alb_post_mix_1.outputs[0], node_principled.inputs[0])
+        if node_alpha_post_mix != None:
+            material.node_tree.links.new(node_alb_post_mix_1.outputs[0], node_principled.inputs[0])
 
-        if bpy.app.version < (3, 0, 0):
+        if bpy.app.version < (3, 0, 0) and node_alpha_post_mix != None:
                 material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[20])    #Reconstructed normal to normal
-        elif bpy.app.version < (4, 0, 0):
+        elif bpy.app.version < (4, 0, 0) and node_alpha_post_mix != None:
             material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[22])    #Reconstructed normal to normal
-        else:
+        elif node_alpha_post_mix != None:
             material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[5])    #Reconstructed normal to normal
 
         #Add a final clamp node to clamp the alpha to 0-1
-        if node_alpha_post_mix != node_alpha_clamp:
+        if node_alpha_post_mix != node_alpha_clamp and node_alpha_post_mix != None:
             
             node_alpha_clamp = material.node_tree.nodes.new(type="ShaderNodeClamp")
             node_alpha_clamp.location = (-750, -250)

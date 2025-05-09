@@ -8,6 +8,7 @@ import bpy # type: ignore
 import bmesh # type: ignore
 
 from ..Types import xp_lin # type: ignore
+from . import geometery_utils
 
 class lin_vertex:
     def __init__(self):
@@ -47,60 +48,57 @@ def get_layer_from_segment_object(in_object, offset, type):
         return None
     
     #Now, we need to find the edge vertices
-    left_vertex = lin_vertex()
-    right_vertex = lin_vertex()
-    bottom_vertex = lin_vertex()
-    top_vertex = lin_vertex()
+    verts, indicies = geometery_utils.get_draw_call_from_obj(in_object)
 
     lowest_x = 1000
     highest_x = -1000
     lowest_y = 1000
     highest_y = -1000
 
-    for i in range(4):
-        #Get the coords for the current vertex
-        cur_vert = in_object.matrix_world @ in_object.data.vertices[i].co
+    left_vertex = lin_vertex()
+    right_vertex = lin_vertex()
+    top_vertex = lin_vertex()
+    bottom_vertex = lin_vertex()
 
-        #If this is the lowest X, we set it as the left vertex
-        if cur_vert.x < lowest_x:
-            lowest_x = cur_vert.x
-            left_vertex.x = cur_vert.x
-            left_vertex.y = cur_vert.y
-            left_vertex.z = cur_vert.z
-            left_vertex.u = uv_layer.data[i].uv.x
-            left_vertex.v = uv_layer.data[i].uv.y
+    for i, vert in enumerate(verts):
+        if vert.loc_x < lowest_x * 1.01:
+            lowest_x = vert.loc_x
+            left_vertex.x = vert.loc_x
+            left_vertex.y = vert.loc_y
+            left_vertex.z = vert.loc_z
+            left_vertex.u = vert.uv_x
+            left_vertex.v = vert.uv_y
 
-        #If this is the highest X, we set it as the right vertex
-        if cur_vert.x > highest_x:
-            highest_x = cur_vert.x
-            right_vertex.x = cur_vert.x
-            right_vertex.y = cur_vert.y
-            right_vertex.z = cur_vert.z
-            right_vertex.u = uv_layer.data[i].uv.x
-            right_vertex.v = uv_layer.data[i].uv.y
+        if vert.loc_x > highest_x * 1.01:
+            highest_x = vert.loc_x
+            right_vertex.x = vert.loc_x
+            right_vertex.y = vert.loc_y
+            right_vertex.z = vert.loc_z
+            right_vertex.u = vert.uv_x
+            right_vertex.v = vert.uv_y
 
-        #If this is the lowest Y, we set it as the bottom vertex
-        if cur_vert.y < lowest_y:
-            lowest_y = cur_vert.y
-            bottom_vertex.x = cur_vert.x
-            bottom_vertex.y = cur_vert.y
-            bottom_vertex.z = cur_vert.z
-            bottom_vertex.u = uv_layer.data[i].uv.x
-            bottom_vertex.v = uv_layer.data[i].uv.y
+        if vert.loc_y < lowest_y * 1.01:
+            lowest_y = vert.loc_y
+            bottom_vertex.x = vert.loc_x
+            bottom_vertex.y = vert.loc_y
+            bottom_vertex.z = vert.loc_z
+            bottom_vertex.u = vert.uv_x
+            bottom_vertex.v = vert.uv_y
 
-        #If this is the highest Y, we set it as the top vertex
-        if cur_vert.y > highest_y:
-            highest_y = cur_vert.y
-            top_vertex.x = cur_vert.x
-            top_vertex.y = cur_vert.y
-            top_vertex.z = cur_vert.z
-            top_vertex.u = uv_layer.data[i].uv.x
-            top_vertex.v = uv_layer.data[i].uv.y
+        if vert.loc_y > highest_y * 1.01:
+            highest_y = vert.loc_y
+            top_vertex.x = vert.loc_x
+            top_vertex.y = vert.loc_y
+            top_vertex.z = vert.loc_z
+            top_vertex.u = vert.uv_x
+            top_vertex.v = vert.uv_y
 
     #Now, comes the hard part. We need to find the center coordinate.
     #S = X of UV. T = Y of UV. X = X of object. Y = Y of object.
     #Because we know the X/S of the left and right vertices, we can find a ratio of Xs to Ss
     #With this info, we can then find the S distance of X0 to the left vertex. We then add that to the S of the left to get the center S
+    if left_vertex.u == right_vertex.u:
+        raise Exception(f"Error: Left and right vertices have the same X texture coordinates! Please check the UVs of {in_object.name}!")
     xs_to_1_s = abs(right_vertex.x - left_vertex.x) / abs(right_vertex.u - left_vertex.u)   #Basically, how wide wide this texture is in meters, in the context of this single layer
     ss_to_x0 = left_vertex.x / xs_to_1_s    #Basically, how much UV space is between the left vertex and the center of the world
     s_at_x0 = left_vertex.u - ss_to_x0  #Basically, we add the UV distance from the left and center of the world to the left, to get the center position

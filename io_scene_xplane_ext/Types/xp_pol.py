@@ -31,7 +31,7 @@ class polygon():
         self.super_rough = False
         self.decal_1 = None
         self.decal_2 = None
-        self.surface = None
+        self.surface = "NONE"
 
         self.do_load_center = False
         self.load_center_lat = 0
