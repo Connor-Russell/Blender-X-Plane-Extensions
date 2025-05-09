@@ -12,6 +12,8 @@ Additional features planned include:
 
 Releases can be found on the release page. To install, simply go to your Blender Settings, then addon, then choose install from file, and select "Blender X-Plane Extensions.zip".
 
+# Documentation Quick Links:
+
 ### [X-Plane Materials](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Materials)
 
 ### [Facades](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Facades)
