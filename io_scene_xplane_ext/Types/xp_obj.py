@@ -64,6 +64,8 @@ class anim_rot_table:
         for kf in self.keyframes:
             #Get the time range
             time_range = max_time - min_time
+            if time_range == 0:
+                time_range = 1
 
             #Get the frame range
             frame_range = max_frame - min_frame
@@ -83,7 +85,9 @@ class anim_loc_table:
 
     def add_keyframe(self, time, loc):
         #Add a keyframe to the list of keyframes
-        kf = anim_loc_keyframe(time, loc)
+        kf = anim_loc_keyframe()
+        kf.time = time
+        kf.loc = loc
         self.keyframes.append(kf)
 
     def get_frames(self):
@@ -103,6 +107,8 @@ class anim_loc_table:
         for kf in self.keyframes:
             #Get the time range
             time_range = max_time - min_time
+            if time_range == 0:
+                time_range = 1
 
             #Get the frame range
             frame_range = max_frame - min_frame
@@ -344,12 +350,12 @@ class object:
                     cur_table.dataref = tokens[9]
 
                     key1 = anim_loc_keyframe()
-                    key1.time = int(tokens[7])
+                    key1.time = float(tokens[7])
                     key1.loc = (float(tokens[1]) * trans_matrix[0], float(tokens[3]) * trans_matrix[1], float(tokens[2]) * trans_matrix[2])
                     cur_table.add_keyframe(key1.time, key1.loc)
 
                     key2 = anim_loc_keyframe()
-                    key2.time = int(tokens[8])
+                    key2.time = float(tokens[8])
                     key2.loc = (float(tokens[4]) * trans_matrix[0], float(tokens[6]) * trans_matrix[1], float(tokens[5]) * trans_matrix[2])
                     cur_table.add_keyframe(key2.time, key2.loc)
 
@@ -371,12 +377,12 @@ class object:
                     cur_table.name = tokens[9]
 
                     key1 = anim_rot_keyframe()
-                    key1.time = int(tokens[7])
+                    key1.time = float(tokens[7])
                     key1.rot = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
                     cur_table.add_keyframe(key1.time, key1.rot)
 
                     key2 = anim_rot_keyframe()
-                    key2.time = int(tokens[8])
+                    key2.time = float(tokens[8])
                     key2.rot = (float(tokens[4]), float(tokens[6]), float(tokens[5]))
                     cur_table.add_keyframe(key2.time, key2.rot)
 
@@ -389,26 +395,20 @@ class object:
             elif tokens[0] == "ANIM_rotate_begin":
                 cur_table = anim_rot_table()
                 cur_table.name = tokens[4]
-                cur_rotate_keyframe_do_x = tokens[1] == "1"
-                cur_rotate_keyframe_do_y = tokens[3] == "1"
-                cur_rotate_keyframe_do_z = tokens[2] == "1"
+                cur_rotate_keyframe_do_x = float(tokens[1])
+                cur_rotate_keyframe_do_y = float(tokens[3])
+                cur_rotate_keyframe_do_z = float(tokens[2])
                 
                 cur_anim_tree[-1].rot_tables.append(cur_table)
             
             elif tokens[0] == "ANIM_rotate_key":
                 #ANIM_rotate_key <time> <angle>
                 cur_keyframe = anim_rot_keyframe()
-                cur_keyframe.time = int(tokens[1])
+                cur_keyframe.time = float(tokens[1])
                 cur_keyframe.rot = (0, 0, 0)
-                x_rot = 0
-                y_rot = 0
-                z_rot = 0
-                if cur_rotate_keyframe_do_x:
-                    x_rot = float(tokens[2])
-                if cur_rotate_keyframe_do_y:
-                    y_rot = float(tokens[2])
-                if cur_rotate_keyframe_do_z:
-                    z_rot = float(tokens[2])
+                x_rot = float(tokens[2]) * cur_rotate_keyframe_do_x
+                y_rot = float(tokens[2]) * cur_rotate_keyframe_do_y
+                z_rot = float(tokens[2]) * cur_rotate_keyframe_do_z
                 cur_keyframe.rot = (x_rot, y_rot, z_rot)
 
                 cur_anim_tree[-1].rot_tables[-1].keyframes.append(cur_keyframe)
@@ -421,7 +421,7 @@ class object:
             elif tokens[0] == "ANIM_trans_key":
                 #ANIM_trans_key <value> <x> <y> <z>
                 cur_keyframe = anim_loc_keyframe()
-                cur_keyframe.time = int(tokens[1])
+                cur_keyframe.time = float(tokens[1])
                 cur_keyframe.loc = (0, 0, 0)
                 new_pos = (float(tokens[2]) * trans_matrix[0], float(tokens[4]) * trans_matrix[1], float(tokens[3]) * trans_matrix[2])
                 cur_keyframe.loc = new_pos

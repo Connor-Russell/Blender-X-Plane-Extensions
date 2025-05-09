@@ -87,9 +87,8 @@ def keyframe_obj_rotation(obj):
     obj.keyframe_insert(data_path="rotation_euler")
 
 def add_xp_dataref_track(obj, name):
-    if obj.xplane:
-        obj.xplane.datarefs.add()
-        obj.xplane.datarefs[len(obj.xplane.datarefs)-1].path = name
+    obj.xplane.datarefs.add()
+    obj.xplane.datarefs[len(obj.xplane.datarefs)-1].path = name
 
 def keyframe_xp_dataref(obj, name, value):
     """
@@ -98,12 +97,11 @@ def keyframe_xp_dataref(obj, name, value):
     :param obj: The Blender object to keyframe.
     :param value: The value to set for the XP dataref.
     """
-    if obj.xplane:
-        for dref in obj.xplane.datarefs:
-            if obj.xplane.datarefs[0].path == name:
-                obj.xplane.datarefs[0].value = value
-                obj.xplane.datarefs[0].keyframe_insert(data_path="value")
-                break
+    for dref in obj.xplane.datarefs:
+        if obj.xplane.datarefs[0].path == name:
+            obj.xplane.datarefs[0].value = value
+            obj.xplane.datarefs[0].keyframe_insert(data_path="value")
+            break
 
 def get_xp_dataref(obj, name):
     """
@@ -113,8 +111,7 @@ def get_xp_dataref(obj, name):
     :param name: The name of the dataref to get.
     :return: The value of the dataref.
     """
-    if obj.xplane:
-        for dref in obj.xplane.datarefs:
-            if obj.xplane.datarefs[0].path == name:
-                return obj.xplane.datarefs[0].value
+    for dref in obj.xplane.datarefs:
+        if obj.xplane.datarefs[0].path == name:
+            return obj.xplane.datarefs[0].value
     return 0
