@@ -118,6 +118,7 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
     """Autodetects the texture"""
     bl_idname = "xp_ext.autodetect_texture"
     bl_label = "Autodetect Texture"
+    bl_description = "Autodetects the textures for the material based on the <name>.png <name>_NML.png and <name>_LIT.png naming scheme. If the albedo texture is set, it is used as <name>, otherwise the material name is used as <name>"
 
     def execute(self, context):
         #Get the material
@@ -152,9 +153,9 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         return {'FINISHED'}
 
 class BTN_mats_update_nodes(bpy.types.Operator):
-    """Called when the user hits Update Nodes in the XPMaterialProperties panel. This removes all material nodes and creates new ones with the new properties."""
     bl_idname = "xp_ext.update_material_nodes"
     bl_label = "Updates material nodes"
+    bl_description = "Updates the material nodes to match the current settings, so the material visually matches your X-Plane material settings. Also reloads images."
     bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
 
     def execute(self, context):
@@ -171,6 +172,7 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
     """Operator to update all the collections texture settings to the current material settings"""
     bl_idname = "xp_ext.update_collection_textures"
     bl_label = "Update Collection Textures"
+    bl_description = "Updates the X-Plane collection export material settings to match that of the first object in the collection. This applies to all collections that are exportable X-Plane objects."
 
     def execute(self, context):
         #For each collection:
@@ -284,6 +286,7 @@ class BTN_bake_low_poly(bpy.types.Operator):
     """Automatically bakes selected objects to active objects for base, normal, roughness, metalness, and lit, then saves into XP formats in the same folder as the .blend"""
     bl_idname = "xp_ext.bake_low_poly"
     bl_label = "Bake to Low Poly"
+    bl_description = "Automatically bakes the selected objects to the active object. Handles base, normal, and lit textures in the X-Plane format, and saves them as <collection_name>_LOD01_<suffix>.png in the Blender folder. Be sure to set extrusion distance and max ray distance in the Blender bake settings"
 
     def execute(self, context):
 
@@ -426,6 +429,7 @@ class BTN_fac_export_all(bpy.types.Operator):
     """Export all facades in the scene"""
     bl_idname = "xp_ext.export_facades"
     bl_label = "Export Facades"
+    bl_description = "Export all facades in the scene that are visible in the viewport. Export is relative to the .blend"
 
     def execute(self, context):
         #Iterate over all the collections in the scene
@@ -440,6 +444,7 @@ class BTN_run_tests(bpy.types.Operator):
     """Run all tests in the addon"""
     bl_idname = "xp_ext.run_tests"
     bl_label = "Run Tests"
+    bl_description = "Run all tests in the addon. This is a development tool and should not be used in production. Will delete ALL scene content"
 
     def execute(self, context):
         #Import the test module and run the tests

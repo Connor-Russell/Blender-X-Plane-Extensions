@@ -14,11 +14,11 @@ import bpy # type: ignore
 bl_info = {
     "name": "X-Plane Extensions",
     "author": "Connor Russell",
-    "version": (0, 9),
-    "blender": (3, 1, 0),
+    "version": (0, 9, 4),
+    "blender": (3, 0, 0),
     "location": "Properties > Scene > X-Plane Extensions",
     "description": "Unofficial Blender addon to add support for additional X-Plane formats and QOL improvements.",
-    "git_url": "https://github.com/Connor-Russell/X-Plane-Blender-Facade-Exporter",
+    "git_url": "https://github.com/Connor-Russell/Blender-X-Plane-Extensions",
     "category": "Import-Export"
 }
 

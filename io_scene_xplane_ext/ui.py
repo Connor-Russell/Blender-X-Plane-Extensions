@@ -390,7 +390,7 @@ class MENU_operations(bpy.types.Panel):
         layout.label(text="X-Plane Exporter Sync")
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
 
-        do_test_operators = True
+        do_test_operators = False
         if do_test_operators:
             layout.separator()
             layout.label(text="Test Operators")
