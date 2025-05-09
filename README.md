@@ -5,14 +5,12 @@ This Blender Plugin provides additional functionality for X-Plane projects in Bl
 - Facade Importer (basic)
 - Line Exporter
 - Line Importer
-- Object Importer
+- Object Importer (WIP, some animations don't import properly)
 
 Additional features planned include:
-- Polygon Exporter
-- Polygon Importer
 - Autogen Point Exporter with auto-splitting of multiple material objects into different .objs
 
-Releases can be found on the release page. Alternatively, to get the latest version, clone the repository, and copy "io_scene_xplane_ext" into your Blender script folder.
+Releases can be found on the release page. To install, simply go to your Blender Settings, then addon, then choose install from file, and select "Blender X-Plane Extensions.zip".
 
 ### [X-Plane Materials](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Materials)
 
@@ -20,9 +18,12 @@ Releases can be found on the release page. Alternatively, to get the latest vers
 
 ### [Lines](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Line)
 
+### [Polygons](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Polygons)
+
 ### [Object Importer](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki/X%E2%80%90Plane-Object-Importing)
 
 # Known issues:
 - Decals are not imported for any formats
 - Material importing may be incomplete
 - Verticies are not deduped when exporting facades, resulting in potentially slightly higher VRAM usage on facades due to a few extra verticies
+- Certain object animations do not properly import
