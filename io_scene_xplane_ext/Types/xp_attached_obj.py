@@ -1,4 +1,4 @@
-#Project: BlenderFacadeExporter
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/9/2024
 #Purpose: Provide utility functions to help in extracting the geometry and attached objects from the individual objects in a layer.

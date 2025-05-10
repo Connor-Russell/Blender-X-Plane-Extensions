@@ -1,4 +1,4 @@
-#Project: BlenderFacadeExporter
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/9/2024
 #Purpose: Provide utility functions to work with geometry (things like rotating a point, etc)

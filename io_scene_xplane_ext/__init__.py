@@ -1,7 +1,7 @@
-#Project:   Blender-X-Plane-Lin-Exporter
+#Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Purpose:   Provides a simple WYSIWYG interface for exporting X-Plane lines from Blender
+#Purpose:   Provides additional functionality to Blender for X-Plane, including import/export for .lins, .pols, .facs, import of .objs, and WYSIWYG materials
 
 #Import modules
 from . import props
@@ -14,7 +14,7 @@ import bpy # type: ignore
 bl_info = {
     "name": "X-Plane Extensions",
     "author": "Connor Russell",
-    "version": (0, 9, 4),
+    "version": (0, 9, 5),
     "blender": (3, 0, 0),
     "location": "Properties > Scene > X-Plane Extensions",
     "description": "Unofficial Blender addon to add support for additional X-Plane formats and QOL improvements.",

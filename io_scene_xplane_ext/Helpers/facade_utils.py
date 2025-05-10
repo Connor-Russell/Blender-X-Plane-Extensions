@@ -1,4 +1,4 @@
-#Project: BlenderFacadeExporter
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/14/2024
 #Purpose: Contains the properties for the whole facade in Blender. There can only be one facade per file.

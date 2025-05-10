@@ -1,3 +1,8 @@
+#Project:   Blender-X-Plane-Extensions
+#Author:    Connor Russell
+#Date:      2/28/2024
+#Module:    Auto Baker
+#Purpose:   Provide a single function to bake high poly models to low poly models in the X-Plane format
 
 from .Helpers import bake_utils
 import bpy

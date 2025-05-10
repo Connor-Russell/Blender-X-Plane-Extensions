@@ -1,4 +1,4 @@
-#Project:   Blender X-Plane Extensions
+#Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      4-24/2025
 #Module:    xp_obj.py

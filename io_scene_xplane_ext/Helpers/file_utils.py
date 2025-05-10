@@ -1,3 +1,8 @@
+#Project:   Blender-X-Plane-Extensions
+#Author:    Connor Russell
+#Date:      2/26/2024
+#Module:    File Utils
+#Purpose:   Provide a single file containing functions for files
 
 import os
 import bpy

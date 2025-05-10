@@ -1,4 +1,4 @@
-#Project:   Blender-X-Plane-Lin-Exporter
+#Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
 #Module:    UI

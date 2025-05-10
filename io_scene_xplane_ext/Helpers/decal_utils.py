@@ -1,4 +1,4 @@
-#Project: BlenderFacadeExporter
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/20/2024
 #Purpose: Provide a class that contains all the data for a decal
