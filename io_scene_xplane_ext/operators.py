@@ -251,14 +251,8 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
                             if xp_props.draped:
                                 col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
-                            if xp_props.seperate_decals:
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_three, 1)
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_four, 2)
-                            else:
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+                            decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
+                            decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
 
                         #If we have updated, but this one is draped, update with this one. Then we can skip the rest of the objects in this collection
                         if xp_props.draped:
@@ -272,14 +266,8 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
 
                             col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
-                            if xp_props.seperate_decals:
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_three, 1)
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_four, 2)
-                            else:
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                                decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+                            decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
+                            decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
         return {'FINISHED'}
 
 class BTN_bake_low_poly(bpy.types.Operator):
