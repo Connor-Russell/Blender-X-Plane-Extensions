@@ -670,9 +670,17 @@ def update_nodes(material):
             node_decal_1_dither.inputs[1].default_value = xp_material_props.decal_one.dither_ratio
             material.node_tree.links.new(node_decal_1_subtract_alpha.outputs[0], node_decal_1_dither.inputs[0])
 
+            #Then we need to add a math node and multiply the dither by -1 to match XP
+            node_decal_1_dither_neg = material.node_tree.nodes.new(type="ShaderNodeMath")
+            node_decal_1_dither_neg.location = (-3250, -250)
+            node_decal_1_dither_neg.label = "Decal 1 Dither Neg"
+            node_decal_1_dither_neg.operation = 'MULTIPLY'
+            node_decal_1_dither_neg.inputs[1].default_value = -1
+            material.node_tree.links.new(node_decal_1_dither.outputs[0], node_decal_1_dither_neg.inputs[0])
+
             output_src_1_alb_rgb = node_decal_1_subtract_rgb.outputs[0]
             output_src_1_alb_alpha = node_decal_1_subtract_alpha.outputs[0]
-            output_src_1_dither = node_decal_1_dither.outputs[0]
+            output_src_1_dither = node_decal_1_dither_neg.outputs[0]
 
         if image_decal_1_nml != None:
             node_decal_1_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
@@ -732,10 +740,17 @@ def update_nodes(material):
             node_decal_2_dither.inputs[1].default_value = xp_material_props.decal_two.dither_ratio
             material.node_tree.links.new(node_decal_2_subtract_alpha.outputs[0], node_decal_2_dither.inputs[0])
 
+            #Then we need to add a math node and multiply the dither by -1 to match XP
+            node_decal_2_dither_neg = material.node_tree.nodes.new(type="ShaderNodeMath")
+            node_decal_2_dither_neg.location = (-3250, -1250)
+            node_decal_2_dither_neg.label = "Decal 2 Dither Neg"
+            node_decal_2_dither_neg.operation = 'MULTIPLY'
+            node_decal_2_dither_neg.inputs[1].default_value = -1
+            material.node_tree.links.new(node_decal_2_dither.outputs[0], node_decal_2_dither_neg.inputs[0])
+
             output_src_2_alb_rgb = node_decal_2_subtract_rgb.outputs[0]
             output_src_2_alb_alpha = node_decal_2_subtract_alpha.outputs[0]
-
-            output_src_2_dither = node_decal_2_dither.outputs[0]
+            output_src_2_dither = node_decal_2_dither_neg.outputs[0]
 
         if image_decal_2_nml != None:
             node_decal_2_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
