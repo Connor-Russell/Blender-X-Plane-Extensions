@@ -199,17 +199,17 @@ class polygon():
                 self.load_center_res = float(line.split()[4])
             elif line.startswith("TEXTURE_TILE"):
                 self.do_tiling = True
-                self.tiling_x_pages = int(line.split()[1])
-                self.tiling_y_pages = int(line.split()[2])
-                self.tiling_map_x_res = int(line.split()[3])
-                self.tiling_map_y_res = int(line.split()[4])
+                self.tiling_x_pages = float(line.split()[1])
+                self.tiling_y_pages = float(line.split()[2])
+                self.tiling_map_x_res = float(line.split()[3])
+                self.tiling_map_y_res = float(line.split()[4])
                 self.tiling_map_texture = line.split()[5]
             elif line.startswith("RUNWAY_MARKINGS"):
                 self.do_runway_markings = True
-                self.runway_r = int(line.split()[1])
-                self.runway_g = int(line.split()[2])
-                self.runway_b = int(line.split()[3])
-                self.runway_a = int(line.split()[4])
+                self.runway_r = float(line.split()[1])
+                self.runway_g = float(line.split()[2])
+                self.runway_b = float(line.split()[3])
+                self.runway_a = float(line.split()[4])
                 self.runway_marking_texture = line.split()[5]
             elif line.startswith("RUNWAY_NOISE"):
                 self.do_runway_noise = True
@@ -227,6 +227,10 @@ class polygon():
         # Check if the collection is exportable
         if not in_collection.xp_pol.exportable:
             return
+        
+        #Make sure there are objects in the collection
+        if len(in_collection.objects) == 0:
+            raise ValueError(f"Collection {in_collection.name} has no objects to use for scaling/material.")
 
         # Set nowrap property
         self.nowrap = in_collection.xp_pol.texture_is_nowrap
@@ -255,12 +259,21 @@ class polygon():
         self.runway_a = in_collection.xp_pol.runway_markings_a
         self.runway_marking_texture = in_collection.xp_pol.runway_markings_texture
 
-        # Ensure the collection has a material
-        if not in_collection.xp_pol.material:
-            raise Exception(f"Error: No material found in collection {in_collection.name}. Please configure material with the X-Plane Material Plugin!")
+        #Get the material from the first mesh object in the collection
+        mat = None
+        for obj in in_collection.objects:
+            if obj.type == 'MESH':
+                #Check if it has a material
+                if len(obj.data.materials) > 0:
+                    #Get the first material
+                    mat = obj.data.materials[0]
+                    break
+
+        if mat is None:
+            raise ValueError(f"No material found in the collection {in_collection.name}")
 
         # Extract material data
-        mat = in_collection.xp_pol.material.xp_materials
+        mat = mat.xp_materials
         self.layer = mat.layer_group
         self.layer_offset = mat.layer_group_offset
         self.alb_texture = mat.alb_texture
@@ -323,9 +336,6 @@ class polygon():
         mat.xp_materials.layer_group = self.layer.upper()
         mat.xp_materials.layer_group_offset = int(self.layer_offset)
         mat.xp_materials.surface_type = self.surface
-
-        # Assign material to the collection
-        new_collection.xp_pol.material = mat
 
         # Set collection properties
         new_collection.xp_pol.texture_is_nowrap = self.nowrap

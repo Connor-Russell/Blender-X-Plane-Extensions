@@ -369,7 +369,6 @@ class PROP_pol_collection(bpy.types.PropertyGroup):
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the polygon is exportable", default=False) # type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the polygon is expanded in the UI", default=False, update=update_ui) # type: ignore
     
-    material: bpy.props.PointerProperty(type=bpy.types.Material, name="Material", description="The material to use for the polygon", update=update_ui) # type: ignore
     texture_is_nowrap: bpy.props.BoolProperty(name="Non-tiling textures", description="Whether the texture can tile or not", default=False) # type: ignore
 
     is_load_centered: bpy.props.BoolProperty(name="Enable Load Center", description="Whether the polygon uses location base texture scaling", default=False) # type: ignore

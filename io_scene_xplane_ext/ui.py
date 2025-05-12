@@ -582,7 +582,6 @@ class MENU_pol_exporter(bpy.types.Panel):
             top_row.prop(col.xp_pol, "exportable", text="Export Enabled")
             if col.xp_pol.is_ui_expanded:
                 box.prop(pol, "name")
-                box.prop(pol, "material")
                 box.prop(pol, "texture_is_nowrap")
                 box.separator()
                 box.prop(pol, "is_load_centered")
