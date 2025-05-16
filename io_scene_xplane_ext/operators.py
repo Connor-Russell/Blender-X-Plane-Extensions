@@ -114,6 +114,50 @@ class IMPORT_obj(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
 
+class TEST_IMPORT_obj(bpy.types.Operator):
+    bl_idname = "xp_ext.test_import_obj"
+    bl_label = "Test Import X-Plane Lines"
+    bl_description = "Test the import of X-Plane lines. This is a development tool and should not be used in production."
+    import_path: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        importer.import_obj(self.import_path)
+
+        return {'FINISHED'}
+    
+class TEST_import_lin(bpy.types.Operator):
+    bl_idname = "xp_ext.test_import_lin"
+    bl_label = "Test Import X-Plane Lines"
+    bl_description = "Test the import of X-Plane lines. This is a development tool and should not be used in production."
+    import_path: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        importer.import_lin(self.import_path)
+
+        return {'FINISHED'}
+    
+class TEST_import_pol(bpy.types.Operator):
+    bl_idname = "xp_ext.test_import_pol"
+    bl_label = "Test Import X-Plane Polygons"
+    bl_description = "Test the import of X-Plane polygons. This is a development tool and should not be used in production."
+    import_path: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        importer.import_pol(self.import_path)
+
+        return {'FINISHED'}
+    
+class TEST_import_fac(bpy.types.Operator):
+    bl_idname = "xp_ext.test_import_fac"
+    bl_label = "Test Import X-Plane Facade"
+    bl_description = "Test the import of X-Plane facades. This is a development tool and should not be used in production."
+    import_path: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        importer.import_fac(self.import_path)
+
+        return {'FINISHED'}
+    
 class BTN_mats_autoodetect_textures(bpy.types.Operator):
     """Autodetects the texture"""
     bl_idname = "xp_ext.autodetect_texture"
@@ -487,6 +531,10 @@ def register():
     bpy.utils.register_class(IMPORT_pol)
     bpy.utils.register_class(IMPORT_fac)
     bpy.utils.register_class(IMPORT_obj)
+    bpy.utils.register_class(TEST_IMPORT_obj)
+    bpy.utils.register_class(TEST_import_lin)
+    bpy.utils.register_class(TEST_import_pol)
+    bpy.utils.register_class(TEST_import_fac)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_bake_low_poly)
@@ -504,6 +552,10 @@ def unregister():
     bpy.utils.unregister_class(IMPORT_pol)
     bpy.utils.unregister_class(IMPORT_fac)
     bpy.utils.unregister_class(IMPORT_obj)
+    bpy.utils.unregister_class(TEST_IMPORT_obj)
+    bpy.utils.unregister_class(TEST_import_lin)
+    bpy.utils.unregister_class(TEST_import_pol)
+    bpy.utils.unregister_class(TEST_import_fac)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_bake_low_poly)

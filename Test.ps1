@@ -8,6 +8,10 @@ $BlenderFileLineExporter = "$cd\Tests\Content\LineExporter.blend"
 $BlenderFilePolygonExporter = "$cd\Tests\Content\PolygonExporter.blend"
 $BlenderFileInternalTests = "$cd\Tests\Content\InternalTests.blend"
 $BlenderFileBakeTest = "$cd\Tests\Content\BakeTest.blend"
+$BlenderFileImportObject = "$cd\Tests\Content\ObjImporter.blend"
+$BlenderFileImportFacade = "$cd\Tests\Content\FacadeExporter.blend"
+$BlenderFileImportLine = "$cd\Tests\Content\LineExporter.blend"
+$BlenderFileImportPolygon = "$cd\Tests\Content\PolygonExporter.blend"
 
 #Define Blender version locations
 $BlenderExe29 = "D:\Blender Versions\2.93\blender.exe"
@@ -38,6 +42,10 @@ $Test42 = $true
 $TestExportFacade = $true
 $TestExportLine = $true
 $TestExportPolygon = $true
+$TestImportObject = $true
+$TestImportFacade = $true
+$TestImportLine = $true
+$TestImportPolygon = $true
 $InternalTest = $true
 $TestBaker = $true
 
@@ -71,6 +79,22 @@ function Test-All {
     if ($TestBaker)
     {
         & $BlenderExe --background $BlenderFileBakeTest --python "$TestDir\bake_test.py"
+    }
+    if ($TestImportObject)
+    {
+        & $BlenderExe --background $BlenderFileImportObject --python "$TestDir\import_obj_test.py"
+    }
+    if ($TestImportFacade)
+    {
+        & $BlenderExe --background $BlenderFileImportFacade --python "$TestDir\import_fac_test.py"
+    }
+    if ($TestImportLine)
+    {
+        & $BlenderExe --background $BlenderFileImportLine --python "$TestDir\import_lin_test.py"
+    }
+    if ($TestImportPolygon)
+    {
+        & $BlenderExe --background $BlenderFileImportPolygon --python "$TestDir\import_pol_test.py"
     }
 }
 
