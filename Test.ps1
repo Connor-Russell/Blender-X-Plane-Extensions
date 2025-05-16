@@ -21,6 +21,8 @@ $BlenderExe36 = "D:\Blender Versions\3.69\blender.exe"
 $BlenderExe40 = "D:\Blender Versions\4.02\blender.exe"
 $BlenderExe41 = "D:\Blender Versions\4.11\blender.exe"
 $BlenderExe42 = "D:\Blender Versions\4.23\blender.exe"
+$BlenderExe43 = "D:\Blender Versions\4.32\blender.exe"
+$BlenderExe44 = "D:\Blender Versions\4.43\blender.exe"
 
 #Define bools to control what versions are tested
 $Test29 = $true
@@ -34,6 +36,8 @@ $Test36 = $true
 $Test40 = $true
 $Test41 = $true
 $Test42 = $true
+$Test43 = $true
+$Test44 = $true
 
 $TestExportFacade = $true
 $TestExportLine = $true
@@ -146,6 +150,18 @@ if ($Test41) {
 if ($Test42) {
     Add-Content "$OutputTestDir\Test Results.csv" "4.2 Tests"
     Test-All -BlenderExe $BlenderExe42
+}
+
+#4.3 Tests
+if ($Test43) {
+    Add-Content "$OutputTestDir\Test Results.csv" "4.3 Tests"
+    Test-All -BlenderExe $BlenderExe43
+}
+
+#4.4 Tests
+if ($Test44) {
+    Add-Content "$OutputTestDir\Test Results.csv" "4.4 Tests"
+    Test-All -BlenderExe $BlenderExe44
 }
 
 #Open the result file

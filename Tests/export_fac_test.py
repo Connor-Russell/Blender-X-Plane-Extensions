@@ -46,6 +46,8 @@ def test(test_dir):
     b_pass = False
     similarity = 0.0
     error_message = ""
+    exporter_output = test_dir + "/../Test Results.csv"
+
     try:
 
         new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.fac"
@@ -63,10 +65,11 @@ def test(test_dir):
         bpy.ops.xp_ext.export_facades()
 
         known_good_file = test_dir + "/Exporter.good.fac"
-        exporter_output = test_dir + "/../Test Results.csv"
 
         #Check if this is Blender version 3.6 or greater. If so we need to check against a different file as there are tiny coordinate differences between the versions
-        if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 0:
+        if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+            known_good_file = test_dir + "/Exporter.good.41.fac"
+        elif bpy.app.version[0] >= 4 and bpy.app.version[1] >= 0:
             known_good_file = test_dir + "/Exporter.good.40.fac"
         elif bpy.app.version[0] >= 3 and bpy.app.version[1] >= 6:
             known_good_file = test_dir + "/Exporter.good.36.fac"

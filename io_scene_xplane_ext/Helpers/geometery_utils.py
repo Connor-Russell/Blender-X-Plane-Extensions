@@ -130,7 +130,8 @@ def create_obj_from_draw_call(vertices, indicies, name):
         loop_normals.append(nml3)
 
     mesh.normals_split_custom_set(loop_normals)
-    mesh.use_auto_smooth = True  # Enable auto-smooth to use custom normals
+    if bpy.app.version < (4, 1, 0):
+        mesh.use_auto_smooth = True  # Enable auto-smooth to use custom normals
 
     # Create an object with the mesh and link it to the scene
     obj = bpy.data.objects.new(name, mesh)
@@ -146,7 +147,7 @@ def get_draw_call_from_obj(obj):
     #Get our mesh data
     mesh = obj.data
 
-    #Calculate split normals if this mesh has them
+    #Calculate split normals if this mesh has them. Note used in 4.1+ but this property wouldn't exist there soo it should be fine
     if hasattr(mesh, "calc_normals_split"):
         mesh.calc_normals_split()
 
@@ -173,7 +174,8 @@ def get_draw_call_from_obj(obj):
     #Define an array to hold our faces
     xp_triangles = []
 
-    #Now we iterate through teh loop triangles to populate our array of XPTriangles
+    #TODO: We need to warn the user if this is Blender 4.1+ and they have an autosmooth modifier on the object, as this does not get applied to the normals
+
     for tri in loop_triangles:
 
         #Define our UV and normal data beforehand. The struct is immutable so we can't change it after the fact
@@ -182,8 +184,6 @@ def get_draw_call_from_obj(obj):
             xp_triangle_uvs = (uv_layer.data[tri.loops[0]].uv, uv_layer.data[tri.loops[1]].uv, uv_layer.data[tri.loops[2]].uv)
 
         xp_triangles_normals = (tri.split_normals[0], tri.split_normals[1], tri.split_normals[2])
-        #if not tri.use_smooth:
-            #xp_triangles_normals = (tri.normal[0], tri.normal[1], tri.normal[2])
 
 
         #Define a temporary face with the data from the loop triangle. UVs default to none so we can add them IF we do have a uv layer
@@ -252,7 +252,7 @@ def get_draw_call_from_obj(obj):
         transformed_position = transform @ local_position
 
         #Work to apply the transform to the normals
-        normal_matrix = obj.matrix_world.inverted().transposed()
+        normal_matrix = obj.matrix_world.to_3x3().inverted().transposed()
         transformed_normal = normal_matrix @ normal
         transformed_normal.normalize()
 
