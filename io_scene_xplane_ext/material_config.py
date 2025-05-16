@@ -188,7 +188,7 @@ def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_
     node_key_base.hide = True
 
     #Now that we have the base keys, we need to normalize them. We do this by dividing each key by the max key value (which we enter as a constant here)
-    max_key_value = max(key_r, key_g, key_b, key_a, key_mod, key_base)
+    max_key_value = max(max(key_r, key_g, key_b, key_a, key_mod, key_base), 1)
 
     node_norm_r = material.node_tree.nodes.new(type="ShaderNodeMath")
     node_norm_r.location = (x_col_2, y_row_2)
