@@ -439,7 +439,7 @@ class object:
         mat.use_nodes = True
         xp_mat = mat.xp_materials
         xp_mat.alb_texture = self.alb_texture
-        xp_mat.nml_texture = self.nml_texture
+        xp_mat.normal_texture = self.nml_texture
         xp_mat.lit_texture = self.lit_texture
         xp_mat.do_blend_alpha = self.do_blend_alpha
         xp_mat.alpha_cutoff = self.alpha_cutoff

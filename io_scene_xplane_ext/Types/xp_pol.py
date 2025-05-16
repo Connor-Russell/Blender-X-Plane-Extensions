@@ -162,9 +162,7 @@ class polygon():
                 self.alb_texture = line.split()[1]
             elif line.startswith("TEXTURE_LIT"):
                 self.lit_texture = line.split()[1]
-            elif line.startswith("WEATHER_TRANSPARENT"):
-                self.weather_texture = ""
-            elif line.startswith("WEATHER"):
+            elif line.startswith("WEATHER") and not line.startswith("WEATHER_TRANSPARENT"):
                 self.weather_texture = line.split()[1]
             elif line.startswith("SUPER_ROUGHNESS"):
                 self.super_rough = True

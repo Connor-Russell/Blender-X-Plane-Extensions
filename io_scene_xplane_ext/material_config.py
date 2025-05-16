@@ -877,11 +877,11 @@ def update_nodes(material):
         if node_alpha_post_mix != None:
             material.node_tree.links.new(node_alb_post_mix_1.outputs[0], node_principled.inputs[0])
 
-        if bpy.app.version < (3, 0, 0) and node_alpha_post_mix != None:
+        if bpy.app.version < (3, 0, 0) and node_nml_post_mix_1 != None:
                 material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[20])    #Reconstructed normal to normal
-        elif bpy.app.version < (4, 0, 0) and node_alpha_post_mix != None:
+        elif bpy.app.version < (4, 0, 0) and node_nml_post_mix_1 != None:
             material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[22])    #Reconstructed normal to normal
-        elif node_alpha_post_mix != None:
+        elif node_nml_post_mix_1 != None:
             material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[5])    #Reconstructed normal to normal
 
         #Add a final clamp node to clamp the alpha to 0-1
