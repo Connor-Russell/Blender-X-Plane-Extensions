@@ -52,10 +52,10 @@ class IMPORT_lin(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         # Implement your import logic here
         directory = self.filepath
-        directory = directory[:directory.rfind("\\")]
+        directory = directory[:directory.rfind(os.sep)]
 
         for cf in self.files:
-            filepath = f"{directory}\\{cf.name}"
+            filepath = f"{directory}{os.sep}{cf.name}"
             importer.import_lin(filepath)
 
         return {'FINISHED'}
@@ -70,10 +70,10 @@ class IMPORT_pol(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         # Implement your import logic here
         directory = self.filepath
-        directory = directory[:directory.rfind("\\")]
+        directory = directory[:directory.rfind(os.sep)]
 
         for cf in self.files:
-            filepath = f"{directory}\\{cf.name}"
+            filepath = f"{directory}{os.sep}{cf.name}"
             importer.import_pol(filepath)
 
         return {'FINISHED'}
@@ -88,10 +88,10 @@ class IMPORT_fac(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         # Implement your import logic here
         directory = self.filepath
-        directory = directory[:directory.rfind("\\")]
+        directory = directory[:directory.rfind(os.sep)]
 
         for cf in self.files:
-            filepath = f"{directory}\\{cf.name}"
+            filepath = f"{directory}{os.sep}{cf.name}"
             importer.import_fac(filepath)
 
         return {'FINISHED'}
@@ -106,10 +106,10 @@ class IMPORT_obj(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         # Implement your import logic here
         directory = self.filepath
-        directory = directory[:directory.rfind("\\")]
+        directory = directory[:directory.rfind(os.sep)]
 
         for cf in self.files:
-            filepath = f"{directory}\\{cf.name}"
+            filepath = f"{directory}{os.sep}{cf.name}"
             importer.import_obj(filepath)
 
         return {'FINISHED'}

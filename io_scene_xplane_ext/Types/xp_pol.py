@@ -137,7 +137,7 @@ class polygon():
             f.write(of)
 
     def read(self, in_file):
-        self.name = in_file.split("\\")[-1]
+        self.name = in_file.split(os.sep)[-1]
 
         # Read the file
         with open(in_file, 'r') as f:

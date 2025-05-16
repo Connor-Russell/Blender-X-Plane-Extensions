@@ -11,11 +11,12 @@ from .Types import xp_lin
 from .Types import xp_fac
 from .Types import xp_obj
 from .Types import xp_pol
+import os
 
 def import_lin(in_path):
     #Define just the file name from the path
     in_name = in_path
-    in_name = in_path.split("\\")[-1]
+    in_name = in_path.split(os.sep)[-1]
 
     #Read it
     lin = xp_lin.line()
@@ -25,7 +26,7 @@ def import_lin(in_path):
 def import_pol(in_path):
     #Define just the file name from the path
     in_name = in_path
-    in_name = in_path.split("\\")[-1]
+    in_name = in_path.split(os.sep)[-1]
 
     #Read it
     pol = xp_pol.polygon()
@@ -36,7 +37,7 @@ def import_pol(in_path):
 def import_fac(in_path):
     #Define just the file name from the path
     in_name = in_path
-    in_name = in_path.split("\\")[-1]
+    in_name = in_path.split(os.sep)[-1]
 
     #Read it
     fac = xp_fac.facade()
@@ -47,7 +48,7 @@ def import_fac(in_path):
 def import_obj(in_path):
     #Define just the file name from the path
     in_name = in_path
-    in_name = in_path.split("\\")[-1]
+    in_name = in_path.split(os.sep)[-1]
 
     #Read it
     obj = xp_obj.object()
