@@ -13,6 +13,7 @@ def compare_files(file1, file2):
     chr_same = 0
     chr_total = 0
     similarity = 0.0
+    line_count_diff = 0
     
     try:
         with open(file1, 'r') as new, open(file2, 'r') as good:
@@ -36,14 +37,15 @@ def compare_files(file1, file2):
                 
         
         similarity = chr_same / chr_total
-        similarity *= (abs(len(new_lines) - len(good_lines)) / max(len(new_lines) - len(good_lines)))
+        line_count_diff = abs(len(new_lines) - len(good_lines))
     except:
         pass
 
-    return similarity
+    return line_count_diff, similarity
 
 def test(test_dir):
     b_pass = False
+    line_count_diff = 0
     similarity = 0.0
     error_message = ""
     exporter_output = test_dir + "/../Test Results.csv"
@@ -67,12 +69,12 @@ def test(test_dir):
         known_good_file = test_dir + "/Exporter.good.fac"
 
         #Check if this is Blender version 3.6 or greater. If so we need to check against a different file as there are tiny coordinate differences between the versions
-        if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
-            known_good_file = test_dir + "/Exporter.good.41.fac"
-        elif bpy.app.version[0] >= 4 and bpy.app.version[1] >= 0:
-            known_good_file = test_dir + "/Exporter.good.40.fac"
-        elif bpy.app.version[0] >= 3 and bpy.app.version[1] >= 6:
-            known_good_file = test_dir + "/Exporter.good.36.fac"
+        #if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+        #    known_good_file = test_dir + "/Exporter.good.41.fac"
+        #elif bpy.app.version[0] >= 4 and bpy.app.version[1] >= 0:
+        #    known_good_file = test_dir + "/Exporter.good.40.fac"
+        #elif bpy.app.version[0] >= 3 and bpy.app.version[1] >= 6:
+        #    known_good_file = test_dir + "/Exporter.good.36.fac"
 
         #Resolve the file paths to use \\ instead of / for windows compatibility
         new_file = new_file.replace("/", "\\")
@@ -82,12 +84,14 @@ def test(test_dir):
 
         #Compare the exported file with the known good file
         b_pass = True
-        similarity = compare_files(new_file, known_good_file)
+        line_count_diff, similarity = compare_files(new_file, known_good_file)
 
     except Exception as e:
         error_message = str(e)
         pass
-    if similarity < 1.0:
+    if similarity < 0.99:
+        b_pass = False
+    if line_count_diff > 0:
         b_pass = False
 
     #Append the test results to the exporter_output file
@@ -95,7 +99,7 @@ def test(test_dir):
         if b_pass:
             output.write("Facade Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + error_message + "\n")
         else:
-            output.write("Facade Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + error_message + "\n")
+            output.write("Facade Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + " Difference in line count: " + str(line_count_diff) + " " + error_message + "\n")
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":

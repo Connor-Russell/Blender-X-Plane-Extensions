@@ -1,4 +1,4 @@
-2025-05-16 11-50-01
+2025-05-16 12-22-38
 Test Name,Result
 2.9 Tests
 Facade Exporter,PASS,100.0000% 
@@ -34,7 +34,7 @@ Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
 3.2 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.9962% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -45,7 +45,7 @@ Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
 3.3 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.9962% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -56,7 +56,7 @@ Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
 3.4 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.9962% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -67,7 +67,7 @@ Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
 3.5 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.9962% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -78,7 +78,7 @@ Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
 3.6 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.9549% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -89,7 +89,7 @@ Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
 4.0 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.9549% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -100,7 +100,7 @@ Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
 4.1 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.5841% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -111,7 +111,7 @@ Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
 4.2 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.5841% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -122,7 +122,7 @@ Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
 4.3 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.5841% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -130,7 +130,7 @@ TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
 4.4 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.5841% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
