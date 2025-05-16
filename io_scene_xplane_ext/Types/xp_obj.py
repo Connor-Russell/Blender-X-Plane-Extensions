@@ -17,6 +17,7 @@ class anim_loc_keyframe:
 
     #Define instance variables
     def __init__(self):
+        self.type = 'loc_keyframe'
         self.frame = 0
         self.time = 0  #Time of the keyframe
         self.loc = (0, 0, 0)  #Location of the keyframe
@@ -28,6 +29,7 @@ class anim_rot_keyframe:
 
     #Define instance variables
     def __init__(self):
+        self.type = 'rot_keyframe'
         self.frame = 0
         self.time = 0  #Time of the keyframe
         self.rot = (0, 0, 0)  #Rotation of the keyframe
@@ -39,12 +41,15 @@ class anim_rot_table:
 
     #Define instance variables
     def __init__(self):
-        self.name = ''  #Dataref for the animation
+        self.type = 'rot_table'
+        self.dataref = ''  #Dataref for the animation
         self.keyframes = []  #List of keyframes for the animation
 
     def add_keyframe(self, time, rot):
         #Add a keyframe to the list of keyframes
-        kf = anim_rot_keyframe(time, rot)
+        kf = anim_rot_keyframe()
+        kf.time = time
+        kf.rot = rot
         self.keyframes.append(kf)
 
     def get_frames(self):
@@ -80,6 +85,7 @@ class anim_loc_table:
 
     #Define instance variables
     def __init__(self):
+        self.type = 'loc_table'
         self.dataref = ""  #Dataref for the animation
         self.keyframes = []  #List of keyframes for the animation
 
@@ -123,26 +129,93 @@ class anim_level:
 
     #Define instance variables
     def __init__(self):
-        self.driver = None #This is an empty that all children are linked to. This is what is keyframed and "drives" the animation
-        self.static_loc_keyframes = []  #List of static location keyframes for the animation
-        self.static_rot_keyframes = []  #List of static rotation keyframes for the animation
-        self.loc_tables = []  #List of location tables for the animation
-        self.rot_tables = []  #List of rotation tables for the animation
+        self.first_action = None #This is the empty that drives the first action in the animation
+        self.last_action = None #This is the empty that drives the last action in the animation
+        self.actions = []  #List of actions for the animation
         self.draw_calls = []  #List of draw calls for the animation
         self.children = []  #List of children anim_levels for the animation
 
     def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mat, in_collection):
         #Create a new empty for this animation level
-        name = "Anim"
-        if len(self.draw_calls) > 0:
-            name = f"Anim TRIS {self.draw_calls[0][0]} {self.draw_calls[0][1]}"
-        anim_empty = bpy.data.objects.new(name, None)
-        anim_empty.empty_display_type = "ARROWS"
-        anim_empty.empty_display_size = 1
-        in_collection.objects.link(anim_empty)
-        self.driver = anim_empty
-        if parent_obj != None:
-            anim_empty.parent = parent_obj
+
+        cur_parent = parent_obj
+        for i, action in enumerate(self.actions):
+            #Create the empty for this action
+            name = f"Anim + Action {i}"
+            if len(self.draw_calls) > 0:
+                name = f"Anim TRIS {self.draw_calls[0][0]} {self.draw_calls[0][1]} Action {i}"
+            anim_empty = bpy.data.objects.new(name, None)
+            anim_empty.empty_display_type = "ARROWS"
+            anim_empty.empty_display_size = 0.1
+            in_collection.objects.link(anim_empty)
+            if cur_parent != None:
+                anim_empty.parent = cur_parent
+            cur_parent = anim_empty
+
+            #Set the first/last actions
+            if i == 0:
+                self.first_action = anim_empty
+            elif i == len(self.actions) - 1:
+                self.last_action = anim_empty
+
+            #Now, we apply the animations!
+            if action.type == 'loc_keyframe':
+                base_pos = anim_utils.get_obj_position(anim_empty)
+                new_pos = (base_pos[0] + action.loc[0], base_pos[1] + action.loc[1], base_pos[2] + action.loc[2])
+                anim_utils.set_obj_position(anim_empty, new_pos)
+            
+            elif action.type == 'rot_keyframe':
+                base_rot = anim_utils.get_obj_rotation(anim_empty)
+                new_rot = (base_rot[0] + action.rot[0], base_rot[1] + action.rot[1], base_rot[2] + action.rot[2])
+                anim_utils.set_obj_rotation(anim_empty, new_rot)
+            
+            elif action.type == 'loc_table':
+                base_pos = anim_utils.get_obj_position(anim_empty)
+
+                dataref = action.dataref
+
+                action.get_frames()
+
+                #Create a new track for this dataref
+                anim_utils.add_xp_dataref_track(anim_empty, dataref)
+
+                #Now, we need to add all the keyframes to the track
+                for kf in action.keyframes:
+                    #Set the current frame to the keyframe time
+                    anim_utils.goto_frame(kf.frame)
+
+                    #Set the position of the empty to the keyframe value
+                    new_pos = (base_pos[0] + kf.loc[0], base_pos[1] + kf.loc[1], base_pos[2] + kf.loc[2])
+                    anim_utils.set_obj_position(anim_empty, new_pos)
+
+                    #Set the value of the dataref to the keyframe value
+                    anim_utils.keyframe_obj_location(anim_empty)
+                    anim_utils.keyframe_xp_dataref(anim_empty, dataref, kf.time)
+            
+            elif action.type == 'rot_table':
+                base_rot = anim_utils.get_obj_rotation(anim_empty)
+
+                dataref = action.dataref
+
+                action.get_frames()
+
+                anim_utils.add_xp_dataref_track(anim_empty, dataref)
+
+                #Now, we need to add all the keyframes to the track
+                for kf in action.keyframes:
+                    #Set the current frame to the keyframe time
+                    anim_utils.goto_frame(kf.frame)
+
+                    #Set the rotation of the empty to the keyframe value
+                    new_rot = (base_rot[0] + kf.rot[0], base_rot[1] + kf.rot[1], base_rot[2] + kf.rot[2])
+                    anim_utils.set_obj_rotation(anim_empty, new_rot)
+
+                    #Set the value of the dataref to the keyframe value
+                    anim_utils.keyframe_obj_rotation(anim_empty)
+                    anim_utils.keyframe_xp_dataref(anim_empty, dataref, kf.time)
+
+            #Reset our frame
+            anim_utils.goto_frame(0)
 
         #Now we need to add all the draw calls to the scene, then parent them to the empty
         for dc in self.draw_calls:
@@ -166,74 +239,14 @@ class anim_level:
             dc_obj.data.materials.append(in_mat)
             in_collection.objects.link(dc_obj)
 
-            dc_obj.parent = anim_empty
+            dc_obj.parent = self.last_action
 
         #Now that we added out draw calls, it's time to recurse
         for child in self.children:
-            child.add_to_scene(anim_empty, all_verts, all_indicies, in_mat, in_collection)
+            child.add_to_scene(self.last_action, all_verts, all_indicies, in_mat, in_collection)
 
         #Reset our frame
         anim_utils.goto_frame(0)
-
-        #Now, all our child structures have been created! It's time to apply our static keyframes. Aka starting positons.
-        for kf in self.static_loc_keyframes:
-            base_pos = anim_utils.get_obj_position(anim_empty)
-            new_pos = (base_pos[0] + kf.loc[0], base_pos[1] + kf.loc[1], base_pos[2] + kf.loc[2])
-            anim_utils.set_obj_position(anim_empty, new_pos)
-
-        for kf in self.static_rot_keyframes:
-            base_rot = anim_utils.get_obj_rotation(anim_empty)
-            new_rot = (base_rot[0] + kf.rot[0], base_rot[1] + kf.rot[1], base_rot[2] + kf.rot[2])
-            anim_utils.set_obj_rotation(anim_empty, new_rot)
-
-        #Store the object's base position and rotation
-        base_pos = anim_utils.get_obj_position(anim_empty)
-        base_rot = anim_utils.get_obj_rotation(anim_empty)
-
-        #Now, it's time to add our keyframes. This code only makes sense if there is a single keyframe table. TODO: How does XP even handle multiple? CAN IT?
-        for loc_table in self.loc_tables:
-            #Get the dataref for this table
-            dataref = loc_table.dataref
-
-            loc_table.get_frames()
-
-            #Create a new track for this dataref
-            anim_utils.add_xp_dataref_track(anim_empty, dataref)
-
-            #Now, we need to add all the keyframes to the track
-            for kf in loc_table.keyframes:
-                #Set the current frame to the keyframe time
-                anim_utils.goto_frame(kf.frame)
-
-                #Set the position of the empty to the keyframe value
-                new_pos = (base_pos[0] + kf.loc[0], base_pos[1] + kf.loc[1], base_pos[2] + kf.loc[2])
-                anim_utils.set_obj_position(anim_empty, new_pos)
-
-                #Set the value of the dataref to the keyframe value
-                anim_utils.keyframe_obj_location(anim_empty)
-                anim_utils.keyframe_xp_dataref(anim_empty, dataref, kf.time)
-        
-        for rot_table in self.rot_tables:
-            #Get the dataref for this table
-            dataref = rot_table.name
-
-            rot_table.get_frames()
-
-            #Create a new track for this dataref
-            anim_utils.add_xp_dataref_track(anim_empty, dataref)
-
-            #Now, we need to add all the keyframes to the track
-            for kf in rot_table.keyframes:
-                #Set the current frame to the keyframe time
-                anim_utils.goto_frame(kf.frame)
-
-                #Set the rotation of the empty to the keyframe value
-                new_rot = (base_rot[0] + kf.rot[0], base_rot[1] + kf.rot[1], base_rot[2] + kf.rot[2])
-                anim_utils.set_obj_rotation(anim_empty, new_rot)
-
-                #Set the value of the dataref to the keyframe value
-                anim_utils.keyframe_obj_rotation(anim_empty)
-                anim_utils.keyframe_xp_dataref(anim_empty, dataref, kf.time)
 
 class object:
     """
@@ -341,7 +354,7 @@ class object:
                     cur_static_translation = anim_loc_keyframe()
                     cur_static_translation.time = 0
                     cur_static_translation.loc = (float(tokens[1]) * trans_matrix[0], float(tokens[3]) * trans_matrix[1], float(tokens[2] * trans_matrix[2]))
-                    cur_anim_tree[-1].static_loc_keyframes.append(cur_static_translation)
+                    cur_anim_tree[-1].actions.append(cur_static_translation)
 
                 #Otherwise, we assume this is a shortened keyframe table
                 elif len(tokens) == 10:
@@ -359,34 +372,52 @@ class object:
                     key2.loc = (float(tokens[4]) * trans_matrix[0], float(tokens[6]) * trans_matrix[1], float(tokens[5]) * trans_matrix[2])
                     cur_table.add_keyframe(key2.time, key2.loc)
 
-                    cur_anim_tree[-1].loc_tables.append(cur_table)
+                    cur_anim_tree[-1].actions.append(cur_table)
             
             elif tokens[0] == "ANIM_rotate":
                 #This is the same as the translation, but for rotation
-                if len(tokens) < 10:
-                    #ANIM_rotate <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
+                if len(tokens) < 9:
+                    #ANIM_rotate <ratiox> <ratioy> <ratioz> <rotate1> <rotate2> <v1> <v2> <dataref>
                     cur_static_rotation = anim_rot_keyframe()
                     cur_static_rotation.time = 0
-                    cur_static_rotation.rot = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
 
-                    cur_anim_tree[-1].static_rot_keyframes.append(cur_static_rotation)
+                    cur_rotate_keyframe_do_x = float(tokens[1]) * -1
+                    cur_rotate_keyframe_do_y = float(tokens[3]) * -1
+                    cur_rotate_keyframe_do_z = float(tokens[2])
+                    x_rot = float(tokens[4]) * cur_rotate_keyframe_do_x
+                    y_rot = float(tokens[4]) * cur_rotate_keyframe_do_y
+                    z_rot = float(tokens[4]) * cur_rotate_keyframe_do_z
+                    cur_static_rotation.rot = (x_rot, y_rot, z_rot)
 
-                elif len(tokens) == 10:
-                    #ANIM_rotate <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
+                    cur_anim_tree[-1].actions.append(cur_static_rotation)
+
+                elif len(tokens) == 9:
+                    #ANIM_rotate <ratiox> <ratioy> <ratioz> <rotate1> <rotate2> <v1> <v2> <dataref>
                     cur_table = anim_rot_table()
-                    cur_table.name = tokens[9]
+                    cur_table.dataref = tokens[8]
+
+                    cur_rotate_keyframe_do_x = float(tokens[1]) * -1
+                    cur_rotate_keyframe_do_y = float(tokens[3]) * -1
+                    cur_rotate_keyframe_do_z = float(tokens[2])
 
                     key1 = anim_rot_keyframe()
-                    key1.time = float(tokens[7])
-                    key1.rot = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+                    key1.time = float(tokens[6])
+                    x_rot = float(tokens[4]) * cur_rotate_keyframe_do_x
+                    y_rot = float(tokens[4]) * cur_rotate_keyframe_do_y
+                    z_rot = float(tokens[4]) * cur_rotate_keyframe_do_z
+                    key1.rot = (x_rot, y_rot, z_rot)
+                    
                     cur_table.add_keyframe(key1.time, key1.rot)
 
                     key2 = anim_rot_keyframe()
-                    key2.time = float(tokens[8])
-                    key2.rot = (float(tokens[4]), float(tokens[6]), float(tokens[5]))
+                    key2.time = float(tokens[7])
+                    x_rot = float(tokens[5]) * cur_rotate_keyframe_do_x
+                    y_rot = float(tokens[5]) * cur_rotate_keyframe_do_y
+                    z_rot = float(tokens[5]) * cur_rotate_keyframe_do_z
+                    key2.rot = (x_rot, y_rot, z_rot)
                     cur_table.add_keyframe(key2.time, key2.rot)
 
-                    cur_anim_tree[-1].rot_tables.append(cur_table)
+                    cur_anim_tree[-1].actions.append(cur_table)
             
             elif tokens[0] == "ANIM_end":
                 #Pop the current animation tree
@@ -394,29 +425,29 @@ class object:
             
             elif tokens[0] == "ANIM_rotate_begin":
                 cur_table = anim_rot_table()
-                cur_table.name = tokens[4]
+                cur_table.dataref = tokens[4]
                 cur_rotate_keyframe_do_x = float(tokens[1])
                 cur_rotate_keyframe_do_y = float(tokens[3])
                 cur_rotate_keyframe_do_z = float(tokens[2])
                 
-                cur_anim_tree[-1].rot_tables.append(cur_table)
+                cur_anim_tree[-1].actions.append(cur_table)
             
             elif tokens[0] == "ANIM_rotate_key":
                 #ANIM_rotate_key <time> <angle>
                 cur_keyframe = anim_rot_keyframe()
                 cur_keyframe.time = float(tokens[1])
                 cur_keyframe.rot = (0, 0, 0)
-                x_rot = float(tokens[2]) * cur_rotate_keyframe_do_x
-                y_rot = float(tokens[2]) * cur_rotate_keyframe_do_y
+                x_rot = float(tokens[2]) * cur_rotate_keyframe_do_x * -1
+                y_rot = float(tokens[2]) * cur_rotate_keyframe_do_y * -1
                 z_rot = float(tokens[2]) * cur_rotate_keyframe_do_z
                 cur_keyframe.rot = (x_rot, y_rot, z_rot)
 
-                cur_anim_tree[-1].rot_tables[-1].keyframes.append(cur_keyframe)
+                cur_anim_tree[-1].actions[-1].keyframes.append(cur_keyframe)
 
             elif tokens[0] == "ANIM_trans_begin":
                 cur_table = anim_loc_table()
                 cur_table.dataref = tokens[1]
-                cur_anim_tree[-1].loc_tables.append(cur_table)
+                cur_anim_tree[-1].actions.append(cur_table)
 
             elif tokens[0] == "ANIM_trans_key":
                 #ANIM_trans_key <value> <x> <y> <z>
@@ -426,7 +457,7 @@ class object:
                 new_pos = (float(tokens[2]) * trans_matrix[0], float(tokens[4]) * trans_matrix[1], float(tokens[3]) * trans_matrix[2])
                 cur_keyframe.loc = new_pos
 
-                cur_anim_tree[-1].loc_tables[-1].keyframes.append(cur_keyframe)
+                cur_anim_tree[-1].actions[-1].keyframes.append(cur_keyframe)
 
     def to_scene(self):
         #Create a new collection for this object

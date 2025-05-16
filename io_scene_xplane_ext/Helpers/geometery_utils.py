@@ -77,7 +77,6 @@ def create_obj_from_draw_call(vertices, indicies, name):
     bm = bmesh.new()
 
     #Add all the vertices
-    print(len(vertices))
     for vertex in vertices:
         v = bm.verts.new((vertex.loc_x, vertex.loc_y, vertex.loc_z))
         v.normal = (vertex.normal_x, vertex.normal_y, vertex.normal_z)
