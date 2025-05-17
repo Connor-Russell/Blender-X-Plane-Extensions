@@ -44,12 +44,21 @@ import mathutils
 
 def set_obj_position(obj, position):
     world_pos = mathutils.Vector(position)
+    obj.location = world_pos
+
+def get_obj_position(obj):
+    return (obj.location.x, obj.location.y, obj.location.z)
+
+def set_obj_position_world(obj, position):
+    bpy.context.view_layer.update()
+    world_pos = mathutils.Vector(position)
     if obj.parent:
         obj.location = obj.parent.matrix_world.inverted() @ world_pos
     else:
         obj.location = world_pos
 
-def get_obj_position(obj):
+def get_obj_position_world(obj):
+    bpy.context.view_layer.update()
     loc = obj.matrix_world.to_translation()
     return (loc.x, loc.y, loc.z)
 

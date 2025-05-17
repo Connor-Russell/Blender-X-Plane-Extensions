@@ -319,7 +319,7 @@ def TEST_world_space_transform():
         obj_a.rotation_euler = (0, 0, math.radians(45))
 
         # Get world position of B
-        world_pos = anim_utils.get_obj_position(obj_b)
+        world_pos = anim_utils.get_obj_position_world(obj_b)
 
         # Expected world position: rotate (0,2,0) by 45deg around Z, then add (2,0,0)
         expected_x = 0.58579
@@ -330,8 +330,8 @@ def TEST_world_space_transform():
 
         # Now set B to a new world position and check if it is set correctly
         new_world_pos = (5, 5, 0)
-        anim_utils.set_obj_position(obj_b, new_world_pos)
-        check_pos = anim_utils.get_obj_position(obj_b)
+        anim_utils.set_obj_position_world(obj_b, new_world_pos)
+        check_pos = anim_utils.get_obj_position_world(obj_b)
         if abs(check_pos[0] - new_world_pos[0]) > tolerance or abs(check_pos[1] - new_world_pos[1]) > tolerance:
             result = f"FAIL,Set world pos to {new_world_pos}, got {check_pos}"
 
