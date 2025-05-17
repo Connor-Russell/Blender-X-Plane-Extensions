@@ -5,3 +5,6 @@
 #Zip files
 *.zip
 Blender X-Plane Extensions.zip
+
+#Python cache
+__pycache__/

@@ -8,25 +8,50 @@ import bpy
 import math
 import mathutils
 
-def set_obj_position(obj, position):
+def align_to_axis(obj, axis):
+    #return
     """
-    Set the position of an object in Blender.
+    Rotates the object so its local Z axis aligns with the given normalized axis vector,
+    without changing its position.
+    """
+    print("Start position: ", obj.location)
+    z = axis.normalized()
+    # Choose an arbitrary vector not parallel to z
+    if abs(z.dot(mathutils.Vector((0, 0, 1)))) < 0.999:
+        x = mathutils.Vector((0, 0, 1)).cross(z).normalized()
+    else:
+        x = mathutils.Vector((1, 0, 0)).cross(z).normalized()
+    y = z.cross(x).normalized()
+    # Build rotation matrix (columns are x, y, z)
+    rot_mat = mathutils.Matrix((x, y, z))
+    # Set only the rotation, keep the location
+    obj.matrix_basis = rot_mat.to_4x4()
+    
+    print("End position: ", obj.location)
 
-    :param obj: The Blender object to set the position for.
-    :param position: A tuple (x, y, z) representing the new position.
+def rotate_on_z(object, angle):
+    #return
     """
-    obj.location.x = position[0]
-    obj.location.y = position[1]
-    obj.location.z = position[2]
+    Rotate an object object around its local Z-axis.
+
+    :param object: The Blender object object to rotate. This object should already be aligned to the desired axis.
+    :param angle: The angle in degrees to rotate the object.
+    """
+    rot_mat = mathutils.Matrix.Rotation(math.radians(angle), 4, 'Z')
+    object.matrix_world = rot_mat @ object.matrix_world
+
+import mathutils
+
+def set_obj_position(obj, position):
+    world_pos = mathutils.Vector(position)
+    if obj.parent:
+        obj.location = obj.parent.matrix_world.inverted() @ world_pos
+    else:
+        obj.location = world_pos
 
 def get_obj_position(obj):
-    """
-    Get the position of an object in Blender.
-
-    :param obj: The Blender object to get the position from.
-    :return: A tuple (x, y, z) representing the object's position.
-    """
-    return (obj.location.x, obj.location.y, obj.location.z)
+    loc = obj.matrix_world.to_translation()
+    return (loc.x, loc.y, loc.z)
 
 def set_obj_rotation(obj, rotation):
     """

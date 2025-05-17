@@ -9,6 +9,8 @@ import os
 
 from ..Helpers import geometery_utils
 from ..Helpers import anim_utils
+import math
+import mathutils
 
 class anim_loc_keyframe:
     """
@@ -19,7 +21,7 @@ class anim_loc_keyframe:
     def __init__(self):
         self.frame = 0
         self.time = 0  #Time of the keyframe
-        self.loc = (0, 0, 0)  #Location of the keyframe
+        self.loc = (0, 0, 0)  #Location of the keyframe 
 
 class anim_rot_keyframe:
     """
@@ -30,7 +32,8 @@ class anim_rot_keyframe:
     def __init__(self):
         self.frame = 0
         self.time = 0  #Time of the keyframe
-        self.rot = (0, 0, 0)  #Rotation of the keyframe
+        self.rot = 0  #Rotation of the keyframe
+        self.rot_vector = (0, 0, 0)  #Rotation vector of the keyframe. Only used when keyframe is standalone
 
 class anim_rot_table:
     """
@@ -41,6 +44,7 @@ class anim_rot_table:
     def __init__(self):
         self.name = ''  #Dataref for the animation
         self.keyframes = []  #List of keyframes for the animation
+        self.rot_vector = (0, 0, 0)  #Rotation vector of the keyframe
 
     def add_keyframe(self, time, rot):
         #Add a keyframe to the list of keyframes
@@ -148,7 +152,7 @@ class anim_level:
         for dc in self.draw_calls:
             start_index = dc[0]
             length = dc[1]
-
+            
             #Get the indicies for this draw call
             dc_indicies = all_indicies[start_index:start_index+length]
 
@@ -367,23 +371,41 @@ class object:
                     #ANIM_rotate <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
                     cur_static_rotation = anim_rot_keyframe()
                     cur_static_rotation.time = 0
-                    cur_static_rotation.rot = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+
+                    cur_rotate_keyframe_do_x = float(tokens[1]) * -1
+                    cur_rotate_keyframe_do_y = float(tokens[3]) * -1
+                    cur_rotate_keyframe_do_z = float(tokens[2])
+                    x_rot = float(tokens[4]) * cur_rotate_keyframe_do_x
+                    y_rot = float(tokens[4]) * cur_rotate_keyframe_do_y
+                    z_rot = float(tokens[4]) * cur_rotate_keyframe_do_z
+                    cur_static_rotation.rot = (x_rot, y_rot, z_rot)
 
                     cur_anim_tree[-1].static_rot_keyframes.append(cur_static_rotation)
 
                 elif len(tokens) == 10:
                     #ANIM_rotate <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
                     cur_table = anim_rot_table()
-                    cur_table.name = tokens[9]
+                    cur_table.dataref = tokens[8]
+
+                    cur_rotate_keyframe_do_x = float(tokens[1]) * -1
+                    cur_rotate_keyframe_do_y = float(tokens[3]) * -1
+                    cur_rotate_keyframe_do_z = float(tokens[2])
 
                     key1 = anim_rot_keyframe()
-                    key1.time = float(tokens[7])
-                    key1.rot = (float(tokens[1]), float(tokens[3]), float(tokens[2]))
+                    key1.time = float(tokens[6])
+                    x_rot = float(tokens[4]) * cur_rotate_keyframe_do_x
+                    y_rot = float(tokens[4]) * cur_rotate_keyframe_do_y
+                    z_rot = float(tokens[4]) * cur_rotate_keyframe_do_z
+                    key1.rot = (x_rot, y_rot, z_rot)
+                    
                     cur_table.add_keyframe(key1.time, key1.rot)
 
                     key2 = anim_rot_keyframe()
-                    key2.time = float(tokens[8])
-                    key2.rot = (float(tokens[4]), float(tokens[6]), float(tokens[5]))
+                    key2.time = float(tokens[7])
+                    x_rot = float(tokens[5]) * cur_rotate_keyframe_do_x
+                    y_rot = float(tokens[5]) * cur_rotate_keyframe_do_y
+                    z_rot = float(tokens[5]) * cur_rotate_keyframe_do_z
+                    key2.rot = (x_rot, y_rot, z_rot)
                     cur_table.add_keyframe(key2.time, key2.rot)
 
                     cur_anim_tree[-1].rot_tables.append(cur_table)
@@ -394,10 +416,12 @@ class object:
             
             elif tokens[0] == "ANIM_rotate_begin":
                 cur_table = anim_rot_table()
-                cur_table.name = tokens[4]
+                cur_table.dataref = tokens[4]
                 cur_rotate_keyframe_do_x = float(tokens[1])
                 cur_rotate_keyframe_do_y = float(tokens[3])
                 cur_rotate_keyframe_do_z = float(tokens[2])
+
+                cur_table.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
                 
                 cur_anim_tree[-1].rot_tables.append(cur_table)
             
@@ -406,8 +430,8 @@ class object:
                 cur_keyframe = anim_rot_keyframe()
                 cur_keyframe.time = float(tokens[1])
                 cur_keyframe.rot = (0, 0, 0)
-                x_rot = float(tokens[2]) * cur_rotate_keyframe_do_x
-                y_rot = float(tokens[2]) * cur_rotate_keyframe_do_y
+                x_rot = float(tokens[2]) * cur_rotate_keyframe_do_x * -1
+                y_rot = float(tokens[2]) * cur_rotate_keyframe_do_y * -1
                 z_rot = float(tokens[2]) * cur_rotate_keyframe_do_z
                 cur_keyframe.rot = (x_rot, y_rot, z_rot)
 
