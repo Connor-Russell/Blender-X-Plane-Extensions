@@ -8,26 +8,18 @@ import bpy
 import math
 import mathutils
 
+import mathutils
+
 def align_to_axis(obj, axis):
-    #return
     """
     Rotates the object so its local Z axis aligns with the given normalized axis vector,
-    without changing its position.
+    without changing its position or scale.
     """
-    print("Start position: ", obj.location)
     z = axis.normalized()
-    # Choose an arbitrary vector not parallel to z
-    if abs(z.dot(mathutils.Vector((0, 0, 1)))) < 0.999:
-        x = mathutils.Vector((0, 0, 1)).cross(z).normalized()
-    else:
-        x = mathutils.Vector((1, 0, 0)).cross(z).normalized()
-    y = z.cross(x).normalized()
-    # Build rotation matrix (columns are x, y, z)
-    rot_mat = mathutils.Matrix((x, y, z))
-    # Set only the rotation, keep the location
-    obj.matrix_basis = rot_mat.to_4x4()
-    
-    print("End position: ", obj.location)
+    # Find the rotation that aligns (0,0,1) to z
+    quat = mathutils.Vector((0, 0, 1)).rotation_difference(z)
+    obj.rotation_mode = 'QUATERNION'
+    obj.rotation_quaternion = quat
 
 def rotate_on_z(object, angle):
     #return
@@ -37,8 +29,14 @@ def rotate_on_z(object, angle):
     :param object: The Blender object object to rotate. This object should already be aligned to the desired axis.
     :param angle: The angle in degrees to rotate the object.
     """
-    rot_mat = mathutils.Matrix.Rotation(math.radians(angle), 4, 'Z')
-    object.matrix_world = rot_mat @ object.matrix_world
+    #Select the object, put it in object mode, then rotate it on the local Z by the given angle
+    bpy.ops.object.select_all(action='DESELECT')
+    object.select_set(True)
+    bpy.context.view_layer.objects.active = object
+    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.transform.rotate(value=math.radians(angle), orient_axis='Z', orient_type='LOCAL')
+    bpy.ops.object.mode_set(mode='OBJECT')
+    object.select_set(False)
 
 import mathutils
 

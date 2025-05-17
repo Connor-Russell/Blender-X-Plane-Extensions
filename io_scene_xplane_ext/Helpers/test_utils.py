@@ -8,6 +8,7 @@ import bpy
 from ..Helpers import collection_utils
 from ..Helpers import file_utils
 from ..Helpers import anim_utils
+import mathutils
 
 #---------------------------------------------------------------------------------
 #collection_utils.py tests
@@ -344,6 +345,29 @@ def TEST_world_space_transform():
         result = "FAIL,Unknown error occurred."
     return result
 
+def TEST_align_on_axis():
+    #This is a visual test, it doesn't return anything. 
+    #We have a list of normalized vectors. For each one, we add an empty, and align it to the vector, and name it off the vector.
+    vectors = [
+        (0.5, 0.5, 0.707)
+    ]
+
+    #Delete all objects in the scene
+    for obj in bpy.data.objects:
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+    for vec in vectors:
+        empty = bpy.data.objects.new("TestEmpty", None)
+        empty.empty_display_size = 1
+        empty.empty_display_type = 'PLAIN_AXES'
+        bpy.context.scene.collection.objects.link(empty)
+
+        #Align the empty to the vector
+        anim_utils.align_to_axis(empty, mathutils.Vector(vec))
+
+        #Set the name of the empty to the vector
+        empty.name = f"TestEmpty_{vec[0]}_{vec[1]}_{vec[2]}"
+
 #----------------------------------------------------------------------------------
 # Main function to run all tests
 #----------------------------------------------------------------------------------
@@ -367,6 +391,8 @@ def run_all_tests():
 
     result5 = TEST_world_space_transform()
     print(f"TEST_world_space_transform: {result5}")
+
+    TEST_align_on_axis()
 
     test_results_file = file_utils.rel_to_abs("../Test Results.csv")
     with open(test_results_file, 'a') as output:
