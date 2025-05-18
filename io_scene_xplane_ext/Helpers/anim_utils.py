@@ -8,25 +8,39 @@ import bpy
 import math
 import mathutils
 
-def set_obj_position(obj, position):
-    """
-    Set the position of an object in Blender.
+import mathutils
 
-    :param obj: The Blender object to set the position for.
-    :param position: A tuple (x, y, z) representing the new position.
+def axis_angle_to_euler_xyz(axis, angle_degrees):
     """
-    obj.location.x = position[0]
-    obj.location.y = position[1]
-    obj.location.z = position[2]
+    Returns Euler XYZ angles (in radians) for a rotation of 'angle_degrees' around 'axis'.
+    """
+    axis = mathutils.Vector(axis).normalized()
+    angle_rad = math.radians(angle_degrees)
+    quat = mathutils.Quaternion(axis, angle_rad)
+    euler = quat.to_euler('XYZ')
+    return euler
+
+import mathutils
+
+def set_obj_position(obj, position):
+    world_pos = mathutils.Vector(position)
+    obj.location = world_pos
 
 def get_obj_position(obj):
-    """
-    Get the position of an object in Blender.
-
-    :param obj: The Blender object to get the position from.
-    :return: A tuple (x, y, z) representing the object's position.
-    """
     return (obj.location.x, obj.location.y, obj.location.z)
+
+def set_obj_position_world(obj, position):
+    bpy.context.view_layer.update()
+    world_pos = mathutils.Vector(position)
+    if obj.parent:
+        obj.location = obj.parent.matrix_world.inverted() @ world_pos
+    else:
+        obj.location = world_pos
+
+def get_obj_position_world(obj):
+    bpy.context.view_layer.update()
+    loc = obj.matrix_world.to_translation()
+    return (loc.x, loc.y, loc.z)
 
 def set_obj_rotation(obj, rotation):
     """
@@ -39,6 +53,15 @@ def set_obj_rotation(obj, rotation):
     obj.rotation_euler.x = math.radians(rotation[0])
     obj.rotation_euler.y = math.radians(rotation[1])
     obj.rotation_euler.z = math.radians(rotation[2])
+
+def set_obj_rotation_from_euler(obj, rotation):
+    """
+    Set the rotation of an object in Blender.
+
+    :param obj: The Blender object to set the rotation for.
+    :param rotation: A tuple (x, y, z) representing the new rotation in radians.
+    """
+    obj.rotation_euler = mathutils.Euler(rotation, 'XYZ')
 
 def get_obj_rotation(obj):
     """
