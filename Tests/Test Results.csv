@@ -1,4 +1,4 @@
-
+2025-05-18 21-53-38
 Test Name,Result
 2.9 Tests
 Facade Exporter,PASS,100.0000% 
@@ -8,25 +8,11 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
-Object Importer,FAIL,Failed to import 1 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Wind_Tee.obj: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 124, in execute
-    importer.import_obj(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 57, in import_obj
-    obj.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 474, in to_scene
-    anim.add_to_scene(None, self.verticies, self.indicies, mat, collection)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 223, in add_to_scene
-    anim_utils.add_xp_dataref_track(anim_empty, dataref)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\anim_utils.py", line 90, in add_xp_dataref_track
-    obj.xplane.datarefs.add()
-AttributeError: 'Object' object has no attribute 'xplane'
-
-location: D:\Blender Versions\2.93\2.93\scripts\modules\bpy\ops.py:132
-
-,
+Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
@@ -38,13 +24,14 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
-Object Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Car_Stop.obj: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Wind_Tee.obj: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,
-Facade Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Power_Lines.fac: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Sidewalk.fac: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,
-Line Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Black_Dark_Edge_Fine.lin: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Edge_Dark.lin: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,
-Polygon Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Patched_1_Dark.pol: Calling operator "bpy.ops.xp_ext.test_import_pol" error, could not be found,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Striped_Dark_Fine.pol: Calling operator "bpy.ops.xp_ext.test_import_pol" error, could not be found,
+Object Importer,PASS,Imported 2 objects
+Facade Importer,PASS,Imported 2 facades
+Line Importer,PASS,Imported 2 lines
+Polygon Importer,PASS,Imported 2 polygons
 3.1 Tests
 Facade Exporter,PASS,100.0000% 
 Line Exporter,PASS,100.0000% 
@@ -53,25 +40,11 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
-Object Importer,FAIL,Failed to import 1 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Wind_Tee.obj: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 124, in execute
-    importer.import_obj(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 57, in import_obj
-    obj.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 474, in to_scene
-    anim.add_to_scene(None, self.verticies, self.indicies, mat, collection)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 223, in add_to_scene
-    anim_utils.add_xp_dataref_track(anim_empty, dataref)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\anim_utils.py", line 90, in add_xp_dataref_track
-    obj.xplane.datarefs.add()
-AttributeError: 'Object' object has no attribute 'xplane'
-
-location: D:\Blender Versions\3.12\3.1\scripts\modules\bpy\ops.py:132
-
-,
+Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
@@ -83,23 +56,11 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
-Object Importer,FAIL,Failed to import 1 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Wind_Tee.obj: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 124, in execute
-    importer.import_obj(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 57, in import_obj
-    obj.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 474, in to_scene
-    anim.add_to_scene(None, self.verticies, self.indicies, mat, collection)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 223, in add_to_scene
-    anim_utils.add_xp_dataref_track(anim_empty, dataref)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\anim_utils.py", line 90, in add_xp_dataref_track
-    obj.xplane.datarefs.add()
-AttributeError: 'Object' object has no attribute 'xplane'
-Location: D:\Blender Versions\3.22\3.2\scripts\modules\bpy\ops.py:115
-,
+Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
@@ -111,23 +72,11 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
-Object Importer,FAIL,Failed to import 1 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Wind_Tee.obj: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 124, in execute
-    importer.import_obj(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 57, in import_obj
-    obj.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 474, in to_scene
-    anim.add_to_scene(None, self.verticies, self.indicies, mat, collection)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 223, in add_to_scene
-    anim_utils.add_xp_dataref_track(anim_empty, dataref)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\anim_utils.py", line 90, in add_xp_dataref_track
-    obj.xplane.datarefs.add()
-AttributeError: 'Object' object has no attribute 'xplane'
-Location: D:\Blender Versions\3.39\3.3\scripts\modules\bpy\ops.py:113
-,
+Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
@@ -139,23 +88,11 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
-Object Importer,FAIL,Failed to import 1 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Wind_Tee.obj: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 124, in execute
-    importer.import_obj(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 57, in import_obj
-    obj.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 474, in to_scene
-    anim.add_to_scene(None, self.verticies, self.indicies, mat, collection)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 223, in add_to_scene
-    anim_utils.add_xp_dataref_track(anim_empty, dataref)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\anim_utils.py", line 90, in add_xp_dataref_track
-    obj.xplane.datarefs.add()
-AttributeError: 'Object' object has no attribute 'xplane'
-Location: D:\Blender Versions\3.41\3.4\scripts\modules\bpy\ops.py:113
-,
+Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
@@ -167,13 +104,14 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,100.0000%
-Object Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Car_Stop.obj: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Wind_Tee.obj: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,
-Facade Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Power_Lines.fac: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Sidewalk.fac: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,
-Line Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Black_Dark_Edge_Fine.lin: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Edge_Dark.lin: Calling operator "bpy.ops.xp_ext.test_import_obj" error, could not be found,
-Polygon Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Patched_1_Dark.pol: Calling operator "bpy.ops.xp_ext.test_import_pol" error, could not be found,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Striped_Dark_Fine.pol: Calling operator "bpy.ops.xp_ext.test_import_pol" error, could not be found,
+Object Importer,PASS,Imported 2 objects
+Facade Importer,PASS,Imported 2 facades
+Line Importer,PASS,Imported 2 lines
+Polygon Importer,PASS,Imported 2 polygons
 3.6 Tests
 Facade Exporter,PASS,99.9549% 
 Line Exporter,PASS,100.0000% 
@@ -182,6 +120,7 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
@@ -197,6 +136,7 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
@@ -212,65 +152,14 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
-Object Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Car_Stop.obj: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 124, in execute
-    importer.import_obj(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 57, in import_obj
-    obj.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 466, in to_scene
-    dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {start_index} {length}")
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\geometery_utils.py", line 133, in create_obj_from_draw_call
-    mesh.use_auto_smooth = True  # Enable auto-smooth to use custom normals
-    ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'Mesh' object has no attribute 'use_auto_smooth'
-Location: D:\Blender Versions\4.11\4.1\scripts\modules\bpy\ops.py:109
-,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Wind_Tee.obj: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 124, in execute
-    importer.import_obj(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 57, in import_obj
-    obj.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_obj.py", line 466, in to_scene
-    dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {start_index} {length}")
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\geometery_utils.py", line 133, in create_obj_from_draw_call
-    mesh.use_auto_smooth = True  # Enable auto-smooth to use custom normals
-    ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'Mesh' object has no attribute 'use_auto_smooth'
-Location: D:\Blender Versions\4.11\4.1\scripts\modules\bpy\ops.py:109
-,
+Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
-Polygon Importer,FAIL,Failed to import 2 of 2 objects with errors: Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Patched_1_Dark.pol: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 146, in execute
-    importer.import_pol(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 35, in import_pol
-    pol.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_pol.py", line 411, in to_scene
-    new_obj = geometery_utils.create_obj_from_draw_call([v1, v2, v3, v4], indicies, new_collection.name)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\geometery_utils.py", line 133, in create_obj_from_draw_call
-    mesh.use_auto_smooth = True  # Enable auto-smooth to use custom normals
-    ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'Mesh' object has no attribute 'use_auto_smooth'
-Location: D:\Blender Versions\4.11\4.1\scripts\modules\bpy\ops.py:109
-,Failed to import A:\Code\Blender-X-Plane-Extensions\Tests\Content\ImportTests\Asphalt_Striped_Dark_Fine.pol: Error: Python: Traceback (most recent call last):
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\operators.py", line 146, in execute
-    importer.import_pol(self.import_path)
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\importer.py", line 35, in import_pol
-    pol.to_scene()
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Types\xp_pol.py", line 411, in to_scene
-    new_obj = geometery_utils.create_obj_from_draw_call([v1, v2, v3, v4], indicies, new_collection.name)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Blender Versions\scripts\addons\io_scene_xplane_ext\Helpers\geometery_utils.py", line 133, in create_obj_from_draw_call
-    mesh.use_auto_smooth = True  # Enable auto-smooth to use custom normals
-    ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'Mesh' object has no attribute 'use_auto_smooth'
-Location: D:\Blender Versions\4.11\4.1\scripts\modules\bpy\ops.py:109
-,
+Polygon Importer,PASS,Imported 2 polygons
 4.2 Tests
 Facade Exporter,PASS,99.5841% 
 Line Exporter,PASS,100.0000% 
@@ -279,10 +168,14 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,100.0000%
-
+Object Importer,PASS,Imported 2 objects
+Facade Importer,PASS,Imported 2 facades
+Line Importer,PASS,Imported 2 lines
+Polygon Importer,PASS,Imported 2 polygons
 4.3 Tests
 Facade Exporter,PASS,99.5841% 
 Line Exporter,PASS,100.0000% 
@@ -291,6 +184,11 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
+TEST_world_space_transform,PASS
+Object Importer,PASS,Imported 2 objects
+Facade Importer,PASS,Imported 2 facades
+Line Importer,PASS,Imported 2 lines
+Polygon Importer,PASS,Imported 2 polygons
 4.4 Tests
 Facade Exporter,PASS,99.5841% 
 Line Exporter,PASS,100.0000% 
@@ -299,4 +197,8 @@ TEST_get_all_collections_from_view_layer,PASS
 TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
-
+TEST_world_space_transform,PASS
+Object Importer,PASS,Imported 2 objects
+Facade Importer,PASS,Imported 2 facades
+Line Importer,PASS,Imported 2 lines
+Polygon Importer,PASS,Imported 2 polygons

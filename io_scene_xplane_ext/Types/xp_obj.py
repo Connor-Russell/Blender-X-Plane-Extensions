@@ -187,7 +187,7 @@ class anim_level:
             #Create the empty for this action
             name = f"Anim"
             if len(self.draw_calls) > 0:
-                name += f" TRIS {self.draw_calls[0][0]} {self.draw_calls[0][1]}"
+                name += f" TRIS {self.draw_calls[0].start_index} {self.draw_calls[0].length}"
             name += f" Pt {i}"
             if action.type == 'rot_table_vector_transform':
                 name += " Rotation Transform"
