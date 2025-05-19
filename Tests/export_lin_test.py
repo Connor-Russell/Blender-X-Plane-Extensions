@@ -46,6 +46,7 @@ def test(test_dir):
     b_pass = False
     similarity = 0.0
     error_message = ""
+    exporter_output = test_dir + "/../Test Results.csv"
     try:
 
         new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.lin"
@@ -63,7 +64,6 @@ def test(test_dir):
         bpy.ops.xp_ext.export_lines()
 
         known_good_file = test_dir + "/Exporter.good.lin"
-        exporter_output = test_dir + "/../Test Results.csv"
 
         #Resolve the file paths to use \\ instead of / for windows compatibility
         new_file = new_file.replace("/", "\\")

@@ -212,6 +212,22 @@ class BTN_mats_update_nodes(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_mats_update_all_mat_nodes(bpy.types.Operator):
+    """Updates all materials in the scene to match the current settings"""
+    bl_idname = "xp_ext.update_all_material_nodes"
+    bl_label = "Update All Materials"
+    bl_description = "Updates all materials in the scene to match the current settings. This is a slow operation and should only be used when necessary. It will also reload all images."
+    bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
+
+    def execute(self, context):
+        #Get all the materials
+        for mat in bpy.data.materials:
+            if mat.xp_materials.alb_texture != "":
+                material_config.update_settings(mat)
+                material_config.update_nodes(mat)
+
+        return {'FINISHED'}
+
 class BTN_update_xp_export_settings(bpy.types.Operator):
     """Operator to update all the collections texture settings to the current material settings"""
     bl_idname = "xp_ext.update_collection_textures"
@@ -537,6 +553,7 @@ def register():
     bpy.utils.register_class(TEST_import_fac)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
+    bpy.utils.register_class(BTN_mats_update_all_mat_nodes)
     bpy.utils.register_class(BTN_bake_low_poly)
     bpy.utils.register_class(BTN_update_xp_export_settings)
     bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
@@ -558,6 +575,7 @@ def unregister():
     bpy.utils.unregister_class(TEST_import_fac)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
+    bpy.utils.unregister_class(BTN_mats_update_all_mat_nodes)
     bpy.utils.unregister_class(BTN_bake_low_poly)
     bpy.utils.unregister_class(BTN_update_xp_export_settings)
     bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)

@@ -8,6 +8,9 @@ import bpy # type: ignore
 from .Helpers import file_utils
 
 def operator_wrapped_update_settings(self = None, context = None):
+    if bpy.context.active_object == None:
+        return
+
     #This function is called when the user updates a property in the UI. It will call the update_settings function to update the material settings.
     #Get the material from the context
     in_material = bpy.context.active_object.active_material
@@ -20,6 +23,9 @@ def operator_wrapped_update_settings(self = None, context = None):
     update_settings(in_material)
 
 def operator_wrapped_update_nodes(self = None, context = None):
+    if bpy.context.active_object == None:
+        return
+    
     #This function is called when the user updates a property in the UI. It will call the update_nodes function to update the material nodes.
     #Get the material from the context
     in_material = bpy.context.active_object.active_material
@@ -317,14 +323,14 @@ def update_nodes(material):
         xp_material_props = material.xp_materials
 
         #Resolve paths. They are relative to the blender file or relative to one folder back. We assume one folder back first. If the file is not found, we assume it is in the same folder as the blender file.
-        str_image_alb = file_utils.rel_to_abs(xp_material_props.alb_texture)
-        str_image_nml = file_utils.rel_to_abs(xp_material_props.normal_texture)
-        str_image_lit = file_utils.rel_to_abs(xp_material_props.lit_texture)
-        str_image_mod = file_utils.rel_to_abs(xp_material_props.decal_modulator)
-        str_image_decal_1_alb = file_utils.rel_to_abs(xp_material_props.decal_one.alb)
-        str_image_decal_1_nml = file_utils.rel_to_abs(xp_material_props.decal_one.nml)
-        str_image_decal_2_alb = file_utils.rel_to_abs(xp_material_props.decal_two.alb)
-        str_image_decal_2_nml = file_utils.rel_to_abs(xp_material_props.decal_two.nml)
+        str_image_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.alb_texture))
+        str_image_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.normal_texture))
+        str_image_lit = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.lit_texture))
+        str_image_mod = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_modulator))
+        str_image_decal_1_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_one.alb))
+        str_image_decal_1_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_one.nml))
+        str_image_decal_2_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_two.alb))
+        str_image_decal_2_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_two.nml))
 
         if not xp_material_props.decal_one.enabled:
             str_image_decal_1_alb = ""

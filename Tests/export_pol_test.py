@@ -47,6 +47,7 @@ def test(test_dir):
 
     similarity = 0.0
     error_message = ""
+    exporter_output = test_dir + "/../Test Results.csv"
     try:
 
         new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.pol"
@@ -64,7 +65,6 @@ def test(test_dir):
         bpy.ops.xp_ext.export_polygons()
 
         known_good_file = test_dir + "/Exporter.good.pol"
-        exporter_output = test_dir + "/../Test Results.csv"
 
         #Resolve the file paths to use \\ instead of / for windows compatibility
         new_file = new_file.replace("/", "\\")

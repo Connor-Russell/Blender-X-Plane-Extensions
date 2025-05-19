@@ -8,6 +8,7 @@ import bpy
 from ..Helpers import collection_utils
 from ..Helpers import file_utils
 from ..Helpers import anim_utils
+import mathutils
 
 #---------------------------------------------------------------------------------
 #collection_utils.py tests
@@ -291,6 +292,59 @@ def TEST_keyframing():
 
     return result
 
+def TEST_world_space_transform():
+    """
+    Test world space transform utilities with parented objects and rotation.
+    """
+    import math
+    result = "PASS"
+    try:
+        # Clean up any previous test objects
+        for obj in bpy.data.objects:
+            if obj.name.startswith("TestA") or obj.name.startswith("TestB"):
+                bpy.data.objects.remove(obj, do_unlink=True)
+
+        # Create parent object A
+        obj_a = bpy.data.objects.new("TestA", None)
+        bpy.context.scene.collection.objects.link(obj_a)
+
+        # Create child object B
+        obj_b = bpy.data.objects.new("TestB", None)
+        bpy.context.scene.collection.objects.link(obj_b)
+        obj_b.parent = obj_a
+        obj_b.location = (0, 2, 0)
+        obj_b.rotation_euler = (0, 0, 0)
+
+        #Move A. Has to be after B so it applies to both
+        obj_a.location = (2, 0, 0)
+        obj_a.rotation_euler = (0, 0, math.radians(45))
+
+        # Get world position of B
+        world_pos = anim_utils.get_obj_position_world(obj_b)
+
+        # Expected world position: rotate (0,2,0) by 45deg around Z, then add (2,0,0)
+        expected_x = 0.58579
+        expected_y = 1.4142
+        tolerance = 0.001
+        if abs(world_pos[0] - expected_x) > tolerance or abs(world_pos[1] - expected_y) > tolerance:
+            result = f"FAIL,Expected world pos ({expected_x:.3f},{expected_y:.3f}), got ({world_pos[0]:.3f},{world_pos[1]:.3f})"
+
+        # Now set B to a new world position and check if it is set correctly
+        new_world_pos = (5, 5, 0)
+        anim_utils.set_obj_position_world(obj_b, new_world_pos)
+        check_pos = anim_utils.get_obj_position_world(obj_b)
+        if abs(check_pos[0] - new_world_pos[0]) > tolerance or abs(check_pos[1] - new_world_pos[1]) > tolerance:
+            result = f"FAIL,Set world pos to {new_world_pos}, got {check_pos}"
+
+        # Cleanup
+        bpy.data.objects.remove(obj_b, do_unlink=True)
+        bpy.data.objects.remove(obj_a, do_unlink=True)
+    except Exception as e:
+        result = "FAIL,Exception: " + str(e)
+    except:
+        result = "FAIL,Unknown error occurred."
+    return result
+
 #----------------------------------------------------------------------------------
 # Main function to run all tests
 #----------------------------------------------------------------------------------
@@ -312,11 +366,14 @@ def run_all_tests():
     result4 = TEST_draw_call_round_trip()
     print(f"TEST_get_draw_call_from_obj: {result4}")
 
-    #Open the test results csv and print the results
+    result5 = TEST_world_space_transform()
+    print(f"TEST_world_space_transform: {result5}")
+
     test_results_file = file_utils.rel_to_abs("../Test Results.csv")
     with open(test_results_file, 'a') as output:
         output.write(f"TEST_get_all_collections_from_view_layer,{result1}\n")
         output.write(f"TEST_get_roof_data,{result2}\n")
         output.write(f"TEST_keyframing,{result3}\n")
         output.write(f"TEST_get_draw_call_from_obj,{result4}\n")
+        output.write(f"TEST_world_space_transform,{result5}\n")
 

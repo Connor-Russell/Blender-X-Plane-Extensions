@@ -380,6 +380,8 @@ class MENU_operations(bpy.types.Panel):
 
         xp_ext = bpy.context.scene.xp_ext
 
+        layout.operator("xp_ext.update_all_material_nodes", text="Update All Materials")
+
         layout.separator()
         layout.label(text="Auto Low-Poly Baker")
         layout.prop(xp_ext, "low_poly_bake_resolution")
