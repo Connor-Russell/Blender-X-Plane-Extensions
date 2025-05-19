@@ -11,26 +11,37 @@ import mathutils
 from ..Helpers import geometery_utils
 from ..Helpers import anim_utils
 
-class anim_loc_keyframe:
+class anim_action:
+    """
+    Base class for all animation actions
+    """
+
+    def __init__(self):
+        self.type = ''
+        self.empty = None  #Empty for the animation
+
+class anim_loc_keyframe(anim_action):
     """
     Class to represent a keyframe for an animation. This class is used to store the keyframes for an animation.
     """
 
     #Define instance variables
     def __init__(self):
+        super().__init__()
         self.type = 'loc_keyframe'
         self.frame = 0
         self.time = 0  #Time of the keyframe
         self.loc = (0, 0, 0)  #Location of the keyframe
         self.empty = None  #Empty for the animation
 
-class anim_rot_keyframe:
+class anim_rot_keyframe(anim_action):
     """
     Class to represent a keyframe for an animation. This class is used to store the keyframes for an animation.
     """
 
     #Define instance variables
     def __init__(self):
+        super().__init__()
         self.type = 'rot_keyframe'
         self.frame = 0
         self.time = 0  #Time of the keyframe
@@ -38,17 +49,27 @@ class anim_rot_keyframe:
         self.rot = 0  #Rotation of the keyframe
         self.empty = None  #Empty for the animation
 
-class anim_rot_table:
+class anim_rot_table_vector_transform(anim_action):
+    """
+    Class to represent the vector transform that must come before an anim_rot_table. This will act as a parent for the keyframed table, allowing for smooth animations along an arbitrary axis
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.type = 'rot_table_vector_transform'
+        self.rot_vector = (0, 0, 0)  #Rotation vector of the table
+
+class anim_rot_table(anim_action):
     """
     Class to represent a table of keyframes for an animation. This class is used to store the keyframes for an animation.
     """
 
     #Define instance variables
     def __init__(self):
+        super().__init__()
         self.type = 'rot_table'
         self.dataref = ''  #Dataref for the animation
         self.keyframes = []  #List of keyframes for the animation
-        self.rot_vector = (0, 0, 0)  #Rotation vector of the keyframe. Only used if standalone
         self.empty = None  #Empty for the animation
 
     def add_keyframe(self, time, rot):
@@ -84,13 +105,14 @@ class anim_rot_table:
             #Get the frame for this keyframe
             kf.frame = int((kf.time - min_time) / time_range * frame_range + min_frame)
 
-class anim_loc_table:
+class anim_loc_table(anim_action):
     """
     Class to represent a table of keyframes for an animation. This class is used to store the keyframes for an animation.
     """
 
     #Define instance variables
     def __init__(self):
+        super().__init__()
         self.type = 'loc_table'
         self.dataref = ""  #Dataref for the animation
         self.keyframes = []  #List of keyframes for the animation
@@ -149,9 +171,20 @@ class anim_level:
         cur_parent = parent_obj
         for i, action in enumerate(self.actions):
             #Create the empty for this action
-            name = f"Anim + Action {i}"
+            name = f"Anim"
             if len(self.draw_calls) > 0:
-                name = f"Anim TRIS {self.draw_calls[0][0]} {self.draw_calls[0][1]} Action {i}"
+                name += f" TRIS {self.draw_calls[0][0]} {self.draw_calls[0][1]}"
+            name += f" Pt {i}"
+            if action.type == 'rot_table_vector_transform':
+                name += " Rotation Transform"
+            elif action.type == 'rot_keyframe':
+                name += " Static Rotation"
+            elif action.type == 'loc_keyframe':
+                name += " Static Translation"
+            elif action.type == 'loc_table':
+                name += " Keyframed Translation"
+            elif action.type == 'rot_table':
+                name += " Keyframed Rotation"
             anim_empty = bpy.data.objects.new(name, None)
             anim_empty.empty_display_type = "ARROWS"
             anim_empty.empty_display_size = 0.1
@@ -160,7 +193,19 @@ class anim_level:
 
             if cur_parent != None:
                 anim_empty.parent = cur_parent
+                #if action.type == 'rot_table':
+                    #anim_empty.matrix_parent_inverse.identity()
             cur_parent = anim_empty
+
+            #If it is a rotation we need to align it to the rotation vector
+            if action.type == 'rot_keyframe' or action.type == 'rot_table_vector_transform':
+                eular = anim_utils.euler_to_align_z_with_vector(action.rot_vector)
+                anim_utils.set_obj_rotation_world(anim_empty, eular)
+            elif action.type == 'loc_keyframe' or action.type == 'loc_table':
+                eular = mathutils.Vector((0, 0, 0))
+                anim_utils.set_obj_rotation_world(anim_empty, eular)
+            else:
+                anim_empty.rotation_euler = mathutils.Vector((0, 0, 0)).xyz
 
             #Set the first/last actions
             if i == 0:
@@ -194,6 +239,10 @@ class anim_level:
 
             dc_obj.parent = self.last_action
 
+            #Reset it's rotation so it doesn't take up it's parent's rotation axis
+            eular = mathutils.Vector((0, 0, 0))
+            anim_utils.set_obj_rotation_world(dc_obj, eular)
+
         #Now that we added out draw calls, it's time to recurse
         for child in self.children:
             child.add_to_scene(self.last_action, all_verts, all_indicies, in_mat, in_collection)
@@ -213,10 +262,11 @@ class anim_level:
                 anim_utils.set_obj_position_world(anim_empty, new_pos)
             
             elif action.type == 'rot_keyframe':
-                new_rot = anim_utils.axis_angle_to_euler_xyz(action.rot_vector, action.rot)
-                anim_utils.set_obj_rotation_from_euler(anim_empty, new_rot)
+                base_rot = anim_utils.get_base_rot_for_local_z_rotation(anim_empty)
+                anim_utils.rotate_obj_around_local_z(anim_empty, action.rot, base_rot)
             
             elif action.type == 'loc_table':
+                
                 base_pos = anim_utils.get_obj_position_world(anim_empty)
 
                 dataref = action.dataref
@@ -246,14 +296,16 @@ class anim_level:
 
                 anim_utils.add_xp_dataref_track(anim_empty, dataref)
 
+                base_rot = anim_utils.get_obj_rotation(anim_empty)
+
                 #Now, we need to add all the keyframes to the track
                 for kf in action.keyframes:
                     #Set the current frame to the keyframe time
                     anim_utils.goto_frame(kf.frame)
 
                     #Set the rotation of the empty to the keyframe value
-                    new_rot = anim_utils.axis_angle_to_euler_xyz(action.rot_vector, kf.rot)
-                    anim_utils.set_obj_rotation_from_euler(anim_empty, new_rot)
+                    new_rot = (base_rot[0], base_rot[1], base_rot[2] + kf.rot)
+                    anim_utils.set_obj_rotation(anim_empty, new_rot)
 
                     #Set the value of the dataref to the keyframe value
                     anim_utils.keyframe_obj_rotation(anim_empty)
@@ -405,18 +457,21 @@ class object:
 
                 elif len(tokens) == 9:
                     #ANIM_rotate <ratiox> <ratioy> <ratioz> <rotate1> <rotate2> <v1> <v2> <dataref>
-                    cur_table = anim_rot_table()
-                    cur_table.dataref = tokens[8]
+                    
+                    cur_rotate_transform = anim_rot_table_vector_transform()
 
                     cur_rotate_keyframe_do_x = float(tokens[1]) * trans_matrix[0]
                     cur_rotate_keyframe_do_y = float(tokens[3]) * trans_matrix[1]
                     cur_rotate_keyframe_do_z = float(tokens[2]) * trans_matrix[2]
 
-                    cur_table.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
+                    cur_rotate_transform.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
+
+                    cur_table = anim_rot_table()
+                    cur_table.dataref = tokens[8]
 
                     key1 = anim_rot_keyframe()
                     key1.time = float(tokens[6])
-                    key1.rot = float(tokens[4]) * -1
+                    key1.rot = float(tokens[4])
                     
                     cur_table.add_keyframe(key1.time, key1.rot)
 
@@ -425,6 +480,7 @@ class object:
                     key2.rot = float(tokens[5])
                     cur_table.add_keyframe(key2.time, key2.rot)
 
+                    cur_anim_tree[-1].actions.append(cur_rotate_transform)
                     cur_anim_tree[-1].actions.append(cur_table)
             
             elif tokens[0] == "ANIM_end":
@@ -432,14 +488,18 @@ class object:
                 cur_anim_tree.pop()
             
             elif tokens[0] == "ANIM_rotate_begin":
-                cur_table = anim_rot_table()
-                cur_table.dataref = tokens[4]
+                cur_rotate_transform = anim_rot_table_vector_transform()
+
                 cur_rotate_keyframe_do_x = float(tokens[1]) * trans_matrix[0]
                 cur_rotate_keyframe_do_y = float(tokens[3]) * trans_matrix[1]
                 cur_rotate_keyframe_do_z = float(tokens[2]) * trans_matrix[2]
 
-                cur_table.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
+                cur_rotate_transform.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
+
+                cur_table = anim_rot_table()
+                cur_table.dataref = tokens[4]
                 
+                cur_anim_tree[-1].actions.append(cur_rotate_transform)
                 cur_anim_tree[-1].actions.append(cur_table)
             
             elif tokens[0] == "ANIM_rotate_key":
