@@ -1,0 +1,18 @@
+A
+850
+LINE_PAINT
+
+TEXTURE Asphalt_Black_Dark_Edge.png
+TEXTURE_NORMAL 1.0 	Asphalt_Black_Edge_NML.png
+WEATHER 	Asphalt_Black_Weather.png
+
+DECAL_PARAMS	2	0	0	0	0	0	0	1	0	0	0	0	0	0	../Fine_Asphalt_Detail.png
+NORMAL_DECAL_PARAMS	2 0	0	0	0	0	1	../Fine_Asphalt_Detail_NML.png	0.30234139
+NORMAL_DECAL_PARAMS	0.5	0	0	0	0	0	0.5	../Streaky_Pavement_Details_NML.png	0.30234139
+
+MIRROR
+SCALE 6 6
+
+TEX_WIDTH 2048
+S_OFFSET 0 896 1024 1152
+LAYER_GROUP runways -1

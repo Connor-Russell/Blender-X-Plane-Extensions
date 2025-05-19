@@ -105,7 +105,7 @@ def test(test_dir):
 if __name__ == "__main__":
 
     #The test dir is the parent of the blender file path. THis is just so we don't have to deal with passing in an extra argument, or hard coding the path in every test tilf
-    test_dir = bpy.data.filepath.rsplit("\\", 1)[0]
+    test_dir = os.path.dirname(bpy.data.filepath)
 
     test(test_dir)
 
