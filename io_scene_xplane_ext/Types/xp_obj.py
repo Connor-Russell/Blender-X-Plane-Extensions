@@ -25,6 +25,46 @@ class draw_call:
         self.lod_end = 0  #End range of the LOD
         self.lod_bucket = -1  #LOD bucket of the draw call. Corresponds to the XP2B value.
 
+    def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection):
+
+        # When adding geometry, we need verts and indicies. We have our range of indicies, and *all* the indicies and *all* the verts
+        # So to add them, we need *just* our indicies and verts. So what we do is we get all the indicies we need, in the correct order
+        # Then we iterate through them, getting the verticies they reference, and offsetting the indicies to start idx is at 0 here.
+        # Then when we pass it to creat_obj_from_draw_call it's in the correct format.
+        # Note, we do need to flip the indicies to fix reversed normals. I believe this an XP vs Blender winding thing, (TODO: Double check this) but it works for now
+        dc_indicies = all_indicies[self.start_index:self.start_index+self.length]
+
+        dc_verticies = []
+        for i in range(len(dc_indicies)):
+            dc_verticies.append(all_verts[dc_indicies[i]])
+            dc_indicies[i] = i
+
+        dc_indicies.reverse()
+
+        dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {self.start_index} {self.length}")
+        in_collection.objects.link(dc_obj)
+
+        if self.lod_bucket != -1:
+            #Set the LOD bucket for this object
+            dc_obj.xplane.override_lods = True
+            if self.lod_bucket == 0:
+                dc_obj.xplane.lod[0] = True
+            elif self.lod_bucket == 1:
+                dc_obj.xplane.lod[1] = True
+            elif self.lod_bucket == 2:
+                dc_obj.xplane.lod[2] = True
+            elif self.lod_bucket == 3:
+                dc_obj.xplane.lod[3] = True
+            else:
+                print(f"Unknown LOD bucket for obj {dc_obj.name} for range {self.lod_start}-{self.lod_end}. Bucket is {self.lod_bucket}. What?")
+
+        # Set the material for this object. Right now this is very basic - we use the first material in the list. In the future, this list will contain all material variants which are based on the draw call state
+        # We would have all these variants so if the material is in a state that is the same as us (i.e. the blend mode) we can reuse an existing material vs a new one
+        if len(in_mats) > 0:
+            dc_obj.data.materials.append(in_mats[0])
+
+        return dc_obj
+
 class anim_action:
     """
     Base class for all animation actions
@@ -231,43 +271,10 @@ class anim_level:
 
         #Now we need to add all the draw calls to the scene, then parent them to the empty
         for dc in self.draw_calls:
-            start_index = dc.start_index
-            length = dc.length
-
-            #Get the indicies for this draw call
-            dc_indicies = all_indicies[start_index:start_index+length]
-
-            #Get the verticies for this draw call, and adjust the indicies references
-            dc_verticies = []
-            for i in range(len(dc_indicies)):
-                dc_verticies.append(all_verts[dc_indicies[i]])
-                dc_indicies[i] = i
-
-            #To fix flipped normals
-            dc_indicies.reverse()
-
-            #Create the object for this draw call
-            dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {start_index} {length}")
-            dc_obj.data.materials.append(in_mat)
-            in_collection.objects.link(dc_obj)
-
+            dc_obj = dc.add_to_scene(all_verts, all_indicies, [in_mat], in_collection)
             dc_obj.parent = self.last_action
 
-            if dc.lod_bucket != -1:
-                #Set the LOD bucket for this object
-                dc_obj.xplane.override_lods = True
-                if dc.lod_bucket == 0:
-                    dc_obj.xplane.lod[0] = True
-                elif dc.lod_bucket == 1:
-                    dc_obj.xplane.lod[1] = True
-                elif dc.lod_bucket == 2:
-                    dc_obj.xplane.lod[2] = True
-                elif dc.lod_bucket == 3:
-                    dc_obj.xplane.lod[3] = True
-                else:
-                    print(f"Unknown LOD bucket for obj {dc_obj.name} for range {dc.lod_start}-{dc.lod_end}. Bucket is {dc.lod_bucket}. What?")
-
-            #Reset it's rotation so it doesn't take up it's parent's rotation axis
+            #So it doesn't take up it's parent's rotation
             eular = mathutils.Vector((0, 0, 0))
             anim_utils.set_obj_rotation_world(dc_obj, eular)
 
@@ -680,40 +687,7 @@ class object:
 
         #For the basic draw calls just add 'em to the scene
         for dc in self.draw_calls:
-            start_index = dc.start_index
-            length = dc.length
-
-            #Get the indicies for this draw call
-            dc_indicies = self.indicies[start_index:start_index+length]
-
-            #Get the verticies for this draw call, and adjust the indicies references
-            dc_verticies = []
-            for i in range(len(dc_indicies)):
-                dc_verticies.append(self.verticies[dc_indicies[i]])
-                dc_indicies[i] = i
-
-            #To fix flipped normals
-            dc_indicies.reverse()
-
-            #Create the object for this draw call
-            dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {start_index} {length}")
-            dc_obj.data.materials.append(mat)
-            collection.objects.link(dc_obj)
-            bpy.context.view_layer.objects.active = dc_obj
-
-            if dc.lod_bucket != -1:
-                #Set the LOD bucket for this object
-                dc_obj.xplane.override_lods = True
-                if dc.lod_bucket == 0:
-                    dc_obj.xplane.lod[0] = True
-                elif dc.lod_bucket == 1:
-                    dc_obj.xplane.lod[1] = True
-                elif dc.lod_bucket == 2:
-                    dc_obj.xplane.lod[2] = True
-                elif dc.lod_bucket == 3:
-                    dc_obj.xplane.lod[3] = True
-                else:
-                    print(f"Unknown LOD bucket for obj {dc_obj.name} for range {dc.lod_start}-{dc.lod_end}. Bucket is {dc.lod_bucket}. What?")
+            dc.add_to_scene(self.verticies, self.indicies, [mat], collection)
 
 
         #Now that we have the basic geometery, we need to add the animated stuff.
