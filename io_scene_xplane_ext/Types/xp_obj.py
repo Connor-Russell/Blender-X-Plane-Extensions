@@ -7,9 +7,59 @@
 import bpy
 import os
 import mathutils
+import math
 
+from ..Helpers import anim_utils
 from ..Helpers import geometery_utils
 from ..Helpers import anim_utils
+from ..Helpers import light_data    #These are defines for the parameter layout of PARAM lights
+
+class light:
+    """
+    Class to represent a light in an X-Plane object. This class is used to store the lights for an object.
+    """
+
+    #Define instance variables
+    def __init__(self):
+        self.type = "POINT" #Type. POINT or SPOT
+        self.color_r = 1
+        self.color_g = 1
+        self.color_b = 1
+        self.loc_x = 0
+        self.loc_y = 0
+        self.loc_z = 0
+        self.dir_x = 0
+        self.dir_y = 0
+        self.dir_z = 0
+        self.cone_angle = 0
+        self.size = 0   #If this is photometric, we can get to a Blender wattage value by dividing this by 683. At least according to Github Copilot - I'm no lighting expert and this isn't that important.
+        self.is_photometric = False #True if this light is photometric
+        self.params = [] #List of string params for the light that are specific to XP
+        self.xp_type = '' #The X-Plane light type.
+        self.bb_s1 = 0 #Left UV coordinate of the custom billboard light texture
+        self.bb_s2 = 0 #Right UV coordinate of the custom billboard light texture
+        self.bb_t1 = 0 #Bottom UV coordinate of the custom billboard light texture
+        self.bb_t2 = 0 #Top UV coordinate of the custom billboard light texture
+
+    def add_to_scene(self, in_collection):
+        """
+        Adds a new light to the Blender scene with the specified properties.
+        """
+
+        b_light = bpy.data.objects.new(name="Light", type='LIGHT')
+        in_collection.objects.link(b_light)
+
+        b_light.color = (self.color_r, self.color_g, self.color_b)
+        b_light.energy = self.size / 683.0 if self.is_photometric else self.size * 10 / 683.0   #All just kinda guesses here...
+        b_light.spot_size = math.radians(self.cone_angle) if self.type == "SPOT" else 0.0
+        
+        
+        b_light.data = b_light
+        b_light.location = (self.loc_x, self.loc_y, self.loc_z)
+        b_light.rotation_mode = 'XYZ'
+        
+        light_euler = anim_utils.euler_to_align_z_with_vector((self.dir_x, self.dir_y, self.dir_z))
+        b_light.rotation_euler = light_euler
 
 class draw_call:
     """
