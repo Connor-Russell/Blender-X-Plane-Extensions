@@ -11,7 +11,6 @@ import mathutils
 from ..Helpers import geometery_utils
 from ..Helpers import anim_utils
 
-#TODO: Refactor this to add the draw call to the scene via a method vs seperate code every time it's needed
 class draw_call:
     """
     Class to represent a draw call. This class is used to store the draw calls for an object.
@@ -26,7 +25,25 @@ class draw_call:
         self.lod_bucket = -1  #LOD bucket of the draw call. Corresponds to the XP2B value.
 
     def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection):
+        """
+        Adds the geometry represented by this draw call to the Blender scene as a new mesh object.
 
+        Args:
+            all_verts (list): List of all vertex objects (xp_vertex) for the parent X-Plane object.
+            all_indicies (list): List of all indices for the parent X-Plane object.
+            in_mats (list): List of Blender material(s) to assign to the created mesh. The first material is used.
+            in_collection (bpy.types.Collection): The Blender collection to which the new mesh object will be linked.
+
+        Returns:
+            bpy.types.Object: The newly created Blender mesh object representing this draw call.
+
+        Notes:
+            - Extracts the relevant indices and vertices for this draw call from the full object arrays.
+            - Reindexes and reverses indices to match Blender's winding order (fixes normal direction).
+            - Creates a mesh object using geometery_utils.create_obj_from_draw_call.
+            - Assigns LOD bucket and material if applicable.
+            - Links the object to the provided collection.
+        """
         # When adding geometry, we need verts and indicies. We have our range of indicies, and *all* the indicies and *all* the verts
         # So to add them, we need *just* our indicies and verts. So what we do is we get all the indicies we need, in the correct order
         # Then we iterate through them, getting the verticies they reference, and offsetting the indicies to start idx is at 0 here.

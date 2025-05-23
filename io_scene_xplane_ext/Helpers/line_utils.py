@@ -11,6 +11,9 @@ from ..Types import xp_lin # type: ignore
 from . import geometery_utils
 
 class lin_vertex:
+    """
+    Simple class to hold the vertex data for a line segment. TODO: Possibly refactor this to use xp_vertex
+    """
     def __init__(self):
         self.x = 0
         self.y = 0
@@ -19,8 +22,16 @@ class lin_vertex:
         self.v = 0
         self.uv_layer = 0
 
-#Gets the average Z of the object. This is used to determine the layer height.
 def get_layer_z(in_object):
+     """
+     Gets the average Z of the object. This is used to determine the layer height.
+
+    Args:
+        in_object (bpy.types.Object): The Blender object to calculate the average Z for.
+
+    Returns:
+        float: The average Z coordinate of the object's vertices in world space.
+     """
      z_sum = 0
  
      for vert in in_object.data.vertices:
@@ -28,8 +39,18 @@ def get_layer_z(in_object):
  
      return z_sum / len(in_object.data.vertices)
 
-#Type is either "SEGMENT" "START" or "END"
 def get_layer_from_segment_object(in_object, offset, type):
+    """
+    Gets the layer from a segment object. This is used to determine the layer height.
+
+    Args:
+        in_object (bpy.types.Object): The Blender object to get the layer from.
+        offset (float): The offset to apply to the layer. Use the index of this object in a list of objects, sorted off their Z position.
+        type (str): The type of layer to get ("SEGMENT", "START", or "END"). Should come from PROP_lin_layer
+
+    Returns:
+        float: The layer height.
+    """
 
     #First, make sure this blender object has only 4 vertices
     if len(in_object.data.vertices) != 4:
@@ -141,9 +162,14 @@ def get_layer_from_segment_object(in_object, offset, type):
         cap.layer = offset
         return cap
 
-#Gets the scale of the layer based on the UVs and dimensions of the object, and texture.
-#Returns X scale Y scale
 def get_scale_from_layer(in_object):
+    """
+    Gets the scale of the *texture* base on the scale of the object and it's UVs. I.e. if this object uses half the texture and is 1m wide, the scale will be 2m.
+    Args:
+        in_object (bpy.types.Object): The Blender object to get the scale from.
+    Returns:
+        tuple: (x_scale, y_scale) The scale of the layer in meters.
+    """
 
     #First, make sure this blender object has only 4 vertices
     if len(in_object.data.vertices) != 4:
@@ -194,6 +220,9 @@ def get_scale_from_layer(in_object):
 #verts: List of LineVertex objects
 #Returns: The plane object
 def gen_plane_from_verts(in_verts):
+    """
+    TODO: Get rid of this function and replace it with geometry_utils.create_obj_from_draw_call
+    """
     xs = []
     ys = []
     zs = []

@@ -12,6 +12,9 @@ from . import misc_utils
 
 #Simple container to hold an X-Plane Vertex
 class xp_vertex:
+    """
+    Simple class that contains all the data for a vertex in X-Plane.
+    """
     loc_x = 0
     loc_y = 0
     loc_z = 0
@@ -38,41 +41,16 @@ class xp_vertex:
     def __eq__(self, other):
         return self.loc_x == other.loc_x and self.loc_y == other.loc_y and self.loc_z == other.loc_z and self.normal_x == other.normal_x and self.normal_y == other.normal_y and self.normal_z == other.normal_z and self.uv_x == other.uv_x and self.uv_y == other.uv_y
 
-    def to_string(self):
-        return "VERTEX\t" + misc_utils.ftos(self.loc_x, 8) + "\t" + misc_utils.ftos(self.loc_z, 8) + "\t" + misc_utils.ftos(self.loc_y, 8) + "\t" + misc_utils.ftos(self.normal_x, 8) + "\t" + misc_utils.ftos(self.normal_z, 8) + "\t" + misc_utils.ftos(self.normal_y, 8) + "\t" + misc_utils.ftos(self.uv_x, 8) + "\t" + misc_utils.ftos(self.uv_y, 8)
-
-#Rotate a vertex around an axis ("x", "y", or "z"). Angle must be in degrees. Returns the new vertex as a tuple of x y z in that order.
-def rotate_vertex_on_axis(vertex, angle, axis):
-    # Convert the angle to radians
-    angle = math.radians(angle)
-
-    # Get the sin and cos of the angle
-    sin = math.sin(angle)
-    cos = math.cos(angle)
-
-    # Get the axis
-    axis = axis.lower()
-
-    # Rotate the vertex
-    if axis == "x":
-        new_x = vertex[0]
-        new_y = vertex[1] * cos - vertex[2] * sin
-        new_z = vertex[1] * sin + vertex[2] * cos
-    elif axis == "y":
-        new_x = vertex[0] * cos + vertex[2] * sin
-        new_y = vertex[1]
-        new_z = -vertex[0] * sin + vertex[2] * cos
-    elif axis == "z":
-        new_x = vertex[0] * cos - vertex[1] * sin
-        new_y = vertex[0] * sin + vertex[1] * cos
-        new_z = vertex[2]
-    else:
-        raise ValueError("Invalid axis. Must be 'x', 'y', or 'z'")
-
-    return (new_x, new_y, new_z)
-
-#Creates a Blender mesh and object from an X-Plane draw call
 def create_obj_from_draw_call(vertices, indicies, name):
+    """
+    Create a Blender mesh and object from an X-Plane draw call.
+    Args:
+        vertices (list of xp_vertex): List of xp_vertex objects representing the vertices.
+        indicies (list of int): List of indices to create faces with the vertices.
+        name (str): Name for the new object.
+    Returns:
+        bpy.types.Object: The created Blender object.
+    """
     #Create a new bmesh
     bm = bmesh.new()
 
@@ -137,14 +115,19 @@ def create_obj_from_draw_call(vertices, indicies, name):
 
     return obj
 
-#Get the geometry from an object. Returns a tuple of XPVertex and integer indicies that represent the faces.
 def get_draw_call_from_obj(obj):
+    """
+    Get the geometry from a Blender object and return it as a tuple of xp_vertexs and integer indices.
+    Args:
+        obj (bpy.types.Object): Blender object to extract geometry from.
+    """
+
     # Ensure the object is a mesh
     if obj.type != 'MESH':
         raise TypeError("Object must be a mesh")
     
     #Define our output arrays
-    out_verts = []  #Array of XPVertex
+    out_verts = []  #Array of xp_vertex
     out_inds = []   #Ints
 
     #Check if this object has modifiers. If it does, we'll duplicate it, and apply the modifiers to the duplicate.

@@ -7,13 +7,15 @@ import bpy # type: ignore
 import os
 from . import file_utils # type: ignore
 
-#Sets X-Plane decal properties for a given collection based on a given decal property
-#Arguments:
-#in_collection: The collection we are setting the decal properties for
-#in_material: The material we are setting the decal properties for
-#in_decal_prop: The decal property we are setting the properties for
-#index: The index of the decal
 def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
+    """
+    Sets the X-Plane decal properties for a given collection and material.
+    Args:
+        in_collection: The collection we are setting the decal properties for.
+        in_material: The material we are setting the decal properties from.
+        in_decal_prop: The decal property we are setting the properties from.
+        index: The index of the decal.
+    """
     #Get the decal field
     dcl = in_decal_prop
 
@@ -120,10 +122,16 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
                 setattr(in_collection.xplane.layer, dcl_name_nml + "_constant", dcl.nml_strength_constant)
                 setattr(in_collection.xplane.layer, dcl_name_nml + "_modulator", dcl.nml_strength_modulator)
 
-#Arguments:
-#in_decal: The decal object we are trying to get the command for
-#Returns: The command for the decal
 def get_decal_command(in_decal, in_output_folder):
+    """
+    Returns the command for the decal
+    Args:
+        in_decal: The decal object we are trying to get the command for.
+        in_output_folder: The output folder to use for relative paths.
+    Returns:
+        str: The command for the decal.
+    """
+
     #Albedo
     alb_decal = ""
     
@@ -159,6 +167,9 @@ def get_decal_command(in_decal, in_output_folder):
     return alb_decal + nml_decal
 
 def get_decal_from_command(in_command, in_decal_prop):
+    """
+    TODO: This function does not work yet!!!
+    """
     #Split the command into parts
     parts = in_command.split(" ")
 

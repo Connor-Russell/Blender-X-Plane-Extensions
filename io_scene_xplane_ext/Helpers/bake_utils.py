@@ -28,12 +28,12 @@ import numpy as np
 #    - Get all the materials from the source objects and dedup the material list
 #    - For every material in the deduped list
 #      - Clear all nodes
-#      - Use the XPMaterialSettings to set up channels property (diffuse only, normal only, roughness only, or metalness only)
+#      - Use the .xp_material settings to set up channels property (diffuse only, normal only, roughness only, metalness only, or lit only)
 #    - Create a new target texture and select it for baking
 #    - Set proper bake settings
 #    - Bake the texture
 # - Create a new final NML material
-# - Merge normal metalness and roughness textures into the final NML material (done externally)
+# - Merge normal metalness and roughness textures into the final NML material
 # - Save the baked base and final NML textures to disk
 # - Reset the source materials
 #
@@ -56,7 +56,11 @@ class BakeType(Enum):
     LIT = 4
 
 def get_source_materials():
-    #Get the selected objects
+    """
+    Get's a deduped list of all the materials from the selected objects
+    Returns:
+        list: A list of materials from the selected objects
+    """
     selected_objects = bpy.context.selected_objects
 
     #Define list of mats
@@ -71,6 +75,12 @@ def get_source_materials():
     return mats
 
 def config_source_materials(type, mats):
+    """
+    Configures the given materials for baking based on the type and said materials XPMaterialSettings
+    Args:
+        type (BakeType): The type of bake to configure the materials for
+        mats (list): The list of materials to configure
+    """
     for mat in mats:
         #Remove all nodes from the material
         for node in mat.node_tree.nodes:
@@ -194,6 +204,11 @@ def config_source_materials(type, mats):
                 mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
 def config_bake_settings(type):
+    """
+    Configures the bake settings for the given type
+    Args:
+        type (BakeType): The type of bake to configure the settings for
+    """
     bpy.context.scene.render.bake.use_selected_to_active = True
     bpy.context.scene.render.bake.use_clear = False
     bpy.context.scene.cycles.samples = 1
@@ -214,6 +229,13 @@ def config_bake_settings(type):
         bpy.context.scene.render.bake.normal_b = 'POS_Z'
     
 def config_target_bake_texture(target_obj, type, resolution):
+    """
+    Creates a new target texture and selects it for baking
+    Args:
+        target_obj (bpy.types.Object): The target object to bake to
+        type (BakeType): The type of bake to configure the texture for
+        resolution (int): The resolution of the texture to create
+    """
     #Define a name for the texture based on the name
     create_name = ""
     if type == BakeType.BASE:
@@ -272,6 +294,14 @@ def config_target_bake_texture(target_obj, type, resolution):
     mat.node_tree.nodes.active = image_node
     
 def save_baked_textures(target_obj):
+    """
+    Saves the baked base and lit textures to the disk, and merges the normal, metalness, and roughness textures into the final nml texture which is also saved to the disk.
+    Args:
+        target_obj (bpy.types.Object): The target object to save the textures for
+    Notes:
+        Texture names are <collectio_name>_LOD01_<suffix>.png, where suffix is nothing for base, _NML for normal, _LIT for lit
+        TODO: Add Blender plugin preferences to change conventions for suffixes. I use NML because of a mistake and I'm grandfathered in. Most devs use _NRM.
+    """
     #Get the base, combined normal, and lit textures
     base_image = bpy.data.images.get("BAKE_BUFFER_Base")
     nml_image = bpy.data.images.get("BAKE_BUFFER_Normal")
@@ -284,7 +314,7 @@ def save_baked_textures(target_obj):
     nml_image.scale(int(nml_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(nml_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
     roughness_image.scale(int(roughness_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(roughness_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
     metalness_image.scale(int(metalness_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(metalness_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
-    #lit_image.scale(int(lit_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(lit_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
+    lit_image.scale(int(lit_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(lit_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
 
     #Get the file path. This is the file path of the current blend file + the name of the collection of the target object + _low_poly_<type>.png
     file_path = bpy.data.filepath
@@ -356,10 +386,21 @@ def save_baked_textures(target_obj):
     bpy.data.images.remove(metalness_image)
 
 def reset_source_materials(mats):
+    """
+    Resets the source materials to their original state by calling the update_nodes function, which is what's called when the user presses the button in the panel
+    Args:
+        mats (list): The list of materials to reset
+    """
     for mat in mats:
         material_config.update_nodes(mat)
 
 def config_target_object_with_new_textures(target_obj):
+    """
+    Configures the target object with the new textures by setting the material properties and updating the nodes. Use after baking is complete
+    Args:
+        target_obj (bpy.types.Object): The target object to configure
+    """
+
     #Get the material
     mat = None
     if len(target_obj.data.materials) > 0:
