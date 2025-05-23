@@ -9,7 +9,14 @@ import bpy
 
 #Gets an absolute path out of a path that is relative to the blender file.
 def rel_to_abs(in_path):
-    """Gets an absolute path out of a path that is relative to the blender file."""
+    """
+    Gets an absolute path out of a path that is relative to the blender file.
+
+    Args:
+        in_path (str): The relative path to convert.
+    Returns:
+        str: The absolute path.    
+    """
 
     str_out_path = ""
 
@@ -55,11 +62,14 @@ def check_for_dds_or_png(image_path):
 def get_or_load_image(image_path, do_reload=False):
     """
     Get an existing image or load a new one if not already loaded.
-    :param image_path: Path to the image file.
-    :return: Handle to the image.
+    Args:
+        image_path (str): The file path to the image.
+        do_reload (bool): Whether to reload the image if it already exists.
+    Returns:
+        bpy.types.Image: The loaded or existing image.
     """
-    # Check if the image is already loaded
-    existing_image = bpy.data.images.get(image_path)
+    # Check if the image is already loaded. We have to check by the name because Blender uses only the image name as a key vs the whole path
+    existing_image = bpy.data.images.get(os.path.basename(image_path))
     if existing_image:
         # Reload the image if requested
         if do_reload:

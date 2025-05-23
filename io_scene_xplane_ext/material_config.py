@@ -342,29 +342,29 @@ def update_nodes(material):
         
         #Load the images that exist
         if str_image_alb != "":
-            image_alb = file_utils.get_or_load_image(str_image_alb)
+            image_alb = file_utils.get_or_load_image(str_image_alb, True)
         else:
             #Disable alb decals if we don't have an alb
             str_image_decal_1_alb = ""
             str_image_decal_2_alb = ""
         if str_image_nml != "":
-            image_nml = file_utils.get_or_load_image(str_image_nml)
+            image_nml = file_utils.get_or_load_image(str_image_nml, True)
         else:
             #Disable nml decals if we don't have a nml
             str_image_decal_1_nml = ""
             str_image_decal_2_nml = ""
         if str_image_lit != "":
-            image_lit = file_utils.get_or_load_image(str_image_lit)
+            image_lit = file_utils.get_or_load_image(str_image_lit, True)
         if str_image_mod != "":
-            image_mod = file_utils.get_or_load_image(str_image_mod)
+            image_mod = file_utils.get_or_load_image(str_image_mod, True)
         if str_image_decal_1_alb != "":
-            image_decal_1_alb = file_utils.get_or_load_image(str_image_decal_1_alb)
+            image_decal_1_alb = file_utils.get_or_load_image(str_image_decal_1_alb, True)
         if str_image_decal_1_nml != "":
-            image_decal_1_nml = file_utils.get_or_load_image(str_image_decal_1_nml)
+            image_decal_1_nml = file_utils.get_or_load_image(str_image_decal_1_nml, True)
         if str_image_decal_2_alb != "":
-            image_decal_2_alb = file_utils.get_or_load_image(str_image_decal_2_alb)
+            image_decal_2_alb = file_utils.get_or_load_image(str_image_decal_2_alb, True)
         if str_image_decal_2_nml != "":
-            image_decal_2_nml = file_utils.get_or_load_image(str_image_decal_2_nml)
+            image_decal_2_nml = file_utils.get_or_load_image(str_image_decal_2_nml, True)
 
         #Remove all nodes from the material
         for node in material.node_tree.nodes:
