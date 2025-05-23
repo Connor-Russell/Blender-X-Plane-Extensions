@@ -91,6 +91,38 @@ class anim_action:
         self.type = ''
         self.empty = None  #Empty for the animation
 
+class anim_show_hide_command:
+    """
+    Class to represent a single show/hide command in an animation
+    """
+
+    def __init__(self):
+        self.hide = False  #True if this command is a hide command. Otherwise, it's a show command
+        self.start_value = 0  #Min dref value to show/hide at
+        self.end_value = 0  #Max dref value to show/hide at
+        self.dataref = ""  #Dataref for the animation
+
+class anim_show_hide_series(anim_action):
+    """
+    Class to represent a series of show/hide commands for an animation. This class is used to store the show/hide commands for an animation.
+    """
+
+    #Define instance variables
+    def __init__(self):
+        super().__init__()
+        self.type = 'show_hide_series'
+        self.commands = []  #List of show/hide commands for the animation
+        self.empty = None  #Empty for the animation
+
+    def add_command(self, cmd):
+        """
+        Add a command to the list of commands
+
+        Args:
+            cmd (anim_show_hide_command): Command to add to the list of commands
+        """
+        self.commands.append(cmd)
+
 class anim_loc_keyframe(anim_action):
     """
     Class to represent a keyframe for an animation. This class is used to store the keyframes for an animation.
@@ -142,6 +174,7 @@ class anim_rot_table(anim_action):
         self.dataref = ''  #Dataref for the animation
         self.keyframes = []  #List of keyframes for the animation
         self.empty = None  #Empty for the animation
+        self.loop = 0 #The *loop animation every this dref value* value.
 
     def add_keyframe(self, time, rot):
         #Add a keyframe to the list of keyframes
@@ -188,6 +221,7 @@ class anim_loc_table(anim_action):
         self.dataref = ""  #Dataref for the animation
         self.keyframes = []  #List of keyframes for the animation
         self.empty = None  #Empty for the animation
+        self.loop = 0 #The *loop animation every this dref value* value.
 
     def add_keyframe(self, time, loc):
         #Add a keyframe to the list of keyframes
@@ -256,6 +290,8 @@ class anim_level:
                 name += " Keyframed Translation"
             elif action.type == 'rot_table':
                 name += " Keyframed Rotation"
+            elif action.type == 'show_hide_series':
+                name += " Show/Hide Series"
             anim_empty = bpy.data.objects.new(name, None)
             anim_empty.empty_display_type = "ARROWS"
             anim_empty.empty_display_size = 0.1
@@ -264,19 +300,23 @@ class anim_level:
 
             if cur_parent != None:
                 anim_empty.parent = cur_parent
-                #if action.type == 'rot_table':
-                    #anim_empty.matrix_parent_inverse.identity()
             cur_parent = anim_empty
 
             #If it is a rotation we need to align it to the rotation vector
             if action.type == 'rot_keyframe' or action.type == 'rot_table_vector_transform':
-                eular = anim_utils.euler_to_align_z_with_vector(action.rot_vector)
+                eular = anim_utils.euler_to_align_z_with_vector(action.rot_vector)  #We align rotations to their rotation vector so they can be rotated into static place, or their child keyframe controller can be rotated along it's local Z (which is this vector)
                 anim_utils.set_obj_rotation_world(anim_empty, eular)
-            elif action.type == 'loc_keyframe' or action.type == 'loc_table':
+            elif action.type == "rot_table":
+                #Rotation tables are always aligned with their parent. Their parent is transformed so it points in the vector of the rotation vector.
+                #By having no rotation, our Z rotates along the rotation vector
+                anim_empty.rotation_euler = mathutils.Vector((0, 0, 0)).xyz
+            elif action.type == 'loc_keyframe' or action.type == 'loc_table' or action.type == "show_hide_series":
+                #Most actions should have no rotation in world space
                 eular = mathutils.Vector((0, 0, 0))
                 anim_utils.set_obj_rotation_world(anim_empty, eular)
             else:
-                anim_empty.rotation_euler = mathutils.Vector((0, 0, 0)).xyz
+                #TODO: Warn here once we have a proper logging system
+                pass
 
             #Set the first/last actions
             if i == 0:
@@ -325,8 +365,8 @@ class anim_level:
 
                 action.get_frames()
 
-                #Create a new track for this dataref
                 anim_utils.add_xp_dataref_track(anim_empty, dataref)
+                anim_empty.xplane.datarefs[-1].loop = action.loop
 
                 #Now, we need to add all the keyframes to the track
                 for kf in action.keyframes:
@@ -347,6 +387,7 @@ class anim_level:
                 action.get_frames()
 
                 anim_utils.add_xp_dataref_track(anim_empty, dataref)
+                anim_empty.xplane.datarefs[-1].loop = action.loop
 
                 base_rot = anim_utils.get_obj_rotation(anim_empty)
 
@@ -362,6 +403,17 @@ class anim_level:
                     #Set the value of the dataref to the keyframe value
                     anim_utils.keyframe_obj_rotation(anim_empty)
                     anim_utils.keyframe_xp_dataref(anim_empty, dataref, kf.time)
+
+            elif action.type == 'show_hide_series':
+                for cmd in action.commands:
+                    anim_empty.xplane.datarefs.add()
+                    anim_empty.xplane.datarefs[-1].path = cmd.dataref
+                    if cmd.hide:
+                        anim_empty.xplane.datarefs[-1].anim_type = 'hide'
+                    else:
+                        anim_empty.xplane.datarefs[-1].anim_type = 'show'
+                    anim_empty.xplane.datarefs[-1].show_hide_v1 = cmd.start_value
+                    anim_empty.xplane.datarefs[-1].show_hide_v2 = cmd.end_value
 
             #Reset our frame
             anim_utils.goto_frame(0)
@@ -540,6 +592,65 @@ class object:
                     cur_anim_tree[-1].actions.append(cur_rotate_transform)
                     cur_anim_tree[-1].actions.append(cur_table)
             
+            elif tokens[0] == "ANIM_keyframe_loop":
+                #ANIM_keyframe_loop <value>
+                #If there is a anim tree, and it has an actions, and the last item in actions is a loc_table/rot_table, we it's loop value
+                if len(cur_anim_tree) > 0 and cur_anim_tree[-1].actions != None:
+                    if cur_anim_tree[-1].actions[-1].type == 'loc_table' or cur_anim_tree[-1].actions[-1].type == 'rot_table':
+                        cur_anim_tree[-1].actions[-1].loop = float(tokens[1])
+
+            elif tokens[0] == "ANIM_show":
+                #ANIM_show <v1> <v2> <dataref>
+
+                #Make sure we have a current animation tree
+                if len(cur_anim_tree) == 0:
+                    continue
+
+                cur_show = anim_show_hide_command()
+                cur_show.hide = False
+                cur_show.start_value = float(tokens[1])
+                cur_show.end_value = float(tokens[2])
+                cur_show.dataref = tokens[3]
+                
+                #Check if we have a current show/hide series
+                cur_show_hide_series = None
+                if len(cur_anim_tree[-1].actions) > 0:
+                    if cur_anim_tree[-1].actions[-1].type == 'show_hide_series':
+                        cur_show_hide_series = cur_anim_tree[-1].actions[-1]
+
+                #If we don't have a current show/hide series, create one
+                if cur_show_hide_series == None:
+                    cur_show_hide_series = anim_show_hide_series()
+                    cur_anim_tree[-1].actions.append(cur_show_hide_series)
+
+                cur_show_hide_series.add_command(cur_show)
+
+            elif tokens[0] == "ANIM_hide":
+                #ANIM_hide <v1> <v2> <dataref>
+
+                #Make sure we have a current animation tree
+                if len(cur_anim_tree) == 0:
+                    continue
+
+                cur_show = anim_show_hide_command()
+                cur_show.hide = True
+                cur_show.start_value = float(tokens[1])
+                cur_show.end_value = float(tokens[2])
+                cur_show.dataref = tokens[3]
+                
+                #Check if we have a current show/hide series
+                cur_show_hide_series = None
+                if len(cur_anim_tree[-1].actions) > 0:
+                    if cur_anim_tree[-1].actions[-1].type == 'show_hide_series':
+                        cur_show_hide_series = cur_anim_tree[-1].actions[-1]
+
+                #If we don't have a current show/hide series, create one
+                if cur_show_hide_series == None:
+                    cur_show_hide_series = anim_show_hide_series()
+                    cur_anim_tree[-1].actions.append(cur_show_hide_series)
+
+                cur_show_hide_series.add_command(cur_show)
+
             elif tokens[0] == "ANIM_end":
                 #Pop the current animation tree
                 cur_anim_tree.pop()
