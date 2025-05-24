@@ -45,6 +45,8 @@ def compare_images(file1, file2):
 
 def test(test_dir):
     b_pass = False
+    error_messages = ""
+    test_output = test_dir + "/../Test Results.csv"
 
     # Sometimes Blender tries to change the name to .000 (or similar). This *seems* to be a bug in their unique name code since there's no actual conflict
     # But that's not super important to the core plugin so we have this bandaid
@@ -74,30 +76,37 @@ def test(test_dir):
         os.remove(test_lit)
 
     #Bake
-    bpy.ops.xp_ext.bake_low_poly()
+    try:
+        bpy.ops.xp_ext.bake_low_poly()
+    except Exception as e:
+        error_messages += "Bake failed: " + str(e) + "\n"
+        return
 
     #Compare the images
-    albedo_similarity = compare_images(test_albedo, known_good_albedo)
-    normal_similarity = compare_images(test_normal, known_good_normal)
-    lit_similarity = compare_images(test_lit, known_good_lit)
+    try:
+        albedo_similarity = compare_images(test_albedo, known_good_albedo)
+        normal_similarity = compare_images(test_normal, known_good_normal)
+        lit_similarity = compare_images(test_lit, known_good_lit)
 
-    #Rename the test result images to _version.test_result.png so they are ignored by git
-    blender_version = bpy.app.version_string.split(".")
-    blender_version = blender_version[0] + blender_version[1]
-    test_albedo = test_albedo.replace(".png", "_" + blender_version + ".test_result.png")
-    test_normal = test_normal.replace(".png", "_" + blender_version + ".test_result.png")
-    test_lit = test_lit.replace(".png", "_" + blender_version + ".test_result.png")
-    if os.path.exists(test_albedo):
-        os.remove(test_albedo)
-    if os.path.exists(test_normal):
-        os.remove(test_normal)
-    if os.path.exists(test_lit):
-        os.remove(test_lit)
-    os.rename(test_dir + "/BakeTest_LOD01.png", test_albedo)
-    os.rename(test_dir + "/BakeTest_LOD01_NML.png", test_normal)
-    os.rename(test_dir + "/BakeTest_LOD01_LIT.png", test_lit)
-
-    test_output = test_dir + "/../Test Results.csv"
+        #Rename the test result images to _version.test_result.png so they are ignored by git
+        blender_version = bpy.app.version_string.split(".")
+        blender_version = blender_version[0] + blender_version[1]
+        test_albedo = test_albedo.replace(".png", "_" + blender_version + ".test_result.png")
+        test_normal = test_normal.replace(".png", "_" + blender_version + ".test_result.png")
+        test_lit = test_lit.replace(".png", "_" + blender_version + ".test_result.png")
+        if os.path.exists(test_albedo):
+            os.remove(test_albedo)
+        if os.path.exists(test_normal):
+            os.remove(test_normal)
+        if os.path.exists(test_lit):
+            os.remove(test_lit)
+        os.rename(test_dir + "/BakeTest_LOD01.png", test_albedo)
+        os.rename(test_dir + "/BakeTest_LOD01_NML.png", test_normal)
+        os.rename(test_dir + "/BakeTest_LOD01_LIT.png", test_lit)
+        
+    except Exception as e:
+        error_messages += "Image comparison failed: " + str(e) + "\n"
+        return
 
     #Append the test results to the exporter_output file
     with open(test_output, 'a') as output:
@@ -120,6 +129,12 @@ if __name__ == "__main__":
     #The test dir is the parent of the blender file path. THis is just so we don't have to deal with passing in an extra argument, or hard coding the path in every test tilf
     test_dir = bpy.data.filepath.rsplit("\\", 1)[0]
 
-    test(test_dir)
+    try:
+        test(test_dir)
+    except Exception as e:
+        test_output = test_dir + "/../Test Results.csv"
+
+        with open(test_output, 'a') as output:
+            output.write("Bake Test,FAIL,Critical error: " + str(e) + "\n")
 
 

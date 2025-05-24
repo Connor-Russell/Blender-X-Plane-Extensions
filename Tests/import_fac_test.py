@@ -43,4 +43,10 @@ if __name__ == "__main__":
 
     test_dir = os.path.dirname(bpy.data.filepath)
 
-    test(test_dir)
+    try:
+        test(test_dir)
+    except Exception as e:
+        test_output = test_dir + "/../Test Results.csv"
+
+        with open(test_output, 'a') as output:
+            output.write("Facade Importer,FAIL,Critical error: " + str(e) + "\n")

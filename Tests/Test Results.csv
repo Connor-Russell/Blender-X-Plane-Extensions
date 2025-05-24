@@ -1,4 +1,4 @@
-2025-05-18 21-53-38
+2025-05-24 15-51-29
 Test Name,Result
 2.9 Tests
 Facade Exporter,PASS,100.0000% 
@@ -11,7 +11,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -27,7 +27,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -43,7 +43,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -59,7 +59,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -75,7 +75,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -91,7 +91,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -107,7 +107,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -123,7 +123,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,99.9996%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -139,7 +139,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -155,7 +155,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -171,7 +171,7 @@ TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
-Bake Test Lit,PASS,100.0000%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -185,6 +185,9 @@ TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
+Bake Test Albedo,PASS,99.9973%
+Bake Test Normal,PASS,99.9996%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
@@ -198,6 +201,9 @@ TEST_get_roof_data,PASS
 TEST_keyframing,PASS
 TEST_get_draw_call_from_obj,PASS
 TEST_world_space_transform,PASS
+Bake Test Albedo,PASS,99.9973%
+Bake Test Normal,PASS,99.9996%
+Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
 Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines

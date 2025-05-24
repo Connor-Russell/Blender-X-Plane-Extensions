@@ -181,11 +181,42 @@ class PROP_mats(bpy.types.PropertyGroup):
     # - Blend alpha - bool
     # - Polygon offset - int
 
+    #Internal state properties
+    was_draped_last_update: bpy.props.BoolProperty(
+        name="Was Draped Last Update",
+        default=False
+    ) # type: ignore
+
+    was_seperate_material_texture_last_update: bpy.props.BoolProperty(
+        name="Was Seperate Material Texture Last Update",
+        default=False
+    ) # type: ignore
+
+    was_programmatically_updated: bpy.props.BoolProperty(
+        name="Was Programmatically Updated",
+        default=False
+    ) # type: ignore
+
     alb_texture: bpy.props.StringProperty(
         name="Albedo Texture",
         description="The albedo texture",
         default="",
         subtype='FILE_PATH',
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    material_texture: bpy.props.StringProperty(
+        name="Material Texture",
+        description="The material texture",
+        default="",
+        subtype='FILE_PATH',
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    do_seperate_material_texture: bpy.props.BoolProperty(
+        name="Use Seperate Material Texture",
+        description="Whether to use a seperate material texture for the material",
+        default=False,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 

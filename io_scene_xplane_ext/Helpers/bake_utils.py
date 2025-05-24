@@ -100,7 +100,7 @@ def config_source_materials(type, mats):
         #What we do from here is dependant on the type
         if type == BakeType.BASE:
             if mat.xp_materials.alb_texture != "":
-                str_resolve_path = file_utils.rel_to_abs(mat.xp_materials.alb_texture)
+                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.alb_texture))
                 if str_resolve_path != "":
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
                     image_node.image.colorspace_settings.name = 'sRGB'
@@ -118,7 +118,7 @@ def config_source_materials(type, mats):
             #If there is a normal we do the node setup, otherwise we do nothing (cuz normal defaults to a sane value)
             if mat.xp_materials.normal_texture != "":
                 #Now we load the normal image into the image node
-                str_resolve_path = file_utils.rel_to_abs(mat.xp_materials.normal_texture)
+                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.normal_texture))
 
                 if (str_resolve_path != ""):
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -144,60 +144,113 @@ def config_source_materials(type, mats):
                     mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
         elif type == BakeType.ROUGHNESS:
-            #If there is a normal we do the node setup, otherwise we do nothing
-            if mat.xp_materials.normal_texture != "":
-                #Now we load the normal image into the image node
-                str_resolve_path = file_utils.rel_to_abs(mat.xp_materials.normal_texture)
+            #Seperate normal and material textures
+            if mat.xp_materials.do_seperate_material_texture:
+                #If there is a normal we do the node setup, otherwise we use full white (aka full roughness)
+                if mat.xp_materials.material_texture != "":
+                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.material_texture))
 
-                if (str_resolve_path != ""):
-                    image_node.image = file_utils.get_or_load_image(str_resolve_path)
-                    image_node.image.colorspace_settings.name = 'Non-Color'
+                    if (str_resolve_path != ""):
+                        image_node.image = file_utils.get_or_load_image(str_resolve_path)
+                        image_node.image.colorspace_settings.name = 'Non-Color'
 
-                    #Link image alpha into diffuse node color input
-                    mat.node_tree.links.new(image_node.outputs[1], output_node.inputs[0])
+                        #Add a seperate RGB node. Linkage is as follows:
+                        #Image to sep node
+                        #G of sep node to color of diffuse node
+                        sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        mat.node_tree.links.new(image_node.outputs[0], sep_node.inputs[0])
+                        mat.node_tree.links.new(sep_node.outputs[1], output_node.inputs[0])
+                    #No path found
+                    else:
+                        diffuse_node.inputs[0].default_value = (1, 1, 1, 1)
+                        mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+                #No path specified
                 else:
-                    #Set the diffuse color to black
-                    diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
+                    diffuse_node.inputs[0].default_value = (1, 1, 1, 1)
                     mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+
+            #Traditional combined normals/materials
             else:
-                #Set the diffuse color to black
-                diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
-                mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+                #If there is a normal we do the node setup, otherwise we use full black (aka full roughness. Remember, this is XP convention)
+                if mat.xp_materials.normal_texture != "":
+                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.normal_texture))
+
+                    if (str_resolve_path != ""):
+                        image_node.image = file_utils.get_or_load_image(str_resolve_path)
+                        image_node.image.colorspace_settings.name = 'Non-Color'
+
+                        mat.node_tree.links.new(image_node.outputs[1], output_node.inputs[0])
+                    #No path found
+                    else:
+                        diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
+                        mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+                #No path specified
+                else:
+                    diffuse_node.inputs[0].default_value = (1, 1, 1, 1)
+                    mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
         elif type == BakeType.METALNESS:
-            #If there is a normal we do the node setup, otherwise we do nothing
-            if mat.xp_materials.normal_texture != "":
-                #Now we load the normal image into the image node
-                str_resolve_path = file_utils.rel_to_abs(mat.xp_materials.normal_texture)
+            #Seperate normal and material textures
+            if mat.xp_materials.do_seperate_material_texture:
+                #If there is a normal we do the node setup, otherwise we do nothing
+                if mat.xp_materials.material_texture != "":
+                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.material_texture))
 
-                if (str_resolve_path != ""):
-                    image_node.image = file_utils.get_or_load_image(str_resolve_path)
-                    image_node.image.colorspace_settings.name = 'Non-Color'
+                    if (str_resolve_path != ""):
+                        image_node.image = file_utils.get_or_load_image(str_resolve_path)
+                        image_node.image.colorspace_settings.name = 'Non-Color'
 
-                    #Add a seperate RGB node. Linkage is as follows:
-                    #Image to sep node
-                    #B of sep node to color of diffuse node
-                    sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
-                    mat.node_tree.links.new(image_node.outputs[0], sep_node.inputs[0])
-                    mat.node_tree.links.new(sep_node.outputs[2], output_node.inputs[0])
+                        #Add a seperate RGB node. Linkage is as follows:
+                        #Image to sep node
+                        #R of sep node to color of diffuse node
+                        sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        mat.node_tree.links.new(image_node.outputs[0], sep_node.inputs[0])
+                        mat.node_tree.links.new(sep_node.outputs[0], output_node.inputs[0])
+                    #No path found
+                    else:
+                        diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
+                        mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+                #No path specified
+                else:
+                    diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
+                    mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+            #Traditional combined normals/materials
+            else:
+                if mat.xp_materials.normal_texture != "":
+                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.normal_texture))
+
+                    if (str_resolve_path != ""):
+                        image_node.image = file_utils.get_or_load_image(str_resolve_path)
+                        image_node.image.colorspace_settings.name = 'Non-Color'
+
+                        #Add a seperate RGB node. Linkage is as follows:
+                        #Image to sep node
+                        #B of sep node to color of diffuse node
+                        sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        mat.node_tree.links.new(image_node.outputs[0], sep_node.inputs[0])
+                        mat.node_tree.links.new(sep_node.outputs[2], output_node.inputs[0])
+                    #No path found
+                    else:
+                        diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
+                        mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+                #No path specified
                 else:
                     #Set the diffuse color to black
                     diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
                     mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
-            else:
-                #Set the diffuse color to black
-                diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
-                mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
         elif type == BakeType.LIT:
             #This is literally just diffuse but we load the lit texture instead. IF there is no lit texture, we just do black diffuse
             if mat.xp_materials.lit_texture != "":
-                str_resolve_path = file_utils.rel_to_abs(mat.xp_materials.lit_texture)
+                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.lit_texture))
                 if str_resolve_path != "":
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
                     image_node.image.colorspace_settings.name = 'sRGB'
                     mat.node_tree.links.new(image_node.outputs[0], output_node.inputs[0])
-
+                else:
+                    #Set the diffuse color to black
+                    diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
+                    mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
             else:
                 #Set the diffuse color to black
                 diffuse_node.inputs[0].default_value = (0, 0, 0, 1)

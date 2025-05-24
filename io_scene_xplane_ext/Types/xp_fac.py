@@ -514,6 +514,9 @@ class facade:
 
             mat = self.wall_material.xp_materials
 
+            if mat.do_seperate_material_texture:
+                raise Exception("Error: X-Plane does not support seperate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+
             #Textures
             if mat.alb_texture != "":
                 output += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(mat.alb_texture), output_folder) + "\n"
@@ -548,6 +551,9 @@ class facade:
             output += "SHADER_ROOF\n"
 
             mat = self.roof_material.xp_materials
+
+            if mat.do_seperate_material_texture:
+                raise Exception("Error: X-Plane does not support seperate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
 
             #Textures
             if mat.alb_texture != "":

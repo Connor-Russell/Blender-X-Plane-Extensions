@@ -334,20 +334,29 @@ class MENU_mats(bpy.types.Panel):
 
         if xp_materials:
             layout.operator("xp_ext.autodetect_texture", text="Autodetect Texture")
+            layout.prop(xp_materials, "do_seperate_material_texture")
+
             layout.prop(xp_materials, "alb_texture", text="Albedo Texture")
+
             if xp_materials.draped:
                 row = layout.row()            
-                row.prop(xp_materials, "normal_tile_ratio")
                 row.prop(xp_materials, "normal_texture", text="Normal Texture")
+                row.prop(xp_materials, "normal_tile_ratio")
             else:
                 layout.prop(xp_materials, "normal_texture", text="Normal Texture")
+
+            if xp_materials.do_seperate_material_texture:
+                layout.prop(xp_materials, "material_texture", text="Material Texture")
+
             layout.prop(xp_materials, "lit_texture", text="Lit Texture")
             if (xp_materials.lit_texture != ""):
                 layout.prop(xp_materials, "brightness", text="Brightness")
+
             layout.prop(xp_materials, "weather_texture", text="Weather Texture")
             layout.prop(xp_materials, "draped", text="Draped")
             layout.prop(xp_materials, "surface_type", text="Surface Type")
             layout.prop(xp_materials, "blend_alpha", text="Blend Alpha")
+            
             if (not xp_materials.blend_alpha):
                 layout.prop(xp_materials, "blend_cutoff", text="Blend Cutoff")
             layout.prop(xp_materials, "polygon_offset", text="Polygon Offset")

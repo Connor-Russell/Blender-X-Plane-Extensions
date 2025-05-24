@@ -432,6 +432,7 @@ class object:
         self.alb_texture = ""
         self.nml_texture = ""
         self.lit_texture = ""
+        self.mat_texture = ""
         self.do_blend_alpha = True
         self.alpha_cutoff = 0.5
         self.cast_shadows = True
@@ -497,6 +498,12 @@ class object:
             elif tokens[0] == "TEXTURE":
                 self.alb_texture = tokens[1]
             
+            elif tokens[0] == "TEXTURE_MAP":
+                if tokens[1].lower() == "normal":
+                    self.nml_texture = tokens[2]
+                elif tokens[1].lower() == "material_gloss":
+                    self.mat_texture = tokens[2]
+
             elif tokens[0] == "TEXTURE_NORMAL":
                 self.nml_texture = tokens[1]
 
@@ -710,6 +717,9 @@ class object:
         xp_mat = mat.xp_materials
         xp_mat.alb_texture = self.alb_texture
         xp_mat.normal_texture = self.nml_texture
+        if self.mat_texture != "":
+            xp_mat.material_texture = self.mat_texture
+            xp_mat.do_seperate_material_texture = True
         xp_mat.lit_texture = self.lit_texture
         xp_mat.do_blend_alpha = self.do_blend_alpha
         xp_mat.alpha_cutoff = self.alpha_cutoff

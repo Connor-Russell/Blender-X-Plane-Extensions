@@ -281,6 +281,7 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
                             col.xplane.layer.texture = xp_props.alb_texture
                             col.xplane.layer.texture_lit = xp_props.lit_texture
                             col.xplane.layer.texture_normal = xp_props.normal_texture
+                            col.xplane.layer.texture_map_material_gloss = xp_props.material_texture
                             col.xplane.layer.normal_metalness = True
 
                             if xp_props.draped:

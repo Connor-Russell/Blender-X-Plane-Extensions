@@ -53,6 +53,11 @@ def update_settings(in_material):
 
     xp_mat = in_material.xp_materials
 
+    #When we change our own settings for sync purposes, we will get called again. SO we need to check that, if that's the case, we set that we weren't programmatically updated and return since we're already up to datre
+    if xp_mat.was_programmatically_updated:
+        xp_mat.was_programmatically_updated = False
+        return
+
     #Set backface culling to TRUE
     in_material.use_backface_culling = True
 
@@ -74,6 +79,28 @@ def update_settings(in_material):
             in_material.xplane.draped = False
     except:
         pass
+
+    # Set the seperate material textures mode based on draped. If we are a CHANGE we need to change the other setting accordingly.
+    # We will also check to make sure that the 'was' property is in sync. If it's not, we need to make sure it's in sync, then we'll
+    #    update the other settign accordingly. THey SHOULDN'T get out of sync from user input, but other addons can cause this
+
+    #Change in draped mode (or mismatch in settings)
+    if xp_mat.draped != xp_mat.was_draped_last_update:
+        #If it's enabled
+        if xp_mat.draped:
+            xp_mat.was_programmatically_updated = True
+            xp_mat.do_seperate_material_texture = False
+            xp_mat.was_seperate_material_texture_last_update = False
+        xp_mat.was_draped_last_update = xp_mat.draped
+    
+    #Change in seperate material texture mode (or mismatch in settings)
+    if xp_mat.do_seperate_material_texture != xp_mat.was_seperate_material_texture_last_update:
+        #If it's enabled
+        if xp_mat.do_seperate_material_texture:
+            xp_mat.was_programmatically_updated = True
+            xp_mat.draped = False
+            xp_mat.was_draped_last_update = False
+        xp_mat.was_seperate_material_texture_last_update = xp_mat.do_seperate_material_texture
 
     #Set XP alpha mode based on the blend_alpha property. Alpha Cutoff ("off") or Alpha Blend ("on")
     try:
@@ -313,6 +340,7 @@ def update_nodes(material):
         #Define variables to hold the imagese
         image_alb = None
         image_nml = None
+        image_mat = None
         image_lit = None
         image_mod = None
         image_decal_1_alb = None
@@ -325,6 +353,7 @@ def update_nodes(material):
         #Resolve paths. They are relative to the blender file or relative to one folder back. We assume one folder back first. If the file is not found, we assume it is in the same folder as the blender file.
         str_image_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.alb_texture))
         str_image_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.normal_texture))
+        str_image_mat = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.material_texture))
         str_image_lit = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.lit_texture))
         str_image_mod = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_modulator))
         str_image_decal_1_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_one.alb))
@@ -353,6 +382,8 @@ def update_nodes(material):
             #Disable nml decals if we don't have a nml
             str_image_decal_1_nml = ""
             str_image_decal_2_nml = ""
+        if str_image_mat != "":
+            image_mat = file_utils.get_or_load_image(str_image_mat, True)
         if str_image_lit != "":
             image_lit = file_utils.get_or_load_image(str_image_lit, True)
         if str_image_mod != "":
@@ -393,6 +424,10 @@ def update_nodes(material):
         node_principled.location = (-500, 0)
         material.node_tree.links.new(node_principled.outputs[0], node_output.inputs[0])
 
+        node_uv = material.node_tree.nodes.new(type="ShaderNodeUVMap")
+        node_uv.location = (-5000, -500)
+        node_uv.label = "UV Map"
+
         #We need to define the alb/nml node in advance since it will later be used for decals
         node_alb = None
         node_nml_out = None
@@ -404,6 +439,7 @@ def update_nodes(material):
         #Set up alb nodes
         if image_alb != None:
             node_alb = material.node_tree.nodes.new(type="ShaderNodeTexImage")
+            node_alb.label = "Albedo Texture"
             node_alpha_add_lit = material.node_tree.nodes.new(type="ShaderNodeMath")
             node_alpha_clamp = material.node_tree.nodes.new(type="ShaderNodeClamp")
             node_alb.location = (-2600, 0)
@@ -430,7 +466,9 @@ def update_nodes(material):
 
         #Set up nml nodes
         if image_nml != None:
+
             node_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
+            node_nml.label = "Normal Map"
             node_seperate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
             node_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
             node_normal_map = material.node_tree.nodes.new(type="ShaderNodeNormalMap")
@@ -444,6 +482,16 @@ def update_nodes(material):
             image_nml.colorspace_settings.name = 'Non-Color'
 
             node_nml_out = node_normal_map
+
+            #If we are not in seperate material textures node, and are draped, we need to set the normal map's tiled UVs
+            if not xp_material_props.do_seperate_material_texture and xp_material_props.draped:
+                node_uv_nml = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
+                node_uv_nml.location = (-3000, -250)
+                node_uv_nml.label = "UV Scale Normal"
+                node_uv_nml.operation = 'MULTIPLY'
+                node_uv_nml.inputs[1].default_value = (xp_material_props.normal_tile_ratio, xp_material_props.normal_tile_ratio, xp_material_props.normal_tile_ratio)
+                material.node_tree.links.new(node_uv.outputs[0], node_uv_nml.inputs[0])
+                material.node_tree.links.new(node_uv_nml.outputs[0], node_nml.inputs[0])
 
             #Now connections, this is funky cuz XP doesn't use conventional formats. We need to map channels as follows:
                 #NML R to seperate R
@@ -467,21 +515,50 @@ def update_nodes(material):
 
             if bpy.app.version < (3, 0, 0):
                 material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[20])    #Reconstructed normal to normal
-                material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[7])   #Inverted normal roughness to roughness
-                material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[4])   #Seperate normal B to metalness
+                if not xp_material_props.do_seperate_material_texture:
+                    material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[7])   #Inverted normal roughness to roughness
+                    material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[4])   #Seperate normal B to metalness
             elif bpy.app.version < (4, 0, 0):
                 material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[22])    #Reconstructed normal to normal
-                material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[9])   #Inverted normal roughness to roughness
-                material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[6])   #Seperate normal B to metalness
+                if not xp_material_props.do_seperate_material_texture:
+                    material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[9])   #Inverted normal roughness to roughness
+                    material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[6])   #Seperate normal B to metalness
             else:
                 material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[5])    #Reconstructed normal to normal
-                material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[2])   #Inverted normal roughness to roughness
-                material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[1])   #Seperate normal B to metalness
+                if not xp_material_props.do_seperate_material_texture:
+                    material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[2])   #Inverted normal roughness to roughness
+                    material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[1])   #Seperate normal B to metalness
             
+        #If we are in seperate material textures mode, we need to set the normal map's tiled UVs
+        if xp_material_props.do_seperate_material_texture and image_mat != None:
+            node_mat = material.node_tree.nodes.new(type="ShaderNodeTexImage")
+            node_mat.label = "Material Texture"
+            node_mat.location = (-2600, -500)
+            node_mat.image = image_mat
+            image_mat.colorspace_settings.name = 'Non-Color'
+            node_mat_seperate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            node_mat_seperate_rgb.location = (-2300, -500)
+            node_mat_invert_rough = material.node_tree.nodes.new(type="ShaderNodeInvert")
+            node_mat_invert_rough.location = (-2000, -500)
+
+            #For material textures, R is metalness, G is inverted roughness
+            material.node_tree.links.new(node_mat.outputs[0], node_mat_seperate_rgb.inputs[0])  #Mat color to mat split rgb
+            material.node_tree.links.new(node_mat_seperate_rgb.outputs[1], node_mat_invert_rough.inputs[1]) #G (roughness) to invert
+            if bpy.app.version < (3, 0, 0):
+                material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[7]) #Inverted roughness to roughness
+                material.node_tree.links.new(node_mat_seperate_rgb.outputs[0], node_principled.inputs[4]) #Mat R to metalness
+            elif bpy.app.version < (4, 0, 0):
+                material.node_tree.links.new(node_mat_seperate_rgb.outputs[0], node_principled.inputs[6]) #Mat R to metalness
+                material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[9]) #Inverted roughness to roughness
+            else:
+                material.node_tree.links.new(node_mat_seperate_rgb.outputs[0], node_principled.inputs[1])
+                material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[2]) #Inverted roughness to roughness
+
         #Set up lit nodes
         if image_lit != None:
             node_lit = material.node_tree.nodes.new(type="ShaderNodeTexImage")
-            node_lit.location = (-2600, -500)
+            node_lit.label = "Lit Texture"
+            node_lit.location = (-2600, -750)
             node_lit.image = image_lit
 
             #Connect the color to the principled emission
@@ -489,9 +566,12 @@ def update_nodes(material):
                 material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[17])   #Lit color to emission
             elif bpy.app.version < (4, 0, 0):
                 material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[19])   #Lit color to emission
-            else:
+            elif bpy.app.version < (4, 2, 0):
                 material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[26])   #Lit color to emission
                 node_principled.inputs[27].default_value = (1) #Set the emission intensity to 1
+            else:
+                material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[27])   #Lit color to emission
+                node_principled.inputs[28].default_value = (1) #Set the emission intensity to 1
 
             #If there is an alb, connect the alpha to it's add so it can impact the alpha
             if node_alpha_add_lit != None:
@@ -590,10 +670,6 @@ def update_nodes(material):
         # Keying nodes are DONE!!!
         # Next up we need to start working on setting up the decal source UVs
         # So first off, we'll need to get the UV map, then we need vector math nodes to multiply the UVs by the decal scale. We'll need a single UV node, and up to 4 vector math nodes (alb 1, nml1, alb2, nml2)
-
-        node_uv = material.node_tree.nodes.new(type="ShaderNodeUVMap")
-        node_uv.location = (-5000, -500)
-        node_uv.label = "UV Map"
 
         if image_decal_1_alb != None:
             node_uv_decal_alb_1 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")

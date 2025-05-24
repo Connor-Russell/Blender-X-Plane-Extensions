@@ -43,15 +43,15 @@ $Test42 = $true
 $Test43 = $true
 $Test44 = $true
 
-$TestExportFacade = $true
-$TestExportLine = $true
-$TestExportPolygon = $true
-$TestImportObject = $true
-$TestImportFacade = $true
-$TestImportLine = $true
-$TestImportPolygon = $true
-$InternalTest = $true
-$TestBaker = $true
+$TestExportFacade =     $true
+$TestExportLine =       $true
+$TestExportPolygon =    $true
+$TestImportObject =     $true
+$TestImportFacade =     $true
+$TestImportLine =       $true
+$TestImportPolygon =    $true
+$InternalTest =         $true
+$TestBaker =            $true
 
 #First run build our build script, which is in the same folder as this script
 & "$cd\Build.ps1"
