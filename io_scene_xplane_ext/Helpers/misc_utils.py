@@ -48,3 +48,28 @@ def resolve_heading(heading):
 
     return heading
 
+def dedupe_list(in_list):
+    """
+    Removes duplicate entries from a list while preserving the order of the first occurrences.
+    Args:
+        in_list (list): The list to deduplicate.
+    Returns:
+        list: A new list with duplicates removed.
+    """
+    lt = in_list.copy()
+    lt.sort()
+
+    if len(lt) < 2:
+        return lt
+
+    new_list = []
+
+    new_list.append(lt[0])
+
+    for i, item in enumerate(lt):
+        if i == 0:
+            continue
+        if item != lt[i - 1]:
+            new_list.append(item)
+
+    return new_list
