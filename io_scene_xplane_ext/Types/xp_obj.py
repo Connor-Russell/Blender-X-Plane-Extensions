@@ -7,9 +7,122 @@
 import bpy
 import os
 import mathutils
+import math
 
+from ..Helpers import misc_utils
+from ..Helpers import anim_utils
 from ..Helpers import geometery_utils
 from ..Helpers import anim_utils
+from ..Helpers import light_data    #These are defines for the parameter layout of PARAM lights
+
+from functools import total_ordering
+
+@total_ordering
+class light:
+    """
+    Class to represent a light in an X-Plane object. This class is used to store the lights for an object.
+    """
+
+    #Define instance variables
+    def __init__(self):
+        self.name = "" #Name of the light. Really a type.
+        self.type = "POINT" #Type. POINT or SPOT
+        self.xp_type = "NONE" #The X-Plane light type. This is a string that corresponds to the X-Plane light type.
+        self.color_r = 1
+        self.color_g = 1
+        self.color_b = 1
+        self.loc_x = 0
+        self.loc_y = 0
+        self.loc_z = 0
+        self.dir_x = 0
+        self.dir_y = 0
+        self.dir_z = 0
+        self.cone_angle = 0
+        self.dataref = "" #Dataref for the light
+        self.size = 0   #Light size measurement
+        self.is_photometric = False #True if this light is photometric
+        self.params = "" #String of additional params for the light, from LIGHT_PARAM
+        self.xp_type = '' #The X-Plane light type.
+        self.bb_s1 = 0 #Left UV coordinate of the custom billboard light texture
+        self.bb_s2 = 0 #Right UV coordinate of the custom billboard light texture
+        self.bb_t1 = 0 #Top UV coordinate of the custom billboard light texture
+        self.bb_t2 = 0 #Bottom UV coordinate of the custom billboard light texture
+        self.lod_start = 0  #Start range of the LOD. We don't actually use LODs because lights aren't LODed, but, this is used to dedupe
+        self.lod_end = 0    #End range of the LOD
+
+    def add_to_scene(self, in_collection):
+        """
+        Adds a new light to the Blender scene with the specified properties.
+        """
+
+        # Create a new Blender light datablock
+        if self.cone_angle != 0:
+            self.type = "SPOT"
+
+        light_data = bpy.data.lights.new(name="Light", type=self.type)
+        b_light = bpy.data.objects.new(name="Light", object_data=light_data)
+        in_collection.objects.link(b_light)
+
+        b_light.data.color = (self.color_r, self.color_g, self.color_b)
+        b_light.data.energy = self.size / 50 if self.is_photometric else self.size * 2  # All just kinda guesses here, these seem sort of correct. It's just visual anyway...
+        if self.type == "SPOT":
+            b_light.data.spot_size = math.radians(self.cone_angle)
+
+        b_light.location = (self.loc_x, self.loc_y, self.loc_z)
+        b_light.rotation_mode = 'XYZ'
+
+        light_euler = anim_utils.euler_to_align_z_with_vector((-self.dir_x, -self.dir_y, -self.dir_z))
+        b_light.rotation_euler = light_euler
+
+        b_light.data.xplane.param_size = self.size
+        b_light.data.xplane.uv[0] = self.bb_s1   # left
+        b_light.data.xplane.uv[1] = self.bb_t1   # top
+        b_light.data.xplane.uv[2] = self.bb_s2   # right
+        b_light.data.xplane.uv[3] = self.bb_t2   # bottom
+        b_light.data.xplane.dataref = self.dataref
+        b_light.data.xplane.name = self.name
+
+        return b_light
+    
+    def __eq__(self, value):
+        """
+        Slightly unconventional. Checks if all params BUT LOD are equal. This is because if there are multiple lights in the SAME LOD they are intentional.
+        But, if they are in DIFFERENT LODs, then they are a duplicate of the SAME light because of how LODs work in XP .objs.
+        """
+        if not isinstance(value, light):
+            return NotImplemented
+
+        return (self.name == value.name and
+                self.type == value.type and
+                self.xp_type == value.xp_type and
+                self.color_r == value.color_r and
+                self.color_g == value.color_g and
+                self.color_b == value.color_b and
+                self.loc_x == value.loc_x and
+                self.loc_y == value.loc_y and
+                self.loc_z == value.loc_z and
+                self.dir_x == value.dir_x and
+                self.dir_y == value.dir_y and
+                self.dir_z == value.dir_z and
+                self.cone_angle == value.cone_angle and
+                self.dataref == value.dataref and
+                self.size == value.size and
+                self.is_photometric == value.is_photometric and
+                self.params == value.params and
+                self.xp_type == value.xp_type and
+                self.bb_s1 == value.bb_s1 and
+                self.bb_s2 == value.bb_s2 and
+                self.bb_t1 == value.bb_t1 and
+                self.bb_t2 == value.bb_t2 and
+                (self.lod_start != value.lod_start or
+                self.lod_end != value.lod_end))
+
+    def __lt__(self, other):
+        """
+        Less than operator for light objects. This is used to sort lights by their LOD range.
+        """
+        return (self.name, self.type, self.xp_type, self.color_r, self.color_g,self.color_b,self.loc_x,self.loc_y,self.loc_z,self.dir_x,self.dir_y,self.dir_z,self.cone_angle,self.dataref,self.size, self.is_photometric, self.params, self.xp_type, self.bb_s1, self.bb_s2, self.bb_t1, self.bb_t2) < \
+        (other.name, other.type, other.xp_type, other.color_r, other.color_g, other.color_b, other.loc_x, other.loc_y, other.loc_z, other.dir_x, other.dir_y, other.dir_z, other.cone_angle, other.dataref, other.size, other.is_photometric, other.params, other.xp_type, other.bb_s1, other.bb_s2, other.bb_t1, other.bb_t2)
 
 class draw_call:
     """
@@ -267,6 +380,7 @@ class anim_level:
         self.last_action = None #This is the empty that drives the last action in the animation
         self.actions = []  #List of actions for the animation
         self.draw_calls = []  #List of draw calls for the animation
+        self.lights = []  #List of lights for the animation
         self.children = []  #List of children anim_levels for the animation
 
     def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mat, in_collection):
@@ -334,6 +448,16 @@ class anim_level:
             #So it doesn't take up it's parent's rotation
             eular = mathutils.Vector((0, 0, 0))
             anim_utils.set_obj_rotation_world(dc_obj, eular)
+
+        #Dedupe our lights
+        self.lights = misc_utils.dedupe_list(self.lights)
+        for lt in self.lights:
+            #Add the light to the scene
+            new_light = lt.add_to_scene(in_collection)
+            new_light.parent = self.last_action
+
+            eular = new_light.rotation_euler
+            anim_utils.set_obj_rotation_world(new_light, eular)
 
         #Now that we added out draw calls, it's time to recurse
         for child in self.children:
@@ -427,7 +551,8 @@ class object:
     def __init__(self):
         self.verticies = []  #List of vertices in the object. geometery_utils.xp_vertex
         self.indicies = []  #List of indices in the object
-        self.draw_calls = [] #List of "draw calls". These are pairs of start indicies and lengths
+        self.draw_calls = [] #List of draw calls. This is a list of draw_call objects.
+        self.lights = []  #List of lights in the object. This is a list of light objects
         self.anims = []  #List of animations in the object. This is a list of anim_levels
         self.alb_texture = ""
         self.nml_texture = ""
@@ -705,6 +830,150 @@ class object:
                 cur_start_lod = float(tokens[1])
                 cur_end_lod = float(tokens[2])
 
+            elif tokens[0] == "LIGHT_NAMED":
+                #LIGHT_NAMED <name> <x> <y> <z>
+                new_light = light()
+                new_light.lod_start = cur_start_lod
+                new_light.lod_end = cur_end_lod
+                new_light.xp_type = "named"
+                new_light.name = tokens[1]
+                new_light.loc_x = float(tokens[2]) * trans_matrix[0]
+                new_light.loc_y = float(tokens[4]) * trans_matrix[1]
+                new_light.loc_z = float(tokens[3]) * trans_matrix[2]
+
+                if len(cur_anim_tree) > 0:
+                    #If we are in an animation tree, add this light to the current animation tree
+                    cur_anim_tree[-1].lights.append(new_light)
+
+                else:
+                    #Otherwise, add it directly to the lights list
+                    self.lights.append(new_light)
+
+            elif tokens[0] == "LIGHT_CUSTOM":
+                #LIGHT_CUSTOM <x> <y> <z> <r> <g> <b> <a> <s> <s1> <t1> <s2> <t2> <dataref>
+                new_light = light()
+                new_light.lod_start = cur_start_lod
+                new_light.lod_end = cur_end_lod
+                new_light.xp_type = "custom"
+                new_light.name = tokens[1]
+                new_light.loc_x = float(tokens[1]) * trans_matrix[0]
+                new_light.loc_y = float(tokens[3]) * trans_matrix[1]
+                new_light.loc_z = float(tokens[2]) * trans_matrix[2]
+                new_light.color_r = float(tokens[4])
+                new_light.color_g = float(tokens[5])
+                new_light.color_b = float(tokens[6])
+                new_light.size = float(tokens[8])
+                new_light.bb_s1 = float(tokens[9])
+                new_light.bb_t1 = float(tokens[10])
+                new_light.bb_s2 = float(tokens[11])
+                new_light.bb_t2 = float(tokens[12])
+                if len(tokens) > 13:
+                    new_light.dataref = tokens[13]
+
+                if len(cur_anim_tree) > 0:
+                    #If we are in an animation tree, add this light to the current animation tree
+                    cur_anim_tree[-1].lights.append(new_light)
+
+                else:
+                    #Otherwise, add it directly to the lights list
+                    self.lights.append(new_light)
+
+            elif tokens[0] == "LIGHT_SPILL_CUSTOM":
+                #LIGHT_SPILL_CUSTOM <x> <y> <z> <r> <g> <b> <a> <s> <dx> <dy> <dz> <semi> <dref>
+                new_light = light()
+                new_light.lod_start = cur_start_lod
+                new_light.lod_end = cur_end_lod
+                new_light.xp_type = "light_spill_custom"
+                new_light.name = tokens[1]
+                new_light.loc_x = float(tokens[1]) * trans_matrix[0]
+                new_light.loc_y = float(tokens[3]) * trans_matrix[1]
+                new_light.loc_z = float(tokens[2]) * trans_matrix[2]
+                new_light.color_r = float(tokens[4])
+                new_light.color_g = float(tokens[5])
+                new_light.color_b = float(tokens[6])
+                new_light.size = float(tokens[8])
+                new_light.dir_x = float(tokens[9]) * trans_matrix[0]
+                new_light.dir_y = float(tokens[11]) * trans_matrix[1]
+                new_light.dir_z = float(tokens[10]) * trans_matrix[2]
+                #The cone angle is 2x the inverse cosine of the semi. This is in degrees.
+                new_light.cone_angle = 2 * math.degrees(math.acos(float(tokens[12])))
+                if len(tokens) > 13:
+                    new_light.dataref = tokens[13]
+
+                if len(cur_anim_tree) > 0:
+                    #If we are in an animation tree, add this light to the current animation tree
+                    cur_anim_tree[-1].lights.append(new_light)
+
+                else:
+                    #Otherwise, add it directly to the lights list
+                    self.lights.append(new_light)
+
+            elif tokens[0] == "LIGHT_PARAM":
+                #This is the most complex light as it's parameters are variable based on it's type.
+                #It's base format is: LIGHT_PARAM <name> <x> <y> <z> [<additional params>]
+                #We get [<additional params>] based on the dictionary light_data.param_lights_dict.
+                #We then iterate over the rest of the params, comparing them to the keys in the value of that name in the dictionary, and assigning values based on the key
+                
+                new_light = light()
+                new_light.lod_start = cur_start_lod
+                new_light.lod_end = cur_end_lod
+                new_light.xp_type = "param"
+                new_light.name = tokens[1]
+                new_light.loc_x = float(tokens[2]) * trans_matrix[0]
+                new_light.loc_y = float(tokens[4]) * trans_matrix[1]
+                new_light.loc_z = float(tokens[3]) * trans_matrix[2]
+                new_light.params = ""
+
+                additional_params_keys = light_data.param_lights_dict.get(new_light.name, None)
+                if additional_params_keys is None:
+                    print(f"Unknown light type {new_light.name} in object {self.name}. Skipping light.")
+                    continue
+
+                #Make sure we have the right number of additional params
+                if len(tokens) - 5 != len(additional_params_keys):
+                    print(f"Light {new_light.name} in object {self.name} has {len(tokens) - 5} additional params, but expected {len(additional_params)}. Skipping light.")
+                    continue
+
+                #Now iterate over the additional params and assign them to the light
+                for i, param in enumerate(additional_params_keys):
+                    if param == 'R':
+                        new_light.color_r = float(tokens[i + 5])
+                    elif param == 'G':
+                        new_light.color_g = float(tokens[i + 5])
+                    elif param == 'B':
+                        new_light.color_b = float(tokens[i + 5])
+                    elif param == 'DX':
+                        new_light.dir_x = float(tokens[i + 5]) * trans_matrix[0]
+                    elif param == 'DY':
+                        new_light.dir_z = float(tokens[i + 5]) * trans_matrix[2]
+                    elif param == 'DZ':
+                        new_light.dir_y = float(tokens[i + 5]) * trans_matrix[1]
+                    elif param == 'WIDTH':
+                        #The cone angle is 2x the inverse cosine of the semi. This is in degrees.
+                        new_light.cone_angle = 2 * math.degrees(math.acos(float(tokens[i + 5])))
+                    elif param == 'INTENSITY' or param == 'SIZE':
+                        light_size = tokens[i + 5]
+                        if light_size.endswith('cd'):
+                            new_light.is_photometric = True #What do we do with this? There's no setting in XP2B for this???
+                            light_size = light_size[:-2] #Remove the 'cd' suffix
+                            new_light.size = float(light_size)
+                        else:
+                            new_light.size = float(tokens[i + 5])
+
+                        new_light.params += f" {light_size}"
+                    #Everything else we just drop in the params string as there is no corresponding setting in Blender.
+                    else:
+                        new_light.params += f" {tokens[i + 5]}"
+
+                if len(cur_anim_tree) > 0:
+                    #If we are in an animation tree, add this light to the current animation tree
+                    cur_anim_tree[-1].lights.append(new_light)
+
+                else:
+                    #Otherwise, add it directly to the lights list
+                    self.lights.append(new_light)
+                pass
+
     def to_scene(self):
         #Create a new collection for this object
         collection = bpy.data.collections.new(self.name)
@@ -827,6 +1096,10 @@ class object:
         for dc in self.draw_calls:
             dc.add_to_scene(self.verticies, self.indicies, [mat], collection)
 
+        #For basic lights just add them
+        self.lights = misc_utils.dedupe_list(self.lights)
+        for lt in self.lights:
+            lt.add_to_scene(collection)
 
         #Now that we have the basic geometery, we need to add the animated stuff.
         #This is very simple. We iterate through all our root animation levels, and add them to the scene. Aka we call the function to do the hard (sort of) stuff
