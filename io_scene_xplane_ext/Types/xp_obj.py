@@ -1041,7 +1041,7 @@ class object:
 
                 #Make sure we have the right number of additional params
                 if len(tokens) - 5 != len(additional_params_keys):
-                    print(f"Light {new_light.name} in object {self.name} has {len(tokens) - 5} additional params, but expected {len(additional_params)}. Skipping light.")
+                    print(f"Light {new_light.name} in object {self.name} has {len(tokens) - 5} additional params, but expected {len(additional_params_keys)}. Skipping light.")
                     continue
 
                 #Now iterate over the additional params and assign them to the light
