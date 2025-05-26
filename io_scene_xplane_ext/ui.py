@@ -334,7 +334,7 @@ class MENU_mats(bpy.types.Panel):
 
         if xp_materials:
             layout.operator("xp_ext.autodetect_texture", text="Autodetect Texture")
-            layout.prop(xp_materials, "do_seperate_material_texture")
+            layout.prop(xp_materials, "do_separate_material_texture")
 
             layout.prop(xp_materials, "alb_texture", text="Albedo Texture")
 
@@ -345,7 +345,7 @@ class MENU_mats(bpy.types.Panel):
             else:
                 layout.prop(xp_materials, "normal_texture", text="Normal Texture")
 
-            if xp_materials.do_seperate_material_texture:
+            if xp_materials.do_separate_material_texture:
                 layout.prop(xp_materials, "material_texture", text="Material Texture")
 
             layout.prop(xp_materials, "lit_texture", text="Lit Texture")

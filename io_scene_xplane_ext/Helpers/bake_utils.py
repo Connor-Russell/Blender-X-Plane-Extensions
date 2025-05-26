@@ -125,7 +125,7 @@ def config_source_materials(type, mats):
                     image_node.image.colorspace_settings.name = 'Non-Color'
                     mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
-                    #Add a seperate RGB node, combine RGB node, and normal map node. Linkage is as follows:
+                    #Add a separate RGB node, combine RGB node, and normal map node. Linkage is as follows:
                     #Image to sep node
                     #R of sep to R of combine
                     #G of sep to G of combine
@@ -144,8 +144,8 @@ def config_source_materials(type, mats):
                     mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
         elif type == BakeType.ROUGHNESS:
-            #Seperate normal and material textures
-            if mat.xp_materials.do_seperate_material_texture:
+            #separate normal and material textures
+            if mat.xp_materials.do_separate_material_texture:
                 #If there is a normal we do the node setup, otherwise we use full white (aka full roughness)
                 if mat.xp_materials.material_texture != "":
                     str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.material_texture))
@@ -154,7 +154,7 @@ def config_source_materials(type, mats):
                         image_node.image = file_utils.get_or_load_image(str_resolve_path)
                         image_node.image.colorspace_settings.name = 'Non-Color'
 
-                        #Add a seperate RGB node. Linkage is as follows:
+                        #Add a separate RGB node. Linkage is as follows:
                         #Image to sep node
                         #G of sep node to color of diffuse node
                         sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
@@ -190,8 +190,8 @@ def config_source_materials(type, mats):
                     mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
         elif type == BakeType.METALNESS:
-            #Seperate normal and material textures
-            if mat.xp_materials.do_seperate_material_texture:
+            #separate normal and material textures
+            if mat.xp_materials.do_separate_material_texture:
                 #If there is a normal we do the node setup, otherwise we do nothing
                 if mat.xp_materials.material_texture != "":
                     str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.material_texture))
@@ -200,7 +200,7 @@ def config_source_materials(type, mats):
                         image_node.image = file_utils.get_or_load_image(str_resolve_path)
                         image_node.image.colorspace_settings.name = 'Non-Color'
 
-                        #Add a seperate RGB node. Linkage is as follows:
+                        #Add a separate RGB node. Linkage is as follows:
                         #Image to sep node
                         #R of sep node to color of diffuse node
                         sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
@@ -223,7 +223,7 @@ def config_source_materials(type, mats):
                         image_node.image = file_utils.get_or_load_image(str_resolve_path)
                         image_node.image.colorspace_settings.name = 'Non-Color'
 
-                        #Add a seperate RGB node. Linkage is as follows:
+                        #Add a separate RGB node. Linkage is as follows:
                         #Image to sep node
                         #B of sep node to color of diffuse node
                         sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')

@@ -127,7 +127,7 @@ class light:
 
 class draw_call_state:
     """
-    Class to represent the state used in a draw call. This is seperate because many DCs can have the same state, so when parsing, we just have a cur state object which we then attach to the DC
+    Class to represent the state used in a draw call. This is separate because many DCs can have the same state, so when parsing, we just have a cur state object which we then attach to the DC
     """
 
     def __init__(self):
@@ -1137,7 +1137,7 @@ class object:
         xp_mat.normal_texture = self.nml_texture
         if self.mat_texture != "":
             xp_mat.material_texture = self.mat_texture
-            xp_mat.do_seperate_material_texture = True
+            xp_mat.do_separate_material_texture = True
         xp_mat.lit_texture = self.lit_texture
         xp_mat.blend_alpha = self.do_blend_alpha
         xp_mat.blend_cutoff = self.blend_cutoff

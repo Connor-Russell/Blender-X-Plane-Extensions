@@ -81,7 +81,7 @@ def update_settings(in_material):
     except:
         pass
 
-    # Set the seperate material textures mode based on draped. If we are a CHANGE we need to change the other setting accordingly.
+    # Set the separate material textures mode based on draped. If we are a CHANGE we need to change the other setting accordingly.
     # We will also check to make sure that the 'was' property is in sync. If it's not, we need to make sure it's in sync, then we'll
     #    update the other settign accordingly. THey SHOULDN'T get out of sync from user input, but other addons can cause this
 
@@ -90,18 +90,18 @@ def update_settings(in_material):
         #If it's enabled
         if xp_mat.draped:
             xp_mat.was_programmatically_updated = True
-            xp_mat.do_seperate_material_texture = False
-            xp_mat.was_seperate_material_texture_last_update = False
+            xp_mat.do_separate_material_texture = False
+            xp_mat.was_separate_material_texture_last_update = False
         xp_mat.was_draped_last_update = xp_mat.draped
     
-    #Change in seperate material texture mode (or mismatch in settings)
-    if xp_mat.do_seperate_material_texture != xp_mat.was_seperate_material_texture_last_update:
+    #Change in separate material texture mode (or mismatch in settings)
+    if xp_mat.do_separate_material_texture != xp_mat.was_separate_material_texture_last_update:
         #If it's enabled
-        if xp_mat.do_seperate_material_texture:
+        if xp_mat.do_separate_material_texture:
             xp_mat.was_programmatically_updated = True
             xp_mat.draped = False
             xp_mat.was_draped_last_update = False
-        xp_mat.was_seperate_material_texture_last_update = xp_mat.do_seperate_material_texture
+        xp_mat.was_separate_material_texture_last_update = xp_mat.do_separate_material_texture
 
     #Set XP alpha mode based on the blend_alpha property. Alpha Cutoff ("off") or Alpha Blend ("on")
     try:
@@ -411,7 +411,7 @@ def update_nodes(material):
                 # Clamp (0-1 for alpha). This takes from the add, connects to the alpha
             # For normal (if present):
                 # Image texture
-                # Seperate RGB
+                # separate RGB
                 # Combined RGB
                 # Normal Map
                 # Invert
@@ -470,12 +470,12 @@ def update_nodes(material):
 
             node_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
             node_nml.label = "Normal Map"
-            node_seperate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            node_separate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
             node_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
             node_normal_map = material.node_tree.nodes.new(type="ShaderNodeNormalMap")
             node_rough_invert = material.node_tree.nodes.new(type="ShaderNodeInvert")
             node_nml.location = (-2600, -250)
-            node_seperate_rgb.location = (-2250, -250)
+            node_separate_rgb.location = (-2250, -250)
             node_combine_rgb.location = (-2000, -250)
             node_normal_map.location = (-1750, -250)
             node_rough_invert.location = (-2250, -375)
@@ -484,8 +484,8 @@ def update_nodes(material):
 
             node_nml_out = node_normal_map
 
-            #If we are not in seperate material textures node, and are draped, we need to set the normal map's tiled UVs
-            if not xp_material_props.do_seperate_material_texture and xp_material_props.draped:
+            #If we are not in separate material textures node, and are draped, we need to set the normal map's tiled UVs
+            if not xp_material_props.do_separate_material_texture and xp_material_props.draped:
                 node_uv_nml = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
                 node_uv_nml.location = (-3000, -250)
                 node_uv_nml.label = "UV Scale Normal"
@@ -495,19 +495,19 @@ def update_nodes(material):
                 material.node_tree.links.new(node_uv_nml.outputs[0], node_nml.inputs[0])
 
             #Now connections, this is funky cuz XP doesn't use conventional formats. We need to map channels as follows:
-                #NML R to seperate R
-                #NML G to seperate G
+                #NML R to separate R
+                #NML G to separate G
                 #NML B to principled metalness
                 #NML alpha to invert
-                #Seperate R to combine R
-                #Seperate G to combine G
+                #separate R to combine R
+                #separate G to combine G
                 #The combine B needs to be 1
                 #Combine to normal map
                 #Normal map to principled normal
                 #Invert to principled roughness
-            material.node_tree.links.new(node_nml.outputs[0], node_seperate_rgb.inputs[0])
-            material.node_tree.links.new(node_seperate_rgb.outputs[0], node_combine_rgb.inputs[0])
-            material.node_tree.links.new(node_seperate_rgb.outputs[1], node_combine_rgb.inputs[1])
+            material.node_tree.links.new(node_nml.outputs[0], node_separate_rgb.inputs[0])
+            material.node_tree.links.new(node_separate_rgb.outputs[0], node_combine_rgb.inputs[0])
+            material.node_tree.links.new(node_separate_rgb.outputs[1], node_combine_rgb.inputs[1])
             
             node_combine_rgb.inputs[2].default_value = 1
             material.node_tree.links.new(node_combine_rgb.outputs[0], node_normal_map.inputs[1])
@@ -516,43 +516,43 @@ def update_nodes(material):
 
             if bpy.app.version < (3, 0, 0):
                 material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[20])    #Reconstructed normal to normal
-                if not xp_material_props.do_seperate_material_texture:
+                if not xp_material_props.do_separate_material_texture:
                     material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[7])   #Inverted normal roughness to roughness
-                    material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[4])   #Seperate normal B to metalness
+                    material.node_tree.links.new(node_separate_rgb.outputs[2], node_principled.inputs[4])   #separate normal B to metalness
             elif bpy.app.version < (4, 0, 0):
                 material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[22])    #Reconstructed normal to normal
-                if not xp_material_props.do_seperate_material_texture:
+                if not xp_material_props.do_separate_material_texture:
                     material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[9])   #Inverted normal roughness to roughness
-                    material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[6])   #Seperate normal B to metalness
+                    material.node_tree.links.new(node_separate_rgb.outputs[2], node_principled.inputs[6])   #separate normal B to metalness
             else:
                 material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[5])    #Reconstructed normal to normal
-                if not xp_material_props.do_seperate_material_texture:
+                if not xp_material_props.do_separate_material_texture:
                     material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[2])   #Inverted normal roughness to roughness
-                    material.node_tree.links.new(node_seperate_rgb.outputs[2], node_principled.inputs[1])   #Seperate normal B to metalness
+                    material.node_tree.links.new(node_separate_rgb.outputs[2], node_principled.inputs[1])   #separate normal B to metalness
             
-        #If we are in seperate material textures mode, we need to set the normal map's tiled UVs
-        if xp_material_props.do_seperate_material_texture and image_mat != None:
+        #If we are in separate material textures mode, we need to set the normal map's tiled UVs
+        if xp_material_props.do_separate_material_texture and image_mat != None:
             node_mat = material.node_tree.nodes.new(type="ShaderNodeTexImage")
             node_mat.label = "Material Texture"
             node_mat.location = (-2600, -500)
             node_mat.image = image_mat
             image_mat.colorspace_settings.name = 'Non-Color'
-            node_mat_seperate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
-            node_mat_seperate_rgb.location = (-2300, -500)
+            node_mat_separate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            node_mat_separate_rgb.location = (-2300, -500)
             node_mat_invert_rough = material.node_tree.nodes.new(type="ShaderNodeInvert")
             node_mat_invert_rough.location = (-2000, -500)
 
             #For material textures, R is metalness, G is inverted roughness
-            material.node_tree.links.new(node_mat.outputs[0], node_mat_seperate_rgb.inputs[0])  #Mat color to mat split rgb
-            material.node_tree.links.new(node_mat_seperate_rgb.outputs[1], node_mat_invert_rough.inputs[1]) #G (roughness) to invert
+            material.node_tree.links.new(node_mat.outputs[0], node_mat_separate_rgb.inputs[0])  #Mat color to mat split rgb
+            material.node_tree.links.new(node_mat_separate_rgb.outputs[1], node_mat_invert_rough.inputs[1]) #G (roughness) to invert
             if bpy.app.version < (3, 0, 0):
                 material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[7]) #Inverted roughness to roughness
-                material.node_tree.links.new(node_mat_seperate_rgb.outputs[0], node_principled.inputs[4]) #Mat R to metalness
+                material.node_tree.links.new(node_mat_separate_rgb.outputs[0], node_principled.inputs[4]) #Mat R to metalness
             elif bpy.app.version < (4, 0, 0):
-                material.node_tree.links.new(node_mat_seperate_rgb.outputs[0], node_principled.inputs[6]) #Mat R to metalness
+                material.node_tree.links.new(node_mat_separate_rgb.outputs[0], node_principled.inputs[6]) #Mat R to metalness
                 material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[9]) #Inverted roughness to roughness
             else:
-                material.node_tree.links.new(node_mat_seperate_rgb.outputs[0], node_principled.inputs[1])
+                material.node_tree.links.new(node_mat_separate_rgb.outputs[0], node_principled.inputs[1])
                 material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[2]) #Inverted roughness to roughness
 
         #Set up lit nodes

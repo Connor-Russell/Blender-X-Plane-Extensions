@@ -273,8 +273,8 @@ class polygon():
         # Extract material data
         mat = mat.xp_materials
 
-        if mat.do_seperate_material_texture:
-            raise Exception("Error: X-Plane does not support seperate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+        if mat.do_separate_material_texture:
+            raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
 
         self.layer = mat.layer_group
         self.layer_offset = mat.layer_group_offset

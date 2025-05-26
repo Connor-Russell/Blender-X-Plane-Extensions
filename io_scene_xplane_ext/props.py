@@ -187,8 +187,8 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=False
     ) # type: ignore
 
-    was_seperate_material_texture_last_update: bpy.props.BoolProperty(
-        name="Was Seperate Material Texture Last Update",
+    was_separate_material_texture_last_update: bpy.props.BoolProperty(
+        name="Was separate Material Texture Last Update",
         default=False
     ) # type: ignore
 
@@ -213,9 +213,9 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
-    do_seperate_material_texture: bpy.props.BoolProperty(
-        name="Use Seperate Material Texture",
-        description="Whether to use a seperate material texture for the material",
+    do_separate_material_texture: bpy.props.BoolProperty(
+        name="Use separate Material Texture",
+        description="Whether to use a separate material texture for the material",
         default=False,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
