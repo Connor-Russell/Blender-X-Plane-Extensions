@@ -14,6 +14,7 @@ from ..Helpers import anim_utils
 from ..Helpers import geometery_utils
 from ..Helpers import anim_utils
 from ..Helpers import light_data    #These are defines for the parameter layout of PARAM lights
+from .. import props
 
 from functools import total_ordering
 
@@ -124,6 +125,30 @@ class light:
         return (self.name, self.type, self.xp_type, self.color_r, self.color_g,self.color_b,self.loc_x,self.loc_y,self.loc_z,self.dir_x,self.dir_y,self.dir_z,self.cone_angle,self.dataref,self.size, self.is_photometric, self.params, self.xp_type, self.bb_s1, self.bb_s2, self.bb_t1, self.bb_t2) < \
         (other.name, other.type, other.xp_type, other.color_r, other.color_g, other.color_b, other.loc_x, other.loc_y, other.loc_z, other.dir_x, other.dir_y, other.dir_z, other.cone_angle, other.dataref, other.size, other.is_photometric, other.params, other.xp_type, other.bb_s1, other.bb_s2, other.bb_t1, other.bb_t2)
 
+class draw_call_state:
+    """
+    Class to represent the state used in a draw call. This is seperate because many DCs can have the same state, so when parsing, we just have a cur state object which we then attach to the DC
+    """
+
+    def __init__(self):
+        self.blend = True
+        self.blend_cutoff = 0.5
+        self.draped = False
+        self.cast_shadow = True
+        self.surface_type = "none"
+
+    def copy(self):
+        """
+        Returns a copy of this state object.
+        """
+        new_state = draw_call_state()
+        new_state.blend = self.blend
+        new_state.blend_cutoff = self.blend_cutoff
+        new_state.draped = self.draped
+        new_state.cast_shadow = self.cast_shadow
+        new_state.surface_type = self.surface_type
+        return new_state
+
 class draw_call:
     """
     Class to represent a draw call. This class is used to store the draw calls for an object.
@@ -136,6 +161,7 @@ class draw_call:
         self.lod_start = 0  #Start range of the LOD
         self.lod_end = 0  #End range of the LOD
         self.lod_bucket = -1  #LOD bucket of the draw call. Corresponds to the XP2B value.
+        self.state = draw_call_state()  #State of the draw call. This is used to store the state of the draw call, such as blend mode, alpha cutoff, etc.
 
     def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection):
         """
@@ -188,10 +214,55 @@ class draw_call:
             else:
                 print(f"Unknown LOD bucket for obj {dc_obj.name} for range {self.lod_start}-{self.lod_end}. Bucket is {self.lod_bucket}. What?")
 
-        # Set the material for this object. Right now this is very basic - we use the first material in the list. In the future, this list will contain all material variants which are based on the draw call state
-        # We would have all these variants so if the material is in a state that is the same as us (i.e. the blend mode) we can reuse an existing material vs a new one
-        if len(in_mats) > 0:
-            dc_obj.data.materials.append(in_mats[0])
+        # Lastly, we need to get the correct material. Soo, here's out logic
+        # First, we need to either get a regular material, or a draped material. 
+        # From there, we need to check if the material matches our state - specifically, blend mode, alpha cutoff, shadows, and hard surface
+        # So, with that in mind, we can iterate over all the materials in the list. We save the first basic and first draped we find, and keep going
+        # If we find an actual match, we use it! If not, we create a new material based on the basic material we found, use that, and add it to the list
+        basic_mat = None
+        basic_draped_mat = None
+        matching_mat = None
+        for mat in in_mats:
+            xp_props = mat.xp_materials
+
+            #Save our basic materials
+            if xp_props.draped and basic_draped_mat == None:
+                basic_draped_mat = mat
+            elif basic_mat == None:
+                basic_mat = mat
+
+            #Compare to state
+            if xp_props.draped == self.state.draped and \
+                xp_props.blend_alpha == self.state.blend and \
+                xp_props.blend_cutoff == self.state.blend_cutoff and \
+                xp_props.cast_shadow == self.state.cast_shadow and \
+                xp_props.surface_type == self.state.surface_type.upper():
+                matching_mat = mat
+
+        if basic_draped_mat == None:
+            basic_draped_mat = basic_mat
+
+        #If we didn't get a matching material, we'll create a new one based on the basic
+        if matching_mat == None:
+            new_mat = None
+
+            #Duplicate draped material
+            if self.state.draped:
+                new_mat = basic_draped_mat.copy()
+            else:
+                new_mat = basic_mat.copy()
+
+            new_mat.xp_materials.draped = self.state.draped
+            new_mat.xp_materials.blend_alpha = self.state.blend
+            new_mat.xp_materials.blend_cutoff = self.state.blend_cutoff
+            new_mat.xp_materials.cast_shadow = self.state.cast_shadow
+            new_mat.xp_materials.surface_type = self.state.surface_type.upper()
+
+            matching_mat = new_mat
+
+            in_mats.append(new_mat)
+                
+        dc_obj.data.materials.append(matching_mat)
 
         return dc_obj
 
@@ -383,7 +454,7 @@ class anim_level:
         self.lights = []  #List of lights for the animation
         self.children = []  #List of children anim_levels for the animation
 
-    def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mat, in_collection):
+    def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mats, in_collection):
         #Create a new empty for this animation level
 
         self.last_action = parent_obj
@@ -442,7 +513,7 @@ class anim_level:
 
         #Now we need to add all the draw calls to the scene, then parent them to the empty
         for dc in self.draw_calls:
-            dc_obj = dc.add_to_scene(all_verts, all_indicies, [in_mat], in_collection)
+            dc_obj = dc.add_to_scene(all_verts, all_indicies, in_mats, in_collection)
             dc_obj.parent = self.last_action
 
             #So it doesn't take up it's parent's rotation
@@ -461,7 +532,7 @@ class anim_level:
 
         #Now that we added out draw calls, it's time to recurse
         for child in self.children:
-            child.add_to_scene(self.last_action, all_verts, all_indicies, in_mat, in_collection)
+            child.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection)
 
         #Reset our frame
         anim_utils.goto_frame(0)
@@ -554,14 +625,31 @@ class object:
         self.draw_calls = [] #List of draw calls. This is a list of draw_call objects.
         self.lights = []  #List of lights in the object. This is a list of light objects
         self.anims = []  #List of animations in the object. This is a list of anim_levels
+        self.name = ""
+
+        #Base material
         self.alb_texture = ""
         self.nml_texture = ""
         self.lit_texture = ""
         self.mat_texture = ""
         self.do_blend_alpha = True
-        self.alpha_cutoff = 0.5
-        self.cast_shadows = True
-        self.name = ""
+        self.blend_cutoff = 0.5
+        self.cast_shadow = True
+        #self.decal_one = props.PROP_decal()
+        #self.decal_two = props.PROP_decal()
+        self.layer_group = "objects"
+        self.layer_group_offset = 0
+
+        #Draped material
+        self.draped_alb_texture = ""
+        self.draped_nml_tile_rat = 1.0
+        self.draped_nml_texture = ""
+        self.draped_lit_texture = ""
+        #self.draped_decal_one = props.PROP_decal()
+        #self.draped_decal_two = props.PROP_decal()
+        self.draped_layer_group = "objects"
+        self.draped_layer_group_offset = -5
+        
 
     def read(self, in_obj_path):
         self.name = os.path.basename(in_obj_path)
@@ -575,6 +663,7 @@ class object:
         cur_rotate_keyframe_do_z = False
         cur_start_lod = 0
         cur_end_lod = 0
+        cur_state = draw_call_state()
 
         with open(in_obj_path, "r") as f:
             lines = f.readlines()
@@ -608,6 +697,8 @@ class object:
             elif tokens[0] == "TRIS":
                 #Draw call. Start index and length
                 dc = draw_call()
+                dc.state = cur_state  #Use the current state for this draw call
+                cur_state = cur_state.copy()  #Reset the current state for the next draw call
                 dc.start_index = int(tokens[1])
                 dc.length = int(tokens[2])
                 dc.lod_start = cur_start_lod
@@ -622,6 +713,8 @@ class object:
 
             elif tokens[0] == "TEXTURE":
                 self.alb_texture = tokens[1]
+                if self.draped_alb_texture == "":
+                    self.draped_alb_texture = tokens[1]
             
             elif tokens[0] == "TEXTURE_MAP":
                 if tokens[1].lower() == "normal":
@@ -631,16 +724,33 @@ class object:
 
             elif tokens[0] == "TEXTURE_NORMAL":
                 self.nml_texture = tokens[1]
+                if self.draped_nml_texture == "":
+                    self.draped_nml_texture = tokens[1]
+
+            elif tokens[0] == "TEXTURE_DRAPED":
+                self.draped_alb_texture = tokens[1]
+
+            elif tokens[0] == "TEXTURE_DRAPED_NORMAL":
+                self.draped_nml_tile_rat = float(tokens[1])
+                self.draped_nml_texture = tokens[2]
+
+            elif tokens[0] == "TEXTURE_DRAPED_LIT":
+                self.draped_lit_texture = tokens[1]
 
             elif tokens[0] == "TEXTURE_LIT":
                 self.lit_texture = tokens[1]
+                if self.draped_lit_texture == "":
+                    self.draped_lit_texture = tokens[1]
 
             elif tokens[0] == "GLOBAL_no_blend":
                 self.do_blend_alpha = False
-                self.alpha_cutoff = float(tokens[1])
+                self.blend_cutoff = float(tokens[1])
+                cur_state.blend = False
+                cur_state.blend_cutoff = self.blend_cutoff
 
             elif tokens[0] == "GLOBAL_no_shadow":
-                self.cast_shadows = False
+                self.cast_shadow = False
+                cur_state.cast_shadow = False
 
             elif tokens[0] == "ANIM_begin": 
                 new_anim = anim_level()
@@ -974,13 +1084,52 @@ class object:
                     self.lights.append(new_light)
                 pass
 
+            elif tokens[0] == "ATTR_draped":
+                cur_state.draped = True
+
+            elif tokens[0] == "ATTR_no_draped":
+                cur_state.draped = False
+
+            elif tokens[0] == "ATTR_no_shadow":
+                cur_state.cast_shadow = False
+
+            elif tokens[0] == "ATTR_shadow":
+                cur_state.cast_shadow = True
+
+            elif tokens[0] == "ATTR_no_blend":
+                cur_state.blend = False
+                if len(tokens) > 1:
+                    cur_state.blend_cutoff = float(tokens[1])
+
+            elif tokens[0] == "ATTR_blend":
+                cur_state.blend = True
+                cur_state.blend_cutoff = 0.5
+    
+            elif tokens[0] == "ATTR_hard":
+                cur_state.surface_type = tokens[1]
+
+            elif tokens[0] == "ATTR_hard_deck":
+                cur_state.surface_type = tokens[1]
+
+            elif tokens[0] == "ATTR_no_hard":
+                cur_state.surface_type = "none"
+
+            elif tokens[0] == "ATTR_layer_group":
+                self.layer_group = tokens[1]
+                self.layer_group_offset = int(tokens[2]) if len(tokens) > 2 else 0
+
+            elif tokens[0] == "ATTR_draped_layer_group":
+                self.draped_layer_group = tokens[1]
+                self.draped_layer_group_offset = int(tokens[2]) if len(tokens) > 2 else 0
+
     def to_scene(self):
         #Create a new collection for this object
         collection = bpy.data.collections.new(self.name)
         collection.name = self.name
         bpy.context.scene.collection.children.link(collection)
 
-        #Create a new material
+        #Create the base material
+        all_mats = []
         mat = bpy.data.materials.new(name=self.name)
         mat.use_nodes = True
         xp_mat = mat.xp_materials
@@ -990,10 +1139,29 @@ class object:
             xp_mat.material_texture = self.mat_texture
             xp_mat.do_seperate_material_texture = True
         xp_mat.lit_texture = self.lit_texture
-        xp_mat.do_blend_alpha = self.do_blend_alpha
-        xp_mat.alpha_cutoff = self.alpha_cutoff
-        xp_mat.cast_shadows = self.cast_shadows
+        xp_mat.blend_alpha = self.do_blend_alpha
+        xp_mat.blend_cutoff = self.blend_cutoff
+        xp_mat.cast_shadow = self.cast_shadow
         mat.name = self.name
+
+        all_mats.append(mat)
+
+        #Create the draped material if it exists
+        if self.draped_alb_texture != "":
+            draped_mat = bpy.data.materials.new(name=self.name + "_draped")
+            draped_mat.use_nodes = True
+            xp_draped_mat = draped_mat.xp_materials
+            xp_draped_mat.alb_texture = self.draped_alb_texture
+            xp_draped_mat.normal_texture = self.draped_nml_texture
+            xp_draped_mat.lit_texture = self.draped_lit_texture
+            xp_draped_mat.do_blend_alpha = self.do_blend_alpha
+            xp_draped_mat.blend_cutoff = self.blend_cutoff
+            xp_draped_mat.cast_shadow = self.cast_shadow
+            xp_draped_mat.draped = True
+            xp_draped_mat.draped_nml_tile_rat = self.draped_nml_tile_rat
+            draped_mat.name = self.name + "_draped"
+
+            all_mats.append(draped_mat)
 
         #In X-Plane2Blender, the LOD system is done via buckets. There are 4 buckets, with their start/end distances set at a collection level
         #In X-Plane however, the LOD sysytem is done via ranges on a potentially per-tris basis, so we could potentially
@@ -1094,7 +1262,7 @@ class object:
 
         #For the basic draw calls just add 'em to the scene
         for dc in self.draw_calls:
-            dc.add_to_scene(self.verticies, self.indicies, [mat], collection)
+            dc.add_to_scene(self.verticies, self.indicies, all_mats, collection)
 
         #For basic lights just add them
         self.lights = misc_utils.dedupe_list(self.lights)
@@ -1104,6 +1272,6 @@ class object:
         #Now that we have the basic geometery, we need to add the animated stuff.
         #This is very simple. We iterate through all our root animation levels, and add them to the scene. Aka we call the function to do the hard (sort of) stuff
         for anim in self.anims:
-            anim.add_to_scene(None, self.verticies, self.indicies, mat, collection)
+            anim.add_to_scene(None, self.verticies, self.indicies, all_mats, collection)
         
         #WE'RE DONE!

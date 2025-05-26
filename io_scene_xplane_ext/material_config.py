@@ -70,6 +70,7 @@ def update_settings(in_material):
             in_material.xplane.blendRatio = xp_mat.blend_cutoff
         except:
             pass
+    in_material.show_transparent_back = False
 
     #Set XP draped mode based on the draped property
     try:
