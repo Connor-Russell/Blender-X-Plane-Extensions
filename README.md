@@ -5,7 +5,7 @@ This Blender Plugin provides additional functionality for X-Plane projects in Bl
 - Facade Importer (basic)
 - Line Exporter
 - Line Importer
-- Object Importer (WIP, some animations don't import properly)
+- Object Importer (WIP, not all property data is imported, and animation hierarchy may be unexpected)
 
 Additional features planned include:
 - Autogen Point Exporter with auto-splitting of multiple material objects into different .objs
@@ -26,6 +26,6 @@ Releases can be found on the release page. To install, simply go to your Blender
 
 # Known issues:
 - Decals are not imported for any formats
-- Material importing may be incomplete
+- Only the NORMAL_METALNESS material model is implemented. NORMAL_TRANSLUCENT and XP-10 style materials are not supported.
 - Verticies are not deduped when exporting facades, resulting in potentially slightly higher VRAM usage on facades due to a few extra verticies
-- Certain object animations do not properly import
+- Some object properties are not imported
