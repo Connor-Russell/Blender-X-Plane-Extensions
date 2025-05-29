@@ -125,6 +125,35 @@ class light:
         return (self.name, self.type, self.xp_type, self.color_r, self.color_g,self.color_b,self.loc_x,self.loc_y,self.loc_z,self.dir_x,self.dir_y,self.dir_z,self.cone_angle,self.dataref,self.size, self.is_photometric, self.params, self.xp_type, self.bb_s1, self.bb_s2, self.bb_t1, self.bb_t2) < \
         (other.name, other.type, other.xp_type, other.color_r, other.color_g, other.color_b, other.loc_x, other.loc_y, other.loc_z, other.dir_x, other.dir_y, other.dir_z, other.cone_angle, other.dataref, other.size, other.is_photometric, other.params, other.xp_type, other.bb_s1, other.bb_s2, other.bb_t1, other.bb_t2)
 
+class manipulator_detent:
+    """
+    Class to represent a detent in a manipulator. This class is used to store the detents for a manipulator.
+    """
+
+    def __init__(self):
+        self.start = 0
+        self.end = 0
+        self.length = 0
+
+class manipulator:
+    """
+    Class to represent a manipulator in an X-Plane object. This class is used to store the manipulators for an object.
+    """
+
+    #Define instance variables
+    def __init__(self):
+        self.valid = False  #True if this manipulator is valid. If not, it will be ignored
+        #List of parameters for the manipulator. This is a list of strings. It's easier to store here then to have 500 different param types. We'll just grab directly from these string values when configuring
+        self.params = []
+        self.detents = []  #List of detents for the manipulator. This is a list of manipulator_detent objects
+        self.wheel_delta = 0  #Wheel delta for the manipulator. This is used to set how much the scroll wheel changes the value
+    
+    def apply_to_obj(self, obj):
+        """
+        Applies the manipulator settings to the given Blender object
+        """
+        pass
+
 class draw_call_state:
     """
     Class to represent the state used in a draw call. This is separate because many DCs can have the same state, so when parsing, we just have a cur state object which we then attach to the DC
@@ -162,6 +191,7 @@ class draw_call:
         self.lod_end = 0  #End range of the LOD
         self.lod_bucket = -1  #LOD bucket of the draw call. Corresponds to the XP2B value.
         self.state = draw_call_state()  #State of the draw call. This is used to store the state of the draw call, such as blend mode, alpha cutoff, etc.
+        self.manipulator = None  #Manipulator for the draw call. This is used to store the manipulator for the draw call, if it has one.
 
     def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection):
         """
@@ -664,6 +694,7 @@ class object:
         cur_start_lod = 0
         cur_end_lod = 0
         cur_state = draw_call_state()
+        cur_manipulator = manipulator()
 
         with open(in_obj_path, "r") as f:
             lines = f.readlines()
@@ -703,6 +734,11 @@ class object:
                 dc.length = int(tokens[2])
                 dc.lod_start = cur_start_lod
                 dc.lod_end = cur_end_lod
+                if cur_manipulator.valid:
+                    dc.manipulator = cur_manipulator.copy()  #Copy the current manipulator to the draw call
+
+                #Reset the current manipulator for the next draw call
+                cur_manipulator = manipulator()
 
                 #Add the draw call to the list of draw calls. This is the current animation in the tree, or the list of static draw calls it there is no current animation
                 if len(cur_anim_tree) > 0:
@@ -1122,6 +1158,28 @@ class object:
                 self.draped_layer_group = tokens[1]
                 self.draped_layer_group_offset = int(tokens[2]) if len(tokens) > 2 else 0
 
+            elif tokens[0] == "ATTR_manip_wheel":
+                cur_manipulator.wheel_delta = float(tokens[1]) if len(tokens) > 1 else 0
+
+            elif tokens[0] == "ATTR_axis_detented":
+                new_detent = manipulator_detent()
+                new_detent.start = float(tokens[1])
+                new_detent.end = float(tokens[2])
+                new_detent.length = float(tokens[3])
+                cur_manipulator.detents.append(new_detent)
+
+            elif tokens[0] == "ATTR_manip_keyframe":
+                #TODO: What does this even do? I don't understand docs nor see corresponding settings in X-Plane2Blender
+                pass
+
+            elif tokens[0] == "ATTR_manip_device":
+                #TODO: Not implemented in XP2Blender, so nothing we can do afaik
+                pass
+
+            elif tokens[0].startswith("ATTR_manip"):
+                cur_manipulator.valid = True
+                cur_manipulator.tokens = tokens.copy()
+                
     def to_scene(self):
         #Create a new collection for this object
         collection = bpy.data.collections.new(self.name)
