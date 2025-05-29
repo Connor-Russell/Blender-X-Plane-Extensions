@@ -135,6 +135,17 @@ class manipulator_detent:
         self.end = 0
         self.length = 0
 
+    def copy(self):
+        """
+        Returns a copy of this detent object.
+        """
+        new_detent = manipulator_detent()
+        new_detent.start = self.start
+        new_detent.end = self.end
+        new_detent.length = self.length
+
+        return new_detent
+
 class manipulator:
     """
     Class to represent a manipulator in an X-Plane object. This class is used to store the manipulators for an object.
@@ -158,7 +169,7 @@ class manipulator:
             #If there are no params, we can't apply this manipulator
             return
 
-        cmd = self.paranms[0]
+        cmd = self.params[0]
 
         #Almost all manips have this, and if they don't they just ignore it anyway so we can just set it once
         obj.xplane.manip.wheel_delta = self.wheel_delta
@@ -195,8 +206,8 @@ class manipulator:
             obj.xplane.manip.dx = float(self.params[2])
             obj.xplane.manip.dy = float(self.params[3])
             obj.xplane.manip.dz = float(self.params[4])
-            obj.xplane.manip.v1_min = float(self.params[5])
-            obj.xplane.manip.v1_max = float(self.params[6])
+            obj.xplane.manip.v1 = float(self.params[5])
+            obj.xplane.manip.v2 = float(self.params[6])
             obj.xplane.manip.dataref1 = self.params[7]
 
             #Tooltip may or may not be included
@@ -209,9 +220,9 @@ class manipulator:
 
         elif param_len >= 3 and cmd == "ATTR_manip_command":
             obj.xplane.manip.enabled = True
-            obj.xplane.manip.type = "drag_axis"
+            obj.xplane.manip.type = "command"
             obj.xplane.manip.cursor = self.params[1].lower()
-            obj.xplane.manip.tooltip = self.params[2]
+            obj.xplane.manip.command = self.params[2]
 
             #Tooltip may or may not be included
             if param_len >= 4:
@@ -454,7 +465,18 @@ class manipulator:
             if len(self.detents) > 0:
                 obj.xplane.manip.type = "drag_rotate_detent"
             obj.xplane.manip.cursor = self.params[1].lower()
-            obj.xplane.manip.xplane.manip.command = self.params[2]
+
+    def copy(self):
+        """
+        Returns a copy of this manipulator object.
+        """
+        new_manip = manipulator()
+        new_manip.valid = self.valid
+        new_manip.params = self.params.copy()
+        new_manip.detents = [detent.copy() for detent in self.detents]
+        new_manip.wheel_delta = self.wheel_delta
+
+        return new_manip
 
 class draw_call_state:
     """
