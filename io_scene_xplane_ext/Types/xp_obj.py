@@ -466,6 +466,9 @@ class manipulator:
                 obj.xplane.manip.type = "drag_rotate_detent"
             obj.xplane.manip.cursor = self.params[1].lower()
 
+        for det in self.detents:
+            obj.xplane.manip.axis_detent_ranges.append((det.start, det.end, det.length))
+
     def copy(self):
         """
         Returns a copy of this manipulator object.
