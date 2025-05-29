@@ -152,7 +152,309 @@ class manipulator:
         """
         Applies the manipulator settings to the given Blender object
         """
-        pass
+        param_len = len(self.params)
+
+        if param_len == 0:
+            #If there are no params, we can't apply this manipulator
+            return
+
+        cmd = self.paranms[0]
+
+        #Almost all manips have this, and if they don't they just ignore it anyway so we can just set it once
+        obj.xplane.manip.wheel_delta = self.wheel_delta
+
+        if param_len == 1 and cmd == "ATTR_manip_noop":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "noop"
+
+        elif param_len >= 10 and cmd == "ATTR_manip_drag_xy":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_xy"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.dx = float(self.params[2])
+            obj.xplane.manip.dy = float(self.params[3])
+            obj.xplane.manip.v1_min = float(self.params[4])
+            obj.xplane.manip.v1_max = float(self.params[5])
+            obj.xplane.manip.v2_min = float(self.params[6])
+            obj.xplane.manip.v2_max = float(self.params[7])
+            obj.xplane.manip.dataref1 = self.params[8]
+            obj.xplane.manip.dataref2 = self.params[9]
+
+            #Tooltip may or may not be included
+            if param_len >= 11:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[10:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 8 and cmd == "ATTR_manip_drag_axis":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_axis"
+            if len(self.detents) > 0:
+                obj.xplane.manip.type = "drag_axis_detent"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.dx = float(self.params[2])
+            obj.xplane.manip.dy = float(self.params[3])
+            obj.xplane.manip.dz = float(self.params[4])
+            obj.xplane.manip.v1_min = float(self.params[5])
+            obj.xplane.manip.v1_max = float(self.params[6])
+            obj.xplane.manip.dataref1 = self.params[7]
+
+            #Tooltip may or may not be included
+            if param_len >= 9:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[8:])
+                obj.xplane.manip.tooltip = tooltip
+
+            #TODO: Implement detents. This should be easy but X-Plane2Blender isn't exposing the arguments so I need to dive into it's code1
+
+        elif param_len >= 3 and cmd == "ATTR_manip_command":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_axis"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.tooltip = self.params[2]
+
+            #Tooltip may or may not be included
+            if param_len >= 4:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[3:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_command_axis":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_axis"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.dx = float(self.params[2])
+            obj.xplane.manip.dy = float(self.params[3])
+            obj.xplane.manip.dz = float(self.params[4])
+            obj.xplane.manip.positive_command = self.params[5]
+            obj.xplane.manip.negative_command = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 5 and cmd == "ATTR_manip_push":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "push"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_down = float(self.params[2])
+            obj.xplane.manip.v_up = float(self.params[3])
+            obj.xplane.manip.dataref1 = self.params[4]
+
+            #Tooltip may or may not be included
+            if param_len >= 6:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[5:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 4 and cmd == "ATTR_manip_radio":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "radio"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_down = float(self.params[2])
+            obj.xplane.manip.dataref1 = self.params[3]
+
+            #Tooltip may or may not be included
+            if param_len >= 5:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[4:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 5 and cmd == "ATTR_manip_toggle":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "toggle"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_on = float(self.params[2])
+            obj.xplane.manip.v_off = float(self.params[3])
+            obj.xplane.manip.dataref1 = self.params[4]
+
+            #Tooltip may or may not be included
+            if param_len >= 6:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[5:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_delta":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "delta"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_down = float(self.params[2])
+            obj.xplane.manip.v_hold = float(self.params[3])
+            obj.xplane.manip.v1_min = float(self.params[4])
+            obj.xplane.manip.v1_max = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_wrap":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "wrap"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_down = float(self.params[2])
+            obj.xplane.manip.v_hold = float(self.params[3])
+            obj.xplane.manip.v1_min = float(self.params[4])
+            obj.xplane.manip.v1_max = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 8 and cmd == "ATTR_manip_drag_axis_pix":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_axis_pix"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.dx = float(self.params[2])
+            obj.xplane.manip.step = float(self.params[3])
+            obj.xplane.manip.exp = float(self.params[4])
+            obj.xplane.manip.v1 = float(self.params[5])
+            obj.xplane.manip.v2 = float(self.params[6])
+            obj.xplane.manip.dataref1 = self.params[7]
+
+            #Tooltip may or may not be included
+            if param_len >= 9:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[8:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 4 and cmd == "ATTR_manip_command_knob":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_knob"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.positive_command = self.params[2]
+            obj.xplane.manip.negative_command = self.params[3]
+
+            #Tooltip may or may not be included
+            if param_len >= 5:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[4:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 4 and cmd == "ATTR_manip_command_switch_up_down":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_switch_up_down"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.positive_command = self.params[2]
+            obj.xplane.manip.negative_command = self.params[3]
+
+            #Tooltip may or may not be included
+            if param_len >= 5:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[4:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 4 and cmd == "ATTR_manip_command_switch_left_right":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_switch_left_right"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.positive_command = self.params[2]
+            obj.xplane.manip.negative_command = self.params[3]
+
+            #Tooltip may or may not be included
+            if param_len >= 5:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[4:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_axis_knob":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "axis_knob"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v1 = float(self.params[2])
+            obj.xplane.manip.v2 = float(self.params[3])
+            obj.xplane.manip.click_step = float(self.params[4])
+            obj.xplane.manip.hold_step = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_axis_switch_up_down":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "axis_switch_up_down"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v1 = float(self.params[2])
+            obj.xplane.manip.v2 = float(self.params[3])
+            obj.xplane.manip.click_step = float(self.params[4])
+            obj.xplane.manip.hold_step = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_axis_switch_left_right":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "axis_switch_left_right"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v1 = float(self.params[2])
+            obj.xplane.manip.v2 = float(self.params[3])
+            obj.xplane.manip.click_step = float(self.params[4])
+            obj.xplane.manip.hold_step = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 3 and cmd == "ATTR_manip_command_switch_left_right2":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_switch_left_right2"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.xplane.manip.command = self.params[2]
+
+            #Tooltip may or may not be included
+            if param_len >= 4:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[3:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 3 and cmd == "ATTR_manip_command_switch_up_down2":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_switch_up_down2"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.xplane.manip.command = self.params[2]
+
+            #Tooltip may or may not be included
+            if param_len >= 4:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[3:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 3 and cmd == "ATTR_manip_command_knob2":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_knob2"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.xplane.manip.command = self.params[2]
+
+            #Tooltip may or may not be included
+            if param_len >= 4:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[3:])
+                obj.xplane.manip.tooltip = tooltip
+        
+        elif param_len >= 17 and cmd == "ATTR_manip_drag_rotate":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_rotate"
+            if len(self.detents) > 0:
+                obj.xplane.manip.type = "drag_rotate_detent"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.xplane.manip.command = self.params[2]
 
 class draw_call_state:
     """
@@ -229,6 +531,9 @@ class draw_call:
 
         dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {self.start_index} {self.length}")
         in_collection.objects.link(dc_obj)
+
+        if self.manipulator != None:
+            self.manipulator.apply_to_obj(dc_obj)
 
         if self.lod_bucket != -1:
             #Set the LOD bucket for this object
@@ -1178,7 +1483,7 @@ class object:
 
             elif tokens[0].startswith("ATTR_manip"):
                 cur_manipulator.valid = True
-                cur_manipulator.tokens = tokens.copy()
+                cur_manipulator.params = tokens.copy()
                 
     def to_scene(self):
         #Create a new collection for this object
