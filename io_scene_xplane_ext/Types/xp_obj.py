@@ -467,7 +467,8 @@ class manipulator:
             obj.xplane.manip.cursor = self.params[1].lower()
 
         for det in self.detents:
-            obj.xplane.manip.axis_detent_ranges.append((det.start, det.end, det.length))
+            pass
+            #obj.xplane.manip.axis_detent_ranges.append((det.start, det.end, det.length))
 
     def copy(self):
         """
@@ -626,6 +627,65 @@ class draw_call:
 
         return dc_obj
 
+class static_offsets:
+    """
+    Class to represent a series of transformations that need to take place on an object in a certain order
+    """
+    def __init__(self):
+        self.actions = []   #Tuples. xyz offsets or xyz euler
+        self.action_types = []  #translate or rotate
+
+    def copy(self):
+        """
+        Returns a copy of this static offsets object.
+        """
+        new_offsets = static_offsets()
+        new_offsets.actions = self.actions.copy()
+        new_offsets.action_types = self.action_types.copy()
+        return new_offsets
+
+    def apply(self, obj):
+        """
+        Applies the static offsets to the given object. This will apply all the actions in the order they were added.
+        
+        Args:
+            obj (bpy.types.Object): The Blender object to apply the static offsets to.
+        """
+
+        if len(self.actions) == 0:
+            #If there are no actions, we don't need to do anything
+            return
+
+        cur_location = mathutils.Vector((0, 0, 0))
+        total_rot = mathutils.Euler((0, 0, 0), 'XYZ')
+
+        reversed_actions = self.actions.copy()
+        reversed_actions.reverse()
+        reversed_types = self.action_types.copy()
+        reversed_types.reverse()
+
+        for i, action in enumerate(reversed_actions):
+            action_type = reversed_types[i]
+
+            if action_type == 'translate':
+                #Apply translation
+                cur_location.x += action[0]
+                cur_location.y += action[1]
+                cur_location.z += action[2]
+
+            elif action_type == 'rotate':
+                translation = mathutils.Quaternion(action[0], math.radians(action[1]))
+                cur_location.rotate(translation)
+
+                total_rot = (total_rot.to_matrix() @ translation.to_matrix()).to_euler('XYZ')
+
+        #Apply the final location and rotation to the object
+        base_pos = anim_utils.get_obj_position_world(obj)
+        new_pos = (base_pos[0] + cur_location.x, base_pos[1] + cur_location.y, base_pos[2] + cur_location.z)
+        anim_utils.set_obj_position_world(obj, new_pos)
+
+        anim_utils.set_obj_rotation(obj, total_rot)
+
 class anim_action:
     """
     Base class for all animation actions
@@ -634,6 +694,7 @@ class anim_action:
     def __init__(self):
         self.type = ''
         self.empty = None  #Empty for the animation
+        self.static_offsets = static_offsets()  #Static offsets for the animation. This is used to store the static offsets for the animation, such as translation and rotation
 
 class anim_show_hide_command:
     """
@@ -815,10 +876,15 @@ class anim_level:
         self.children = []  #List of children anim_levels for the animation
 
     def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mats, in_collection):
+
+        #For static translations, we will not create a new empty, rather we will just move all children by their translation
+        cur_static_offsets = static_offsets()  #This will hold the static offsets for the animation level
+
         #Create a new empty for this animation level
 
         self.last_action = parent_obj
         cur_parent = parent_obj
+        
         for i, action in enumerate(self.actions):
             #Create the empty for this action
             name = f"Anim"
@@ -829,26 +895,39 @@ class anim_level:
                 name += " Rotation Transform"
             elif action.type == 'rot_keyframe':
                 name += " Static Rotation"
+                cur_static_offsets.actions.append((action.rot_vector, action.rot))
+                cur_static_offsets.action_types.append('rotate')
+                continue  #Static rotations are not animated, so we don't create a new empty for them
             elif action.type == 'loc_keyframe':
                 name += " Static Translation"
+                cur_static_offsets.actions.append(action.loc)
+                cur_static_offsets.action_types.append('translate')
+                continue  #Static translations are not animated, so we don't create a new empty for them
             elif action.type == 'loc_table':
                 name += " Keyframed Translation"
             elif action.type == 'rot_table':
                 name += " Keyframed Rotation"
             elif action.type == 'show_hide_series':
                 name += " Show/Hide Series"
+            
+            #Create the new objetc and link it
             anim_empty = bpy.data.objects.new(name, None)
             anim_empty.empty_display_type = "ARROWS"
-            anim_empty.empty_display_size = 0.1
+            anim_empty.empty_display_size = 0.02
             in_collection.objects.link(anim_empty)
             self.actions[i].empty = anim_empty
 
+            #Set this actions base loc/rot transforms and reset the offsets
+            action.static_offsets = cur_static_offsets.copy()
+            cur_static_offsets = static_offsets()  #Reset the static offsets for the next action
+
+            #Reset the offsets because future objetcs will be parented to this one,
             if cur_parent != None:
                 anim_empty.parent = cur_parent
             cur_parent = anim_empty
 
             #If it is a rotation we need to align it to the rotation vector
-            if action.type == 'rot_keyframe' or action.type == 'rot_table_vector_transform':
+            if action.type == 'rot_table_vector_transform':
                 eular = anim_utils.euler_to_align_z_with_vector(action.rot_vector)  #We align rotations to their rotation vector so they can be rotated into static place, or their child keyframe controller can be rotated along it's local Z (which is this vector)
                 anim_utils.set_obj_rotation_world(anim_empty, eular)
             elif action.type == "rot_table":
@@ -880,6 +959,9 @@ class anim_level:
             eular = mathutils.Vector((0, 0, 0))
             anim_utils.set_obj_rotation_world(dc_obj, eular)
 
+            #Apply the static offsets to the draw call object
+            cur_static_offsets.apply(dc_obj)
+
         #Dedupe our lights
         self.lights = misc_utils.dedupe_list(self.lights)
         for lt in self.lights:
@@ -889,6 +971,9 @@ class anim_level:
 
             eular = new_light.rotation_euler
             anim_utils.set_obj_rotation_world(new_light, eular)
+
+            #Apply the static offsets to the light object
+            cur_static_offsets.apply(new_light)  
 
         #Now that we added out draw calls, it's time to recurse
         for child in self.children:
@@ -901,18 +986,15 @@ class anim_level:
         for i, action in enumerate(reversed(self.actions)):
 
             anim_empty = action.empty
-            
+
             #Now, we apply the animations!
-            if action.type == 'loc_keyframe':
-                base_pos = anim_utils.get_obj_position_world(anim_empty)
-                new_pos = (base_pos[0] + action.loc[0], base_pos[1] + action.loc[1], base_pos[2] + action.loc[2])
-                anim_utils.set_obj_position_world(anim_empty, new_pos)
+            if action.type == 'loc_keyframe' or action.type == 'rot_keyframe':
+                continue  #Static translations are not animated, so we don't do anything here
+
+            #Apply the base static translation offset
+            action.static_offsets.apply(anim_empty)
             
-            elif action.type == 'rot_keyframe':
-                base_rot = anim_utils.get_base_rot_for_local_z_rotation(anim_empty)
-                anim_utils.rotate_obj_around_local_z(anim_empty, action.rot, base_rot)
-            
-            elif action.type == 'loc_table':
+            if action.type == 'loc_table':
                 
                 base_pos = anim_utils.get_obj_position_world(anim_empty)
 
