@@ -10,6 +10,44 @@ import mathutils
 
 import mathutils
 
+def rotate_point_and_euler(point, euler_angles, axis, angle_deg):
+        """
+        Rotates a location and euler around an arbitrary axis by a given angle in degrees.
+        Args:
+            point (mathutils.Vector): The position vector to rotate.
+            euler_angles (mathutils.Euler): The Euler angles to rotate.
+            axis (mathutils.Vector): The axis of rotation (should be normalized).
+            angle_deg (float): The angle in degrees to rotate around the axis.
+        Returns:
+            tuple: A tuple containing the rotated position (mathutils.Vector) and the rotated Euler angles (mathutils.Euler).
+        """
+        # Ensure the axis is normalized just in case:
+        axis = axis.normalized()
+
+        # Convert degrees to radians since mathutils.Quaterion accepts radians
+        angle_rad = math.radians(angle_deg)
+
+        # Create the quaternion representing the rotation about the given axis
+        q = mathutils.Quaternion(axis, angle_rad)
+
+        # Rotate the position vector.
+        # The '@' operator applies the rotation.
+        rotated_point = q @ point
+
+        # For the Euler rotation:
+        # 1. Convert the Euler angles to a quaternion
+        euler_quat = euler_angles.to_quaternion()
+
+        # 2. Apply the arbitrary axis rotation by quaternion multiplication.
+        # Note: Quaternion multiplication is not commutative, so if your intention is to pre-rotate,
+        # use q @ euler_quat. If your intention is to post-rotate, you might use euler_quat @ q.
+        rotated_euler_quat = q @ euler_quat
+
+        # 3. Convert the result back to Euler angles using the original order
+        rotated_euler = rotated_euler_quat.to_euler(euler_angles.order)
+
+        return rotated_point, rotated_euler
+
 def euler_to_align_z_with_vector(direction):
     """
     Compute the Euler XYZ rotation (in radians) to align the object's local Z axis with the given direction vector.

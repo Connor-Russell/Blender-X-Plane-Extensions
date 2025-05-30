@@ -674,17 +674,16 @@ class static_offsets:
                 cur_location.z += action[2]
 
             elif action_type == 'rotate':
-                translation = mathutils.Quaternion(action[0], math.radians(action[1]))
-                cur_location.rotate(translation)
-
-                total_rot = (total_rot.to_matrix() @ translation.to_matrix()).to_euler('XYZ')
+                cur_location, total_rot = anim_utils.rotate_point_and_euler(cur_location, total_rot, action[0], action[1])
 
         #Apply the final location and rotation to the object
         base_pos = anim_utils.get_obj_position_world(obj)
         new_pos = (base_pos[0] + cur_location.x, base_pos[1] + cur_location.y, base_pos[2] + cur_location.z)
         anim_utils.set_obj_position_world(obj, new_pos)
 
-        anim_utils.set_obj_rotation(obj, total_rot)
+        base_rot = obj.rotation_euler
+        new_rot = (total_rot.to_quaternion() @ base_rot.to_quaternion()).to_euler('XYZ')
+        obj.rotation_euler = new_rot
 
 class anim_action:
     """
