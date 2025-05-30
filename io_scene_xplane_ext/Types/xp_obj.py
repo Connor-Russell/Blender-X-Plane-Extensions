@@ -681,9 +681,9 @@ class static_offsets:
         new_pos = (base_pos[0] + cur_location.x, base_pos[1] + cur_location.y, base_pos[2] + cur_location.z)
         anim_utils.set_obj_position_world(obj, new_pos)
 
-        base_rot = obj.rotation_euler
+        base_rot = anim_utils.get_obj_rotation_world(obj)
         new_rot = (total_rot.to_quaternion() @ base_rot.to_quaternion()).to_euler('XYZ')
-        obj.rotation_euler = new_rot
+        anim_utils.set_obj_rotation_world(obj, new_rot)
 
 class anim_action:
     """
@@ -694,6 +694,7 @@ class anim_action:
         self.type = ''
         self.empty = None  #Empty for the animation
         self.static_offsets = static_offsets()  #Static offsets for the animation. This is used to store the static offsets for the animation, such as translation and rotation
+        self.show_hide_commands = []  #List of show/hide commands for the animation
 
 class anim_show_hide_command:
     """
@@ -705,6 +706,16 @@ class anim_show_hide_command:
         self.start_value = 0  #Min dref value to show/hide at
         self.end_value = 0  #Max dref value to show/hide at
         self.dataref = ""  #Dataref for the animation
+
+    def apply(self, obj):
+        obj.xplane.datarefs.add()
+        obj.xplane.datarefs[-1].path = self.dataref
+        if self.hide:
+            obj.xplane.datarefs[-1].anim_type = 'hide'
+        else:
+            obj.xplane.datarefs[-1].anim_type = 'show'
+        obj.xplane.datarefs[-1].show_hide_v1 = self.start_value
+        obj.xplane.datarefs[-1].show_hide_v2 = self.end_value
 
 class anim_show_hide_series(anim_action):
     """
@@ -874,16 +885,22 @@ class anim_level:
         self.lights = []  #List of lights for the animation
         self.children = []  #List of children anim_levels for the animation
 
-    def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mats, in_collection):
+    def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mats, in_collection, initial_static_offsets=None, initial_show_hide_commands=None):
 
         #For static translations, we will not create a new empty, rather we will just move all children by their translation
         cur_static_offsets = static_offsets()  #This will hold the static offsets for the animation level
+        if initial_static_offsets != None:
+            cur_static_offsets = initial_static_offsets.copy()
+
+        cur_show_hide_commands = []  #This will hold the show/hide commands for the animation level
+        if initial_show_hide_commands != None:
+            cur_show_hide_commands = initial_show_hide_commands.copy()
 
         #Create a new empty for this animation level
-
         self.last_action = parent_obj
         cur_parent = parent_obj
         
+        #Add all the actions, creating the hierarchy of empties with their rotations set. 
         for i, action in enumerate(self.actions):
             #Create the empty for this action
             name = f"Anim"
@@ -908,11 +925,13 @@ class anim_level:
                 name += " Keyframed Rotation"
             elif action.type == 'show_hide_series':
                 name += " Show/Hide Series"
+                cur_show_hide_commands = action.commands  #We will apply these commands later, so we save them here
+                continue  #Show/hide series are not animated, so we don't create a new empty for them. Their commands will be attached to all their direct children
             
             #Create the new objetc and link it
             anim_empty = bpy.data.objects.new(name, None)
             anim_empty.empty_display_type = "ARROWS"
-            anim_empty.empty_display_size = 0.02
+            anim_empty.empty_display_size = 0.05
             in_collection.objects.link(anim_empty)
             self.actions[i].empty = anim_empty
 
@@ -961,6 +980,10 @@ class anim_level:
             #Apply the static offsets to the draw call object
             cur_static_offsets.apply(dc_obj)
 
+            #Apply show hide animations
+            for cmd in cur_show_hide_commands:
+                cmd.apply(dc_obj)
+
         #Dedupe our lights
         self.lights = misc_utils.dedupe_list(self.lights)
         for lt in self.lights:
@@ -974,9 +997,13 @@ class anim_level:
             #Apply the static offsets to the light object
             cur_static_offsets.apply(new_light)  
 
+            #Apply show hide animations
+            for cmd in cur_show_hide_commands:
+                cmd.apply(new_light)
+
         #Now that we added out draw calls, it's time to recurse
         for child in self.children:
-            child.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection)
+            child.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection, cur_static_offsets.copy(), cur_show_hide_commands.copy())
 
         #Reset our frame
         anim_utils.goto_frame(0)
@@ -986,12 +1013,16 @@ class anim_level:
 
             anim_empty = action.empty
 
-            #Now, we apply the animations!
-            if action.type == 'loc_keyframe' or action.type == 'rot_keyframe':
-                continue  #Static translations are not animated, so we don't do anything here
+            #Skip animations that just have their data propagated to their children
+            if action.type == 'loc_keyframe' or action.type == 'rot_keyframe' or action.type == 'show_hide_series':
+                continue
 
             #Apply the base static translation offset
             action.static_offsets.apply(anim_empty)
+
+            #Apply show/hide commands. We do this here vs a dedicated empty because that can mess up manipulators sadly
+            for cmd in action.show_hide_commands:
+                    cmd.apply(anim_empty)
             
             if action.type == 'loc_table':
                 
@@ -1039,17 +1070,6 @@ class anim_level:
                     #Set the value of the dataref to the keyframe value
                     anim_utils.keyframe_obj_rotation(anim_empty)
                     anim_utils.keyframe_xp_dataref(anim_empty, dataref, kf.time)
-
-            elif action.type == 'show_hide_series':
-                for cmd in action.commands:
-                    anim_empty.xplane.datarefs.add()
-                    anim_empty.xplane.datarefs[-1].path = cmd.dataref
-                    if cmd.hide:
-                        anim_empty.xplane.datarefs[-1].anim_type = 'hide'
-                    else:
-                        anim_empty.xplane.datarefs[-1].anim_type = 'show'
-                    anim_empty.xplane.datarefs[-1].show_hide_v1 = cmd.start_value
-                    anim_empty.xplane.datarefs[-1].show_hide_v2 = cmd.end_value
 
             #Reset our frame
             anim_utils.goto_frame(0)
