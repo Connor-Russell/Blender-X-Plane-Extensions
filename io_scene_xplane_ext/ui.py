@@ -270,6 +270,10 @@ class MENU_lin_exporter(bpy.types.Panel):
                         box.prop(col.xp_lin, "name")
                         box.prop(col.xp_lin, "mirror")
                         box.prop(col.xp_lin, "segment_count")
+                        row = box.row()
+                        row.prop(col.xp_lin, "layer_group")
+                        row.prop(col.xp_lin, "layer_group_offset")
+
 
         #Draw a collapsable box where we can list all the collections, and whether they are exportable
         disabled_box = layout.box()
@@ -287,6 +291,9 @@ class MENU_lin_exporter(bpy.types.Panel):
                             box.prop(col.xp_lin, "name")
                             box.prop(col.xp_lin, "mirror")
                             box.prop(col.xp_lin, "segment_count")
+                            row = box.row()
+                            row.prop(col.xp_lin, "layer_group")
+                            row.prop(col.xp_lin, "layer_group_offset")
 
 class MENU_lin_layer(bpy.types.Panel):
     bl_label = "X-Plane Line Layer"
@@ -333,39 +340,70 @@ class MENU_mats(bpy.types.Panel):
         xp_materials = material.xp_materials
 
         if xp_materials:
+            
             layout.operator("xp_ext.autodetect_texture", text="Autodetect Texture")
-            layout.prop(xp_materials, "do_separate_material_texture")
+            layout.operator("xp_ext.update_material_nodes", text="Update Material")
 
-            layout.prop(xp_materials, "alb_texture", text="Albedo Texture")
+            #---------------------------------Texture Properties---------------------------------
+
+            box = layout.box()
+
+            box.label(text="Textures")
+            box.prop(xp_materials, "do_separate_material_texture")
+
+            box.prop(xp_materials, "alb_texture", text="Albedo Texture")
 
             if xp_materials.draped:
-                row = layout.row()            
+                row = box.row()            
                 row.prop(xp_materials, "normal_texture", text="Normal Texture")
                 row.prop(xp_materials, "normal_tile_ratio")
             else:
-                layout.prop(xp_materials, "normal_texture", text="Normal Texture")
+                box.prop(xp_materials, "normal_texture", text="Normal Texture")
 
             if xp_materials.do_separate_material_texture:
-                layout.prop(xp_materials, "material_texture", text="Material Texture")
+                box.prop(xp_materials, "material_texture", text="Material Texture")
 
-            layout.prop(xp_materials, "lit_texture", text="Lit Texture")
+            box.prop(xp_materials, "lit_texture", text="Lit Texture")
             if (xp_materials.lit_texture != ""):
-                layout.prop(xp_materials, "brightness", text="Brightness")
+                box.prop(xp_materials, "brightness", text="Brightness")
 
-            layout.prop(xp_materials, "weather_texture", text="Weather Texture")
-            layout.prop(xp_materials, "draped", text="Draped")
-            layout.prop(xp_materials, "surface_type", text="Surface Type")
-            layout.prop(xp_materials, "blend_alpha", text="Blend Alpha")
+            box.prop(xp_materials, "weather_texture", text="Weather Texture")
+
+            #---------------------------------Surface Properties---------------------------------
+
+            box = layout.box()
+            box.label(text="Surface Properties")
+
+            box.prop(xp_materials, "blend_mode")
+            if (xp_materials.blend_mode == "CLIP" or xp_materials.blend_mode == "SHADOW"):
+                box.prop(xp_materials, "blend_cutoff")
+
+            box.separator()
+
+            box.prop(xp_materials, "cast_shadow")
+            box.prop(xp_materials, "draped")
+            box.prop(xp_materials, "polygon_offset")
             
-            if (not xp_materials.blend_alpha):
-                layout.prop(xp_materials, "blend_cutoff", text="Blend Cutoff")
-            layout.prop(xp_materials, "polygon_offset", text="Polygon Offset")
-            layout.prop(xp_materials, "cast_shadow", text="Casts Shadows")
-            layout.prop(xp_materials, "layer_group", text="Layer Group")
-            layout.prop(xp_materials, "layer_group_offset", text="Layer Group Offset")
-            layout.operator("xp_ext.update_material_nodes", text="Update Material")
 
-            layout.separator()
+            box.separator()
+
+            box.prop(xp_materials, "surface_type")
+            box.prop(xp_materials, "surface_is_deck")
+            
+
+            box = layout.box()
+
+            box.label(text="Lighting Properties")
+            box.prop(xp_materials, "light_level_override")
+            if xp_materials.light_level_override:
+                box.prop(xp_materials, "light_level_v1")
+                box.prop(xp_materials, "light_level_v2")
+                box.prop(xp_materials, "light_level_photometric")
+                if xp_materials.light_level_photometric:
+                    box.prop(xp_materials, "light_level_brightness")
+                box.prop(xp_materials, "light_level_dataref")
+
+            #---------------------------------Decal Properties---------------------------------
 
             box = layout.box()
 
@@ -374,6 +412,40 @@ class MENU_mats(bpy.types.Panel):
 
             draw_decal_prop(box, xp_materials.decal_one, 0)
             draw_decal_prop(box, xp_materials.decal_two, 1)
+
+            box = layout.box()
+
+            #---------------------------------Aircraft Properties---------------------------------
+
+            box.label(text="Aircraft Properties")
+
+            box.prop(xp_materials, "camera_collision_enabled")
+            box.prop(xp_materials, "drawing_enabled")
+
+            box.separator()
+
+            box.prop(xp_materials, "use_2d_panel_texture")
+            if xp_materials.use_2d_panel_texture:
+                box.prop(xp_materials, "panel_texture_region")
+
+            box.separator()
+            box.prop(xp_materials, "cockpit_device")
+            if xp_materials.cockpit_device != "NONE":
+                if xp_materials.cockpit_device == "Plugin Device":
+                    box.prop(xp_materials, "custom_cockpit_device")
+                row = box.row()
+
+                row.prop(xp_materials, "cockpit_device_use_bus_1")
+                row.prop(xp_materials, "cockpit_device_use_bus_2")
+                row.prop(xp_materials, "cockpit_device_use_bus_3")
+
+                row = box.row()
+
+                row.prop(xp_materials, "cockpit_device_use_bus_4")
+                row.prop(xp_materials, "cockpit_device_use_bus_5")
+                row.prop(xp_materials, "cockpit_device_use_bus_6")
+
+                box.prop(xp_materials, "cockpit_device_lighting_channel")
 
 class MENU_operations(bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
@@ -469,6 +541,8 @@ class MENU_facade(bpy.types.Panel):
                 wall_box.prop(fac, "render_wall")
                 if fac.render_wall:
                     wall_box.prop(fac, "wall_material")
+                    wall_box.prop(fac, "wall_layer_group")
+                    wall_box.prop(fac, "wall_layer_group_offset")
 
                 box.separator()
 
@@ -480,6 +554,8 @@ class MENU_facade(bpy.types.Panel):
                 roof_box.prop(fac, "render_roof")
                 if fac.render_roof:
                     roof_box.prop(fac, "roof_material")
+                    roof_box.prop(fac, "roof_layer_group")
+                    roof_box.prop(fac, "roof_layer_group_offset")
 
                 box.separator()
 
@@ -594,6 +670,9 @@ class MENU_pol_exporter(bpy.types.Panel):
             if col.xp_pol.is_ui_expanded:
                 box.prop(pol, "name")
                 box.prop(pol, "texture_is_nowrap")
+                row = box.row()
+                row.prop(col.xp_lin, "layer_group")
+                row.prop(col.xp_lin, "layer_group_offset")
                 box.separator()
                 box.prop(pol, "is_load_centered")
 

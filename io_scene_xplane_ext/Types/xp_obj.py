@@ -9,6 +9,7 @@ import os
 import mathutils
 import math
 
+from .. import material_config
 from ..Helpers import misc_utils
 from ..Helpers import anim_utils
 from ..Helpers import geometery_utils
@@ -17,6 +18,9 @@ from ..Helpers import light_data    #These are defines for the parameter layout 
 from .. import props
 
 from functools import total_ordering
+
+#Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
+obj_does_use_lods = False
 
 @total_ordering
 class light:
@@ -50,6 +54,7 @@ class light:
         self.bb_t2 = 0 #Bottom UV coordinate of the custom billboard light texture
         self.lod_start = 0  #Start range of the LOD. We don't actually use LODs because lights aren't LODed, but, this is used to dedupe
         self.lod_end = 0    #End range of the LOD
+        self.lod_bucket = -1  #LOD bucket of the light. This is used to determine which LOD bucket this light belongs to. -1 means no LOD bucket.
 
     def add_to_scene(self, in_collection):
         """
@@ -82,6 +87,8 @@ class light:
         b_light.data.xplane.uv[3] = self.bb_t2   # bottom
         b_light.data.xplane.dataref = self.dataref
         b_light.data.xplane.name = self.name
+        if obj_does_use_lods:
+            b_light.xplane.lod[0] = True
 
         return b_light
     
@@ -125,28 +132,558 @@ class light:
         return (self.name, self.type, self.xp_type, self.color_r, self.color_g,self.color_b,self.loc_x,self.loc_y,self.loc_z,self.dir_x,self.dir_y,self.dir_z,self.cone_angle,self.dataref,self.size, self.is_photometric, self.params, self.xp_type, self.bb_s1, self.bb_s2, self.bb_t1, self.bb_t2) < \
         (other.name, other.type, other.xp_type, other.color_r, other.color_g, other.color_b, other.loc_x, other.loc_y, other.loc_z, other.dir_x, other.dir_y, other.dir_z, other.cone_angle, other.dataref, other.size, other.is_photometric, other.params, other.xp_type, other.bb_s1, other.bb_s2, other.bb_t1, other.bb_t2)
 
+class manipulator_detent:
+    """
+    Class to represent a detent in a manipulator. This class is used to store the detents for a manipulator.
+    """
+
+    def __init__(self):
+        self.start = 0
+        self.end = 0
+        self.length = 0
+
+    def copy(self):
+        """
+        Returns a copy of this detent object.
+        """
+        new_detent = manipulator_detent()
+        new_detent.start = self.start
+        new_detent.end = self.end
+        new_detent.length = self.length
+
+        return new_detent
+
+class manipulator:
+    """
+    Class to represent a manipulator in an X-Plane object. This class is used to store the manipulators for an object.
+    """
+
+    #Define instance variables
+    def __init__(self):
+        self.valid = False  #True if this manipulator is valid. If not, it will be ignored
+        #List of parameters for the manipulator. This is a list of strings. It's easier to store here then to have 500 different param types. We'll just grab directly from these string values when configuring
+        self.params = []
+        self.detents = []  #List of detents for the manipulator. This is a list of manipulator_detent objects
+        self.wheel_delta = 0  #Wheel delta for the manipulator. This is used to set how much the scroll wheel changes the value
+        self.detent_axis = mathutils.Vector((0, 0, 0))  #Axis of the manipulator's detent. This is used to set the axis of the manipulator for drag_axis and drag_rotate manips
+        self.detent_v1 = 0
+        self.detent_v2 = 0
+        self.detent_dataref = ""  #Dataref for the detent manipulator. This is used to set the dataref for the manipulator for drag_axis and drag_rotate manips
+    
+    def get_datarefs_for_axis_or_rotate(self):
+        if len(self.params) == 0:
+            return False, []
+        
+        cmd = self.params[0]
+
+        out_list = []
+
+        animateable = False
+
+        if cmd == "ATTR_manip_drag_axis" and len(self.params) >= 8:
+            #This is a drag axis manipulator
+            out_list.append(self.params[7])
+            animateable = True
+
+        if cmd == "ATTR_manip_drag_rotate" and len(self.params) >= 17:
+            #This is a drag rotate manipulator
+            out_list.append(self.params[15])
+            out_list.append(self.params[16])
+            animateable = True
+
+        if self.detent_dataref != "":
+            #If we have a detent dataref, we need to add it too
+            out_list.append(self.detent_dataref)
+
+        return animateable, out_list
+
+    def apply_to_obj(self, obj, do_animate=False, in_collection=None):
+        """
+        Applies the manipulator settings to the given Blender object
+        """
+        param_len = len(self.params)
+
+        if param_len == 0:
+            #If there are no params, we can't apply this manipulator
+            return None
+
+        cmd = self.params[0]
+
+        #Almost all manips have this, and if they don't they just ignore it anyway so we can just set it once
+        obj.xplane.manip.wheel_delta = self.wheel_delta
+
+        if param_len == 1 and cmd == "ATTR_manip_noop":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "noop"
+
+        elif param_len >= 10 and cmd == "ATTR_manip_drag_xy":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_xy"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.dx = float(self.params[2])
+            obj.xplane.manip.dy = float(self.params[3])
+            obj.xplane.manip.v1_min = float(self.params[4])
+            obj.xplane.manip.v1_max = float(self.params[5])
+            obj.xplane.manip.v2_min = float(self.params[6])
+            obj.xplane.manip.v2_max = float(self.params[7])
+            obj.xplane.manip.dataref1 = self.params[8]
+            obj.xplane.manip.dataref2 = self.params[9]
+
+            #Tooltip may or may not be included
+            if param_len >= 11:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[10:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 8 and cmd == "ATTR_manip_drag_axis":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_axis"
+            if len(self.detents) > 0:
+                obj.xplane.manip.type = "drag_axis_detent"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.dx = float(self.params[2])
+            obj.xplane.manip.dy = float(self.params[3])
+            obj.xplane.manip.dz = float(self.params[4])
+            obj.xplane.manip.v1 = float(self.params[5])
+            obj.xplane.manip.v2 = float(self.params[6])
+            obj.xplane.manip.dataref1 = self.params[7]
+
+            #Tooltip may or may not be included
+            if param_len >= 9:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[8:])
+                obj.xplane.manip.tooltip = tooltip
+
+            #TODO: Implement detents. This should be easy but X-Plane2Blender isn't exposing the arguments so I need to dive into it's code1
+
+        elif param_len >= 3 and cmd == "ATTR_manip_command":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.command = self.params[2]
+
+            #Tooltip may or may not be included
+            if param_len >= 4:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[3:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_command_axis":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_axis"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.dx = float(self.params[2])
+            obj.xplane.manip.dy = float(self.params[3])
+            obj.xplane.manip.dz = float(self.params[4])
+            obj.xplane.manip.positive_command = self.params[5]
+            obj.xplane.manip.negative_command = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 5 and cmd == "ATTR_manip_push":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "push"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_down = float(self.params[2])
+            obj.xplane.manip.v_up = float(self.params[3])
+            obj.xplane.manip.dataref1 = self.params[4]
+
+            #Tooltip may or may not be included
+            if param_len >= 6:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[5:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 4 and cmd == "ATTR_manip_radio":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "radio"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_down = float(self.params[2])
+            obj.xplane.manip.dataref1 = self.params[3]
+
+            #Tooltip may or may not be included
+            if param_len >= 5:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[4:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 5 and cmd == "ATTR_manip_toggle":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "toggle"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_on = float(self.params[2])
+            obj.xplane.manip.v_off = float(self.params[3])
+            obj.xplane.manip.dataref1 = self.params[4]
+
+            #Tooltip may or may not be included
+            if param_len >= 6:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[5:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_delta":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "delta"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_down = float(self.params[2])
+            obj.xplane.manip.v_hold = float(self.params[3])
+            obj.xplane.manip.v1_min = float(self.params[4])
+            obj.xplane.manip.v1_max = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_wrap":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "wrap"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v_down = float(self.params[2])
+            obj.xplane.manip.v_hold = float(self.params[3])
+            obj.xplane.manip.v1_min = float(self.params[4])
+            obj.xplane.manip.v1_max = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 8 and cmd == "ATTR_manip_drag_axis_pix":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_axis_pix"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.dx = float(self.params[2])
+            obj.xplane.manip.step = float(self.params[3])
+            obj.xplane.manip.exp = float(self.params[4])
+            obj.xplane.manip.v1 = float(self.params[5])
+            obj.xplane.manip.v2 = float(self.params[6])
+            obj.xplane.manip.dataref1 = self.params[7]
+
+            #Tooltip may or may not be included
+            if param_len >= 9:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[8:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 4 and cmd == "ATTR_manip_command_knob":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_knob"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.positive_command = self.params[2]
+            obj.xplane.manip.negative_command = self.params[3]
+
+            #Tooltip may or may not be included
+            if param_len >= 5:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[4:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 4 and cmd == "ATTR_manip_command_switch_up_down":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_switch_up_down"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.positive_command = self.params[2]
+            obj.xplane.manip.negative_command = self.params[3]
+
+            #Tooltip may or may not be included
+            if param_len >= 5:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[4:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 4 and cmd == "ATTR_manip_command_switch_left_right":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_switch_left_right"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.positive_command = self.params[2]
+            obj.xplane.manip.negative_command = self.params[3]
+
+            #Tooltip may or may not be included
+            if param_len >= 5:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[4:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_axis_knob":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "axis_knob"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v1 = float(self.params[2])
+            obj.xplane.manip.v2 = float(self.params[3])
+            obj.xplane.manip.click_step = float(self.params[4])
+            obj.xplane.manip.hold_step = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_axis_switch_up_down":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "axis_switch_up_down"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v1 = float(self.params[2])
+            obj.xplane.manip.v2 = float(self.params[3])
+            obj.xplane.manip.click_step = float(self.params[4])
+            obj.xplane.manip.hold_step = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 7 and cmd == "ATTR_manip_axis_switch_left_right":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "axis_switch_left_right"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.v1 = float(self.params[2])
+            obj.xplane.manip.v2 = float(self.params[3])
+            obj.xplane.manip.click_step = float(self.params[4])
+            obj.xplane.manip.hold_step = float(self.params[5])
+            obj.xplane.manip.dataref1 = self.params[6]
+
+            #Tooltip may or may not be included
+            if param_len >= 8:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[7:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 3 and cmd == "ATTR_manip_command_switch_left_right2":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_switch_left_right2"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.xplane.manip.command = self.params[2]
+
+            #Tooltip may or may not be included
+            if param_len >= 4:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[3:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 3 and cmd == "ATTR_manip_command_switch_up_down2":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_switch_up_down2"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.xplane.manip.command = self.params[2]
+
+            #Tooltip may or may not be included
+            if param_len >= 4:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[3:])
+                obj.xplane.manip.tooltip = tooltip
+
+        elif param_len >= 3 and cmd == "ATTR_manip_command_knob2":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "command_knob2"
+            obj.xplane.manip.cursor = self.params[1].lower()
+            obj.xplane.manip.xplane.manip.command = self.params[2]
+
+            #Tooltip may or may not be included
+            if param_len >= 4:
+                #Concat all the remaining params into a single string
+                tooltip = " ".join(self.params[3:])
+                obj.xplane.manip.tooltip = tooltip
+        
+        elif param_len >= 17 and cmd == "ATTR_manip_drag_rotate":
+            obj.xplane.manip.enabled = True
+            obj.xplane.manip.type = "drag_rotate"
+            if len(self.detents) > 0:
+                obj.xplane.manip.type = "drag_rotate_detent"
+            obj.xplane.manip.cursor = self.params[1].lower()
+
+        for det in self.detents:
+            obj.xplane.manip.axis_detent_ranges.add()
+            obj.xplane.manip.axis_detent_ranges[-1].start = det.start
+            obj.xplane.manip.axis_detent_ranges[-1].end = det.end
+            obj.xplane.manip.axis_detent_ranges[-1].height = det.length
+
+        #Now we need to add animations if applicable
+        if do_animate:
+            return None
+        
+            # When I started writing this I thought it'd be easy. We have a manipulator mesh and we have the desired action right, so we just move it on that axis right?
+            # That part is easy. But guess what? Now we moved the MESH and it's no longer where it was SUPPOSED to be!!! Sooo then that gives us the question - what was the original intent of the manipulator???
+            # For example, in the default 172, the overhead lights have a slider for their brightness. The manipulator covers the entire physical slider.
+            # In this situation, the manipulator acts sort of like a touch screen. So accepting the movement is fine, but if we MOVE the ENTIRE "touchscreen" that's a problem!
+            # So for now this code is disabled, and will *likely* remain that way.
+            # We're just keeping it here in case we get direction otherwise, or find out I and am missing something obvious
+
+
+            #We will only potentially animate drag axis and rotation_axis manips, as all the other ones are just data
+            if cmd == "ATTR_manip_drag_axis":
+                manip_mesh_original_rotation = obj.rotation_euler.copy()  #Save the original rotation of the object, so we can restore it later
+                manip_mesh_original_location = obj.location.copy()  #Save the original location of the object, so we can restore it later
+                manip_mesh_original_parent = obj.parent  #Save the original parent of the object, so we can restore it later
+
+                #Since this is along an axis, our first step is to add an empty that is aligned to the axis
+                axis_empty = bpy.data.objects.new("Manipulator Axis", None)
+                axis_empty.empty_display_type = "ARROWS"
+                axis_empty.empty_display_size = 0.05
+                in_collection.objects.link(axis_empty)
+
+                rot_vector = mathutils.Vector((float(self.params[2]), float(self.params[4]) * -1, float(self.params[3])))
+
+                #Now we will animate our empty. 
+                #The way XP stores the length of the animation is a little weird - the alignment vector is *not* normalized, rather it's length is the length of the animation!!!
+                #So get that length. Keyframe at local Z = 0 then local Z = length of the alignment vector
+                alignment_length = rot_vector.length
+                axis_empty.location = manip_mesh_original_location.copy()
+                anim_utils.add_xp_dataref_track(axis_empty, self.params[7])
+                anim_utils.goto_frame(0)
+                anim_utils.keyframe_obj_location(axis_empty)
+                anim_utils.keyframe_xp_dataref(axis_empty, self.params[7], float(self.params[5]))
+                anim_utils.goto_frame(1)
+                new_pos = anim_utils.move_along_axis(axis_empty.location, rot_vector, alignment_length)
+                axis_empty.location = new_pos
+                anim_utils.keyframe_obj_location(axis_empty)
+                anim_utils.keyframe_xp_dataref(axis_empty, self.params[7], float(self.params[6]))
+
+                #Now we have our basic movement animated!!! Next up we have to worry about the detent - if there is one
+                if len(self.detents) > 0:
+                    detent_empty = bpy.data.objects.new("Manipulator Detent Axis", None)
+                    detent_empty.empty_display_type = "ARROWS"
+                    detent_empty.empty_display_size = 0.05
+                    in_collection.objects.link(detent_empty)
+
+                    #Note these values have already been trasnformed from XP space to Blender space
+                    rot_vector_detent = mathutils.Vector((float(self.detent_axis.x), float(self.detent_axis.y), float(self.detent_axis.z)))
+
+                    #Now we will animate our detent empty.
+                    alignment_length_detent = rot_vector_detent.length
+                    detent_empty.location = mathutils.Vector((0, 0, 0))
+                    anim_utils.add_xp_dataref_track(detent_empty, self.detent_dataref)
+                    anim_utils.goto_frame(0)
+                    anim_utils.keyframe_obj_location(detent_empty)
+                    anim_utils.keyframe_xp_dataref(axis_empty, self.detent_dataref, self.detent_v1)
+                    anim_utils.goto_frame(1)
+                    new_pos = anim_utils.move_along_axis(detent_empty.location, rot_vector_detent, alignment_length_detent)
+                    detent_empty.location = new_pos
+                    anim_utils.keyframe_obj_location(detent_empty)
+                    anim_utils.keyframe_xp_dataref(axis_empty, self.detent_dataref, self.detent_v2)
+
+                    #Parent our object to the detent empty
+                    axis_empty.parent = detent_empty
+                    obj.parent = detent_empty
+                    #Reset the positions since they're done via the parent
+                    obj.location = mathutils.Vector((0, 0, 0))
+                    obj.rotation_euler = mathutils.Euler((0, 0, 0), 'XYZ')
+
+                else:
+                    #If there is no detent, we just parent it to the manipulator object
+                    obj.parent = axis_empty
+                    #Reset the positions since they're done via the parent
+                    obj.location = mathutils.Vector((0, 0, 0))
+                    obj.rotation_euler = mathutils.Euler((0, 0, 0), 'XYZ')
+
+                #Now the fun part *cries*. We need to parent this object to the manipulator mesh's parent. 
+                # The good news is since the object was already parented, we have the desired rotation (we already dealt with the location when animating)
+                # So all we need to do is set the rotation of the empty to match the manipulator mesh's rotation.
+                # This works because we didn't actually rotate before - we just moved it *along* the axis, so we can just use the absolute rotation without worrying about merging
+                # EDIT: This is called on an *unparented* object, so we don't even need to worry here! This will get parented instead of the obj then transforms will be applied int he natural process
+                axis_empty.rotation_euler = manip_mesh_original_rotation
+                axis_empty.location = manip_mesh_original_location
+                axis_empty.parent = manip_mesh_original_parent
+
+                return axis_empty
+
+            elif cmd == "ATTR_manip_drag_rotate":
+                pass
+        return None
+        
+    
+    def copy(self):
+        """
+        Returns a copy of this manipulator object.
+        """
+        new_manip = manipulator()
+        new_manip.valid = self.valid
+        new_manip.params = self.params.copy()
+        new_manip.detents = self.detents.copy()
+        new_manip.wheel_delta = self.wheel_delta
+        new_manip.detent_axis = self.detent_axis.copy()
+        new_manip.detent_v1 = self.detent_v1
+        new_manip.detent_v2 = self.detent_v2
+        new_manip.detent_dataref = self.detent_dataref
+
+        return new_manip
+
 class draw_call_state:
     """
     Class to represent the state used in a draw call. This is separate because many DCs can have the same state, so when parsing, we just have a cur state object which we then attach to the DC
     """
 
     def __init__(self):
-        self.blend = True
+        self.blend_mode = "BLEND"
         self.blend_cutoff = 0.5
         self.draped = False
         self.cast_shadow = True
         self.surface_type = "none"
+        self.light_level_override = False
+        self.draw = True
+        self.hard_camera = False
+        self.light_level_v1 = 0
+        self.light_level_v2 = 0
+        self.light_level_photometric = False
+        self.light_level_brightness = 0
+        self.light_level_dataref = ""
+        self.is_hud = False
+
+        #Cockpit device properties
+        self.use_2d_panel = False
+        self.panel_texture_region = 0
+        self.cockpit_device = "NONE"
+        self.custom_cockpit_device = ""
+        self.cockpit_device_use_bus_1 = False
+        self.cockpit_device_use_bus_2 = False
+        self.cockpit_device_use_bus_3 = False
+        self.cockpit_device_use_bus_4 = False
+        self.cockpit_device_use_bus_5 = False
+        self.cockpit_device_use_bus_6 = False
+        self.cockpit_device_lighting_channel = 0
 
     def copy(self):
         """
         Returns a copy of this state object.
         """
         new_state = draw_call_state()
-        new_state.blend = self.blend
+        new_state.blend_mode = self.blend_mode
         new_state.blend_cutoff = self.blend_cutoff
         new_state.draped = self.draped
         new_state.cast_shadow = self.cast_shadow
         new_state.surface_type = self.surface_type
+        new_state.draw = self.draw
+        new_state.hard_camera = self.hard_camera
+        new_state.light_level_override = self.light_level_override
+        new_state.light_level_v1 = self.light_level_v1
+        new_state.light_level_v2 = self.light_level_v2
+        new_state.light_level_photometric = self.light_level_photometric
+        new_state.light_level_brightness = self.light_level_brightness
+        new_state.light_level_dataref = self.light_level_dataref
+        new_state.is_hud = self.is_hud
+        new_state.use_2d_panel = self.use_2d_panel
+        new_state.panel_texture_region = self.panel_texture_region
+        new_state.cockpit_device = self.cockpit_device
+        new_state.custom_cockpit_device = self.custom_cockpit_device
+        new_state.cockpit_device_use_bus_1 = self.cockpit_device_use_bus_1
+        new_state.cockpit_device_use_bus_2 = self.cockpit_device_use_bus_2
+        new_state.cockpit_device_use_bus_3 = self.cockpit_device_use_bus_3
+        new_state.cockpit_device_use_bus_4 = self.cockpit_device_use_bus_4
+        new_state.cockpit_device_use_bus_5 = self.cockpit_device_use_bus_5
+        new_state.cockpit_device_use_bus_6 = self.cockpit_device_use_bus_6
+        new_state.cockpit_device_lighting_channel = self.cockpit_device_lighting_channel
         return new_state
 
 class draw_call:
@@ -162,8 +699,9 @@ class draw_call:
         self.lod_end = 0  #End range of the LOD
         self.lod_bucket = -1  #LOD bucket of the draw call. Corresponds to the XP2B value.
         self.state = draw_call_state()  #State of the draw call. This is used to store the state of the draw call, such as blend mode, alpha cutoff, etc.
+        self.manipulator = None  #Manipulator for the draw call. This is used to store the manipulator for the draw call, if it has one.
 
-    def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection):
+    def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection, in_parent=None):
         """
         Adds the geometry represented by this draw call to the Blender scene as a new mesh object.
 
@@ -200,6 +738,33 @@ class draw_call:
         dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {self.start_index} {self.length}")
         in_collection.objects.link(dc_obj)
 
+        override_return_obj = None
+
+        if self.manipulator != None:
+            #Now we need to check if we need to animate it because there isn't an animating parent
+            animatable, datarefs = self.manipulator.get_datarefs_for_axis_or_rotate()
+
+            do_need_animate = True
+
+            cur_parent = in_parent
+
+            #Check if *any* of the parents here use the same datarefs. Not perfect but it's a best guess of whether the parent provides the given animation
+            #Temporarily disabled. See line 517, toward end of manipulator.apply_to_obj
+            #TODO: Re-enable this, but give a warning instead if we find we're not animated
+            while False:
+                if cur_parent == None:
+                    break
+                for dref in cur_parent.xplane.datarefs:
+                    for used_dref in datarefs:
+                        if dref.path == used_dref:
+                            #If we find a dataref that matches, we don't need to animate this manipulator
+                            do_need_animate = False
+                            break
+
+                cur_parent = cur_parent.parent
+
+            override_return_obj = self.manipulator.apply_to_obj(dc_obj)
+
         if self.lod_bucket != -1:
             #Set the LOD bucket for this object
             dc_obj.xplane.override_lods = True
@@ -214,6 +779,9 @@ class draw_call:
             else:
                 print(f"Unknown LOD bucket for obj {dc_obj.name} for range {self.lod_start}-{self.lod_end}. Bucket is {self.lod_bucket}. What?")
 
+        #Set HUD state
+        dc_obj.xplane.hud_glass = self.state.is_hud
+
         # Lastly, we need to get the correct material. Soo, here's out logic
         # First, we need to either get a regular material, or a draped material. 
         # From there, we need to check if the material matches our state - specifically, blend mode, alpha cutoff, shadows, and hard surface
@@ -222,6 +790,7 @@ class draw_call:
         basic_mat = None
         basic_draped_mat = None
         matching_mat = None
+
         for mat in in_mats:
             xp_props = mat.xp_materials
 
@@ -233,10 +802,30 @@ class draw_call:
 
             #Compare to state
             if xp_props.draped == self.state.draped and \
-                xp_props.blend_alpha == self.state.blend and \
+                xp_props.blend_mode == self.state.blend_mode and \
                 xp_props.blend_cutoff == self.state.blend_cutoff and \
                 xp_props.cast_shadow == self.state.cast_shadow and \
-                xp_props.surface_type == self.state.surface_type.upper():
+                xp_props.surface_type == self.state.surface_type.upper() and \
+                xp_props.drawing_enabled == self.state.draw and \
+                xp_props.camera_collision_enabled == self.state.hard_camera and \
+                xp_props.light_level_override == self.state.light_level_override and \
+                xp_props.light_level_v1 == self.state.light_level_v1 and \
+                xp_props.light_level_v2 == self.state.light_level_v2 and \
+                xp_props.light_level_photometric == self.state.light_level_photometric and \
+                xp_props.light_level_brightness == self.state.light_level_brightness and \
+                xp_props.light_level_dataref == self.state.light_level_dataref and \
+                xp_props.use_2d_panel_texture == self.state.use_2d_panel and \
+                xp_props.panel_texture_region == self.state.panel_texture_region and \
+                xp_props.cockpit_device.upper() == self.state.cockpit_device and \
+                xp_props.custom_cockpit_device == self.state.custom_cockpit_device and \
+                xp_props.cockpit_device_use_bus_1 == self.state.cockpit_device_use_bus_1 and \
+                xp_props.cockpit_device_use_bus_2 == self.state.cockpit_device_use_bus_2 and \
+                xp_props.cockpit_device_use_bus_3 == self.state.cockpit_device_use_bus_3 and \
+                xp_props.cockpit_device_use_bus_4 == self.state.cockpit_device_use_bus_4 and \
+                xp_props.cockpit_device_use_bus_5 == self.state.cockpit_device_use_bus_5 and \
+                xp_props.cockpit_device_use_bus_6 == self.state.cockpit_device_use_bus_6 and \
+                xp_props.cockpit_device_lighting_channel == self.state.cockpit_device_lighting_channel:
+                
                 matching_mat = mat
 
         if basic_draped_mat == None:
@@ -253,10 +842,29 @@ class draw_call:
                 new_mat = basic_mat.copy()
 
             new_mat.xp_materials.draped = self.state.draped
-            new_mat.xp_materials.blend_alpha = self.state.blend
+            new_mat.xp_materials.blend_mode = self.state.blend_mode.upper()
             new_mat.xp_materials.blend_cutoff = self.state.blend_cutoff
             new_mat.xp_materials.cast_shadow = self.state.cast_shadow
             new_mat.xp_materials.surface_type = self.state.surface_type.upper()
+            new_mat.xp_materials.drawing_enabled = self.state.draw
+            new_mat.xp_materials.camera_collision_enabled = self.state.hard_camera
+            new_mat.xp_materials.light_level_override = self.state.light_level_override
+            new_mat.xp_materials.light_level_v1 = self.state.light_level_v1
+            new_mat.xp_materials.light_level_v2 = self.state.light_level_v2
+            new_mat.xp_materials.light_level_photometric = self.state.light_level_photometric
+            new_mat.xp_materials.light_level_brightness = int(self.state.light_level_brightness)
+            new_mat.xp_materials.light_level_dataref = self.state.light_level_dataref
+            new_mat.xp_materials.use_2d_panel_texture = self.state.use_2d_panel
+            new_mat.xp_materials.panel_texture_region = self.state.panel_texture_region
+            new_mat.xp_materials.cockpit_device = self.state.cockpit_device
+            new_mat.xp_materials.custom_cockpit_device = self.state.custom_cockpit_device
+            new_mat.xp_materials.cockpit_device_use_bus_1 = self.state.cockpit_device_use_bus_1
+            new_mat.xp_materials.cockpit_device_use_bus_2 = self.state.cockpit_device_use_bus_2
+            new_mat.xp_materials.cockpit_device_use_bus_3 = self.state.cockpit_device_use_bus_3
+            new_mat.xp_materials.cockpit_device_use_bus_4 = self.state.cockpit_device_use_bus_4
+            new_mat.xp_materials.cockpit_device_use_bus_5 = self.state.cockpit_device_use_bus_5
+            new_mat.xp_materials.cockpit_device_use_bus_6 = self.state.cockpit_device_use_bus_6
+            new_mat.xp_materials.cockpit_device_lighting_channel = self.state.cockpit_device_lighting_channel
 
             matching_mat = new_mat
 
@@ -264,7 +872,69 @@ class draw_call:
                 
         dc_obj.data.materials.append(matching_mat)
 
+        if override_return_obj != None:
+            #If we have a manipulator, we return the object that was created by the manipulator
+            return override_return_obj
+        
         return dc_obj
+
+class static_offsets:
+    """
+    Class to represent a series of transformations that need to take place on an object in a certain order
+    """
+    def __init__(self):
+        self.actions = []   #Tuples. xyz offsets or xyz euler
+        self.action_types = []  #translate or rotate
+
+    def copy(self):
+        """
+        Returns a copy of this static offsets object.
+        """
+        new_offsets = static_offsets()
+        new_offsets.actions = self.actions.copy()
+        new_offsets.action_types = self.action_types.copy()
+        return new_offsets
+
+    def apply(self, obj):
+        """
+        Applies the static offsets to the given object. This will apply all the actions in the order they were added.
+        
+        Args:
+            obj (bpy.types.Object): The Blender object to apply the static offsets to.
+        """
+
+        if len(self.actions) == 0:
+            #If there are no actions, we don't need to do anything
+            return
+
+        cur_location = mathutils.Vector((0, 0, 0))
+        total_rot = mathutils.Euler((0, 0, 0), 'XYZ')
+
+        reversed_actions = self.actions.copy()
+        reversed_actions.reverse()
+        reversed_types = self.action_types.copy()
+        reversed_types.reverse()
+
+        for i, action in enumerate(reversed_actions):
+            action_type = reversed_types[i]
+
+            if action_type == 'translate':
+                #Apply translation
+                cur_location.x += action[0]
+                cur_location.y += action[1]
+                cur_location.z += action[2]
+
+            elif action_type == 'rotate':
+                cur_location, total_rot = anim_utils.rotate_point_and_euler(cur_location, total_rot, action[0], action[1])
+
+        #Apply the final location and rotation to the object
+        base_pos = anim_utils.get_obj_position_world(obj)
+        new_pos = (base_pos[0] + cur_location.x, base_pos[1] + cur_location.y, base_pos[2] + cur_location.z)
+        anim_utils.set_obj_position_world(obj, new_pos)
+
+        base_rot = anim_utils.get_obj_rotation_world(obj)
+        new_rot = (total_rot.to_quaternion() @ base_rot.to_quaternion()).to_euler('XYZ')
+        anim_utils.set_obj_rotation_world(obj, new_rot)
 
 class anim_action:
     """
@@ -274,6 +944,8 @@ class anim_action:
     def __init__(self):
         self.type = ''
         self.empty = None  #Empty for the animation
+        self.static_offsets = static_offsets()  #Static offsets for the animation. This is used to store the static offsets for the animation, such as translation and rotation
+        self.show_hide_commands = []  #List of show/hide commands for the animation
 
 class anim_show_hide_command:
     """
@@ -285,6 +957,27 @@ class anim_show_hide_command:
         self.start_value = 0  #Min dref value to show/hide at
         self.end_value = 0  #Max dref value to show/hide at
         self.dataref = ""  #Dataref for the animation
+
+    def apply(self, obj):
+        obj.xplane.datarefs.add()
+        obj.xplane.datarefs[-1].path = self.dataref
+        if self.hide:
+            obj.xplane.datarefs[-1].anim_type = 'hide'
+        else:
+            obj.xplane.datarefs[-1].anim_type = 'show'
+        obj.xplane.datarefs[-1].show_hide_v1 = self.start_value
+        obj.xplane.datarefs[-1].show_hide_v2 = self.end_value
+
+    def copy(self):
+        """
+        Returns a copy of this show/hide command object.
+        """
+        new_cmd = anim_show_hide_command()
+        new_cmd.hide = self.hide
+        new_cmd.start_value = self.start_value
+        new_cmd.end_value = self.end_value
+        new_cmd.dataref = self.dataref
+        return new_cmd
 
 class anim_show_hide_series(anim_action):
     """
@@ -454,11 +1147,22 @@ class anim_level:
         self.lights = []  #List of lights for the animation
         self.children = []  #List of children anim_levels for the animation
 
-    def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mats, in_collection):
-        #Create a new empty for this animation level
+    def add_to_scene(self, parent_obj, all_verts, all_indicies, in_mats, in_collection, initial_static_offsets=None, initial_show_hide_commands=None):
 
+        #For static translations, we will not create a new empty, rather we will just move all children by their translation
+        cur_static_offsets = static_offsets()  #This will hold the static offsets for the animation level
+        if initial_static_offsets != None:
+            cur_static_offsets = initial_static_offsets.copy()
+
+        cur_show_hide_commands = []  #This will hold the show/hide commands for the animation level
+        if initial_show_hide_commands != None:
+            cur_show_hide_commands = initial_show_hide_commands.copy()
+
+        #Create a new empty for this animation level
         self.last_action = parent_obj
         cur_parent = parent_obj
+        
+        #Add all the actions, creating the hierarchy of empties with their rotations set. 
         for i, action in enumerate(self.actions):
             #Create the empty for this action
             name = f"Anim"
@@ -469,26 +1173,51 @@ class anim_level:
                 name += " Rotation Transform"
             elif action.type == 'rot_keyframe':
                 name += " Static Rotation"
+                cur_static_offsets.actions.append((action.rot_vector, action.rot))
+                cur_static_offsets.action_types.append('rotate')
+                continue  #Static rotations are not animated, so we don't create a new empty for them
             elif action.type == 'loc_keyframe':
                 name += " Static Translation"
+                cur_static_offsets.actions.append(action.loc)
+                cur_static_offsets.action_types.append('translate')
+                continue  #Static translations are not animated, so we don't create a new empty for them
             elif action.type == 'loc_table':
                 name += " Keyframed Translation"
             elif action.type == 'rot_table':
                 name += " Keyframed Rotation"
             elif action.type == 'show_hide_series':
                 name += " Show/Hide Series"
+                for cmd in action.commands:
+                    cur_show_hide_commands.append(cmd.copy())
+                continue  #Show/hide series are not animated, so we don't create a new empty for them. Their commands will be attached to all their direct children
+            
+            #Create the new objetc and link it
             anim_empty = bpy.data.objects.new(name, None)
             anim_empty.empty_display_type = "ARROWS"
-            anim_empty.empty_display_size = 0.1
+            anim_empty.empty_display_size = 0.05
             in_collection.objects.link(anim_empty)
             self.actions[i].empty = anim_empty
 
+            #Set this actions base loc/rot transforms and reset the offsets
+            action.static_offsets = cur_static_offsets.copy()
+            cur_static_offsets = static_offsets()  #Reset the static offsets for the next action
+
+            #Apply show hide animations
+            for cmd in cur_show_hide_commands:
+                cmd.apply(anim_empty)
+
+            #Reset dataref show/hide commands
+            action.show_hide_commands = cur_show_hide_commands.copy()
+            cur_show_hide_commands = []  #Reset the show/hide commands for the next action
+
+
+            #Reset the offsets because future objetcs will be parented to this one,
             if cur_parent != None:
                 anim_empty.parent = cur_parent
             cur_parent = anim_empty
 
             #If it is a rotation we need to align it to the rotation vector
-            if action.type == 'rot_keyframe' or action.type == 'rot_table_vector_transform':
+            if action.type == 'rot_table_vector_transform':
                 eular = anim_utils.euler_to_align_z_with_vector(action.rot_vector)  #We align rotations to their rotation vector so they can be rotated into static place, or their child keyframe controller can be rotated along it's local Z (which is this vector)
                 anim_utils.set_obj_rotation_world(anim_empty, eular)
             elif action.type == "rot_table":
@@ -520,6 +1249,13 @@ class anim_level:
             eular = mathutils.Vector((0, 0, 0))
             anim_utils.set_obj_rotation_world(dc_obj, eular)
 
+            #Apply the static offsets to the draw call object
+            cur_static_offsets.apply(dc_obj)
+
+            #Apply show hide animations
+            for cmd in cur_show_hide_commands:
+                cmd.apply(dc_obj)
+
         #Dedupe our lights
         self.lights = misc_utils.dedupe_list(self.lights)
         for lt in self.lights:
@@ -530,9 +1266,16 @@ class anim_level:
             eular = new_light.rotation_euler
             anim_utils.set_obj_rotation_world(new_light, eular)
 
+            #Apply the static offsets to the light object
+            cur_static_offsets.apply(new_light)  
+
+            #Apply show hide animations
+            for cmd in cur_show_hide_commands:
+                cmd.apply(new_light)
+
         #Now that we added out draw calls, it's time to recurse
         for child in self.children:
-            child.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection)
+            child.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection, cur_static_offsets.copy(), cur_show_hide_commands.copy())
 
         #Reset our frame
         anim_utils.goto_frame(0)
@@ -541,18 +1284,19 @@ class anim_level:
         for i, action in enumerate(reversed(self.actions)):
 
             anim_empty = action.empty
+
+            #Skip animations that just have their data propagated to their children
+            if action.type == 'loc_keyframe' or action.type == 'rot_keyframe' or action.type == 'show_hide_series':
+                continue
+
+            #Apply the base static translation offset
+            action.static_offsets.apply(anim_empty)
+
+            #Apply show/hide commands. We do this here vs a dedicated empty because that can mess up manipulators sadly
+            for cmd in action.show_hide_commands:
+                    cmd.apply(anim_empty)
             
-            #Now, we apply the animations!
-            if action.type == 'loc_keyframe':
-                base_pos = anim_utils.get_obj_position_world(anim_empty)
-                new_pos = (base_pos[0] + action.loc[0], base_pos[1] + action.loc[1], base_pos[2] + action.loc[2])
-                anim_utils.set_obj_position_world(anim_empty, new_pos)
-            
-            elif action.type == 'rot_keyframe':
-                base_rot = anim_utils.get_base_rot_for_local_z_rotation(anim_empty)
-                anim_utils.rotate_obj_around_local_z(anim_empty, action.rot, base_rot)
-            
-            elif action.type == 'loc_table':
+            if action.type == 'loc_table':
                 
                 base_pos = anim_utils.get_obj_position_world(anim_empty)
 
@@ -599,17 +1343,6 @@ class anim_level:
                     anim_utils.keyframe_obj_rotation(anim_empty)
                     anim_utils.keyframe_xp_dataref(anim_empty, dataref, kf.time)
 
-            elif action.type == 'show_hide_series':
-                for cmd in action.commands:
-                    anim_empty.xplane.datarefs.add()
-                    anim_empty.xplane.datarefs[-1].path = cmd.dataref
-                    if cmd.hide:
-                        anim_empty.xplane.datarefs[-1].anim_type = 'hide'
-                    else:
-                        anim_empty.xplane.datarefs[-1].anim_type = 'show'
-                    anim_empty.xplane.datarefs[-1].show_hide_v1 = cmd.start_value
-                    anim_empty.xplane.datarefs[-1].show_hide_v2 = cmd.end_value
-
             #Reset our frame
             anim_utils.goto_frame(0)
 
@@ -627,18 +1360,26 @@ class object:
         self.anims = []  #List of animations in the object. This is a list of anim_levels
         self.name = ""
 
+        self.obj_mode = "aircraft"  #aircraft, scenery, or cockpit
+
         #Base material
         self.alb_texture = ""
         self.nml_texture = ""
         self.lit_texture = ""
         self.mat_texture = ""
-        self.do_blend_alpha = True
+        self.blend_mode = "BLEND"
         self.blend_cutoff = 0.5
         self.cast_shadow = True
         #self.decal_one = props.PROP_decal()
         #self.decal_two = props.PROP_decal()
         self.layer_group = "objects"
         self.layer_group_offset = 0
+
+        self.blend_glass = False
+        self.brightness = -1
+        self.particle_system = ""
+        self.panel_texture_mode = "cockpit" #cockpit, cockpit_lit_only, or cockpit_region
+        self.panel_texture_region = "0"
 
         #Draped material
         self.draped_alb_texture = ""
@@ -650,7 +1391,6 @@ class object:
         self.draped_layer_group = "objects"
         self.draped_layer_group_offset = -5
         
-
     def read(self, in_obj_path):
         self.name = os.path.basename(in_obj_path)
 
@@ -664,6 +1404,7 @@ class object:
         cur_start_lod = 0
         cur_end_lod = 0
         cur_state = draw_call_state()
+        cur_manipulator = manipulator()
 
         with open(in_obj_path, "r") as f:
             lines = f.readlines()
@@ -703,6 +1444,11 @@ class object:
                 dc.length = int(tokens[2])
                 dc.lod_start = cur_start_lod
                 dc.lod_end = cur_end_lod
+                if cur_manipulator.valid:
+                    dc.manipulator = cur_manipulator.copy()  #Copy the current manipulator to the draw call
+
+                #Reset the current manipulator for the next draw call
+                cur_manipulator = manipulator()
 
                 #Add the draw call to the list of draw calls. This is the current animation in the tree, or the list of static draw calls it there is no current animation
                 if len(cur_anim_tree) > 0:
@@ -710,6 +1456,19 @@ class object:
                     cur_anim_tree[-1].draw_calls.append(dc)
                 else:
                     self.draw_calls.append(dc)
+
+            elif tokens[0] == "PARTICLE_SYSTEM":
+                self.particle_system = tokens[1]
+
+            elif tokens[0] == "BLEND_GLASS":
+                self.blend_glass = True
+
+            elif tokens[0] == "GLOBAL_luminance":
+                #If the brightness ends in cd, remove the cd
+                if tokens[1].endswith("cd"):
+                    self.brightness = int(tokens[1][:-2])
+                else:
+                    self.brightness = int(tokens[1])
 
             elif tokens[0] == "TEXTURE":
                 self.alb_texture = tokens[1]
@@ -729,6 +1488,7 @@ class object:
 
             elif tokens[0] == "TEXTURE_DRAPED":
                 self.draped_alb_texture = tokens[1]
+                self.obj_mode = "scenery"
 
             elif tokens[0] == "TEXTURE_DRAPED_NORMAL":
                 self.draped_nml_tile_rat = float(tokens[1])
@@ -743,7 +1503,13 @@ class object:
                     self.draped_lit_texture = tokens[1]
 
             elif tokens[0] == "GLOBAL_no_blend":
-                self.do_blend_alpha = False
+                self.blend_mode == "CLIP"
+                self.blend_cutoff = float(tokens[1])
+                cur_state.blend = False
+                cur_state.blend_cutoff = self.blend_cutoff
+
+            elif tokens[0] == "GLOBAL_shadow_blend":
+                self.blend_mode == "SHADOW"
                 self.blend_cutoff = float(tokens[1])
                 cur_state.blend = False
                 cur_state.blend_cutoff = self.blend_cutoff
@@ -1097,19 +1863,26 @@ class object:
                 cur_state.cast_shadow = True
 
             elif tokens[0] == "ATTR_no_blend":
-                cur_state.blend = False
+                cur_state.blend_mode = "CLIP"
+                if len(tokens) > 1:
+                    cur_state.blend_cutoff = float(tokens[1])
+
+            elif tokens[0] == "ATTR_shadow_blend ":
+                cur_state.blend_mode = "SHADOW"
                 if len(tokens) > 1:
                     cur_state.blend_cutoff = float(tokens[1])
 
             elif tokens[0] == "ATTR_blend":
-                cur_state.blend = True
+                cur_state.blend_mode = "BLEND"
                 cur_state.blend_cutoff = 0.5
     
             elif tokens[0] == "ATTR_hard":
                 cur_state.surface_type = tokens[1]
+                self.obj_mode = "scenery"
 
             elif tokens[0] == "ATTR_hard_deck":
                 cur_state.surface_type = tokens[1]
+                self.obj_mode = "scenery"
 
             elif tokens[0] == "ATTR_no_hard":
                 cur_state.surface_type = "none"
@@ -1122,11 +1895,132 @@ class object:
                 self.draped_layer_group = tokens[1]
                 self.draped_layer_group_offset = int(tokens[2]) if len(tokens) > 2 else 0
 
+            elif tokens[0] == "ATTR_draw_enable":
+                cur_state.draw = True
+
+            elif tokens[0] == "ATTR_draw_disable":
+                cur_state.draw = False
+
+            elif tokens[0] == "ATTR_solid_camera":
+                cur_state.hard_camera = True
+                
+            elif tokens[0] == "ATTR_no_solid_camera":
+                cur_state.hard_camera = False
+           
+            elif tokens[0] == "ATTR_light_level":
+                #ATTR_light_level <v1> <v2> <dataref> [<brightness>]
+                cur_state.light_level_override = True
+                cur_state.light_level_v1 = float(tokens[1])
+                cur_state.light_level_v2 = float(tokens[2])
+                cur_state.light_level_dataref = tokens[3]
+                if len(tokens) > 4:
+                    cur_state.light_level_photometric = True
+                    if tokens[4].endswith('cd'):
+                        cur_state.light_level_brightness = float(tokens[4][:-2])
+                    else:
+                        cur_state.light_level_brightness = float(tokens[4])
+            
+            elif tokens[0] == "ATTR_light_level_reset":
+                cur_state.light_level_override = False
+                cur_state.light_level_v1 = 0.0
+                cur_state.light_level_v2 = 0.0
+                cur_state.light_level_dataref = ""
+                cur_state.light_level_photometric = False
+                cur_state.light_level_brightness = 0.0
+
+            elif tokens[0] == "ATTR_manip_wheel":
+                cur_manipulator.wheel_delta = float(tokens[1]) if len(tokens) > 1 else 0
+
+            elif tokens[0] == "ATTR_axis_detent_range":
+                new_detent = manipulator_detent()
+                new_detent.start = float(tokens[1])
+                new_detent.end = float(tokens[2])
+                new_detent.length = float(tokens[3])
+                cur_manipulator.detents.append(new_detent)
+
+            elif tokens[0] == "ATTR_manip_keyframe":
+                #TODO: What does this even do? I don't understand docs nor see corresponding settings in X-Plane2Blender
+                pass
+
+            elif tokens[0] == "ATTR_cockpit_device":
+                #ATTR_cockpit_device <name> <bus> <lighting channel> <auto_adjust>
+                valid_names = ["GNS430_1", "GNS430_1", "GNS530_2", "GNS530_2", "CDU739_1", "CDU739_2", "G1000_MFD", "G1000_PFD1", "G1000_PFD2"]
+                
+                if not tokens[1] in valid_names:
+                    cur_state.cockpit_device = "Plugin Device"
+                    cur_state.custom_cockpit_device = tokens[1]
+                else:
+                    cur_state.cockpit_device = tokens[1].upper()
+
+                bus = int(tokens[2])
+                if bus & 1:
+                    cur_state.cockpit_device_use_bus_1 = True
+                if bus & 2:
+                    cur_state.cockpit_device_use_bus_2 = True
+                if bus & 4:
+                    cur_state.cockpit_device_use_bus_3 = True
+                if bus & 8:
+                    cur_state.cockpit_device_use_bus_4 = True
+                if bus & 16:
+                    cur_state.cockpit_device_use_bus_5 = True
+                if bus & 32:
+                    cur_state.cockpit_device_use_bus_6 = True
+
+                cur_state.cockpit_device_lighting_channel = int(tokens[3])
+
+            elif tokens[0] == "ATTR_cockpit_lit_only":
+                self.panel_texture_mode = "cockpit_lit_only"
+
+            elif tokens[0] == "ATTR_cockpit_region":
+                self.panel_texture_mode = "cockpit_region"
+                self.panel_texture_region = tokens[1]
+                cur_state.panel_texture_region = int(tokens[1])
+
+            elif tokens[0] == "ATTR_no_cockpit":
+                cur_state.cockpit_device = "NONE"
+                cur_state.custom_cockpit_device = ""
+                cur_state.cockpit_device_use_bus_1 = False
+                cur_state.cockpit_device_use_bus_2 = False
+                cur_state.cockpit_device_use_bus_3 = False
+                cur_state.cockpit_device_use_bus_4 = False
+                cur_state.cockpit_device_use_bus_5 = False
+                cur_state.cockpit_device_use_bus_6 = False
+                cur_state.cockpit_device_lighting_channel = 0
+
+            elif tokens[0] == "ATTR_manip_device":
+                #ATTR_manip_device <cursor> <device> <tooltip>
+                cur_state.cockpit_device = "Plugin Device"
+                cur_state.custom_cockpit_device = tokens[1]
+                pass
+
+            elif tokens[0].startswith("ATTR_manip"):
+                cur_manipulator.valid = True
+                cur_manipulator.params = tokens.copy()
+                self.obj_mode = "cockpit"
+                
     def to_scene(self):
         #Create a new collection for this object
         collection = bpy.data.collections.new(self.name)
         collection.name = self.name
         bpy.context.scene.collection.children.link(collection)
+
+        #Set the collection settings
+        collection.xplane.is_exportable_collection = True
+        collection.xplane.layer.export_type = self.obj_mode
+        collection.xplane.layer.texture = self.alb_texture
+        collection.xplane.layer.texture_lit = self.lit_texture
+        collection.xplane.layer.texture_normal = self.nml_texture
+        collection.xplane.layer.texture_map_material_gloss = self.mat_texture
+        collection.xplane.layer.texture_draped = self.draped_alb_texture
+        collection.xplane.layer.texture_draped_normal = self.draped_nml_texture
+        collection.xplane.layer.blend_glass = self.blend_glass
+        collection.xplane.layer.normal_metalness = True
+        if self.brightness > 0:
+            collection.xplane.layer.luminance_override = True
+            collection.xplane.layer.luminance = self.brightness
+        collection.xplane.layer.cockpit_panel_mode = self.panel_texture_mode
+        collection.xplane.layer.cockpit_regions = self.panel_texture_region
+        collection.xplane.layer.particle_system_file = self.particle_system
 
         #Create the base material
         all_mats = []
@@ -1139,7 +2033,7 @@ class object:
             xp_mat.material_texture = self.mat_texture
             xp_mat.do_separate_material_texture = True
         xp_mat.lit_texture = self.lit_texture
-        xp_mat.blend_alpha = self.do_blend_alpha
+        xp_mat.blend_mode = self.blend_mode
         xp_mat.blend_cutoff = self.blend_cutoff
         xp_mat.cast_shadow = self.cast_shadow
         mat.name = self.name
@@ -1148,13 +2042,14 @@ class object:
 
         #Create the draped material if it exists
         if self.draped_alb_texture != "":
-            draped_mat = bpy.data.materials.new(name=self.name + "_draped")
+            draped_mat = mat.copy()
+            draped_mat.name = self.name + "_draped"
             draped_mat.use_nodes = True
             xp_draped_mat = draped_mat.xp_materials
             xp_draped_mat.alb_texture = self.draped_alb_texture
             xp_draped_mat.normal_texture = self.draped_nml_texture
             xp_draped_mat.lit_texture = self.draped_lit_texture
-            xp_draped_mat.do_blend_alpha = self.do_blend_alpha
+            xp_draped_mat.blend_mode = self.blend_mode
             xp_draped_mat.blend_cutoff = self.blend_cutoff
             xp_draped_mat.cast_shadow = self.cast_shadow
             xp_draped_mat.draped = True
@@ -1191,6 +2086,13 @@ class object:
             else:
                 print(f"Too many LOD buckets for object {self.name}. Skipping LOD {lod_range} for draw call {dc.start_index}-{dc.length}. Object will be added to best guess bucket. Double check this choice!")
 
+        obj_does_use_lods = True
+        if len(all_lod_buckets) == 1:
+            if all_lod_buckets[0] == (0, 0):
+                #If we only have one bucket, and it's the default bucket, we don't need to do anything
+                all_lod_buckets = []
+                obj_does_use_lods = False
+
         #Determine additive vs selective
         for bucket in all_lod_buckets:
             if bucket[0] != 0:
@@ -1200,6 +2102,10 @@ class object:
         all_lod_buckets.sort()
 
         def put_draw_call_in_bucket(dc, all_lod_buckets, is_selective_lod):
+            if all_lod_buckets == []:
+                #If there are no LOD buckets, we don't need to do anything
+                dc.lod_bucket = -1
+                return
             matching_bucket_idx = -1
             for bucket in all_lod_buckets:
                 if bucket == (int(dc.lod_start), int(dc.lod_end)):
@@ -1274,4 +2180,6 @@ class object:
         for anim in self.anims:
             anim.add_to_scene(None, self.verticies, self.indicies, all_mats, collection)
         
-        #WE'RE DONE!
+        #Lastly, we'll go through and update the materials
+        for mat in all_mats:
+            material_config.update_settings(mat)

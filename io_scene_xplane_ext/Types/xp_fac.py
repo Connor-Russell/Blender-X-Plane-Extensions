@@ -46,7 +46,6 @@ class mesh:
         # Return the created object
         return obj
     
-
 class segment:
     def __init__(self):
         self.meshes = []
@@ -272,6 +271,10 @@ class facade:
         self.roof_material = None   #This is a PROP_mats (bpy.types.Material.xp_materials)
         self.import_wall_material = None #This is a facade_material
         self.import_roof_material = None #This is a facade_material
+        self.export_wall_layer_group = "OBJECTS"
+        self.export_wall_layer_group_offset = 0
+        self.export_roof_layer_group = "OBJECTS"
+        self.export_roof_layer_group_offset = 0
         self.graded = False
         self.ring = False
 
@@ -346,7 +349,7 @@ class facade:
 
             elif command == "NO_BLEND":
                 if current_material:
-                    current_material.blend_alpha = False
+                    current_material.blend_mode = "CLIP"
                     current_material.blend_cutoff = float(tokens[1])
 
             elif command == "NO_SHADOW":
@@ -528,7 +531,7 @@ class facade:
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
             #Blend mode
-            if not mat.blend_alpha:
+            if mat.blend_mode == "CLIP":
                 output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
 
             #Shadows
@@ -536,7 +539,7 @@ class facade:
                 output += "NO_SHADOW\n"
 
             #Layer group
-            output += "LAYER_GROUP " + str(mat.layer_group) + " " + str(mat.layer_group_offset) + "\n"
+            output += "LAYER_GROUP " + str(self.export_wall_layer_group) + " " + str(self.export_wall_layer_group_offset) + "\n"
 
             #Decal settings
             if mat.decal_one.enabled:
@@ -566,7 +569,7 @@ class facade:
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
             #Blend mode
-            if not mat.blend_alpha:
+            if mat.blend_mode == "CLIP":
                 output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
 
             #Shadows
@@ -574,11 +577,11 @@ class facade:
                 output += "NO_SHADOW\n"
 
             #Layer group
-            output += "LAYER_GROUP " + str(mat.layer_group) + " " + str(mat.layer_group_offset) + "\n"
+            output += "LAYER_GROUP " + str(self.export_roof_layer_group) + " " + str(self.export_roof_layer_group_offset) + "\n"
             
             #Draped layer group. We only do this if draped
             if not self.graded:
-                output += "LAYER_GROUP_DRAPED " + str(mat.layer_group) + " " + str(mat.layer_group_offset) + "\n"
+                output += "LAYER_GROUP_DRAPED " + str(self.export_roof_layer_group) + " " + str(self.export_roof_layer_group_offset) + "\n"
 
             #Decal settings
             if mat.decal_one.enabled:
@@ -714,6 +717,12 @@ class facade:
         self.roof_material = fac.roof_material
         self.graded = fac.graded
         self.ring = fac.ring
+        
+        #Layer groups
+        self.export_wall_layer_group = fac.wall_layer_group
+        self.export_wall_layer_group_offset = fac.wall_layer_group_offset
+        self.export_roof_layer_group = fac.roof_layer_group
+        self.export_roof_layer_group_offset = fac.roof_layer_group_offset
 
         #Get the floors
         for f in in_collection.xp_fac.floors:
@@ -759,8 +768,8 @@ class facade:
             wall_material.xp_materials.blend_alpha = self.import_wall_material.do_blend_alpha
             wall_material.xp_materials.blend_cutoff = self.import_wall_material.alpha_cutoff
             wall_material.xp_materials.cast_shadow = self.import_wall_material.cast_shadow
-            #wall_material.xp_materials.layer_group = self.import_wall_material.layer_group
-            wall_material.xp_materials.layer_group_offset = self.import_wall_material.layer_group_offset
+            facade_props.wall_layer_group = self.import_wall_material.layer_group.upper()
+            facade_props.wall_layer_group_offset = self.import_wall_material.layer_group_offset
             self.wall_material = wall_material
 
         if self.import_roof_material:
@@ -772,8 +781,8 @@ class facade:
             roof_material.xp_materials.blend_alpha = self.import_roof_material.do_blend_alpha
             roof_material.xp_materials.blend_cutoff = self.import_roof_material.alpha_cutoff
             roof_material.xp_materials.cast_shadow = self.import_roof_material.cast_shadow
-            #roof_material.xp_materials.layer_group = self.import_roof_material.layer_group
-            roof_material.xp_materials.layer_group_offset = self.import_roof_material.layer_group_offset
+            facade_props.roof_layer_group = self.import_roof_material.layer_group.upper()
+            facade_props.roof_layer_group_offset = self.import_roof_material.layer_group_offset
             self.roof_material = roof_material
 
         # Add floors to the collection

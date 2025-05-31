@@ -254,14 +254,6 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
                     #Check for textures
                     if xp_props.alb_texture != "":
 
-                        #Set the layer groups
-                        col.xplane.layer.layer_group = xp_props.layer_group.lower()
-                        col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
-                        
-                        if xp_props.draped:
-                            col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
-                            col.xplane.layer.layer_group_draped_offset = xp_props.layer_group_offset
-
                         #If we haven't updated yet, update
                         if not updated:
                             if xp_props.lit_texture != "":
