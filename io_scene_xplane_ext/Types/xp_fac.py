@@ -569,7 +569,7 @@ class facade:
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
             #Blend mode
-            if not mat.blend_alpha:
+            if mat.blend_mode == "CLIP":
                 output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
 
             #Shadows
