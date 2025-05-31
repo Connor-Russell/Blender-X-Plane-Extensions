@@ -165,8 +165,39 @@ class manipulator:
         self.params = []
         self.detents = []  #List of detents for the manipulator. This is a list of manipulator_detent objects
         self.wheel_delta = 0  #Wheel delta for the manipulator. This is used to set how much the scroll wheel changes the value
+        self.detent_axis = mathutils.Vector((0, 0, 0))  #Axis of the manipulator's detent. This is used to set the axis of the manipulator for drag_axis and drag_rotate manips
+        self.detent_v1 = 0
+        self.detent_v2 = 0
+        self.detent_dataref = ""  #Dataref for the detent manipulator. This is used to set the dataref for the manipulator for drag_axis and drag_rotate manips
     
-    def apply_to_obj(self, obj):
+    def get_datarefs_for_axis_or_rotate(self):
+        if len(self.params) == 0:
+            return False, []
+        
+        cmd = self.params[0]
+
+        out_list = []
+
+        animateable = False
+
+        if cmd == "ATTR_manip_drag_axis" and len(self.params) >= 8:
+            #This is a drag axis manipulator
+            out_list.append(self.params[7])
+            animateable = True
+
+        if cmd == "ATTR_manip_drag_rotate" and len(self.params) >= 17:
+            #This is a drag rotate manipulator
+            out_list.append(self.params[15])
+            out_list.append(self.params[16])
+            animateable = True
+
+        if self.detent_dataref != "":
+            #If we have a detent dataref, we need to add it too
+            out_list.append(self.detent_dataref)
+
+        return animateable, out_list
+
+    def apply_to_obj(self, obj, do_animate=False, in_collection=None):
         """
         Applies the manipulator settings to the given Blender object
         """
@@ -174,7 +205,7 @@ class manipulator:
 
         if param_len == 0:
             #If there are no params, we can't apply this manipulator
-            return
+            return None
 
         cmd = self.params[0]
 
@@ -479,6 +510,100 @@ class manipulator:
             obj.xplane.manip.axis_detent_ranges[-1].end = det.end
             obj.xplane.manip.axis_detent_ranges[-1].height = det.length
 
+        #Now we need to add animations if applicable
+        if do_animate:
+            return None
+        
+            # When I started writing this I thought it'd be easy. We have a manipulator mesh and we have the desired action right, so we just move it on that axis right?
+            # That part is easy. But guess what? Now we moved the MESH and it's no longer where it was SUPPOSED to be!!! Sooo then that gives us the question - what was the original intent of the manipulator???
+            # For example, in the default 172, the overhead lights have a slider for their brightness. The manipulator covers the entire physical slider.
+            # In this situation, the manipulator acts sort of like a touch screen. So accepting the movement is fine, but if we MOVE the ENTIRE "touchscreen" that's a problem!
+            # So for now this code is disabled, and will *likely* remain that way.
+            # We're just keeping it here in case we get direction otherwise, or find out I and am missing something obvious
+
+
+            #We will only potentially animate drag axis and rotation_axis manips, as all the other ones are just data
+            if cmd == "ATTR_manip_drag_axis":
+                manip_mesh_original_rotation = obj.rotation_euler.copy()  #Save the original rotation of the object, so we can restore it later
+                manip_mesh_original_location = obj.location.copy()  #Save the original location of the object, so we can restore it later
+                manip_mesh_original_parent = obj.parent  #Save the original parent of the object, so we can restore it later
+
+                #Since this is along an axis, our first step is to add an empty that is aligned to the axis
+                axis_empty = bpy.data.objects.new("Manipulator Axis", None)
+                axis_empty.empty_display_type = "ARROWS"
+                axis_empty.empty_display_size = 0.05
+                in_collection.objects.link(axis_empty)
+
+                rot_vector = mathutils.Vector((float(self.params[2]), float(self.params[4]) * -1, float(self.params[3])))
+
+                #Now we will animate our empty. 
+                #The way XP stores the length of the animation is a little weird - the alignment vector is *not* normalized, rather it's length is the length of the animation!!!
+                #So get that length. Keyframe at local Z = 0 then local Z = length of the alignment vector
+                alignment_length = rot_vector.length
+                axis_empty.location = manip_mesh_original_location.copy()
+                anim_utils.add_xp_dataref_track(axis_empty, self.params[7])
+                anim_utils.goto_frame(0)
+                anim_utils.keyframe_obj_location(axis_empty)
+                anim_utils.keyframe_xp_dataref(axis_empty, self.params[7], float(self.params[5]))
+                anim_utils.goto_frame(1)
+                new_pos = anim_utils.move_along_axis(axis_empty.location, rot_vector, alignment_length)
+                axis_empty.location = new_pos
+                anim_utils.keyframe_obj_location(axis_empty)
+                anim_utils.keyframe_xp_dataref(axis_empty, self.params[7], float(self.params[6]))
+
+                #Now we have our basic movement animated!!! Next up we have to worry about the detent - if there is one
+                if len(self.detents) > 0:
+                    detent_empty = bpy.data.objects.new("Manipulator Detent Axis", None)
+                    detent_empty.empty_display_type = "ARROWS"
+                    detent_empty.empty_display_size = 0.05
+                    in_collection.objects.link(detent_empty)
+
+                    #Note these values have already been trasnformed from XP space to Blender space
+                    rot_vector_detent = mathutils.Vector((float(self.detent_axis.x), float(self.detent_axis.y), float(self.detent_axis.z)))
+
+                    #Now we will animate our detent empty.
+                    alignment_length_detent = rot_vector_detent.length
+                    detent_empty.location = mathutils.Vector((0, 0, 0))
+                    anim_utils.add_xp_dataref_track(detent_empty, self.detent_dataref)
+                    anim_utils.goto_frame(0)
+                    anim_utils.keyframe_obj_location(detent_empty)
+                    anim_utils.keyframe_xp_dataref(axis_empty, self.detent_dataref, self.detent_v1)
+                    anim_utils.goto_frame(1)
+                    new_pos = anim_utils.move_along_axis(detent_empty.location, rot_vector_detent, alignment_length_detent)
+                    detent_empty.location = new_pos
+                    anim_utils.keyframe_obj_location(detent_empty)
+                    anim_utils.keyframe_xp_dataref(axis_empty, self.detent_dataref, self.detent_v2)
+
+                    #Parent our object to the detent empty
+                    axis_empty.parent = detent_empty
+                    obj.parent = detent_empty
+                    #Reset the positions since they're done via the parent
+                    obj.location = mathutils.Vector((0, 0, 0))
+                    obj.rotation_euler = mathutils.Euler((0, 0, 0), 'XYZ')
+
+                else:
+                    #If there is no detent, we just parent it to the manipulator object
+                    obj.parent = axis_empty
+                    #Reset the positions since they're done via the parent
+                    obj.location = mathutils.Vector((0, 0, 0))
+                    obj.rotation_euler = mathutils.Euler((0, 0, 0), 'XYZ')
+
+                #Now the fun part *cries*. We need to parent this object to the manipulator mesh's parent. 
+                # The good news is since the object was already parented, we have the desired rotation (we already dealt with the location when animating)
+                # So all we need to do is set the rotation of the empty to match the manipulator mesh's rotation.
+                # This works because we didn't actually rotate before - we just moved it *along* the axis, so we can just use the absolute rotation without worrying about merging
+                # EDIT: This is called on an *unparented* object, so we don't even need to worry here! This will get parented instead of the obj then transforms will be applied int he natural process
+                axis_empty.rotation_euler = manip_mesh_original_rotation
+                axis_empty.location = manip_mesh_original_location
+                axis_empty.parent = manip_mesh_original_parent
+
+                return axis_empty
+
+            elif cmd == "ATTR_manip_drag_rotate":
+                pass
+        return None
+        
+    
     def copy(self):
         """
         Returns a copy of this manipulator object.
@@ -488,6 +613,10 @@ class manipulator:
         new_manip.params = self.params.copy()
         new_manip.detents = self.detents.copy()
         new_manip.wheel_delta = self.wheel_delta
+        new_manip.detent_axis = self.detent_axis.copy()
+        new_manip.detent_v1 = self.detent_v1
+        new_manip.detent_v2 = self.detent_v2
+        new_manip.detent_dataref = self.detent_dataref
 
         return new_manip
 
@@ -572,7 +701,7 @@ class draw_call:
         self.state = draw_call_state()  #State of the draw call. This is used to store the state of the draw call, such as blend mode, alpha cutoff, etc.
         self.manipulator = None  #Manipulator for the draw call. This is used to store the manipulator for the draw call, if it has one.
 
-    def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection):
+    def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection, in_parent=None):
         """
         Adds the geometry represented by this draw call to the Blender scene as a new mesh object.
 
@@ -609,8 +738,32 @@ class draw_call:
         dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {self.start_index} {self.length}")
         in_collection.objects.link(dc_obj)
 
+        override_return_obj = None
+
         if self.manipulator != None:
-            self.manipulator.apply_to_obj(dc_obj)
+            #Now we need to check if we need to animate it because there isn't an animating parent
+            animatable, datarefs = self.manipulator.get_datarefs_for_axis_or_rotate()
+
+            do_need_animate = True
+
+            cur_parent = in_parent
+
+            #Check if *any* of the parents here use the same datarefs. Not perfect but it's a best guess of whether the parent provides the given animation
+            #Temporarily disabled. See line 517, toward end of manipulator.apply_to_obj
+            #TODO: Re-enable this, but give a warning instead if we find we're not animated
+            while False:
+                if cur_parent == None:
+                    break
+                for dref in cur_parent.xplane.datarefs:
+                    for used_dref in datarefs:
+                        if dref.path == used_dref:
+                            #If we find a dataref that matches, we don't need to animate this manipulator
+                            do_need_animate = False
+                            break
+
+                cur_parent = cur_parent.parent
+
+            override_return_obj = self.manipulator.apply_to_obj(dc_obj)
 
         if self.lod_bucket != -1:
             #Set the LOD bucket for this object
@@ -637,6 +790,7 @@ class draw_call:
         basic_mat = None
         basic_draped_mat = None
         matching_mat = None
+
         for mat in in_mats:
             xp_props = mat.xp_materials
 
@@ -718,6 +872,10 @@ class draw_call:
                 
         dc_obj.data.materials.append(matching_mat)
 
+        if override_return_obj != None:
+            #If we have a manipulator, we return the object that was created by the manipulator
+            return override_return_obj
+        
         return dc_obj
 
 class static_offsets:

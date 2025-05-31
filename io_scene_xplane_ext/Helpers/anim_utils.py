@@ -10,6 +10,27 @@ import mathutils
 
 import mathutils
 
+def move_along_axis(position, axis, distance):
+    """
+    Moves a position along an arbitrary axis by a given distance.
+    
+    :param position: The starting position (Vector).
+    :param axis: The direction to move (Vector, should be normalized).
+    :param distance: The distance to move.
+    :return: New position after movement.
+    """
+    # Ensure axis is normalized
+    axis = axis.normalized()
+    
+    # Compute displacement
+    displacement = axis * distance
+
+    # Apply movement
+    new_position = position + displacement
+
+    return new_position
+
+
 def rotate_point_and_euler(point, euler_angles, axis, angle_deg):
         """
         Rotates a location and euler around an arbitrary axis by a given angle in degrees.
