@@ -9,6 +9,7 @@ import os
 import mathutils
 import math
 
+from .. import material_config
 from ..Helpers import misc_utils
 from ..Helpers import anim_utils
 from ..Helpers import geometery_utils
@@ -17,6 +18,9 @@ from ..Helpers import light_data    #These are defines for the parameter layout 
 from .. import props
 
 from functools import total_ordering
+
+#Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
+obj_does_use_lods = False
 
 @total_ordering
 class light:
@@ -50,6 +54,7 @@ class light:
         self.bb_t2 = 0 #Bottom UV coordinate of the custom billboard light texture
         self.lod_start = 0  #Start range of the LOD. We don't actually use LODs because lights aren't LODed, but, this is used to dedupe
         self.lod_end = 0    #End range of the LOD
+        self.lod_bucket = -1  #LOD bucket of the light. This is used to determine which LOD bucket this light belongs to. -1 means no LOD bucket.
 
     def add_to_scene(self, in_collection):
         """
@@ -82,6 +87,8 @@ class light:
         b_light.data.xplane.uv[3] = self.bb_t2   # bottom
         b_light.data.xplane.dataref = self.dataref
         b_light.data.xplane.name = self.name
+        if obj_does_use_lods:
+            b_light.xplane.lod[0] = True
 
         return b_light
     
@@ -467,8 +474,10 @@ class manipulator:
             obj.xplane.manip.cursor = self.params[1].lower()
 
         for det in self.detents:
-            pass
-            #obj.xplane.manip.axis_detent_ranges.append((det.start, det.end, det.length))
+            obj.xplane.manip.axis_detent_ranges.add()
+            obj.xplane.manip.axis_detent_ranges[-1].start = det.start
+            obj.xplane.manip.axis_detent_ranges[-1].end = det.end
+            obj.xplane.manip.axis_detent_ranges[-1].height = det.length
 
     def copy(self):
         """
@@ -477,7 +486,7 @@ class manipulator:
         new_manip = manipulator()
         new_manip.valid = self.valid
         new_manip.params = self.params.copy()
-        new_manip.detents = [detent.copy() for detent in self.detents]
+        new_manip.detents = self.detents.copy()
         new_manip.wheel_delta = self.wheel_delta
 
         return new_manip
@@ -488,22 +497,64 @@ class draw_call_state:
     """
 
     def __init__(self):
-        self.blend = True
+        self.blend_mode = "BLEND"
         self.blend_cutoff = 0.5
         self.draped = False
         self.cast_shadow = True
         self.surface_type = "none"
+        self.light_level_override = False
+        self.draw = True
+        self.hard_camera = False
+        self.light_level_v1 = 0
+        self.light_level_v2 = 0
+        self.light_level_photometric = False
+        self.light_level_brightness = 0
+        self.light_level_dataref = ""
+        self.is_hud = False
+
+        #Cockpit device properties
+        self.use_2d_panel = False
+        self.panel_texture_region = 0
+        self.cockpit_device = "NONE"
+        self.custom_cockpit_device = ""
+        self.cockpit_device_use_bus_1 = False
+        self.cockpit_device_use_bus_2 = False
+        self.cockpit_device_use_bus_3 = False
+        self.cockpit_device_use_bus_4 = False
+        self.cockpit_device_use_bus_5 = False
+        self.cockpit_device_use_bus_6 = False
+        self.cockpit_device_lighting_channel = 0
 
     def copy(self):
         """
         Returns a copy of this state object.
         """
         new_state = draw_call_state()
-        new_state.blend = self.blend
+        new_state.blend_mode = self.blend_mode
         new_state.blend_cutoff = self.blend_cutoff
         new_state.draped = self.draped
         new_state.cast_shadow = self.cast_shadow
         new_state.surface_type = self.surface_type
+        new_state.draw = self.draw
+        new_state.hard_camera = self.hard_camera
+        new_state.light_level_override = self.light_level_override
+        new_state.light_level_v1 = self.light_level_v1
+        new_state.light_level_v2 = self.light_level_v2
+        new_state.light_level_photometric = self.light_level_photometric
+        new_state.light_level_brightness = self.light_level_brightness
+        new_state.light_level_dataref = self.light_level_dataref
+        new_state.is_hud = self.is_hud
+        new_state.use_2d_panel = self.use_2d_panel
+        new_state.panel_texture_region = self.panel_texture_region
+        new_state.cockpit_device = self.cockpit_device
+        new_state.custom_cockpit_device = self.custom_cockpit_device
+        new_state.cockpit_device_use_bus_1 = self.cockpit_device_use_bus_1
+        new_state.cockpit_device_use_bus_2 = self.cockpit_device_use_bus_2
+        new_state.cockpit_device_use_bus_3 = self.cockpit_device_use_bus_3
+        new_state.cockpit_device_use_bus_4 = self.cockpit_device_use_bus_4
+        new_state.cockpit_device_use_bus_5 = self.cockpit_device_use_bus_5
+        new_state.cockpit_device_use_bus_6 = self.cockpit_device_use_bus_6
+        new_state.cockpit_device_lighting_channel = self.cockpit_device_lighting_channel
         return new_state
 
 class draw_call:
@@ -575,6 +626,9 @@ class draw_call:
             else:
                 print(f"Unknown LOD bucket for obj {dc_obj.name} for range {self.lod_start}-{self.lod_end}. Bucket is {self.lod_bucket}. What?")
 
+        #Set HUD state
+        dc_obj.xplane.hud_glass = self.state.is_hud
+
         # Lastly, we need to get the correct material. Soo, here's out logic
         # First, we need to either get a regular material, or a draped material. 
         # From there, we need to check if the material matches our state - specifically, blend mode, alpha cutoff, shadows, and hard surface
@@ -594,10 +648,30 @@ class draw_call:
 
             #Compare to state
             if xp_props.draped == self.state.draped and \
-                xp_props.blend_alpha == self.state.blend and \
+                xp_props.blend_mode == self.state.blend_mode and \
                 xp_props.blend_cutoff == self.state.blend_cutoff and \
                 xp_props.cast_shadow == self.state.cast_shadow and \
-                xp_props.surface_type == self.state.surface_type.upper():
+                xp_props.surface_type == self.state.surface_type.upper() and \
+                xp_props.drawing_enabled == self.state.draw and \
+                xp_props.camera_collision_enabled == self.state.hard_camera and \
+                xp_props.light_level_override == self.state.light_level_override and \
+                xp_props.light_level_v1 == self.state.light_level_v1 and \
+                xp_props.light_level_v2 == self.state.light_level_v2 and \
+                xp_props.light_level_photometric == self.state.light_level_photometric and \
+                xp_props.light_level_brightness == self.state.light_level_brightness and \
+                xp_props.light_level_dataref == self.state.light_level_dataref and \
+                xp_props.use_2d_panel_texture == self.state.use_2d_panel and \
+                xp_props.panel_texture_region == self.state.panel_texture_region and \
+                xp_props.cockpit_device.upper() == self.state.cockpit_device and \
+                xp_props.custom_cockpit_device == self.state.custom_cockpit_device and \
+                xp_props.cockpit_device_use_bus_1 == self.state.cockpit_device_use_bus_1 and \
+                xp_props.cockpit_device_use_bus_2 == self.state.cockpit_device_use_bus_2 and \
+                xp_props.cockpit_device_use_bus_3 == self.state.cockpit_device_use_bus_3 and \
+                xp_props.cockpit_device_use_bus_4 == self.state.cockpit_device_use_bus_4 and \
+                xp_props.cockpit_device_use_bus_5 == self.state.cockpit_device_use_bus_5 and \
+                xp_props.cockpit_device_use_bus_6 == self.state.cockpit_device_use_bus_6 and \
+                xp_props.cockpit_device_lighting_channel == self.state.cockpit_device_lighting_channel:
+                
                 matching_mat = mat
 
         if basic_draped_mat == None:
@@ -614,10 +688,29 @@ class draw_call:
                 new_mat = basic_mat.copy()
 
             new_mat.xp_materials.draped = self.state.draped
-            new_mat.xp_materials.blend_alpha = self.state.blend
+            new_mat.xp_materials.blend_mode = self.state.blend_mode.upper()
             new_mat.xp_materials.blend_cutoff = self.state.blend_cutoff
             new_mat.xp_materials.cast_shadow = self.state.cast_shadow
             new_mat.xp_materials.surface_type = self.state.surface_type.upper()
+            new_mat.xp_materials.drawing_enabled = self.state.draw
+            new_mat.xp_materials.camera_collision_enabled = self.state.hard_camera
+            new_mat.xp_materials.light_level_override = self.state.light_level_override
+            new_mat.xp_materials.light_level_v1 = self.state.light_level_v1
+            new_mat.xp_materials.light_level_v2 = self.state.light_level_v2
+            new_mat.xp_materials.light_level_photometric = self.state.light_level_photometric
+            new_mat.xp_materials.light_level_brightness = int(self.state.light_level_brightness)
+            new_mat.xp_materials.light_level_dataref = self.state.light_level_dataref
+            new_mat.xp_materials.use_2d_panel_texture = self.state.use_2d_panel
+            new_mat.xp_materials.panel_texture_region = self.state.panel_texture_region
+            new_mat.xp_materials.cockpit_device = self.state.cockpit_device
+            new_mat.xp_materials.custom_cockpit_device = self.state.custom_cockpit_device
+            new_mat.xp_materials.cockpit_device_use_bus_1 = self.state.cockpit_device_use_bus_1
+            new_mat.xp_materials.cockpit_device_use_bus_2 = self.state.cockpit_device_use_bus_2
+            new_mat.xp_materials.cockpit_device_use_bus_3 = self.state.cockpit_device_use_bus_3
+            new_mat.xp_materials.cockpit_device_use_bus_4 = self.state.cockpit_device_use_bus_4
+            new_mat.xp_materials.cockpit_device_use_bus_5 = self.state.cockpit_device_use_bus_5
+            new_mat.xp_materials.cockpit_device_use_bus_6 = self.state.cockpit_device_use_bus_6
+            new_mat.xp_materials.cockpit_device_lighting_channel = self.state.cockpit_device_lighting_channel
 
             matching_mat = new_mat
 
@@ -716,6 +809,17 @@ class anim_show_hide_command:
             obj.xplane.datarefs[-1].anim_type = 'show'
         obj.xplane.datarefs[-1].show_hide_v1 = self.start_value
         obj.xplane.datarefs[-1].show_hide_v2 = self.end_value
+
+    def copy(self):
+        """
+        Returns a copy of this show/hide command object.
+        """
+        new_cmd = anim_show_hide_command()
+        new_cmd.hide = self.hide
+        new_cmd.start_value = self.start_value
+        new_cmd.end_value = self.end_value
+        new_cmd.dataref = self.dataref
+        return new_cmd
 
 class anim_show_hide_series(anim_action):
     """
@@ -925,7 +1029,8 @@ class anim_level:
                 name += " Keyframed Rotation"
             elif action.type == 'show_hide_series':
                 name += " Show/Hide Series"
-                cur_show_hide_commands = action.commands  #We will apply these commands later, so we save them here
+                for cmd in action.commands:
+                    cur_show_hide_commands.append(cmd.copy())
                 continue  #Show/hide series are not animated, so we don't create a new empty for them. Their commands will be attached to all their direct children
             
             #Create the new objetc and link it
@@ -938,6 +1043,15 @@ class anim_level:
             #Set this actions base loc/rot transforms and reset the offsets
             action.static_offsets = cur_static_offsets.copy()
             cur_static_offsets = static_offsets()  #Reset the static offsets for the next action
+
+            #Apply show hide animations
+            for cmd in cur_show_hide_commands:
+                cmd.apply(anim_empty)
+
+            #Reset dataref show/hide commands
+            action.show_hide_commands = cur_show_hide_commands.copy()
+            cur_show_hide_commands = []  #Reset the show/hide commands for the next action
+
 
             #Reset the offsets because future objetcs will be parented to this one,
             if cur_parent != None:
@@ -1088,18 +1202,26 @@ class object:
         self.anims = []  #List of animations in the object. This is a list of anim_levels
         self.name = ""
 
+        self.obj_mode = "aircraft"  #aircraft, scenery, or cockpit
+
         #Base material
         self.alb_texture = ""
         self.nml_texture = ""
         self.lit_texture = ""
         self.mat_texture = ""
-        self.do_blend_alpha = True
+        self.blend_mode = "BLEND"
         self.blend_cutoff = 0.5
         self.cast_shadow = True
         #self.decal_one = props.PROP_decal()
         #self.decal_two = props.PROP_decal()
         self.layer_group = "objects"
         self.layer_group_offset = 0
+
+        self.blend_glass = False
+        self.brightness = -1
+        self.particle_system = ""
+        self.panel_texture_mode = "cockpit" #cockpit, cockpit_lit_only, or cockpit_region
+        self.panel_texture_region = "0"
 
         #Draped material
         self.draped_alb_texture = ""
@@ -1111,7 +1233,6 @@ class object:
         self.draped_layer_group = "objects"
         self.draped_layer_group_offset = -5
         
-
     def read(self, in_obj_path):
         self.name = os.path.basename(in_obj_path)
 
@@ -1178,6 +1299,19 @@ class object:
                 else:
                     self.draw_calls.append(dc)
 
+            elif tokens[0] == "PARTICLE_SYSTEM":
+                self.particle_system = tokens[1]
+
+            elif tokens[0] == "BLEND_GLASS":
+                self.blend_glass = True
+
+            elif tokens[0] == "GLOBAL_luminance":
+                #If the brightness ends in cd, remove the cd
+                if tokens[1].endswith("cd"):
+                    self.brightness = int(tokens[1][:-2])
+                else:
+                    self.brightness = int(tokens[1])
+
             elif tokens[0] == "TEXTURE":
                 self.alb_texture = tokens[1]
                 if self.draped_alb_texture == "":
@@ -1196,6 +1330,7 @@ class object:
 
             elif tokens[0] == "TEXTURE_DRAPED":
                 self.draped_alb_texture = tokens[1]
+                self.obj_mode = "scenery"
 
             elif tokens[0] == "TEXTURE_DRAPED_NORMAL":
                 self.draped_nml_tile_rat = float(tokens[1])
@@ -1210,7 +1345,13 @@ class object:
                     self.draped_lit_texture = tokens[1]
 
             elif tokens[0] == "GLOBAL_no_blend":
-                self.do_blend_alpha = False
+                self.blend_mode == "CLIP"
+                self.blend_cutoff = float(tokens[1])
+                cur_state.blend = False
+                cur_state.blend_cutoff = self.blend_cutoff
+
+            elif tokens[0] == "GLOBAL_shadow_blend":
+                self.blend_mode == "SHADOW"
                 self.blend_cutoff = float(tokens[1])
                 cur_state.blend = False
                 cur_state.blend_cutoff = self.blend_cutoff
@@ -1564,19 +1705,26 @@ class object:
                 cur_state.cast_shadow = True
 
             elif tokens[0] == "ATTR_no_blend":
-                cur_state.blend = False
+                cur_state.blend_mode = "CLIP"
+                if len(tokens) > 1:
+                    cur_state.blend_cutoff = float(tokens[1])
+
+            elif tokens[0] == "ATTR_shadow_blend ":
+                cur_state.blend_mode = "SHADOW"
                 if len(tokens) > 1:
                     cur_state.blend_cutoff = float(tokens[1])
 
             elif tokens[0] == "ATTR_blend":
-                cur_state.blend = True
+                cur_state.blend_mode = "BLEND"
                 cur_state.blend_cutoff = 0.5
     
             elif tokens[0] == "ATTR_hard":
                 cur_state.surface_type = tokens[1]
+                self.obj_mode = "scenery"
 
             elif tokens[0] == "ATTR_hard_deck":
                 cur_state.surface_type = tokens[1]
+                self.obj_mode = "scenery"
 
             elif tokens[0] == "ATTR_no_hard":
                 cur_state.surface_type = "none"
@@ -1589,10 +1737,43 @@ class object:
                 self.draped_layer_group = tokens[1]
                 self.draped_layer_group_offset = int(tokens[2]) if len(tokens) > 2 else 0
 
+            elif tokens[0] == "ATTR_draw_enable":
+                cur_state.draw = True
+
+            elif tokens[0] == "ATTR_draw_disable":
+                cur_state.draw = False
+
+            elif tokens[0] == "ATTR_solid_camera":
+                cur_state.hard_camera = True
+                
+            elif tokens[0] == "ATTR_no_solid_camera":
+                cur_state.hard_camera = False
+           
+            elif tokens[0] == "ATTR_light_level":
+                #ATTR_light_level <v1> <v2> <dataref> [<brightness>]
+                cur_state.light_level_override = True
+                cur_state.light_level_v1 = float(tokens[1])
+                cur_state.light_level_v2 = float(tokens[2])
+                cur_state.light_level_dataref = tokens[3]
+                if len(tokens) > 4:
+                    cur_state.light_level_photometric = True
+                    if tokens[4].endswith('cd'):
+                        cur_state.light_level_brightness = float(tokens[4][:-2])
+                    else:
+                        cur_state.light_level_brightness = float(tokens[4])
+            
+            elif tokens[0] == "ATTR_light_level_reset":
+                cur_state.light_level_override = False
+                cur_state.light_level_v1 = 0.0
+                cur_state.light_level_v2 = 0.0
+                cur_state.light_level_dataref = ""
+                cur_state.light_level_photometric = False
+                cur_state.light_level_brightness = 0.0
+
             elif tokens[0] == "ATTR_manip_wheel":
                 cur_manipulator.wheel_delta = float(tokens[1]) if len(tokens) > 1 else 0
 
-            elif tokens[0] == "ATTR_axis_detented":
+            elif tokens[0] == "ATTR_axis_detent_range":
                 new_detent = manipulator_detent()
                 new_detent.start = float(tokens[1])
                 new_detent.end = float(tokens[2])
@@ -1603,19 +1784,85 @@ class object:
                 #TODO: What does this even do? I don't understand docs nor see corresponding settings in X-Plane2Blender
                 pass
 
+            elif tokens[0] == "ATTR_cockpit_device":
+                #ATTR_cockpit_device <name> <bus> <lighting channel> <auto_adjust>
+                valid_names = ["GNS430_1", "GNS430_1", "GNS530_2", "GNS530_2", "CDU739_1", "CDU739_2", "G1000_MFD", "G1000_PFD1", "G1000_PFD2"]
+                
+                if not tokens[1] in valid_names:
+                    cur_state.cockpit_device = "Plugin Device"
+                    cur_state.custom_cockpit_device = tokens[1]
+                else:
+                    cur_state.cockpit_device = tokens[1].upper()
+
+                bus = int(tokens[2])
+                if bus & 1:
+                    cur_state.cockpit_device_use_bus_1 = True
+                if bus & 2:
+                    cur_state.cockpit_device_use_bus_2 = True
+                if bus & 4:
+                    cur_state.cockpit_device_use_bus_3 = True
+                if bus & 8:
+                    cur_state.cockpit_device_use_bus_4 = True
+                if bus & 16:
+                    cur_state.cockpit_device_use_bus_5 = True
+                if bus & 32:
+                    cur_state.cockpit_device_use_bus_6 = True
+
+                cur_state.cockpit_device_lighting_channel = int(tokens[3])
+
+            elif tokens[0] == "ATTR_cockpit_lit_only":
+                self.panel_texture_mode = "cockpit_lit_only"
+
+            elif tokens[0] == "ATTR_cockpit_region":
+                self.panel_texture_mode = "cockpit_region"
+                self.panel_texture_region = tokens[1]
+                cur_state.panel_texture_region = int(tokens[1])
+
+            elif tokens[0] == "ATTR_no_cockpit":
+                cur_state.cockpit_device = "NONE"
+                cur_state.custom_cockpit_device = ""
+                cur_state.cockpit_device_use_bus_1 = False
+                cur_state.cockpit_device_use_bus_2 = False
+                cur_state.cockpit_device_use_bus_3 = False
+                cur_state.cockpit_device_use_bus_4 = False
+                cur_state.cockpit_device_use_bus_5 = False
+                cur_state.cockpit_device_use_bus_6 = False
+                cur_state.cockpit_device_lighting_channel = 0
+
             elif tokens[0] == "ATTR_manip_device":
-                #TODO: Not implemented in XP2Blender, so nothing we can do afaik
+                #ATTR_manip_device <cursor> <device> <tooltip>
+                cur_state.cockpit_device = "Plugin Device"
+                cur_state.custom_cockpit_device = tokens[1]
                 pass
 
             elif tokens[0].startswith("ATTR_manip"):
                 cur_manipulator.valid = True
                 cur_manipulator.params = tokens.copy()
+                self.obj_mode = "cockpit"
                 
     def to_scene(self):
         #Create a new collection for this object
         collection = bpy.data.collections.new(self.name)
         collection.name = self.name
         bpy.context.scene.collection.children.link(collection)
+
+        #Set the collection settings
+        collection.xplane.is_exportable_collection = True
+        collection.xplane.layer.export_type = self.obj_mode
+        collection.xplane.layer.texture = self.alb_texture
+        collection.xplane.layer.texture_lit = self.lit_texture
+        collection.xplane.layer.texture_normal = self.nml_texture
+        collection.xplane.layer.texture_map_material_gloss = self.mat_texture
+        collection.xplane.layer.texture_draped = self.draped_alb_texture
+        collection.xplane.layer.texture_draped_normal = self.draped_nml_texture
+        collection.xplane.layer.blend_glass = self.blend_glass
+        collection.xplane.layer.normal_metalness = True
+        if self.brightness > 0:
+            collection.xplane.layer.luminance_override = True
+            collection.xplane.layer.luminance = self.brightness
+        collection.xplane.layer.cockpit_panel_mode = self.panel_texture_mode
+        collection.xplane.layer.cockpit_regions = self.panel_texture_region
+        collection.xplane.layer.particle_system_file = self.particle_system
 
         #Create the base material
         all_mats = []
@@ -1628,7 +1875,7 @@ class object:
             xp_mat.material_texture = self.mat_texture
             xp_mat.do_separate_material_texture = True
         xp_mat.lit_texture = self.lit_texture
-        xp_mat.blend_alpha = self.do_blend_alpha
+        xp_mat.blend_mode = self.blend_mode
         xp_mat.blend_cutoff = self.blend_cutoff
         xp_mat.cast_shadow = self.cast_shadow
         mat.name = self.name
@@ -1637,13 +1884,14 @@ class object:
 
         #Create the draped material if it exists
         if self.draped_alb_texture != "":
-            draped_mat = bpy.data.materials.new(name=self.name + "_draped")
+            draped_mat = mat.copy()
+            draped_mat.name = self.name + "_draped"
             draped_mat.use_nodes = True
             xp_draped_mat = draped_mat.xp_materials
             xp_draped_mat.alb_texture = self.draped_alb_texture
             xp_draped_mat.normal_texture = self.draped_nml_texture
             xp_draped_mat.lit_texture = self.draped_lit_texture
-            xp_draped_mat.do_blend_alpha = self.do_blend_alpha
+            xp_draped_mat.blend_mode = self.blend_mode
             xp_draped_mat.blend_cutoff = self.blend_cutoff
             xp_draped_mat.cast_shadow = self.cast_shadow
             xp_draped_mat.draped = True
@@ -1680,6 +1928,13 @@ class object:
             else:
                 print(f"Too many LOD buckets for object {self.name}. Skipping LOD {lod_range} for draw call {dc.start_index}-{dc.length}. Object will be added to best guess bucket. Double check this choice!")
 
+        obj_does_use_lods = True
+        if len(all_lod_buckets) == 1:
+            if all_lod_buckets[0] == (0, 0):
+                #If we only have one bucket, and it's the default bucket, we don't need to do anything
+                all_lod_buckets = []
+                obj_does_use_lods = False
+
         #Determine additive vs selective
         for bucket in all_lod_buckets:
             if bucket[0] != 0:
@@ -1689,6 +1944,10 @@ class object:
         all_lod_buckets.sort()
 
         def put_draw_call_in_bucket(dc, all_lod_buckets, is_selective_lod):
+            if all_lod_buckets == []:
+                #If there are no LOD buckets, we don't need to do anything
+                dc.lod_bucket = -1
+                return
             matching_bucket_idx = -1
             for bucket in all_lod_buckets:
                 if bucket == (int(dc.lod_start), int(dc.lod_end)):
@@ -1763,4 +2022,6 @@ class object:
         for anim in self.anims:
             anim.add_to_scene(None, self.verticies, self.indicies, all_mats, collection)
         
-        #WE'RE DONE!
+        #Lastly, we'll go through and update the materials
+        for mat in all_mats:
+            material_config.update_settings(mat)

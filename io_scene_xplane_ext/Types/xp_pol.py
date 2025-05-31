@@ -257,6 +257,10 @@ class polygon():
         self.runway_a = in_collection.xp_pol.runway_markings_a
         self.runway_marking_texture = in_collection.xp_pol.runway_markings_texture
 
+        #Set the layer group and offset
+        self.layer = in_collection.xp_pol.layer_group
+        self.layer_offset = in_collection.xp_pol.layer_group_offset
+
         #Get the material from the first mesh object in the collection
         mat = None
         for obj in in_collection.objects:
@@ -276,13 +280,12 @@ class polygon():
         if mat.do_separate_material_texture:
             raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
 
-        self.layer = mat.layer_group
-        self.layer_offset = mat.layer_group_offset
+        
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
         self.weather_texture = mat.weather_texture
-        self.do_blend = mat.blend_alpha
+        self.do_blend = mat.blend_mode == 'BLEND'
         self.blend_cutoff = mat.blend_cutoff
         self.decal_1 = mat.decal_one
         self.decal_2 = mat.decal_two
@@ -333,13 +336,12 @@ class polygon():
         mat.xp_materials.lit_texture = self.lit_texture
         mat.xp_materials.normal_texture = self.nml_texture
         mat.xp_materials.weather_texture = self.weather_texture
-        mat.xp_materials.blend_alpha = self.do_blend
+        mat.xp_materials.blend_mode = 'BlEND' if self.do_blend else 'CLIP'
         mat.xp_materials.blend_cutoff = self.blend_cutoff
-        mat.xp_materials.layer_group = self.layer.upper()
-        mat.xp_materials.layer_group_offset = int(self.layer_offset)
         mat.xp_materials.surface_type = self.surface
 
         # Set collection properties
+        new_collection.xp_pol.exportable = True
         new_collection.xp_pol.texture_is_nowrap = self.nowrap
         new_collection.xp_pol.is_load_centered = self.do_load_center
         new_collection.xp_pol.load_center_lat = self.load_center_lat
@@ -358,6 +360,8 @@ class polygon():
         new_collection.xp_pol.runway_markings_b = self.runway_b
         new_collection.xp_pol.runway_markings_a = self.runway_a
         new_collection.xp_pol.runway_markings_texture = self.runway_marking_texture
+        new_collection.xp_pol.layer_group = self.layer.upper()
+        new_collection.xp_pol.layer_group_offset = int(self.layer_offset)
 
         #Get rid of any subtextures that don't have 4 values. This is a safety check.
         self.subtextures = [subtexture for subtexture in self.subtextures if len(subtexture) == 4]

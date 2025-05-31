@@ -274,10 +274,93 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
-    blend_alpha: bpy.props.BoolProperty(
-        name="Blend Alpha",
-        description="Does the material have blended alpha?",
+    surface_is_deck: bpy.props.BoolProperty(
+        name="Surface is Deck",
+        description="Is the surface a deck you can fly under, or solid all the way to the ground?",
         default=False,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    camera_collision_enabled: bpy.props.BoolProperty(
+        name="Camera Collision",
+        description="Does the material have hard camera collision?",
+        default=False,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    drawing_enabled: bpy.props.BoolProperty(
+        name="Drawing Enabled",
+        description="Is the material drawing enabled?",
+        default=True,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    use_2d_panel_texture: bpy.props.BoolProperty(
+        name="Use 2D Panel Texture",
+        description="Whether to use the 2D panel texture for the material. LEGACY USE ONLY",
+        default=False,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    panel_texture_region: bpy.props.IntProperty(
+        name="Panel Texture Region",
+        description="The region of the 2D panel texture to use for the material. LEGACY USE ONLY",
+        default=0,
+        min=0,
+        max=4,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    cockpit_device: bpy.props.EnumProperty(
+        name="Cockpit Device Name",
+        description="The cockpit device name for the material",
+        items=[
+            ('NONE', "None", "No cockpit device"),
+            ('GNS430_1', "GNS430_1", "GNS430_1"),
+            ('GNS430_2', "GNS430_2", "GNS430_2"),
+            ('GNS530_1', "GNS530_1", "GNS530_1"),
+            ('GNS530_2', "GNS530_2", "GNS530_2"),
+            ('CDU739_1', "CDU739_1", "CDU739_1"),
+            ('CDU739_2', "CDU739_2", "CDU739_2"),
+            ('G1000_PFD1', "G1000_PFD1", "G1000_PFD1"),
+            ('G1000_PFD2', "G1000_PFD2", "G1000_PFD2"),
+            ('G1000_MFD', "G1000_MFD", "G1000_MFD"),
+            ('Plugin Device', "Custom", "Custom Plugin Drawn Device")
+        ],
+        default='NONE',
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    custom_cockpit_device: bpy.props.StringProperty(
+        name="Custom Cockpit Device",
+        description="The custom cockpit device name for the material",
+        default="",
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    cockpit_device_use_bus_1: bpy.props.BoolProperty(name="Use Bus 1", description="Whether the cockpit device uses bus 1", default=False, update=material_config.operator_wrapped_update_settings) # type: ignore
+    cockpit_device_use_bus_2: bpy.props.BoolProperty(name="Use Bus 2", description="Whether the cockpit device uses bus 2", default=False, update=material_config.operator_wrapped_update_settings) # type: ignore
+    cockpit_device_use_bus_3: bpy.props.BoolProperty(name="Use Bus 3", description="Whether the cockpit device uses bus 3", default=False, update=material_config.operator_wrapped_update_settings) # type: ignore
+    cockpit_device_use_bus_4: bpy.props.BoolProperty(name="Use Bus 4", description="Whether the cockpit device uses bus 4", default=False, update=material_config.operator_wrapped_update_settings) # type: ignore
+    cockpit_device_use_bus_5: bpy.props.BoolProperty(name="Use Bus 5", description="Whether the cockpit device uses bus 5", default=False, update=material_config.operator_wrapped_update_settings) # type: ignore
+    cockpit_device_use_bus_6: bpy.props.BoolProperty(name="Use Bus 6", description="Whether the cockpit device uses bus 6", default=False, update=material_config.operator_wrapped_update_settings) # type: ignore
+
+    cockpit_device_lighting_channel: bpy.props.IntProperty(
+        name="Rheostat Lighting Channel",
+        description="The lighting channel for the cockpit device",
+        default=0,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    blend_mode: bpy.props.EnumProperty(
+        name="Blend Mode",
+        description="The blend mode of the material",
+        items=[
+            ('CLIP', "Alpha Clip", "Alpha is clipped at the cutoff value"),
+            ('BLEND', "Alpha Blend", "Alpha is blended"),
+            ('SHADOW', "Alpha Blend, Shadow Clip", "Alpha is blended, shadows are clipped")
+        ],
+        default='BLEND',
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -306,22 +389,48 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
-    #Layer group property
-    layer_group: bpy.props.EnumProperty(
-        name="Layer Group",
-        description="Select the layer group",
-        items=layer_group_enum,
-        default='OBJECTS',
+    light_level_override: bpy.props.BoolProperty(
+        name="Light Level Override",
+        description="Whether the material overrides the light level",
+        default=False,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
-    #Layer group offset property
-    layer_group_offset: bpy.props.IntProperty(
-        name="Layer Group Offset",
-        description="The layer group offset",
-        default=0,
-        min=-5,
-        max=5,
+    light_level_v1: bpy.props.FloatProperty(
+        name="Light Level Value 1",
+        description="Dataref value for no light",
+        default=0.0,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    light_level_v2: bpy.props.FloatProperty(
+        name="Light Level Value 2",
+        description="Dataref value for full light",
+        default=0.0,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    light_level_dataref: bpy.props.StringProperty(
+        name="Light Level Dataref",
+        description="The dataref to use for the light level override",
+        default="",
+        subtype='NONE',
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    light_level_photometric: bpy.props.BoolProperty(
+        name="Photometric Light Level",
+        description="Whether the light level override is photometric",
+        default=False,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    light_level_brightness: bpy.props.IntProperty(
+        name="Light Level Brightness",
+        description="The brightness of the light level override in candelas",
+        default=1,
+        min=0,
+        max=65535,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -393,6 +502,9 @@ class PROP_lin_collection(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
+    layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
+    layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
+
 #Polygon properties
 
 class PROP_pol_collection(bpy.types.PropertyGroup):
@@ -421,6 +533,10 @@ class PROP_pol_collection(bpy.types.PropertyGroup):
     runway_markings_b: bpy.props.FloatProperty(name="Runway Markings Blue", description="The blue value for the runway markings", default=1.0) # type: ignore
     runway_markings_a: bpy.props.FloatProperty(name="Runway Markings Alpha", description="The alpha value for the runway markings", default=1.0) # type: ignore
     runway_markings_texture: bpy.props.StringProperty(name="Runway Markings Texture", description="The texture used for the runway markings", default="", subtype="FILE_PATH") # type: ignore
+
+    #Layer group property
+    layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
+    layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
 #Facade properties
 
@@ -478,10 +594,14 @@ class PROP_facade(bpy.types.PropertyGroup):
     #Wall properties
     render_wall: bpy.props.BoolProperty(name="Render Wall", description="Whether the wall is rendered", update=update_ui)# type: ignore
     wall_material: bpy.props.PointerProperty(type=bpy.types.Material, name="Wall Material", description="The material to use for the wall", update=update_ui)# type: ignore
+    wall_layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
+    wall_layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
     #Roof properties
     render_roof: bpy.props.BoolProperty(name="Render Roof", description="Whether the roof is rendered", update=update_ui)# type: ignore
     roof_material: bpy.props.PointerProperty(type=bpy.types.Material, name="Roof Material", description="The material to use for the roof", update=update_ui)# type: ignore
+    roof_layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
+    roof_layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
     #Floors
     floors: bpy.props.CollectionProperty(type=PROP_fac_floor)# type: ignore

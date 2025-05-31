@@ -60,26 +60,13 @@ def update_settings(in_material):
 
     #Set backface culling to TRUE
     in_material.use_backface_culling = True
-
-    #Set alpha blending to ALPHA_CLIP or OPAQUE
-    if xp_mat.blend_alpha:
-        in_material.blend_method = 'BLEND'
-    else:
-        in_material.blend_method = 'CLIP'
-        try:
-            in_material.xplane.blendRatio = xp_mat.blend_cutoff
-        except:
-            pass
     in_material.show_transparent_back = False
 
     #Set XP draped mode based on the draped property
-    try:
-        if xp_mat.draped:
-            in_material.xplane.draped = True
-        else:
-            in_material.xplane.draped = False
-    except:
-        pass
+    if xp_mat.draped:
+        in_material.xplane.draped = True
+    else:
+        in_material.xplane.draped = False
 
     # Set the separate material textures mode based on draped. If we are a CHANGE we need to change the other setting accordingly.
     # We will also check to make sure that the 'was' property is in sync. If it's not, we need to make sure it's in sync, then we'll
@@ -104,38 +91,58 @@ def update_settings(in_material):
         xp_mat.was_separate_material_texture_last_update = xp_mat.do_separate_material_texture
 
     #Set XP alpha mode based on the blend_alpha property. Alpha Cutoff ("off") or Alpha Blend ("on")
-    try:
-        if xp_mat.blend_alpha:
-            in_material.xplane.blend_v1000 = 'on'
-        else:
-            in_material.xplane.blend_v1000 = 'off'
-    except:
-        pass
+    if xp_mat.blend_mode == "BLEND":
+        in_material.xplane.blend_v1000 = 'on'
+        in_material.xplane.blendRatio = xp_mat.blend_cutoff
+        in_material.blend_method = 'BLEND'
+    elif xp_mat.blend_mode == "SHADOW":
+        in_material.xplane.blend_v1000 = 'shadow'
+        in_material.xplane.blendRatio = xp_mat.blend_cutoff
+        in_material.blend_method = 'BLEND'
+    else:
+        in_material.xplane.blend_v1000 = 'off'
+        in_material.blend_method = 'CLIP'
 
     #Set XP hard mode based on the hard property ("none" or "concrete")
-    try:
-        if xp_mat.hard:
-            in_material.xplane.surfaceType = 'concrete'
-            in_material.xplane.deck = True
-        else:
-            in_material.xplane.surfaceType = 'none'
-            in_material.xplane.deck = False
-    except:
-        pass
+    in_material.xplane.surfaceType = xp_mat.surface_type.lower()
+    in_material.xplane.deck = xp_mat.surface_is_deck
+
+    #Set camera and aicraft specific properties
+    in_material.xplane.solid_camera = xp_mat.camera_collision_enabled
+    in_material.xplane.draw = xp_mat.drawing_enabled
 
     #Set shadow mode
-    try:
-        if in_material.xplane:
-            in_material.xplane.shadow_local = xp_mat.cast_shadow
-    except:
-        pass
+    in_material.xplane.shadow_local = xp_mat.cast_shadow
 
     #Set XP polygon offset based on the polygon_offset property
-    try:
-        if in_material.xplane:
-            in_material.xplane.poly_os = xp_mat.polygon_offset
-    except:
-        pass
+    in_material.xplane.poly_os = xp_mat.polygon_offset
+
+    #Set light level override
+    if in_material.xplane:
+        in_material.xplane.lightLevel = xp_mat.light_level_override
+        in_material.xplane.lightLevel_v1 = xp_mat.light_level_v1
+        in_material.xplane.lightLevel_v2 = xp_mat.light_level_v2
+        in_material.xplane.lightLevel_photometric = xp_mat.light_level_photometric
+        in_material.xplane.lightLevel_brightness = xp_mat.light_level_brightness
+        in_material.xplane.lightLevel_dataref = xp_mat.light_level_dataref
+
+    #Set cockpit device params
+    if xp_mat.use_2d_panel_texture:
+        in_material.xplane.cockpit_feature = 'panel'
+        in_material.xplane.cockpit_region = str(xp_mat.panel_texture_region)
+    if xp_mat.cockpit_device != "NONE":
+        in_material.xplane.cockpit_feature = 'device'
+        in_material.xplane.device_name = xp_mat.cockpit_device
+        in_material.xplane.plugin_device = xp_mat.custom_cockpit_device
+        in_material.xplane.device_bus_0 = xp_mat.cockpit_device_use_bus_1
+        in_material.xplane.device_bus_1 = xp_mat.cockpit_device_use_bus_2
+        in_material.xplane.device_bus_2 = xp_mat.cockpit_device_use_bus_3
+        in_material.xplane.device_bus_3 = xp_mat.cockpit_device_use_bus_4
+        in_material.xplane.device_bus_4 = xp_mat.cockpit_device_use_bus_5
+        in_material.xplane.device_bus_5 = xp_mat.cockpit_device_use_bus_6
+        in_material.xplane.device_lighting_channel = xp_mat.cockpit_device_lighting_channel
+
+
 
 #Internal function to create the node setup for the keying of a decal
 def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_g, key_b, key_a, key_base, key_mod):

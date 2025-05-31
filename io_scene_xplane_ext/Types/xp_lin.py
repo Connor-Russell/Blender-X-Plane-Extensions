@@ -175,15 +175,19 @@ class line():
 
             #Check for position params
             if line.startswith("LAYER_GROUP"):
-                self.layer = line.split()[1]
-                self.layer_offset = float(line.split()[2])
+                tokens = line.split()
+                self.layer = tokens[1]
+                if len(tokens) > 2:
+                    self.layer_offset = float(tokens[2])
             if line.startswith("MIRROR"):
                 self.mirror = True
             if line.startswith("ALIGN"):
                 self.segment_count = int(line.split()[1])
             if line.startswith("SCALE"):
-                self.scale_x = float(line.split()[1])
-                self.scale_y = float(line.split()[2])
+                tokens = line.split()
+                self.scale_x = float(tokens[1])
+                if len(tokens) > 2:
+                    self.scale_y = float(tokens[2])
             if line.startswith("SURFACE"):
                 self.surface = line.split()[1]
 
@@ -258,13 +262,13 @@ class line():
         if mat.do_separate_material_texture:
             raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
 
-        self.layer = mat.layer_group
-        self.layer_offset = mat.layer_group_offset
+        self.layer = in_collection.xp_lin.layer_group
+        self.layer_offset = in_collection.xp_lin.layer_group_offset
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
         self.weather_texture = mat.weather_texture
-        self.do_blend = mat.blend_alpha
+        self.do_blend = True if mat.blend_mode == 'BLEND' else False
         self.blend_cutoff = mat.blend_cutoff
         self.decal_1 = mat.decal_one
         self.decal_2 = mat.decal_two
@@ -305,18 +309,21 @@ class line():
         #Define a new collection with the same name as the file
         new_collection = bpy.data.collections.new(name=in_name)
         bpy.context.scene.collection.children.link(new_collection)
-
+        
         #First create a new material for the line
         mat = bpy.data.materials.new(name=in_name)
         mat.xp_materials.alb_texture = self.alb_texture
         mat.xp_materials.lit_texture = self.lit_texture
         mat.xp_materials.normal_texture = self.nml_texture
         mat.xp_materials.weather_texture = self.weather_texture
-        mat.xp_materials.blend_alpha = self.do_blend
+        mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'
         mat.xp_materials.blend_cutoff = self.blend_cutoff
-        mat.xp_materials.layer_group = self.layer.upper()
-        mat.xp_materials.layer_group_offset = int(self.layer_offset)
         mat.xp_materials.surface_type = self.surface
+        new_collection.xp_lin.layer_group = self.layer.upper()
+        new_collection.xp_lin.layer_group_offset = int(self.layer_offset)
+        new_collection.xp_lin.exportable = True
+        new_collection.xp_lin.mirror = self.mirror
+        new_collection.xp_lin.segment_count = self.segment_count
 
         #Call operator xp_mats.update_material_nodes
         #bpy.ops.xp_ext.update_material_nodes(override_material=mat)
