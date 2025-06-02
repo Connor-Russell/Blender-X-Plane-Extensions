@@ -928,7 +928,8 @@ class static_offsets:
         reversed_types = self.action_types.copy()
         reversed_types.reverse()
 
-        #Add the current loc/rot as actions
+        # Add the current loc/rot as actions. We do these here because it's just easier to apply them with all the same logic.
+        # Note, we need to get these as translations/axis-angle rotations, as if they were animations. So that means translation in world space relative to the parent, and world space rotation to axis-angle
         obj_loc = mathutils.Vector(anim_utils.get_obj_position_world(obj))
         parent_loc = mathutils.Vector((0, 0, 0))
         if obj.parent != None:
@@ -1982,7 +1983,8 @@ class object:
 
             elif tokens[0] == "ATTR_cockpit_device":
                 #ATTR_cockpit_device <name> <bus> <lighting channel> <auto_adjust>
-                valid_names = ["GNS430_1", "GNS430_1", "GNS530_2", "GNS530_2", "CDU739_1", "CDU739_2", "G1000_MFD", "G1000_PFD1", "G1000_PFD2"]
+                valid_names = ["GNS430_1", "GNS430_1", "GNS530_2", "GNS530_2", "CDU739_1", "CDU739_2", "G1000_MFD", "G1000_PFD1", "G1000_PFD2", "MCDU_1", "MCDU_2", \
+                               "Primus_RMU_1", "Primus_RMU_2", "Primus_PFD_1", "Primus_PFD_2", "Primus_MFD_1", "Primus_MFD_2", "Primus_MFD_3"]
                 
                 if not tokens[1] in valid_names:
                     cur_state.cockpit_device = "Plugin Device"

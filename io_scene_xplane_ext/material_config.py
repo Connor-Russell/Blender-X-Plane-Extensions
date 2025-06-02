@@ -142,8 +142,6 @@ def update_settings(in_material):
         in_material.xplane.device_bus_5 = xp_mat.cockpit_device_use_bus_6
         in_material.xplane.device_lighting_channel = xp_mat.cockpit_device_lighting_channel
 
-
-
 #Internal function to create the node setup for the keying of a decal
 def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_g, key_b, key_a, key_base, key_mod):
     # Yeah, it's alot...
