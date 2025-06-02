@@ -14,7 +14,7 @@ import bpy # type: ignore
 bl_info = {
     "name": "X-Plane Extensions",
     "author": "Connor Russell",
-    "version": (0, 9, 7),
+    "version": (1, 0, 0),
     "blender": (3, 0, 0),
     "location": "Properties > Scene > X-Plane Extensions",
     "description": "Unofficial Blender addon to add support for additional X-Plane formats and QOL improvements.",

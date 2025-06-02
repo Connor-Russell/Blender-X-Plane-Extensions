@@ -28,6 +28,32 @@ def rel_to_abs(in_path):
 
     return str_out_path
 
+def abs_to_rel(in_path):
+    """
+    Converts an absolute path to a relative path based on the current Blender file location.
+
+    Args:
+        in_path (str): The absolute path to convert.
+    Returns:
+        str: The relative path.
+    """
+
+    if in_path == "":
+        return ""
+    
+    try:
+
+        if in_path.startswith("//"):
+            in_path = in_path[2:]
+
+        if bpy.data.filepath == "":
+            return in_path
+
+        return os.path.relpath(in_path, os.path.dirname(bpy.data.filepath))
+    except:
+        # If there's an error, return the original path
+        return in_path
+
 def check_for_dds_or_png(image_path):
     """
     Checks if the given image path exists, or if a corresponding .dds or .png version exists.

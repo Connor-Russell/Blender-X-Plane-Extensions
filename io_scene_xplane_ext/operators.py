@@ -171,27 +171,31 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         #Get the name
         name = material.name
 
-        #If the name as an albedo texture, use that as our name
+        #If the material has an albedo texture, use that as our name
         if material.xp_materials.alb_texture != "":
             name = material.xp_materials.alb_texture
 
-            #Remove the .png from the name
-            name = name.replace(".png", "")
-            name = name.replace(".dds", "")
-        else:
-            alb_check_path = file_utils.rel_to_abs(name + ".png")
-            if os.path.exists(alb_check_path):
-                material.xp_materials.alb_texture = name + ".png"
-
+        #Remove the extension from the name
+        name = name.replace(".png", "")
+        name = name.replace(".dds", "")
+        
+        alb_check_path = file_utils.rel_to_abs(name + ".png")
+        
         #Define the paths for the NML, and LIT
         nml_check_path = file_utils.rel_to_abs(name + "_NML.png")
         lit_check_path = file_utils.rel_to_abs(name + "_LIT.png")
+        mat_check_path = ""
 
-        #If the paths exist, set the properties
-        if os.path.exists(nml_check_path):
-            material.xp_materials.normal_texture = name + "_NML.png"
-        if os.path.exists(lit_check_path):
-            material.xp_materials.lit_texture = name + "_LIT.png"
+        if material.xp_materials.do_separate_material_texture:
+            nml_check_path = file_utils.rel_to_abs(name + "_NRM.png")
+            mat_check__path = file_utils.rel_to_abs(name + "_MAT.png")
+
+        #Set properties if the paths exist
+        material.xp_materials.alb_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(alb_check_path))
+        material.xp_materials.normal_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(nml_check_path))
+        material.xp_materials.lit_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(lit_check_path))
+        material.xp_materials.material_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(mat_check_path))
+
 
         #Return success
         return {'FINISHED'}
