@@ -478,7 +478,7 @@ class manipulator:
             obj.xplane.manip.enabled = True
             obj.xplane.manip.type = "command_switch_left_right2"
             obj.xplane.manip.cursor = self.params[1].lower()
-            obj.xplane.manip.xplane.manip.command = self.params[2]
+            obj.xplane.manip.command = self.params[2]
 
             #Tooltip may or may not be included
             if param_len >= 4:
@@ -490,7 +490,7 @@ class manipulator:
             obj.xplane.manip.enabled = True
             obj.xplane.manip.type = "command_switch_up_down2"
             obj.xplane.manip.cursor = self.params[1].lower()
-            obj.xplane.manip.xplane.manip.command = self.params[2]
+            obj.xplane.manip.command = self.params[2]
 
             #Tooltip may or may not be included
             if param_len >= 4:
@@ -502,7 +502,7 @@ class manipulator:
             obj.xplane.manip.enabled = True
             obj.xplane.manip.type = "command_knob2"
             obj.xplane.manip.cursor = self.params[1].lower()
-            obj.xplane.manip.xplane.manip.command = self.params[2]
+            obj.xplane.manip.command = self.params[2]
 
             #Tooltip may or may not be included
             if param_len >= 4:
@@ -865,7 +865,7 @@ class draw_call:
             new_mat.xp_materials.light_level_v1 = self.state.light_level_v1
             new_mat.xp_materials.light_level_v2 = self.state.light_level_v2
             new_mat.xp_materials.light_level_photometric = self.state.light_level_photometric
-            new_mat.xp_materials.light_level_brightness = int(self.state.light_level_brightness)
+            new_mat.xp_materials.light_level_brightness = int(float(self.state.light_level_brightness))
             new_mat.xp_materials.light_level_dataref = self.state.light_level_dataref
             new_mat.xp_materials.use_2d_panel_texture = self.state.use_2d_panel
             new_mat.xp_materials.panel_texture_region = self.state.panel_texture_region
@@ -1460,10 +1460,9 @@ class object:
             elif tokens[0] == "TRIS":
                 #Draw call. Start index and length
                 dc = draw_call()
-                dc.state = cur_state  #Use the current state for this draw call
-                cur_state = cur_state.copy()  #Reset the current state for the next draw call
-                dc.start_index = int(tokens[1])
-                dc.length = int(tokens[2])
+                dc.state = cur_state.copy()  #Use the current state for this draw call
+                dc.start_index = int(float(tokens[1]))
+                dc.length = int(float(tokens[2]))
                 dc.lod_start = cur_start_lod
                 dc.lod_end = cur_end_lod
                 if cur_manipulator.valid:
@@ -1488,9 +1487,9 @@ class object:
             elif tokens[0] == "GLOBAL_luminance":
                 #If the brightness ends in cd, remove the cd
                 if tokens[1].endswith("cd"):
-                    self.brightness = int(tokens[1][:-2])
+                    self.brightness = int(float(tokens[1][:-2]))
                 else:
-                    self.brightness = int(tokens[1])
+                    self.brightness = int(float(tokens[1]))
 
             elif tokens[0] == "TEXTURE":
                 self.alb_texture = tokens[1]
@@ -1872,7 +1871,7 @@ class object:
                     elif param == 'PHASE':
                         new_light.phase = float(tokens[i + 5])
                     elif param == 'INDEX':
-                        new_light.index = int(tokens[i + 5])
+                        new_light.index =int(float(tokens[i + 5]))
 
                     if (param == 'INTENSITY' or param == 'SIZE') and tokens[i + 5].endswith('cd'):
                         tokens[i + 5] = tokens[i + 5][:-2]  #Remove the 'cd' suffix
@@ -1928,11 +1927,11 @@ class object:
 
             elif tokens[0] == "ATTR_layer_group":
                 self.layer_group = tokens[1]
-                self.layer_group_offset = int(tokens[2]) if len(tokens) > 2 else 0
+                self.layer_group_offset =int(float(tokens[2])) if len(tokens) > 2 else 0
 
             elif tokens[0] == "ATTR_draped_layer_group":
                 self.draped_layer_group = tokens[1]
-                self.draped_layer_group_offset = int(tokens[2]) if len(tokens) > 2 else 0
+                self.draped_layer_group_offset = int(float(tokens[2])) if len(tokens) > 2 else 0
 
             elif tokens[0] == "ATTR_draw_enable":
                 cur_state.draw = True
@@ -1992,29 +1991,26 @@ class object:
                 else:
                     cur_state.cockpit_device = tokens[1].upper()
 
-                bus = int(tokens[2])
-                if bus & 1:
-                    cur_state.cockpit_device_use_bus_1 = True
-                if bus & 2:
-                    cur_state.cockpit_device_use_bus_2 = True
-                if bus & 4:
-                    cur_state.cockpit_device_use_bus_3 = True
-                if bus & 8:
-                    cur_state.cockpit_device_use_bus_4 = True
-                if bus & 16:
-                    cur_state.cockpit_device_use_bus_5 = True
-                if bus & 32:
-                    cur_state.cockpit_device_use_bus_6 = True
+                bus = int(float(tokens[2]))
+                cur_state.cockpit_device_use_bus_1 = bus & 1 > 0
+                cur_state.cockpit_device_use_bus_2 = bus & 2 > 0
+                cur_state.cockpit_device_use_bus_3 = bus & 4 > 0
+                cur_state.cockpit_device_use_bus_4 = bus & 8 > 0
+                cur_state.cockpit_device_use_bus_5 = bus & 16 > 0
+                cur_state.cockpit_device_use_bus_6 = bus & 32 > 0
 
-                cur_state.cockpit_device_lighting_channel = int(tokens[3])
+                cur_state.cockpit_device_lighting_channel = int(float(tokens[3]))
 
             elif tokens[0] == "ATTR_cockpit_lit_only":
                 self.panel_texture_mode = "cockpit_lit_only"
 
+            elif tokens[0] == "ATTR_cockpit":
+                cur_state.use_2d_panel = True
+
             elif tokens[0] == "ATTR_cockpit_region":
                 self.panel_texture_mode = "cockpit_region"
                 self.panel_texture_region = tokens[1]
-                cur_state.panel_texture_region = int(tokens[1])
+                cur_state.panel_texture_region = int(float(tokens[1]))
 
             elif tokens[0] == "ATTR_no_cockpit":
                 cur_state.cockpit_device = "NONE"
