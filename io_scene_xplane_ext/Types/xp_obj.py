@@ -44,27 +44,26 @@ class light:
         self.dir_z = 0
         self.cone_angle = 0
         self.dataref = "" #Dataref for the light
+        self.index = 0 #XP Param
         self.size = 0   #Light size measurement
         self.is_photometric = False #True if this light is photometric
         self.params = "" #String of additional params for the light, from LIGHT_PARAM
-        self.xp_type = '' #The X-Plane light type.
         self.bb_s1 = 0 #Left UV coordinate of the custom billboard light texture
         self.bb_s2 = 0 #Right UV coordinate of the custom billboard light texture
         self.bb_t1 = 0 #Top UV coordinate of the custom billboard light texture
         self.bb_t2 = 0 #Bottom UV coordinate of the custom billboard light texture
+        self.frequency = 0 #Frequency of the light, used in beacons
+        self.phase = 0 #Phase of the light, used in beacons
         self.lod_start = 0  #Start range of the LOD. We don't actually use LODs because lights aren't LODed, but, this is used to dedupe
         self.lod_end = 0    #End range of the LOD
         self.lod_bucket = -1  #LOD bucket of the light. This is used to determine which LOD bucket this light belongs to. -1 means no LOD bucket.
 
-    def add_to_scene(self, in_collection):
+    def add_to_scene(self, in_collection, in_parent=None):
         """
         Adds a new light to the Blender scene with the specified properties.
         """
 
         # Create a new Blender light datablock
-        if self.cone_angle != 0:
-            self.type = "SPOT"
-
         light_data = bpy.data.lights.new(name="Light", type=self.type)
         b_light = bpy.data.objects.new(name="Light", object_data=light_data)
         in_collection.objects.link(b_light)
@@ -74,19 +73,30 @@ class light:
         if self.type == "SPOT":
             b_light.data.spot_size = math.radians(self.cone_angle)
 
-        b_light.location = (self.loc_x, self.loc_y, self.loc_z)
+        if in_parent != None:
+            b_light.parent = in_parent
+        
+        anim_utils.set_obj_position_world(b_light, (self.loc_x, self.loc_y, self.loc_z))
+
         b_light.rotation_mode = 'XYZ'
 
         light_euler = anim_utils.euler_to_align_z_with_vector((-self.dir_x, -self.dir_y, -self.dir_z))
-        b_light.rotation_euler = light_euler
+        anim_utils.set_obj_rotation_world(b_light, light_euler)
 
+        
+        #b_light.data.xplane.type = self.xp_type    #Let all lights use automatic for now
+        b_light.data.xplane.params = self.params
         b_light.data.xplane.param_size = self.size
+        b_light.data.xplane.param_intensity_new = self.size
         b_light.data.xplane.uv[0] = self.bb_s1   # left
         b_light.data.xplane.uv[1] = self.bb_t1   # top
         b_light.data.xplane.uv[2] = self.bb_s2   # right
         b_light.data.xplane.uv[3] = self.bb_t2   # bottom
         b_light.data.xplane.dataref = self.dataref
+        b_light.data.xplane.param_index = self.index
         b_light.data.xplane.name = self.name
+        b_light.data.xplane.param_freq = self.frequency
+        b_light.data.xplane.param_phase = self.phase
         if obj_does_use_lods:
             b_light.xplane.lod[0] = True
 
@@ -122,6 +132,9 @@ class light:
                 self.bb_s2 == value.bb_s2 and
                 self.bb_t1 == value.bb_t1 and
                 self.bb_t2 == value.bb_t2 and
+                self.frequency == value.frequency and
+                self.phase == value.phase and
+                self.index == value.index and
                 (self.lod_start != value.lod_start or
                 self.lod_end != value.lod_end))
 
@@ -129,8 +142,8 @@ class light:
         """
         Less than operator for light objects. This is used to sort lights by their LOD range.
         """
-        return (self.name, self.type, self.xp_type, self.color_r, self.color_g,self.color_b,self.loc_x,self.loc_y,self.loc_z,self.dir_x,self.dir_y,self.dir_z,self.cone_angle,self.dataref,self.size, self.is_photometric, self.params, self.xp_type, self.bb_s1, self.bb_s2, self.bb_t1, self.bb_t2) < \
-        (other.name, other.type, other.xp_type, other.color_r, other.color_g, other.color_b, other.loc_x, other.loc_y, other.loc_z, other.dir_x, other.dir_y, other.dir_z, other.cone_angle, other.dataref, other.size, other.is_photometric, other.params, other.xp_type, other.bb_s1, other.bb_s2, other.bb_t1, other.bb_t2)
+        return (self.name, self.type, self.xp_type, self.color_r, self.color_g,self.color_b,self.loc_x,self.loc_y,self.loc_z,self.dir_x,self.dir_y,self.dir_z,self.cone_angle,self.dataref,self.size, self.is_photometric, self.params, self.xp_type, self.bb_s1, self.bb_s2, self.bb_t1, self.bb_t2, self.frequency, self.phase, self.index) < \
+        (other.name, other.type, other.xp_type, other.color_r, other.color_g, other.color_b, other.loc_x, other.loc_y, other.loc_z, other.dir_x, other.dir_y, other.dir_z, other.cone_angle, other.dataref, other.size, other.is_photometric, other.params, other.xp_type, other.bb_s1, other.bb_s2, other.bb_t1, other.bb_t2, other.frequency, other.phase, other.index)
 
 class manipulator_detent:
     """
@@ -915,6 +928,19 @@ class static_offsets:
         reversed_types = self.action_types.copy()
         reversed_types.reverse()
 
+        #Add the current loc/rot as actions
+        obj_loc = mathutils.Vector(anim_utils.get_obj_position_world(obj))
+        parent_loc = mathutils.Vector((0, 0, 0))
+        if obj.parent != None:
+            parent_loc = mathutils.Vector(anim_utils.get_obj_position_world(obj.parent))
+        cur_translation = (obj_loc.x - parent_loc[0], obj_loc.y - parent_loc[1], obj_loc.z - parent_loc[2])
+        reversed_actions.insert(0, cur_translation)
+        reversed_types.insert(0, 'translate')
+
+        original_axis, original_rot = anim_utils.euler_to_axis_angle(anim_utils.get_obj_rotation_world(obj))
+        reversed_actions.insert(0, (original_axis, original_rot))
+        reversed_types.insert(0, 'rotate')
+
         for i, action in enumerate(reversed_actions):
             action_type = reversed_types[i]
 
@@ -928,13 +954,12 @@ class static_offsets:
                 cur_location, total_rot = anim_utils.rotate_point_and_euler(cur_location, total_rot, action[0], action[1])
 
         #Apply the final location and rotation to the object
-        base_pos = anim_utils.get_obj_position_world(obj)
-        new_pos = (base_pos[0] + cur_location.x, base_pos[1] + cur_location.y, base_pos[2] + cur_location.z)
+        new_pos = (parent_loc.x + cur_location.x, parent_loc.y + cur_location.y, parent_loc.z + cur_location.z)
         anim_utils.set_obj_position_world(obj, new_pos)
 
-        base_rot = anim_utils.get_obj_rotation_world(obj)
-        new_rot = (total_rot.to_quaternion() @ base_rot.to_quaternion()).to_euler('XYZ')
-        anim_utils.set_obj_rotation_world(obj, new_rot)
+        #base_rot = anim_utils.get_obj_rotation_world(obj)
+        #new_rot = (total_rot.to_quaternion() @ base_rot.to_quaternion()).to_euler('XYZ')
+        anim_utils.set_obj_rotation_world(obj, total_rot)
 
 class anim_action:
     """
@@ -1259,12 +1284,8 @@ class anim_level:
         #Dedupe our lights
         self.lights = misc_utils.dedupe_list(self.lights)
         for lt in self.lights:
-            #Add the light to the scene
-            new_light = lt.add_to_scene(in_collection)
-            new_light.parent = self.last_action
-
-            eular = new_light.rotation_euler
-            anim_utils.set_obj_rotation_world(new_light, eular)
+            #Add the light to the scene. THis function takes the parent and sets the world space positon/rotation
+            new_light = lt.add_to_scene(in_collection, self.last_action)
 
             #Apply the static offsets to the light object
             cur_static_offsets.apply(new_light)  
@@ -1717,6 +1738,8 @@ class object:
                 new_light.loc_y = float(tokens[4]) * trans_matrix[1]
                 new_light.loc_z = float(tokens[3]) * trans_matrix[2]
 
+                new_light.type = "POINT"
+
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
                     cur_anim_tree[-1].lights.append(new_light)
@@ -1745,6 +1768,8 @@ class object:
                 new_light.bb_t2 = float(tokens[12])
                 if len(tokens) > 13:
                     new_light.dataref = tokens[13]
+
+                new_light.type = "POINT"
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
@@ -1775,6 +1800,8 @@ class object:
                 new_light.cone_angle = 2 * math.degrees(math.acos(float(tokens[12])))
                 if len(tokens) > 13:
                     new_light.dataref = tokens[13]
+
+                new_light.type = "POINT" if float(tokens[12]) > 0.99 else "SPOT"
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
@@ -1810,6 +1837,8 @@ class object:
                     print(f"Light {new_light.name} in object {self.name} has {len(tokens) - 5} additional params, but expected {len(additional_params_keys)}. Skipping light.")
                     continue
 
+                new_light.type = "POINT"
+
                 #Now iterate over the additional params and assign them to the light
                 for i, param in enumerate(additional_params_keys):
                     if param == 'R':
@@ -1827,6 +1856,8 @@ class object:
                     elif param == 'WIDTH':
                         #The cone angle is 2x the inverse cosine of the semi. This is in degrees.
                         new_light.cone_angle = 2 * math.degrees(math.acos(float(tokens[i + 5])))
+                        if float(tokens[i + 5]) < 0.99:
+                            new_light.type = "SPOT"
                     elif param == 'INTENSITY' or param == 'SIZE':
                         light_size = tokens[i + 5]
                         if light_size.endswith('cd'):
@@ -1835,11 +1866,18 @@ class object:
                             new_light.size = float(light_size)
                         else:
                             new_light.size = float(tokens[i + 5])
+                    elif param == 'FREQ':
+                        new_light.frequency = float(tokens[i + 5])
+                    elif param == 'PHASE':
+                        new_light.phase = float(tokens[i + 5])
+                    elif param == 'INDEX':
+                        new_light.index = int(tokens[i + 5])
 
-                        new_light.params += f" {light_size}"
-                    #Everything else we just drop in the params string as there is no corresponding setting in Blender.
-                    else:
-                        new_light.params += f" {tokens[i + 5]}"
+                    if (param == 'INTENSITY' or param == 'SIZE') and tokens[i + 5].endswith('cd'):
+                        tokens[i + 5] = tokens[i + 5][:-2]  #Remove the 'cd' suffix
+                    new_light.params += f"{tokens[i + 5]} "
+
+                
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree

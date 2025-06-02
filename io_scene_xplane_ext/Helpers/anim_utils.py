@@ -30,6 +30,24 @@ def move_along_axis(position, axis, distance):
 
     return new_position
 
+def euler_to_axis_angle(euler):
+    """
+    Converts an XYZ Euler rotation to its equivalent axis-angle representation.
+    
+    :param euler: Euler rotation (in radians). For example, Euler((0.5, 0.3, 1.2), 'XYZ')
+    :return: A tuple (axis, angle) where:
+             - axis is a normalized Vector indicating the rotation axis,
+             - angle is the rotation in degrees.
+    """
+    # Convert the Euler rotation to a quaternion.
+    q = euler.to_quaternion()
+    
+    # Get the axis-angle representation from the quaternion.
+    # mathutils.Quaternion.to_axis_angle returns (axis, angle)
+    axis, angle = q.to_axis_angle()
+    
+    return axis, math.degrees(angle)
+
 
 def rotate_point_and_euler(point, euler_angles, axis, angle_deg):
         """
