@@ -1491,7 +1491,7 @@ class object:
                 else:
                     self.brightness = int(float(tokens[1]))
 
-            elif tokens[0] == "TEXTURE":
+            elif tokens[0] == "TEXTURE" and len(tokens) >= 2:
                 self.alb_texture = tokens[1]
                 if self.draped_alb_texture == "":
                     self.draped_alb_texture = tokens[1]
