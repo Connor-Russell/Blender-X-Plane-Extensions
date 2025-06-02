@@ -83,7 +83,6 @@ class light:
         light_euler = anim_utils.euler_to_align_z_with_vector((-self.dir_x, -self.dir_y, -self.dir_z))
         anim_utils.set_obj_rotation_world(b_light, light_euler)
 
-        
         #b_light.data.xplane.type = self.xp_type    #Let all lights use automatic for now
         b_light.data.xplane.params = self.params
         b_light.data.xplane.param_size = self.size
@@ -1290,6 +1289,10 @@ class anim_level:
 
             #Apply the static offsets to the light object
             cur_static_offsets.apply(new_light)  
+
+            #If the light has a direction vector of 0 0 0 then it's meant to have no local rotation. So set it's rotation euler to 0 0 0
+            if lt.dir_x == 0 and lt.dir_y == 0 and lt.dir_z == 0:
+                new_light.rotation_euler = mathutils.Euler((0, 0, 0), 'XYZ')
 
             #Apply show hide animations
             for cmd in cur_show_hide_commands:
