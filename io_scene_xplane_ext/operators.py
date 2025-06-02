@@ -158,6 +158,22 @@ class TEST_import_fac(bpy.types.Operator):
 
         return {'FINISHED'}
     
+class BTN_clear_split_normals(bpy.types.Operator):
+    """Clears split normals from the selected objects"""
+    bl_idname = "xp_ext.clear_split_normals"
+    bl_label = "Clear Split Normals"
+    bl_description = "Clears split normals from the selected objects. This is useful if you want to switch to autosmooth normals after importing an object"
+    bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
+
+    def execute(self, context):
+        #Iterate through all selected objects
+        for obj in bpy.context.selected_objects:
+            if obj.type == 'MESH':
+                #Clear split normals
+                bpy.ops.mesh.customdata_custom_splitnormals_clear()
+
+        return {'FINISHED'}
+
 class BTN_mats_autoodetect_textures(bpy.types.Operator):
     """Autodetects the texture"""
     bl_idname = "xp_ext.autodetect_texture"
@@ -548,6 +564,7 @@ def register():
     bpy.utils.register_class(TEST_import_lin)
     bpy.utils.register_class(TEST_import_pol)
     bpy.utils.register_class(TEST_import_fac)
+    bpy.utils.register_class(BTN_clear_split_normals)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_mats_update_all_mat_nodes)
@@ -570,6 +587,7 @@ def unregister():
     bpy.utils.unregister_class(TEST_import_lin)
     bpy.utils.unregister_class(TEST_import_pol)
     bpy.utils.unregister_class(TEST_import_fac)
+    bpy.utils.unregister_class(BTN_clear_split_normals)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_mats_update_all_mat_nodes)
