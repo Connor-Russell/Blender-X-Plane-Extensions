@@ -9,6 +9,7 @@ from ..Helpers import line_utils #type: ignore
 from ..Helpers import decal_utils #type: ignore
 from ..Helpers import file_utils #type: ignore
 from ..Helpers import misc_utils #type: ignore
+from .. import material_config #type: ignore
 import bpy #type: ignore
 import os
 
@@ -47,8 +48,8 @@ class line():
         self.mirror = True
         self.segment_count = 1
         self.super_rough = False
-        self.decal_1 = None
-        self.decal_2 = None
+        self.decals = []
+        self.imported_decal_commands = []
         self.surface = "NONE"
 
     def write(self, output_path):
@@ -81,14 +82,14 @@ class line():
         of += "\n"
 
         #Write the decals
-        if self.decal_1.enabled or self.decal_2.enabled:
+        if len(self.decals) > 0:
             of += "#Decals\n"
-            if self.decal_1.enabled:
-                of += decal_utils.get_decal_command(self.decal_1, output_folder)
-                of += "\n"
-            if self.decal_2.enabled:
-                of += decal_utils.get_decal_command(self.decal_2, output_folder)
-                of += "\n"
+            for decal in self.decals:
+                #Get the decal command
+                decal_command = decal_utils.get_decal_command(decal, output_folder)
+                if decal_command:
+                    of += decal_command
+
             of += "\n"
 
         of += "#Position Params\n"
@@ -166,12 +167,9 @@ class line():
             if line.startswith("TEX_HEIGHT"):
                 uv_scalar_y = int(line.split()[1])
 
-            #Check for decals (disabled)
-            #if False #line.startswith("DECAL"):
-            #    if self.decal_1 == None:
-            #        self.decal_1 = line_utils.get_decal_from_command(line)
-            #    else:
-            #        self.decal_2 = line_utils.get_decal_from_command(line)
+            #Check for decals
+            if line.startswith("DECAL") or line.startswith("NORMAL_DECAL"):
+                self.imported_decal_commands.append(line)
 
             #Check for position params
             if line.startswith("LAYER_GROUP"):
@@ -270,9 +268,10 @@ class line():
         self.weather_texture = mat.weather_texture
         self.do_blend = True if mat.blend_mode == 'BLEND' else False
         self.blend_cutoff = mat.blend_cutoff
-        self.decal_1 = mat.decal_one
-        self.decal_2 = mat.decal_two
         self.surface = mat.surface_type
+
+        for decal in mat.decals:
+            self.decals.append(decal)
 
         # Next we need to get segment commands. We treat the Z position as layer, so things are layered intuitively. But Z position can be *anything*.
         # So we need to sort the Z positions, then get the *index* of that Z position, so we have a 0-top continuous range of layers.
@@ -325,8 +324,22 @@ class line():
         new_collection.xp_lin.mirror = self.mirror
         new_collection.xp_lin.segment_count = self.segment_count
 
-        #Call operator xp_mats.update_material_nodes
-        #bpy.ops.xp_ext.update_material_nodes(override_material=mat)
+        material_config.update_settings(mat)
+
+        decal_alb_index = 0
+        decal_nml_index = 2
+
+        for decal in self.imported_decal_commands:
+            if decal.startswith("NORMAL"):
+                if decal_nml_index > 3:
+                    raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
+                decal_nml_index += 1
+            else:
+                if decal_alb_index > 2:
+                    raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
+                decal_alb_index += 1
 
         #Now we will iterate through every segment, and generate a plane for it
         for seg in self.segments:

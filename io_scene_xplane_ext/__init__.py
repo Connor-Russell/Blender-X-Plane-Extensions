@@ -7,6 +7,7 @@
 from . import props
 from . import ui
 from . import operators
+from . import material_config
 
 import bpy # type: ignore
 
@@ -22,15 +23,33 @@ bl_info = {
     "category": "Import-Export"
 }
 
+@bpy.app.handlers.persistent
+def post_load(dummy):
+    for mat in bpy.data.materials:
+        material_config.update_settings(mat)
+    
+    #If any version updating needs to be done, do it here
+
+@bpy.app.handlers.persistent
+def pre_save(dummy):
+    plugin_version = bl_info["version"]
+    bpy.types.Scene.xp_ext.last_save_plugin_version = plugin_version[0] + plugin_version[1] + plugin_version[2]
+
 def register():
     props.register()
     operators.register()
     ui.register()
+    bpy.app.handlers.load_post.append(post_load)
+    bpy.app.handlers.save_pre.append(pre_save)
 
 def unregister():
     operators.unregister()
     props.unregister()
     ui.unregister()
+    if post_load in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(post_load)
+    if pre_save in bpy.app.handlers.save_pre:
+        bpy.app.handlers.save_pre.remove(pre_save)
 
 if __name__ == "__main__":
     register()

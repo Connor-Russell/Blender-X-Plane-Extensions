@@ -1424,8 +1424,7 @@ class object:
         self.blend_mode = "BLEND"
         self.blend_cutoff = 0.5
         self.cast_shadow = True
-        #self.decal_one = props.PROP_decal()
-        #self.decal_two = props.PROP_decal()
+        self.imported_decal_commands = []
         self.layer_group = "objects"
         self.layer_group_offset = 0
 
@@ -1440,8 +1439,7 @@ class object:
         self.draped_nml_tile_rat = 1.0
         self.draped_nml_texture = ""
         self.draped_lit_texture = ""
-        #self.draped_decal_one = props.PROP_decal()
-        #self.draped_decal_two = props.PROP_decal()
+        self.imported_decal_commands_draped = []
         self.draped_layer_group = "objects"
         self.draped_layer_group_offset = -5
 
@@ -1472,6 +1470,7 @@ class object:
         cur_end_lod = 0
         cur_state = draw_call_state()
         cur_manipulator = manipulator()
+        cur_in_draped_mat = False
 
         with open(in_obj_path, "r") as f:
             lines = f.readlines()
@@ -1540,34 +1539,41 @@ class object:
                 self.alb_texture = tokens[1]
                 if self.draped_alb_texture == "":
                     self.draped_alb_texture = tokens[1]
+                cur_in_draped_mat = False
             
             elif tokens[0] == "TEXTURE_MAP":
                 if tokens[1].lower() == "normal":
                     self.nml_texture = tokens[2]
                 elif tokens[1].lower() == "material_gloss":
                     self.mat_texture = tokens[2]
+                cur_in_draped_mat = False
 
             elif tokens[0] == "TEXTURE_NORMAL":
                 self.nml_texture = tokens[1]
                 if self.draped_nml_texture == "":
                     self.draped_nml_texture = tokens[1]
+                cur_in_draped_mat = False
 
             elif tokens[0] == "TEXTURE_DRAPED":
                 self.draped_alb_texture = tokens[1]
                 self.obj_mode = "scenery"
+                cur_in_draped_mat = True
 
             elif tokens[0] == "TEXTURE_DRAPED_NORMAL":
                 self.draped_nml_tile_rat = float(tokens[1])
                 self.draped_nml_texture = tokens[2]
+                cur_in_draped_mat = True
 
             elif tokens[0] == "TEXTURE_DRAPED_LIT":
                 self.draped_lit_texture = tokens[1]
+                cur_in_draped_mat = True
 
             elif tokens[0] == "TEXTURE_LIT":
                 self.lit_texture = tokens[1]
                 if self.draped_lit_texture == "":
                     self.draped_lit_texture = tokens[1]
                 
+            #Check for decals
             elif tokens[0].startswith("DECAL") or tokens[0].startswith("NORMAL_DECAL"):
                 if cur_in_draped_mat:
                     self.imported_decal_commands_draped.append(line)
@@ -2249,12 +2255,12 @@ class object:
         for decal in self.imported_decal_commands:
             if decal.startswith("NORMAL"):
                 if decal_nml_index > 3:
-                    log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material!")
+                    raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                 decal_nml_index += 1
             else:
                 if decal_alb_index > 2:
-                    log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 
@@ -2282,12 +2288,12 @@ class object:
             for decal in self.imported_decal_commands_draped:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
-                        log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
                     decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                     decal_nml_index += 1
                 else:
                     if decal_alb_index > 2:
-                        log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
                     decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
 
