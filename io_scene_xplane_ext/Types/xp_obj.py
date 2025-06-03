@@ -15,7 +15,8 @@ from ..Helpers import anim_utils
 from ..Helpers import geometery_utils
 from ..Helpers import anim_utils
 from ..Helpers import light_data    #These are defines for the parameter layout of PARAM lights
-from .. import props
+from ..Helpers import decal_utils
+from ..Helpers import log_utils
 
 from functools import total_ordering
 
@@ -789,7 +790,7 @@ class draw_call:
             elif self.lod_bucket == 3:
                 dc_obj.xplane.lod[3] = True
             else:
-                print(f"Unknown LOD bucket for obj {dc_obj.name} for range {self.lod_start}-{self.lod_end}. Bucket is {self.lod_bucket}. What?")
+                log_utils.warning(f"Unknown LOD bucket for obj {dc_obj.name} for range {self.lod_start}-{self.lod_end}. Bucket is {self.lod_bucket}. What?")
 
         #Set HUD state
         dc_obj.xplane.hud_glass = self.state.is_hud
@@ -1290,10 +1291,6 @@ class anim_level:
             #Apply the static offsets to the light object
             cur_static_offsets.apply(new_light)  
 
-            #If the light has a direction vector of 0 0 0 then it's meant to have no local rotation. So set it's rotation euler to 0 0 0
-            if lt.dir_x == 0 and lt.dir_y == 0 and lt.dir_z == 0:
-                new_light.rotation_euler = mathutils.Euler((0, 0, 0), 'XYZ')
-
             #Apply show hide animations
             for cmd in cur_show_hide_commands:
                 cmd.apply(new_light)
@@ -1459,6 +1456,9 @@ class object:
         self.cockpit_regions = []
 
     def read(self, in_obj_path):
+
+        log_utils.new_section(f"Read obj {in_obj_path}")
+
         self.name = os.path.basename(in_obj_path)
 
         trans_matrix = [1, -1, 1]
@@ -1567,6 +1567,12 @@ class object:
                 self.lit_texture = tokens[1]
                 if self.draped_lit_texture == "":
                     self.draped_lit_texture = tokens[1]
+                
+            elif tokens[0].startswith("DECAL") or tokens[0].startswith("NORMAL_DECAL"):
+                if cur_in_draped_mat:
+                    self.imported_decal_commands_draped.append(line)
+                else:
+                    self.imported_decal_commands.append(line)
 
             elif tokens[0] == "GLOBAL_no_blend":
                 self.blend_mode == "CLIP"
@@ -1874,12 +1880,12 @@ class object:
 
                 additional_params_keys = light_data.param_lights_dict.get(new_light.name, None)
                 if additional_params_keys is None:
-                    print(f"Unknown light type {new_light.name} in object {self.name}. Skipping light.")
+                    log_utils.warning(f"Unknown light type {new_light.name} in object {self.name}. Skipping light.")
                     continue
 
                 #Make sure we have the right number of additional params
                 if len(tokens) - 5 != len(additional_params_keys):
-                    print(f"Light {new_light.name} in object {self.name} has {len(tokens) - 5} additional params, but expected {len(additional_params_keys)}. Skipping light.")
+                    log_utils.warning(f"Light {new_light.name} in object {self.name} has {len(tokens) - 5} additional params, but expected {len(additional_params_keys)}. Skipping light.")
                     continue
 
                 new_light.type = "POINT"
@@ -2123,6 +2129,8 @@ class object:
                 self.wiper_params.append(new_wiper)
             
     def to_scene(self):
+        log_utils.new_section(f"Convert read data to collection for object {self.name}")
+
         #Create a new collection for this object
         collection = bpy.data.collections.new(self.name)
         collection.name = self.name
@@ -2235,6 +2243,21 @@ class object:
         xp_mat.cast_shadow = self.cast_shadow
         mat.name = self.name
 
+        decal_alb_index = 0
+        decal_nml_index = 2
+
+        for decal in self.imported_decal_commands:
+            if decal.startswith("NORMAL"):
+                if decal_nml_index > 3:
+                    log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material!")
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
+                decal_nml_index += 1
+            else:
+                if decal_alb_index > 2:
+                    log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.")
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
+                decal_alb_index += 1
+
         all_mats.append(mat)
 
         #Create the draped material if it exists
@@ -2252,6 +2275,21 @@ class object:
             xp_draped_mat.draped = True
             xp_draped_mat.draped_nml_tile_rat = self.draped_nml_tile_rat
             draped_mat.name = self.name + "_draped"
+
+            decal_alb_index = 0
+            decal_nml_index = 2
+
+            for decal in self.imported_decal_commands_draped:
+                if decal.startswith("NORMAL"):
+                    if decal_nml_index > 3:
+                        log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
+                    decal_nml_index += 1
+                else:
+                    if decal_alb_index > 2:
+                        log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
+                    decal_alb_index += 1
 
             all_mats.append(draped_mat)
 
@@ -2281,7 +2319,7 @@ class object:
                 if not did_find_matching_bucket:
                     all_lod_buckets.append(lod_range)
             else:
-                print(f"Too many LOD buckets for object {self.name}. Skipping LOD {lod_range} for draw call {dc.start_index}-{dc.length}. Object will be added to best guess bucket. Double check this choice!")
+                log_utils.warning(f"Too many LOD buckets for object {self.name}. Skipping LOD {lod_range} for draw call {dc.start_index}-{dc.length}. Object will be added to best guess bucket. Double check this choice!")
 
         obj_does_use_lods = True
         if len(all_lod_buckets) == 1:
