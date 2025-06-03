@@ -9,6 +9,7 @@ from ..Helpers import line_utils #type: ignore
 from ..Helpers import decal_utils #type: ignore
 from ..Helpers import file_utils #type: ignore
 from ..Helpers import misc_utils #type: ignore
+from .. import material_config #type: ignore
 import bpy #type: ignore
 import os
 
@@ -48,6 +49,7 @@ class line():
         self.segment_count = 1
         self.super_rough = False
         self.decals = []
+        self.imported_decal_commands = []
         self.surface = "NONE"
 
     def write(self, output_path):
@@ -87,6 +89,8 @@ class line():
                 decal_command = decal_utils.get_decal_command(decal, output_folder)
                 if decal_command:
                     of += decal_command
+
+            of += "\n"
 
         of += "#Position Params\n"
 
@@ -163,12 +167,9 @@ class line():
             if line.startswith("TEX_HEIGHT"):
                 uv_scalar_y = int(line.split()[1])
 
-            #Check for decals (disabled)
-            #if False #line.startswith("DECAL"):
-            #    if self.decal_1 == None:
-            #        self.decal_1 = line_utils.get_decal_from_command(line)
-            #    else:
-            #        self.decal_2 = line_utils.get_decal_from_command(line)
+            #Check for decals
+            if line.startswith("DECAL") or line.startswith("NORMAL_DECAL"):
+                self.imported_decal_commands.append(line)
 
             #Check for position params
             if line.startswith("LAYER_GROUP"):
@@ -323,8 +324,22 @@ class line():
         new_collection.xp_lin.mirror = self.mirror
         new_collection.xp_lin.segment_count = self.segment_count
 
-        #Call operator xp_mats.update_material_nodes
-        #bpy.ops.xp_ext.update_material_nodes(override_material=mat)
+        material_config.update_settings(mat)
+
+        decal_alb_index = 0
+        decal_nml_index = 2
+
+        for decal in self.imported_decal_commands:
+            if decal.startswith("NORMAL"):
+                if decal_nml_index > 3:
+                    raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
+                decal_nml_index += 1
+            else:
+                if decal_alb_index > 2:
+                    raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
+                decal_alb_index += 1
 
         #Now we will iterate through every segment, and generate a plane for it
         for seg in self.segments:

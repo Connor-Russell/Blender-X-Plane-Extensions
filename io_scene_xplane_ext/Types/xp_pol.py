@@ -30,6 +30,7 @@ class polygon():
         self.do_blend = False
         self.super_rough = False
         self.decals = []
+        self.imported_decal_commands = []
         self.surface = "NONE"
 
         self.do_load_center = False
@@ -103,6 +104,8 @@ class polygon():
                 if decal_command:
                     of += decal_command
 
+            of += "\n"
+
         #Write the main polygon params
         of += "LAYER_GROUP " + self.layer.lower() + " " + str(self.layer_offset) + "\n"
         of += "SCALE " + str(int(self.scale_x)) + " " + str(int(self.scale_y)) + "\n"
@@ -167,12 +170,9 @@ class polygon():
                 self.do_blend = False
                 self.blend_cutoff = float(line.split()[1])
 
-            # Check for decals (disabled for now)
-            # if line.startswith("DECAL"):
-            #     if self.decal_1 is None:
-            #         self.decal_1 = decal_utils.get_decal_from_command(line)
-            #     else:
-            #         self.decal_2 = decal_utils.get_decal_from_command(line)
+            #Check for decals
+            if line.startswith("DECAL") or line.startswith("NORMAL_DECAL"):
+                self.imported_decal_commands.append(line)
 
             # Check for main polygon params
             elif line.startswith("LAYER_GROUP"):
@@ -336,6 +336,21 @@ class polygon():
         mat.xp_materials.blend_mode = 'BlEND' if self.do_blend else 'CLIP'
         mat.xp_materials.blend_cutoff = self.blend_cutoff
         mat.xp_materials.surface_type = self.surface
+
+        decal_alb_index = 0
+        decal_nml_index = 2
+
+        for decal in self.imported_decal_commands:
+            if decal.startswith("NORMAL"):
+                if decal_nml_index > 3:
+                    raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
+                decal_nml_index += 1
+            else:
+                if decal_alb_index > 2:
+                    raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
+                decal_alb_index += 1
 
         # Set collection properties
         new_collection.xp_pol.exportable = True

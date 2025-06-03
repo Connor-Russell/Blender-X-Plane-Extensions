@@ -258,6 +258,7 @@ class facade_material:
         self.layer_group = ""
         self.layer_group_offset = 0
         self.decals = []  # List of decals, each decal is a facade_decal object
+        self.imported_decal_commands = []
 
 class facade:
     def __init__(self):
@@ -361,6 +362,10 @@ class facade:
                 if current_material:
                     current_material.layer_group = tokens[1]
                     current_material.layer_group_offset = int(tokens[2])
+
+            elif command.startswith("DECAL") or command.startswith("NORMAL_DECAL"):
+                if current_material:
+                    current_material.imported_decal_commands.append(line)
 
             elif command == "ROOF_SCALE":
                 self.roof_scale_x = float(tokens[1])
@@ -540,6 +545,8 @@ class facade:
                     if decal_command:
                         output += decal_command
 
+                output += "\n"
+
             #Blend mode
             if mat.blend_mode == "CLIP":
                 output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
@@ -580,6 +587,8 @@ class facade:
                     decal_command = decal_utils.get_decal_command(decal, output_folder)
                     if decal_command:
                         output += decal_command
+
+                output += "\n"
 
             #Blend mode
             if mat.blend_mode == "CLIP":
@@ -779,6 +788,21 @@ class facade:
             facade_props.wall_layer_group_offset = self.import_wall_material.layer_group_offset
             self.wall_material = wall_material
 
+            decal_alb_index = 0
+            decal_nml_index = 2
+
+            for decal in self.imported_decal_commands:
+                if decal.startswith("NORMAL"):
+                    if decal_nml_index > 3:
+                        raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_nml_index])
+                    decal_nml_index += 1
+                else:
+                    if decal_alb_index > 2:
+                        raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_alb_index])
+                    decal_alb_index += 1
+
         if self.import_roof_material:
             roof_material = bpy.data.materials.new(name="RoofMaterial")
             roof_material.use_nodes = True
@@ -791,6 +815,21 @@ class facade:
             facade_props.roof_layer_group = self.import_roof_material.layer_group.upper()
             facade_props.roof_layer_group_offset = self.import_roof_material.layer_group_offset
             self.roof_material = roof_material
+
+            decal_alb_index = 0
+            decal_nml_index = 2
+
+            for decal in self.imported_decal_commands:
+                if decal.startswith("NORMAL"):
+                    if decal_nml_index > 3:
+                        raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_nml_index])
+                    decal_nml_index += 1
+                else:
+                    if decal_alb_index > 2:
+                        raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_alb_index])
+                    decal_alb_index += 1
 
         # Add floors to the collection
         for floor_obj in self.floors:
