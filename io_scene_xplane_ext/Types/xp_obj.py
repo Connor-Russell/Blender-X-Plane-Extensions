@@ -1401,7 +1401,7 @@ class thermal_source:
     def __init__(self):
         self.dataref = ""
         self.toggle_dataref = ""
-        self.temperature = 5.0
+        self.temperature = 0.0
 
 class object:
     """
@@ -1452,7 +1452,6 @@ class object:
         self.thermal_texture = ""
         self.thermal_src_datarefs = []
         self.thermal_sources = []
-        self.thermal_sources_2 = []
         self.wiper_texture = ""
         self.wiper_params = []
         self.rain_scale = 1.0
@@ -2112,7 +2111,7 @@ class object:
                 new_source = thermal_source()
                 new_source.temperature = float(tokens[1])
                 new_source.toggle_dataref = tokens[2]
-                self.thermal_sources_2.append(new_source)
+                self.thermal_sources.append(new_source)
 
             elif tokens[0] == "WIPER_param":
                 new_wiper = wiper_param()
@@ -2120,6 +2119,8 @@ class object:
                 new_wiper.start = float(tokens[2])
                 new_wiper.end = float(tokens[3])
                 new_wiper.width = float(tokens[4])
+
+                self.wiper_params.append(new_wiper)
             
     def to_scene(self):
         #Create a new collection for this object
@@ -2144,6 +2145,79 @@ class object:
         collection.xplane.layer.cockpit_panel_mode = self.panel_texture_mode
         collection.xplane.layer.cockpit_regions = self.panel_texture_region
         collection.xplane.layer.particle_system_file = self.particle_system
+        collection.xplane.layer.rain.rain_scale = self.rain_scale
+        collection.xplane.layer.rain.thermal_texture = self.thermal_texture
+        collection.xplane.layer.rain.wiper_texture = self.wiper_texture
+
+        for i, src, in enumerate(self.thermal_sources):
+            target = None
+            if i == 0:
+                collection.xplane.layer.rain.thermal_source_1_enabled = True
+                target = collection.xplane.layer.rain.thermal_source_1
+            elif i == 1:
+                collection.xplane.layer.rain.thermal_source_2_enabled = True
+                target = collection.xplane.layer.rain.thermal_source_2
+            elif i == 2:
+                collection.xplane.layer.rain.thermal_source_3_enabled = True
+                target = collection.xplane.layer.rain.thermal_source_3
+            elif i == 3:
+                collection.xplane.layer.rain.thermal_source_4_enabled = True
+                target = collection.xplane.layer.rain.thermal_source_4
+            else:
+                #Only 4 thermal sources are supported, so we just break out of the loop
+                break
+
+            if src.temperature != 0:
+                target.defrost_time = str(src.temperature)
+            else:
+                target.defrost_time = src.dataref
+            target.dataref_on_off = src.toggle_dataref
+
+        for i, src, in enumerate(self.wiper_params):
+            target = None
+            if i == 0:
+                collection.xplane.layer.rain.wiper_1_enabled = True
+                target = collection.xplane.layer.rain.wiper_1
+            elif i == 1:
+                collection.xplane.layer.rain.wiper_2_enabled = True
+                target = collection.xplane.layer.rain.wiper_2
+            elif i == 2:
+                collection.xplane.layer.rain.wiper_3_enabled = True
+                target = collection.xplane.layer.rain.wiper_3
+            elif i == 3:
+                collection.xplane.layer.rain.wiper_4_enabled = True
+                target = collection.xplane.layer.rain.wiper_4
+            else:
+                #Only 4 wipers are supported, so we just break out of the loop
+                break
+
+            target.dataref = src.dataref
+            target.start = src.start
+            target.end = src.end
+            target.nominal_width = src.width
+        
+        for i, region in enumerate(self.cockpit_regions):
+            target = None
+            if i == 0:
+                collection.xplane.layer.cockpit_regions = 1
+                target = collection.xplane.layer.cockpit_region[0]
+            elif i == 1:
+                collection.xplane.layer.cockpit_regions = 2
+                target = collection.xplane.layer.cockpit_region[1]
+            elif i == 2:
+                collection.xplane.layer.cockpit_regions = 3
+                target = collection.xplane.layer.cockpit_region[2]
+            elif i == 3:
+                collection.xplane.layer.cockpit_regions = 4
+                target = collection.xplane.layer.cockpit_region[3]
+            else:
+                #Only 4 cockpit regions are supported, so we just break out of the loop
+                break
+
+            target.left = region.left
+            target.top = region.bottom
+            target.width = region.width
+            target.height = region.height
 
         #Create the base material
         all_mats = []
