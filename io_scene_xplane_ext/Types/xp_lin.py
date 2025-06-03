@@ -9,6 +9,7 @@ from ..Helpers import line_utils #type: ignore
 from ..Helpers import decal_utils #type: ignore
 from ..Helpers import file_utils #type: ignore
 from ..Helpers import misc_utils #type: ignore
+from ..Helpers import log_utils #type: ignore
 from .. import material_config #type: ignore
 import bpy #type: ignore
 import os
@@ -130,6 +131,7 @@ class line():
             f.write(of)
     
     def read(self, in_file):
+        log_utils.new_section(f"Reading .lin {in_file}")
         #Read the file
         with open(in_file, 'r') as f:
             lines = f.readlines()
@@ -144,6 +146,36 @@ class line():
 
             #Check for comments
             if line.startswith("#"):
+                continue
+
+            tokens = line.split()
+            if not tokens:
+                continue
+
+            # Defensive: check token count for each command before using tokens
+            cmd = tokens[0]
+            min_tokens = {
+                'TEXTURE_NORMAL': 3,
+                'TEXTURE_LIT': 2,
+                'TEXTURE': 2,
+                'WEATHER': 2,
+                'NO_BLEND': 2,
+                'TEX_WIDTH': 2,
+                'TEX_HEIGHT': 2,
+                'DECAL': 1,
+                'NORMAL_DECAL': 1,
+                'LAYER_GROUP': 2, # can be 2 or 3, but 2 is safe
+                'MIRROR': 1,
+                'ALIGN': 2,
+                'SCALE': 2, # can be 2 or 3
+                'SURFACE': 2,
+                'S_OFFSET': 5,
+                'START_CAP': 7,
+                'END_CAP': 7,
+            }
+            # Only check if command is in our map
+            if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
+                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
                 continue
 
             #Check for material data

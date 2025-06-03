@@ -137,6 +137,8 @@ class polygon():
             f.write(of)
 
     def read(self, in_file):
+        log_utils.new_section(f"Reading .pol {in_file}")
+
         self.name = in_file.split(os.sep)[-1]
 
         # Read the file
@@ -147,6 +149,37 @@ class polygon():
         for line in lines:
             # Get the line
             line = line.strip()
+
+            tokens = line.split()
+            if not tokens:
+                continue
+
+            # Defensive: check token count for each command before using tokens
+            cmd = tokens[0]
+            min_tokens = {
+                'TEXTURE_NOWRAP': 2,
+                'TEXTURE_LIT_NOWRAP': 2,
+                'TEXTURE_NORMAL': 3,
+                'TEXTURE': 2,
+                'TEXTURE_LIT': 2,
+                'WEATHER': 2,
+                'SUPER_ROUGHNESS': 1,
+                'NO_BLEND': 2,
+                'DECAL': 1,
+                'NORMAL_DECAL': 1,
+                'LAYER_GROUP': 2, # can be 2 or 3, but 2 is safe
+                'SCALE': 3,
+                'SURFACE': 2,
+                'LOAD_CENTER': 5,
+                'TEXTURE_TILE': 6,
+                'RUNWAY_MARKINGS': 6,
+                'RUNWAY_NOISE': 1,
+                '#subtex': 5,
+            }
+            if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
+                from ..Helpers import log_utils
+                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
+                continue
 
             # Check for material data
             if line.startswith("TEXTURE_NOWRAP"):

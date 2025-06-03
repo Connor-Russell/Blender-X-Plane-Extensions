@@ -9,6 +9,7 @@ from ..Helpers import geometery_utils # type: ignore
 from ..Helpers import decal_utils # type: ignore
 from ..Helpers import file_utils # type: ignore
 from ..Helpers import misc_utils # type: ignore
+from ..Helpers import log_utils
 from . import xp_attached_obj # type: ignore
 import os
 
@@ -285,6 +286,8 @@ class facade:
         Reads a .fac file and populates the facade object and its members.
         """
 
+        log_utils.new_section(f"Reading .fac {in_path}")
+
         self.name = os.path.basename(in_path)  # Get the name of the facade file
 
         with open(in_path, "r") as f:
@@ -304,7 +307,48 @@ class facade:
                 continue  # Ignore empty lines and comments
 
             tokens = line.split()
+            if not tokens:
+                continue
+
+            # Defensive: check token count for each command before using tokens
             command = tokens[0]
+            min_tokens = {
+                'I': 1,
+                'FACADE': 1,
+                'GRADED': 1,
+                'DRAPED': 1,
+                'RING': 2,
+                'SHADER_WALL': 1,
+                'SHADER_ROOF': 1,
+                'TEXTURE': 2,
+                'TEXTURE_LIT': 2,
+                'TEXTURE_NORMAL': 2,
+                'TEXTURE_MODULATOR': 2,
+                'NO_BLEND': 2,
+                'NO_SHADOW': 1,
+                'LAYER_GROUP': 3,
+                'DECAL': 1,
+                'NORMAL_DECAL': 1,
+                'ROOF_SCALE': 3,
+                'OBJ': 2,
+                'FLOOR': 2,
+                'ROOF_TWO_SIDED': 1,
+                'ROOF_HEIGHT': 2,
+                'ROOF_OBJ_HEADING': 7,
+                'SEGMENT': 2,
+                'SEGMENT_CURVED': 2,
+                'MESH': 4,
+                'VERTEX': 9,
+                'IDX': 2,
+                'WALL': 6,
+                'SPELLING': 2,
+                'ATTACH_DRAPED': 6,
+                'ATTACH_GRADED': 6,
+            }
+            if command in min_tokens and len(tokens) < min_tokens[command]:
+                
+                log_utils.warning(f"Not enough tokens for command '{command}'! Expected at least {min_tokens[command]}, got {len(tokens)}. Line: '{line}'")
+                continue
 
             if command == "I":
                 # Header line, skip
@@ -872,6 +916,6 @@ class facade:
             for roof_obj in floor_obj.roof_objs:
                 obj = roof_obj.to_obj(roof_obj.resource)
                 roof_collection.objects.link(obj)
-            
 
-        
+
+

@@ -1455,7 +1455,7 @@ class object:
 
     def read(self, in_obj_path):
 
-        log_utils.new_section(f"Read obj {in_obj_path}")
+        log_utils.new_section(f"Read .obj {in_obj_path}")
 
         self.name = os.path.basename(in_obj_path)
 
@@ -1481,6 +1481,61 @@ class object:
             tokens = line.split()
 
             if len(tokens) == 0:
+                continue
+
+            # Defensive: check token count for each command before using tokens
+            cmd = tokens[0]
+            # Map of command to minimum required tokens (based on usage below)
+            min_tokens = {
+                'VT': 9,
+                'IDX10': 11,
+                'IDX': 2,
+                'TRIS': 3,
+                'PARTICLE_SYSTEM': 2,
+                'BLEND_GLASS': 1,
+                'GLOBAL_luminance': 2,
+                'TEXTURE': 2,
+                'TEXTURE_MAP': 3,
+                'TEXTURE_NORMAL': 2,
+                'TEXTURE_DRAPED': 2,
+                'TEXTURE_DRAPED_NORMAL': 3,
+                'TEXTURE_DRAPED_LIT': 2,
+                'TEXTURE_LIT': 2,
+                'GLOBAL_no_blend': 2,
+                'GLOBAL_shadow_blend': 2,
+                'ANIM_trans': 4, # 4 *minimum* tokens, but can be more
+                'ANIM_rotate': 5, # 5 *minimum* tokens, but can be more
+                'ANIM_keyframe_loop': 2,
+                'ANIM_show': 4,
+                'ANIM_hide': 4,
+                'ANIM_rotate_begin': 5,
+                'ANIM_rotate_key': 3,
+                'ANIM_trans_begin': 2,
+                'ANIM_trans_key': 5,
+                'ATTR_LOD': 3,
+                'LIGHT_NAMED': 5,
+                'LIGHT_CUSTOM': 13, #13-14
+                'LIGHT_SPILL_CUSTOM': 13, #13-14
+                'LIGHT_PARAM': 6, # variable, but 6 is minimum
+                'ATTR_hard': 2,
+                'ATTR_hard_deck': 2,
+                'ATTR_layer_group': 3,
+                'ATTR_draped_layer_group': 3,
+                'ATTR_cockpit_device': 5,
+                'ATTR_cockpit_region': 2,
+                'THERMAL_source': 3,
+                'THERMAL_source2': 3,
+                'WIPER_param': 5,
+                'COCKPIT_REGION': 5,
+                'RAIN_SCALE': 2,
+                'RAIN_FRICTION': 2,
+                'THERMAL_texture': 2,
+                'WIPER_texture': 2,
+                'WIPER_blend': 2,
+            }
+            # Only check if command is in our map
+            if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
+                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
                 continue
 
             if tokens[0] == "VT":
@@ -2255,12 +2310,14 @@ class object:
         for decal in self.imported_decal_commands:
             if decal.startswith("NORMAL"):
                 if decal_nml_index > 3:
-                    raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                 decal_nml_index += 1
             else:
                 if decal_alb_index > 2:
-                    raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 
@@ -2288,12 +2345,14 @@ class object:
             for decal in self.imported_decal_commands_draped:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
-                        raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        break
                     decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                     decal_nml_index += 1
                 else:
                     if decal_alb_index > 2:
-                        raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        break
                     decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
 
@@ -2306,8 +2365,6 @@ class object:
         #In Additive mode, all LODs that are in range are drawn
         #In Selective mode, a single LOD is drawn, based on the distance being within the min and max.
         #We determine additive by checking if any LODs *don't* start with 0, in which case we assume it's selective
-        #This is relevant because if the LOD is additive, the objects that don't fit in a bucket will be put in every bucket that their range is *less* than
-        #If the LOD is selective, they'll be put in the bucket that their average range is cloest to. 
         all_lod_buckets = []
         is_selective_lod = False
 
