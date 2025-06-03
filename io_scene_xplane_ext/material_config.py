@@ -143,7 +143,19 @@ def update_settings(in_material):
         in_material.xplane.device_lighting_channel = xp_mat.cockpit_device_lighting_channel
     elif not xp_mat.use_2d_panel_texture:
         in_material.xplane.cockpit_feature = 'none'
-    
+
+    #Set the correct number of decals
+    while len(xp_mat.decals) < 4:
+        #Add a new decal
+        xp_mat.decals.add()
+    while len(xp_mat.decals) > 4:
+        #Remove the last decal
+        xp_mat.decals.remove(xp_mat.decals.count - 1)
+
+    xp_mat.decals[0].is_normal = False
+    xp_mat.decals[1].is_normal = False
+    xp_mat.decals[2].is_normal = True
+    xp_mat.decals[3].is_normal = True
 
 #Internal function to create the node setup for the keying of a decal
 def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_g, key_b, key_a, key_base, key_mod):
@@ -365,17 +377,21 @@ def update_nodes(material):
         str_image_mat = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.material_texture))
         str_image_lit = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.lit_texture))
         str_image_mod = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_modulator))
-        str_image_decal_1_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_one.alb))
-        str_image_decal_1_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_one.nml))
-        str_image_decal_2_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_two.alb))
-        str_image_decal_2_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_two.nml))
+        str_image_decal_1_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[0].texture))
+        str_image_decal_2_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[1].texture))
+        str_image_decal_1_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[2].texture))
+        str_image_decal_2_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[3].texture))
 
-        if not xp_material_props.decal_one.enabled:
+        if not xp_material_props.decals[0].enabled:
             str_image_decal_1_alb = ""
+
+        if not xp_material_props.decals[1].enabled:
+            str_image_decal_2_alb = ""
+
+        if not xp_material_props.decals[2].enabled:
             str_image_decal_1_nml = ""
 
-        if not xp_material_props.decal_two.enabled:
-            str_image_decal_2_alb = ""
+        if not xp_material_props.decals[3].enabled:
             str_image_decal_2_nml = ""
         
         #Load the images that exist
@@ -638,43 +654,37 @@ def update_nodes(material):
         #Now we will add out keying nodes.
         if image_decal_1_alb != None:
             output_key_1_alb_rgb = create_decal_key_nodes(material, -4000, 6000, output_mod_r, node_alb, \
-                xp_material_props.decal_one.rgb_decal_key_red, xp_material_props.decal_one.rgb_decal_key_green, \
-                xp_material_props.decal_one.rgb_decal_key_blue, xp_material_props.decal_one.rgb_decal_key_alpha, \
-                xp_material_props.decal_one.rgb_strength_constant, xp_material_props.decal_one.rgb_strength_modulator)
+                xp_material_props.decals[0].strength_key_red, xp_material_props.decals[0].strength_key_green, \
+                xp_material_props.decals[0].strength_key_blue, xp_material_props.decals[0].strength_key_alpha, \
+                xp_material_props.decals[0].strength_constant, xp_material_props.decals[0].strength_modulator)
             
             output_key_1_alb_alpha = create_decal_key_nodes(material, -4000, 5000, output_mod_r, node_alb, \
-                xp_material_props.decal_one.alpha_decal_key_red, xp_material_props.decal_one.alpha_decal_key_green, \
-                xp_material_props.decal_one.alpha_decal_key_blue, xp_material_props.decal_one.alpha_decal_key_alpha, \
-                xp_material_props.decal_one.alpha_strength_constant, xp_material_props.decal_one.alpha_strength_modulator)
+                xp_material_props.decals[0].strength2_key_red, xp_material_props.decals[0].strength2_key_green, \
+                xp_material_props.decals[0].strength2_key_blue, xp_material_props.decals[0].strength2_key_alpha, \
+                xp_material_props.decals[0].strength2_constant, xp_material_props.decals[0].strength2_modulator)
 
         if image_decal_1_nml != None:
-            if xp_material_props.decal_one.normal_follows_albedo:
-                output_key_1_nml = output_key_1_alb_alpha
-            else:
-                output_key_1_nml = create_decal_key_nodes(material, -4000, 4000, output_mod_r, node_alb, \
-                    xp_material_props.decal_one.nml_decal_key_red, xp_material_props.decal_one.nml_decal_key_green, \
-                    xp_material_props.decal_one.nml_decal_key_blue, xp_material_props.decal_one.nml_decal_key_alpha, \
-                    xp_material_props.decal_one.nml_strength_constant, xp_material_props.decal_one.nml_strength_modulator)
+            output_key_1_nml = create_decal_key_nodes(material, -4000, 6000, output_mod_r, node_alb, \
+                xp_material_props.decals[2].strength_key_red, xp_material_props.decals[2].strength_key_green, \
+                xp_material_props.decals[2].strength_key_blue, xp_material_props.decals[2].strength_key_alpha, \
+                xp_material_props.decals[2].strength_constant, xp_material_props.decals[2].strength_modulator)
                 
         if image_decal_2_alb != None:
             output_key_2_alb_rgb = create_decal_key_nodes(material, -4000, 3000, output_mod_g, node_alb, \
-                xp_material_props.decal_two.rgb_decal_key_red, xp_material_props.decal_two.rgb_decal_key_green, \
-                xp_material_props.decal_two.rgb_decal_key_blue, xp_material_props.decal_two.rgb_decal_key_alpha, \
-                xp_material_props.decal_two.rgb_strength_constant, xp_material_props.decal_two.rgb_strength_modulator)
+                xp_material_props.decals[1].strength_key_red, xp_material_props.decals[1].strength_key_green, \
+                xp_material_props.decals[1].strength_key_blue, xp_material_props.decals[1].strength_key_alpha, \
+                xp_material_props.decals[1].strength_constant, xp_material_props.decals[1].strength_modulator)
             
             output_key_2_alb_alpha = create_decal_key_nodes(material, -4000, 2000, output_mod_g, node_alb, \
-                xp_material_props.decal_two.alpha_decal_key_red, xp_material_props.decal_two.alpha_decal_key_green, \
-                xp_material_props.decal_two.alpha_decal_key_blue, xp_material_props.decal_two.alpha_decal_key_alpha, \
-                xp_material_props.decal_two.alpha_strength_constant, xp_material_props.decal_two.alpha_strength_modulator)
+                xp_material_props.decals[1].strength2_key_red, xp_material_props.decals[1].strength2_key_green, \
+                xp_material_props.decals[1].strength2_key_blue, xp_material_props.decals[1].strength2_key_alpha, \
+                xp_material_props.decals[1].strength2_constant, xp_material_props.decals[1].strength2_modulator)
             
         if image_decal_2_nml != None:
-            if xp_material_props.decal_two.normal_follows_albedo:
-                output_key_2_nml = output_key_2_alb_alpha
-            else:
-                output_key_2_nml = create_decal_key_nodes(material, -4000, 1000, output_mod_g, node_alb, \
-                    xp_material_props.decal_two.nml_decal_key_red, xp_material_props.decal_two.nml_decal_key_green, \
-                    xp_material_props.decal_two.nml_decal_key_blue, xp_material_props.decal_two.nml_decal_key_alpha, \
-                    xp_material_props.decal_two.nml_strength_constant, xp_material_props.decal_two.nml_strength_modulator)
+            output_key_2_nml = create_decal_key_nodes(material, -4000, 6000, output_mod_r, node_alb, \
+                xp_material_props.decals[3].strength_key_red, xp_material_props.decals[3].strength_key_green, \
+                xp_material_props.decals[3].strength_key_blue, xp_material_props.decals[3].strength_key_alpha, \
+                xp_material_props.decals[3].strength_constant, xp_material_props.decals[3].strength_modulator)
                 
         # Keying nodes are DONE!!!
         # Next up we need to start working on setting up the decal source UVs
@@ -685,46 +695,40 @@ def update_nodes(material):
             node_uv_decal_alb_1.location = (-4750, -500)
             node_uv_decal_alb_1.label = "UV Scale Alb 1"
             node_uv_decal_alb_1.operation = 'MULTIPLY'
-            node_uv_decal_alb_1.inputs[1].default_value = (xp_material_props.decal_one.tile_ratio, xp_material_props.decal_one.tile_ratio, xp_material_props.decal_one.tile_ratio)
+            node_uv_decal_alb_1.inputs[1].default_value = (xp_material_props.decals[0].tile_ratio, xp_material_props.decals[0].tile_ratio, xp_material_props.decals[0].tile_ratio)
             material.node_tree.links.new(node_uv.outputs[0], node_uv_decal_alb_1.inputs[0])
 
             output_uv_decal_alb_1 = node_uv_decal_alb_1.outputs[0]
         
         if image_decal_1_nml != None:
-            if xp_material_props.decal_one.normal_follows_albedo:
-                output_uv_decal_nml_1 = output_uv_decal_alb_1
-            else:
-                node_uv_decal_nml_1 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
-                node_uv_decal_nml_1.location = (-4750, -750)
-                node_uv_decal_nml_1.label = "UV Scale Nml 1"
-                node_uv_decal_nml_1.operation = 'MULTIPLY'
-                node_uv_decal_nml_1.inputs[1].default_value = (xp_material_props.decal_one.nml_tile_ratio, xp_material_props.decal_one.nml_tile_ratio, xp_material_props.decal_one.nml_tile_ratio)
-                material.node_tree.links.new(node_uv.outputs[0], node_uv_decal_nml_1.inputs[0])
+            node_uv_decal_nml_1 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
+            node_uv_decal_nml_1.location = (-4750, -750)
+            node_uv_decal_nml_1.label = "UV Scale Nml 1"
+            node_uv_decal_nml_1.operation = 'MULTIPLY'
+            node_uv_decal_nml_1.inputs[1].default_value = (xp_material_props.decals[2].nml_tile_ratio, xp_material_props.decals[2].nml_tile_ratio, xp_material_props.decals[2].nml_tile_ratio)
+            material.node_tree.links.new(node_uv.outputs[0], node_uv_decal_nml_1.inputs[0])
 
-                output_uv_decal_nml_1 = node_uv_decal_nml_1.outputs[0]
+            output_uv_decal_nml_1 = node_uv_decal_nml_1.outputs[0]
 
         if image_decal_2_alb != None:
             node_uv_decal_alb_2 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
             node_uv_decal_alb_2.location = (-4750, -1000)
             node_uv_decal_alb_2.label = "UV Scale Alb 2"
             node_uv_decal_alb_2.operation = 'MULTIPLY'
-            node_uv_decal_alb_2.inputs[1].default_value = (xp_material_props.decal_two.tile_ratio, xp_material_props.decal_two.tile_ratio, xp_material_props.decal_two.tile_ratio)
+            node_uv_decal_alb_2.inputs[1].default_value = (xp_material_props.decals[1].tile_ratio, xp_material_props.decals[1].tile_ratio, xp_material_props.decals[1].tile_ratio)
             material.node_tree.links.new(node_uv.outputs[0], node_uv_decal_alb_2.inputs[0])
 
             output_uv_decal_alb_2 = node_uv_decal_alb_2.outputs[0]
 
         if image_decal_2_nml != None:
-            if xp_material_props.decal_two.normal_follows_albedo:
-                output_uv_decal_nml_2 = output_uv_decal_alb_2
-            else:
-                node_uv_decal_nml_2 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
-                node_uv_decal_nml_2.location = (-4750, -1250)
-                node_uv_decal_nml_2.label = "UV Scale Nml 2"
-                node_uv_decal_nml_2.operation = 'MULTIPLY'
-                node_uv_decal_nml_2.inputs[1].default_value = (xp_material_props.decal_two.nml_tile_ratio, xp_material_props.decal_two.nml_tile_ratio, xp_material_props.decal_two.nml_tile_ratio)
-                material.node_tree.links.new(node_uv.outputs[0], node_uv_decal_nml_2.inputs[0])
+            node_uv_decal_nml_2 = material.node_tree.nodes.new(type="ShaderNodeVectorMath")
+            node_uv_decal_nml_2.location = (-4750, -1250)
+            node_uv_decal_nml_2.label = "UV Scale Nml 2"
+            node_uv_decal_nml_2.operation = 'MULTIPLY'
+            node_uv_decal_nml_2.inputs[1].default_value = (xp_material_props.decals[3].nml_tile_ratio, xp_material_props.decals[3].nml_tile_ratio, xp_material_props.decals[3].nml_tile_ratio)
+            material.node_tree.links.new(node_uv.outputs[0], node_uv_decal_nml_2.inputs[0])
 
-                output_uv_decal_nml_2 = node_uv_decal_nml_2.outputs[0]
+            output_uv_decal_nml_2 = node_uv_decal_nml_2.outputs[0]
 
         # Now that we have the UVs, we need to set up the actual source nodes.
         # Basically for Alb, we have just an image node, with the appropriate UV
@@ -758,7 +762,7 @@ def update_nodes(material):
             node_decal_1_dither.location = (-3500, -250)
             node_decal_1_dither.label = "Decal 1 Dither"
             node_decal_1_dither.operation = 'MULTIPLY'
-            node_decal_1_dither.inputs[1].default_value = xp_material_props.decal_one.dither_ratio
+            node_decal_1_dither.inputs[1].default_value = xp_material_props.decals[0].dither_ratio
             material.node_tree.links.new(node_decal_1_subtract_alpha.outputs[0], node_decal_1_dither.inputs[0])
 
             #Then we need to add a math node and multiply the dither by -1 to match XP
@@ -828,7 +832,7 @@ def update_nodes(material):
             node_decal_2_dither.location = (-3500, -1250)
             node_decal_2_dither.label = "Decal 2 Dither"
             node_decal_2_dither.operation = 'MULTIPLY'
-            node_decal_2_dither.inputs[1].default_value = xp_material_props.decal_two.dither_ratio
+            node_decal_2_dither.inputs[1].default_value = xp_material_props.decals[1].dither_ratio
             material.node_tree.links.new(node_decal_2_subtract_alpha.outputs[0], node_decal_2_dither.inputs[0])
 
             #Then we need to add a math node and multiply the dither by -1 to match XP

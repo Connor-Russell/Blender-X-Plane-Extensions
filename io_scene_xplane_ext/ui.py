@@ -7,111 +7,63 @@
 import bpy # type: ignore
 from . import props
 
-
-#Facade parts UI functions
-
 def draw_decal_prop(layout, property_item, index):
-    layout.prop(property_item, "enabled", text=f"Decal {index + 1}")
+    box = layout.box()
 
-    if property_item.enabled:
+    row = box.row()
+    
+    decal_name = "Decal " + str(index + 1) + (" - Normal" if property_item.is_normal else " - Albedo")
 
-        box = layout.box()
+    row.prop(property_item, "is_ui_expanded", text=f"", icon='TRIA_DOWN' if property_item.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+    row.prop(property_item, "enabled", text=decal_name)
 
-        #Normal follows albedo
-        box.prop(property_item, "normal_follows_albedo")
-
-        #Decal Library (broken in xp currently)
-        #box.prop(property_item, "decal_lib")
-
-        if property_item.decal_lib != "":
-            box.label(text="Decal asset is set, other properties are ignored.")
-            return
-
-        #Textures
-        box.prop(property_item, "alb")
-        box.prop(property_item, "nml")
+    if property_item.is_ui_expanded:
+        box.prop(property_item, "texture")
 
         box.separator()
 
-        #UVs
-        if property_item.alb != "" or (property_item.normal_follows_albedo and property_item.nml != ""):
-            row = box.row()
-            row.prop(property_item, "projected")
+        box.prop(property_item, "projected")
 
-            if property_item.projected:
-                row.prop(property_item, "scale_x")
-                row.prop(property_item, "scale_y")
-            else:
-                row.prop(property_item, "tile_ratio")
+        row = box.row()
 
-        if (not property_item.normal_follows_albedo) and property_item.nml != "":
+        if property_item.projected:
+            row.prop(property_item, "scale_x")
+            row.prop(property_item, "scale_y")
+        else:
+            row.prop(property_item, "tile_ratio")
+
+        if not property_item.is_normal:
             box.separator()
-            box.label(text="Normal Map Scale")
-
-            #Normal Map
-            box.prop(property_item, "nml_projected")
-
-            if property_item.nml_projected:
-                row = box.row()
-                row.prop(property_item, "nml_scale_x")
-                row.prop(property_item, "nml_scale_y")
-            else:
-                row = box.row()
-                row.prop(property_item, "nml_tile_ratio")
+            box.prop(property_item, "dither_ratio")
 
         box.separator()
 
-        #Dither (not supported on objs)
-        #if property_item.type != "NML":
-            #box.prop(property_item, "dither_ratio")
+        row = box.row()
 
-        box.separator()
+        row.prop(property_item, "strength_constant")
+        row.prop(property_item, "strength_modulator")
 
-        #RGB strength and keying
-        if (property_item.alb != "") or (property_item.normal_follows_albedo and property_item.nml != ""):
-            box.label(text="RGB Decal Application Control")
-            row = box.row()
-            row.prop(property_item, "rgb_strength_constant")
-            row.prop(property_item, "rgb_strength_modulator")
-            row = box.row()
-            row.prop(property_item, "rgb_decal_key_red")
-            row.prop(property_item, "rgb_decal_key_green")
-            row.prop(property_item, "rgb_decal_key_blue")
-            row.prop(property_item, "rgb_decal_key_alpha")
+        row = box.row()
 
+        row.prop(property_item, "strength_key_red")
+        row.prop(property_item, "strength_key_green")
+        row.prop(property_item, "strength_key_blue")
+        row.prop(property_item, "strength_key_alpha")
+
+        if not property_item.is_normal:
             box.separator()
 
-            if property_item.alb != "":
-
-                box.label(text="Alpha Dither Ratio")
-                row = box.row()
-
-                row.prop(property_item, "dither_ratio")
-
-                box.separator()
-
-                box.label(text="Alpha Decal Application Control")
-                row = box.row()
-                row.prop(property_item, "alpha_strength_constant")
-                row.prop(property_item, "alpha_strength_modulator")
-                row = box.row()
-                row.prop(property_item, "alpha_decal_key_red")
-                row.prop(property_item, "alpha_decal_key_green")
-                row.prop(property_item, "alpha_decal_key_blue")
-                row.prop(property_item, "alpha_decal_key_alpha")
-
-        if (not property_item.normal_follows_albedo) and property_item.nml != "":
-            box.separator()
-
-            box.label(text="Normal Decal Application Control")
             row = box.row()
-            row.prop(property_item, "nml_strength_constant")
-            row.prop(property_item, "nml_strength_modulator")
+
+            row.prop(property_item, "strength2_constant")
+            row.prop(property_item, "strength2_modulator")
+
             row = box.row()
-            row.prop(property_item, "nml_decal_key_red")
-            row.prop(property_item, "nml_decal_key_green")
-            row.prop(property_item, "nml_decal_key_blue")
-            row.prop(property_item, "nml_decal_key_alpha")
+
+            row.prop(property_item, "strength2_key_red")
+            row.prop(property_item, "strength2_key_green")
+            row.prop(property_item, "strength2_key_blue")
+            row.prop(property_item, "strength2_key_alpha")
 
 def draw_fac_spelling_entry(layout, entry, collection_name, floor_index, wall_index, spelling_index, entry_index):
     row = layout.row()
@@ -408,10 +360,9 @@ class MENU_mats(bpy.types.Panel):
             box = layout.box()
 
             box.label(text="Decals:")
-            box.prop(xp_materials, "decal_modulator", text="Decal Modulator Texture")
-
-            draw_decal_prop(box, xp_materials.decal_one, 0)
-            draw_decal_prop(box, xp_materials.decal_two, 1)
+            
+            for i, decal in enumerate(xp_materials.decals):
+                draw_decal_prop(box, decal, i)
 
             box = layout.box()
 

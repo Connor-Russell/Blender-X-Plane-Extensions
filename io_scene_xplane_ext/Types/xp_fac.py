@@ -257,6 +257,7 @@ class facade_material:
         self.cast_shadow = True
         self.layer_group = ""
         self.layer_group_offset = 0
+        self.decals = []  # List of decals, each decal is a facade_decal object
 
 class facade:
     def __init__(self):
@@ -530,6 +531,15 @@ class facade:
             if mat.decal_modulator != "":
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
+            #Write the decals
+            if len(mat.decals) > 0:
+                output += "#Decals\n"
+                for decal in self.decals:
+                    #Get the decal command
+                    decal_command = decal_utils.get_decal_command(decal, output_folder)
+                    if decal_command:
+                        output += decal_command
+
             #Blend mode
             if mat.blend_mode == "CLIP":
                 output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
@@ -541,12 +551,6 @@ class facade:
             #Layer group
             output += "LAYER_GROUP " + str(self.export_wall_layer_group) + " " + str(self.export_wall_layer_group_offset) + "\n"
 
-            #Decal settings
-            if mat.decal_one.enabled:
-                output += decal_utils.get_decal_command(mat.decal_one, output_folder) + "\n"
-            if mat.decal_two.enabled:
-                output += decal_utils.get_decal_command(mat.decal_two, output_folder) + "\n"
-            
             output += "\n"
         
         #Roof shader
@@ -568,6 +572,15 @@ class facade:
             if mat.decal_modulator != "":
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
+            #Write the decals
+            if len(mat.decals) > 0:
+                output += "#Decals\n"
+                for decal in self.decals:
+                    #Get the decal command
+                    decal_command = decal_utils.get_decal_command(decal, output_folder)
+                    if decal_command:
+                        output += decal_command
+
             #Blend mode
             if mat.blend_mode == "CLIP":
                 output += "NO_BLEND " + str(mat.blend_cutoff) + "\n"
@@ -582,12 +595,6 @@ class facade:
             #Draped layer group. We only do this if draped
             if not self.graded:
                 output += "LAYER_GROUP_DRAPED " + str(self.export_roof_layer_group) + " " + str(self.export_roof_layer_group_offset) + "\n"
-
-            #Decal settings
-            if mat.decal_one.enabled:
-                output += decal_utils.get_decal_command(mat.decal_one, output_folder) + "\n"
-            if mat.decal_two.enabled:
-                output += decal_utils.get_decal_command(mat.decal_two, output_folder) + "\n"
 
             #Hard
             if mat.surface_type != "NONE":

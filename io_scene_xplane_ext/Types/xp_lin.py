@@ -47,8 +47,7 @@ class line():
         self.mirror = True
         self.segment_count = 1
         self.super_rough = False
-        self.decal_1 = None
-        self.decal_2 = None
+        self.decals = []
         self.surface = "NONE"
 
     def write(self, output_path):
@@ -81,15 +80,13 @@ class line():
         of += "\n"
 
         #Write the decals
-        if self.decal_1.enabled or self.decal_2.enabled:
+        if len(self.decals) > 0:
             of += "#Decals\n"
-            if self.decal_1.enabled:
-                of += decal_utils.get_decal_command(self.decal_1, output_folder)
-                of += "\n"
-            if self.decal_2.enabled:
-                of += decal_utils.get_decal_command(self.decal_2, output_folder)
-                of += "\n"
-            of += "\n"
+            for decal in self.decals:
+                #Get the decal command
+                decal_command = decal_utils.get_decal_command(decal, output_folder)
+                if decal_command:
+                    of += decal_command
 
         of += "#Position Params\n"
 
@@ -270,9 +267,10 @@ class line():
         self.weather_texture = mat.weather_texture
         self.do_blend = True if mat.blend_mode == 'BLEND' else False
         self.blend_cutoff = mat.blend_cutoff
-        self.decal_1 = mat.decal_one
-        self.decal_2 = mat.decal_two
         self.surface = mat.surface_type
+
+        for decal in mat.decals:
+            self.decals.append(decal)
 
         # Next we need to get segment commands. We treat the Z position as layer, so things are layered intuitively. But Z position can be *anything*.
         # So we need to sort the Z positions, then get the *index* of that Z position, so we have a 0-top continuous range of layers.
