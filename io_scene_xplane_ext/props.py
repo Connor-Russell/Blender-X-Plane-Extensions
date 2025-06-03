@@ -68,6 +68,11 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
 
 class PROP_xp_ext_scene(bpy.types.PropertyGroup):
+    last_save_plugin_version: bpy.props.IntProperty(
+        name="Last Saved Plugin Version",
+        default=1
+    ) #type: ignore
+
     pol_collection_search: bpy.props.StringProperty(
         name="Search",
         default="",

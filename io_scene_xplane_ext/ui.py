@@ -360,6 +360,9 @@ class MENU_mats(bpy.types.Panel):
             box = layout.box()
 
             box.label(text="Decals:")
+
+            if len(xp_materials.decals) == 0:
+                box.label(text="Change any XP Material setting to trigger an update to add the decals slots")
             
             for i, decal in enumerate(xp_materials.decals):
                 draw_decal_prop(box, decal, i)
