@@ -106,6 +106,10 @@ def create_obj_from_draw_call(vertices, indicies, name):
         loop_normals.append(nml2)
         loop_normals.append(nml3)
 
+    #Set the object to use smooth shading
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
+
     mesh.normals_split_custom_set(loop_normals)
     if bpy.app.version < (4, 1, 0):
         mesh.use_auto_smooth = True  # Enable auto-smooth to use custom normals

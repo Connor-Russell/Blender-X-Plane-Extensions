@@ -1371,6 +1371,38 @@ class anim_level:
             #Reset our frame
             anim_utils.goto_frame(0)
 
+class wiper_param:
+    """
+    Class to represent the parameters for a wiper animation.
+    """
+
+    def __init__(self):
+        self.dataref = ""
+        self.start = 0.0
+        self.end = 0.0
+        self.width = 0.0
+
+class cockpit_region:
+    """
+    Class to represent a region in the cockpit for panel textures.
+    """
+    
+    def __init__(self):
+        self.left = 0.0
+        self.bottom = 0.0
+        self.width = 1.0
+        self.height = 1.0
+
+class thermal_source:
+    """
+    Class to represent a thermal source in an X-Plane object.
+    """
+
+    def __init__(self):
+        self.dataref = ""
+        self.toggle_dataref = ""
+        self.temperature = 5.0
+
 class object:
     """
     Class to represent an X-Plane object. This class provides functions to import the object into Blender.
@@ -1415,7 +1447,18 @@ class object:
         #self.draped_decal_two = props.PROP_decal()
         self.draped_layer_group = "objects"
         self.draped_layer_group_offset = -5
-        
+
+        #Thermal data. This just lets us store it between read and before to_collection
+        self.thermal_texture = ""
+        self.thermal_src_datarefs = []
+        self.thermal_sources = []
+        self.thermal_sources_2 = []
+        self.wiper_texture = ""
+        self.wiper_params = []
+        self.rain_scale = 1.0
+        self.rain_friction = 1.0
+        self.cockpit_regions = []
+
     def read(self, in_obj_path):
         self.name = os.path.basename(in_obj_path)
 
@@ -2037,6 +2080,47 @@ class object:
                 cur_manipulator.params = tokens.copy()
                 self.obj_mode = "cockpit"
                 
+            elif tokens[0] == "COCKPIT_REGION":
+                region = cockpit_region()
+                region.left = float(tokens[1])
+                region.bottom = float(tokens[2])
+                region.width = float(tokens[3]) - region.left
+                region.height = float(tokens[4]) - region.bottom
+
+            elif tokens[0] == "RAIN_SCALE":
+                self.rain_scale = float(tokens[1])
+
+            elif tokens[0] == "RAIN_FRICTION":
+                self.rain_friction = float(tokens[1])
+
+            elif tokens[0] == "THERMAL_texture":
+                self.thermal_texture = tokens[1]
+
+            elif tokens[0] == "WIPER_texture":
+                self.wiper_texture = tokens[1]
+
+            elif tokens[0] == "WIPER_blend":
+                self.wiper_texture = tokens[1]
+
+            elif tokens[0] == "THERMAL_source":
+                new_source = thermal_source()
+                new_source.dataref = tokens[1]
+                new_source.toggle_dataref = tokens[2]
+                self.thermal_sources.append(new_source)
+
+            elif tokens[0] == "THERMAL_source2":
+                new_source = thermal_source()
+                new_source.temperature = float(tokens[1])
+                new_source.toggle_dataref = tokens[2]
+                self.thermal_sources_2.append(new_source)
+
+            elif tokens[0] == "WIPER_param":
+                new_wiper = wiper_param()
+                new_wiper.dataref = tokens[1]
+                new_wiper.start = float(tokens[2])
+                new_wiper.end = float(tokens[3])
+                new_wiper.width = float(tokens[4])
+            
     def to_scene(self):
         #Create a new collection for this object
         collection = bpy.data.collections.new(self.name)
