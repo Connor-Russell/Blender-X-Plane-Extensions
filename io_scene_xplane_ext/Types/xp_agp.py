@@ -6,8 +6,9 @@
 
 from ..Helpers import agp_utils
 from .. import material_config
-from .. import collection_utils
+from .. import misc_utils
 
+import math
 import mathutils
 import bpy
 
@@ -29,7 +30,7 @@ class crop_polygon:
 
         return new_obj
 
-    def to_commmand(self, transform: agp_utils.agp_transform):
+    def to_command(self, transform: agp_utils.agp_transform):
         cmd = ""
 
         #Now we need to copy our perimeter and transform it
@@ -90,7 +91,7 @@ class facade:
 
         return new_obj
 
-    def to_commmand(self, fac_resource_list, transform: agp_utils.agp_transform):
+    def to_command(self, fac_resource_list, transform: agp_utils.agp_transform):
         cmd = ""
 
         #Find out resource index
@@ -159,7 +160,7 @@ class tree_line:
 
         return new_obj
 
-    def to_commmands(self, transform: agp_utils.agp_transform):
+    def to_commands(self, transform: agp_utils.agp_transform):
         #TREE_LINE commands in .agps are only a start and end.
         # In here we allow more but will auto split them into multiple commands
         cmds = []
@@ -527,3 +528,113 @@ class auto_split_obj:
             cmds.append(cmd)
 
         return cmds
+
+class tile:
+    def __init__(self):
+        self.left_uv = 0.0
+        self.right_uv = 1.0
+        self.top_uv = 0.0
+        self.bottom_uv = 1.0
+        self.anchor_x_uv = 0.5
+        self.anchor_y_uv = 0.5
+        self.transform = agp_utils.agp_transform()
+        self.rotation_n = 0
+        self.material = None
+
+        #Annotations (aka attached stuff)
+        self.crop_poly = None
+        self.facades = []   #List of facade objects
+        self.tree_lines = []    #List of tree_line objects
+        self.trees = []   #List of tree objects
+        self.attached_objs = []   #List of attached_obj objects
+        self.auto_split_objs = []   #List of auto_split_obj objects
+
+    def from_obj(self, in_obj, agp_name):
+        self.left_uv, self.bottom_uv, self.right_uv, self.top_uv, self.transform = agp_utils.get_tile_bounds_and_transform(in_obj)
+
+        #Count of CCW rotations
+        self.rotation_n = int(round((((-(math.degrees(in_obj.rotation_euler.z) + 180)) % 360) / 90))) % 4
+        
+        #Now that we have the transform, we can get the child data
+        for obj in in_obj.children:
+            if not obj.xp_agp.exportable:
+                continue
+
+            if obj.xp_agp.type == 'ATTACHED_OBJ':
+                new_obj = attached_obj()
+                new_obj.from_obj(obj)
+                self.attached_objs.append(new_obj)
+
+            elif obj.xp_agp.type == 'AUTO_SPLIT_OBJ':
+                new_obj = auto_split_obj()
+                new_obj.export(obj, agp_name)
+                self.auto_split_objs.append(new_obj)
+
+            elif obj.xp_agp.type == 'FACADE':
+                new_fac = facade()
+                new_fac.from_obj(obj)
+                self.facades.append(obj)
+
+            elif obj.xp_agp.type == 'TREE':
+                new_tree = tree()
+                new_tree.from_obj(obj)
+                self.trees.append(new_tree)
+
+            elif obj.xp_agp.type == 'TREE_LINE':
+                new_tree_line = tree_line()
+                new_tree_line.from_obj(obj)
+                self.tree_lines.append(obj)
+
+            elif obj.xp_agp.type == 'CROP_POLY':
+                new_crop_poly = crop_polygon()
+                new_crop_poly.from_obj(obj)
+                self.crop_poly = new_crop_poly
+
+    def to_obj(self, obj):
+        pass
+
+    def from_commands(self, command):
+        pass
+
+    def to_commands(self, fac_resource_list, obj_resource_list):
+        commands = []
+        
+        cur_cmd = ""
+
+        cur_cmd = f"TILE {self.left_uv} {self.bottom_uv} {self.right_uv} {self.top_uv}"
+        commands.append(cur_cmd)
+
+        cur_cmd = f"ANCHOR_PT {self.anchor_x_uv} {self.anchor_y_uv}"
+        commands.append(cur_cmd)
+
+        cur_cmd = f"GROUND_PT {self.anchor_x_uv} {self.anchor_y_uv}"
+        commands.append(cur_cmd)
+
+        cur_cmd = f"ROTATION_N {self.rotation_n}"
+        commands.append(cur_cmd)
+
+        if self.crop_poly != None:
+            cur_cmd = self.crop_poly.to_command(self.transform)
+            commands.append(cur_cmd)
+
+        for obj in self.attached_objs:
+            cur_cmd = obj.to_command(obj_resource_list, self.transform)
+            commands.append(cur_cmd)
+
+        for obj in self.auto_split_objs:
+            cmds = obj.to_commands(obj_resource_list, self.transform)
+            commands.extend(cmds)
+
+        for obj in self.facades:
+            cur_cmd = obj.to_command(fac_resource_list, self.transform)
+            commands.append(cur_cmd)
+
+        for obj in self.trees:
+            cur_cmd = obj.to_command(self.transform)
+            commands.append(cur_cmd)
+
+        for obj in self.tree_lines:
+            cmds = obj.to_commands(self.transform)
+            commands.extend(cmds)
+
+        return commands

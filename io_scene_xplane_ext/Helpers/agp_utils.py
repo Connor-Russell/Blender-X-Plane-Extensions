@@ -223,9 +223,9 @@ def get_tile_bounds_and_transform(obj):
     top_v = uv_layer[top_vertex.index].uv.y
     bottom_v = uv_layer[bottom_vertex.index].uv.y
 
-    #Calculate the ratios
-    x_ratio = (right_vertex.co.x - left_vertex.co.x) / (right_u - left_u)
-    y_ratio = (top_vertex.co.y - bottom_vertex.co.y) / (top_v - bottom_v)
+    #Calculate the ratios. We always use 4096 as our pixel size
+    x_ratio = ((right_vertex.co.x - left_vertex.co.x) / (right_u - left_u)) * 4096
+    y_ratio = ((top_vertex.co.y - bottom_vertex.co.y) / (top_v - bottom_v)) * 4096
 
     #Now that we have the ratios, and the left/bottom coords, we can get the anchor
     # To do so, we will multiply the negative left position and negative bottom postion by the ratios,
