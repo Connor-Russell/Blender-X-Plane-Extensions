@@ -6,6 +6,7 @@
 
 import bpy # type: ignore
 from .Helpers import file_utils
+from .Helpers import decal_utils
 
 def operator_wrapped_update_settings(self = None, context = None):
     if bpy.context.active_object == None:
@@ -36,6 +37,89 @@ def operator_wrapped_update_nodes(self = None, context = None):
 
     #Call the update_nodes function to update the material nodes
     update_nodes(in_material)
+
+#Function to update the X-Plane Collection material settings:
+def update_xplane_collection_settings(col):
+    #Define flag
+    updated = False
+
+    #Get all the objects in the collection
+    for obj in col.objects:
+        mat = obj.active_material
+
+        if mat != None:
+            xp_props = mat.xp_materials
+
+            #Check for textures
+            if xp_props.alb_texture != "":
+
+                #If we haven't updated yet, update
+                if not updated:
+                    if xp_props.lit_texture != "":
+                        if xp_props.brightness > 0:
+                            col.xplane.layer.luminance_override = True
+                            col.xplane.layer.luminance = int(xp_props.brightness)
+                        else:
+                            col.xplane.layer.luminance_override = False
+                            col.xplane.layer.luminance = 1000
+
+                        if xp_props.normal_texture != "":
+                            col.xplane.layer.normal_metalness_draped = True
+                    else:
+                        col.xplane.layer.luminance_override = False
+                        col.xplane.layer.luminance = 1000
+
+                    col.xplane.layer.texture = xp_props.alb_texture
+                    col.xplane.layer.texture_lit = xp_props.lit_texture
+                    col.xplane.layer.texture_normal = xp_props.normal_texture
+                    col.xplane.layer.texture_map_material_gloss = xp_props.material_texture
+                    col.xplane.layer.normal_metalness = True
+
+                    if xp_props.draped:
+                        col.xplane.layer.texture_draped = xp_props.alb_texture
+                        col.xplane.layer.texture_draped_normal = xp_props.normal_texture
+                        col.xplane.layer.normal_metalness_draped = True
+                    else:
+                        col.xplane.layer.texture_draped = ""
+                        col.xplane.layer.texture_draped_normal = ""
+                        col.xplane.layer.normal_metalness_draped = False
+                    updated = True
+
+                    #Now we need to set the decal properties
+                    #Reset decal properties
+                    col.xplane.layer.file_decal1 = ""
+                    col.xplane.layer.file_decal2 = ""
+                    col.xplane.layer.file_draped_decal1 = ""
+                    col.xplane.layer.file_draped_decal2 = ""
+                    col.xplane.layer.file_normal_decal1 = ""
+                    col.xplane.layer.file_normal_decal2 = ""
+                    col.xplane.layer.file_draped_normal_decal1 = ""
+                    col.xplane.layer.file_draped_normal_decal2 = ""
+                    col.xplane.layer.texture_modulator = ""
+                    col.xplane.layer.texture_draped_modulator = ""
+
+                    col.xplane.layer.texture_modulator = xp_props.decal_modulator
+
+                    if xp_props.draped:
+                        col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
+
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+
+                #If we have updated, but this one is draped, update with this one. Then we can skip the rest of the objects in this collection
+                if xp_props.draped:
+                    col.xplane.layer.texture = xp_props.alb_texture
+                    col.xplane.layer.texture_lit = xp_props.lit_texture
+                    col.xplane.layer.texture_normal = xp_props.normal_texture
+                    col.xplane.layer.texture_draped = xp_props.alb_texture
+                    col.xplane.layer.texture_draped_normal = xp_props.normal_texture
+                    col.xplane.layer.normal_metalness = True
+                    col.xplane.layer.normal_metalness_draped = True
+
+                    col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
+
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
 
 #Function to update settings when a property is updated:
 def update_settings(in_material):

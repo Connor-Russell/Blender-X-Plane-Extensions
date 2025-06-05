@@ -5,6 +5,8 @@
 #Purpose:   Provide classes that abstracts the X-Plane AGP format
 
 from ..Helpers import agp_utils
+from .. import material_config
+from .. import collection_utils
 
 import mathutils
 import bpy
@@ -258,3 +260,270 @@ class tree:
         #Convert the pixel coords to Blender coords
         self.x, self.y = agp_utils.to_blender_coords(x_pixel, y_pixel, transform)
 
+class attached_obj:
+    """
+    Class to abstract an individual tree in X-Plane's AGP format
+    """
+
+    def __init__(self):
+        self.resource = ""
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+        self.heading = 0.0
+        self.draped = False
+        self.show_low = 0
+        self.show_high = 0
+
+    def from_obj(self, obj):
+        self.resource = obj.xp_agp.attached_obj_resource
+        self.draped = obj.xp_agp.attached_obj_draped
+
+        self.x = obj.location.x
+        self.y = obj.location.y
+        self.z = obj.location.z
+        self.heading = obj.rotation_euler.z
+
+        self.show_low = obj.xp_agp.attached_obj_show_between_low
+        self.show_high = obj.xp_agp.attached_obj_show_between_high
+
+    def to_obj(self):
+        #Create a new empty and set it's properties
+        new_empty = bpy.data.objects.new("Attached Obj", None)
+
+        new_empty.xp_agp.attached_obj_resource = self.resource
+        new_empty.xp_agp.attached_obj_draped = self.draped
+
+        new_empty.xp_agp.attached_obj_show_between_low = self.show_low
+        new_empty.xp_agp.attached_obj_show_between_high = self.show_high
+
+        new_empty.location.x = self.x
+        new_empty.location.y = self.y
+        new_empty.location.z = self.z
+        new_empty.rotation_euler.z = self.heading
+
+        return new_empty
+
+    def to_command(self, obj_resource_list, transform: agp_utils.agp_transform):
+        cmd = ""
+
+        x_pixel, y_pixel = agp_utils.to_pixel_coords(self.x, self.y, transform)
+
+        obj_index = obj_resource_list.index(self.resource)
+
+        if not self.draped:
+            cmd = f"OBJ_DELTA {x_pixel} {y_pixel} {self.heading} {self.z} {obj_index} {self.show_low} {self.show_high}"
+        else:
+            cmd = f"OBJ_DRAPED {x_pixel} {y_pixel} {self.heading} {obj_index} {self.show_low} {self.show_high}"
+
+    def from_command(self, in_command, obj_resource_list, transform: agp_utils.agp_transform):
+        """
+        Parse an OBJ_DELTA or OBJ_DRAPED command and set the attached_obj's properties accordingly.
+        Args:
+            in_command (str): The OBJ_DELTA or OBJ_DRAPED command string.
+            obj_resource_list (list): List of resource names, indexed by resource index.
+            transform (agp_utils.agp_transform): Transform to convert pixel coords to Blender coords.
+        """
+        tokens = in_command.strip().split()
+        if not tokens:
+            raise ValueError(f"Empty command: {in_command}")
+        if tokens[0] == 'OBJ_DELTA':
+            # OBJ_DELTA x_pixel y_pixel heading z obj_index show_low show_high
+            if len(tokens) < 6:
+                raise ValueError(f"Invalid OBJ_DELTA command: {in_command}")
+            x_pixel = float(tokens[1])
+            y_pixel = float(tokens[2])
+            self.heading = float(tokens[3])
+            self.z = float(tokens[4])
+            obj_index = int(tokens[5])
+            if len(tokens) >= 8:
+                self.show_low = int(tokens[6])
+                self.show_high = int(tokens[7])
+            self.draped = False
+        elif tokens[0] == 'OBJ_DRAPED':
+            if len(tokens) < 5:
+                raise ValueError(f"Invalid OBJ_DRAPED command: {in_command}")
+            x_pixel = float(tokens[1])
+            y_pixel = float(tokens[2])
+            self.heading = float(tokens[3])
+            obj_index = int(tokens[4])
+            if len(tokens) >= 7:
+                self.show_low = int(tokens[5])
+                self.show_high = int(tokens[6])
+            self.z = 0.0
+            self.draped = True
+        elif tokens[0] == 'OBJ_GRADED' or tokens[0] == 'OBJ_SCRAPER':
+            if len(tokens) < 5:
+                raise ValueError(f"Invalid OBJ_GRADED command: {in_command}")
+            x_pixel = float(tokens[1])
+            y_pixel = float(tokens[2])
+            self.heading = float(tokens[3])
+            obj_index = int(tokens[4])
+            if len(tokens) >= 7:
+                self.show_low = int(tokens[5])
+                self.show_high = int(tokens[6])
+            self.z = 0.0
+            self.draped = False
+        else:
+            raise ValueError(f"Unknown command type for attached_obj: {tokens[0]}")
+
+        self.resource = obj_resource_list[obj_index]
+        self.x, self.y = agp_utils.to_blender_coords(x_pixel, y_pixel, transform)
+
+class auto_split_obj:
+    """
+    Class to represent an object that is auto-split off material and has it's parts added to the obj
+    """
+
+    def __init__(self):
+        self.resoures = []
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+        self.heading = 0.0
+        self.draped = False
+        self.show_low = 0
+        self.show_high = 0
+
+    def export(self, obj, agp_name):
+        """
+        Automatically splits the object by material, exports all the parts, and configures the settings
+        """
+
+        self.x = obj.location.x
+        self.y = obj.location.y
+        self.z = obj.location.z
+        self.draped = False
+        self.show_low = 0
+        self.show_high = 0
+
+        #Get all the children of this object, recursively
+        def get_children_recursive(obj):
+            children = []
+            for child in obj.children:
+                children.append(child)
+                children.extend(get_children_recursive(child))
+            return children
+        
+        children = get_children_recursive(obj)
+
+        def split_obj_by_material(obj):
+            """
+            Splits the given mesh object by material, returning a list of the new objects.
+            Args:
+                obj (bpy.types.Object): The mesh object to split.
+            Returns:
+                list: List of new objects, one per material.
+            """
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='DESELECT')
+
+            # Store original object name for later
+            original_name = obj.name
+            new_objects = []
+
+            mat_count = len(obj.data.materials)
+            for mat_index in range(mat_count):
+                bpy.ops.mesh.select_all(action='DESELECT')
+                bpy.ops.object.material_slot_select()
+                # Only separate if faces are selected
+                bpy.ops.mesh.separate(type='SELECTED')
+                bpy.ops.object.mode_set(mode='OBJECT')
+                # Find the new object (it will be selected)
+                separated_objs = [o for o in bpy.context.selected_objects if o != obj]
+                new_objects.extend(separated_objs)
+                bpy.ops.object.mode_set(mode='EDIT')
+
+            bpy.ops.object.mode_set(mode='OBJECT')
+            # Optionally, remove the original object if needed
+            # bpy.data.objects.remove(obj, do_unlink=True)
+
+            return new_objects    
+
+        all_mats = []
+        mat_collections = []    #Aligned with all_mats
+        all_objs = []
+
+        for child in children:
+            split_objs = split_obj_by_material(child)
+
+            #Move all the split objects by the inverse of their parent's location
+            for split_obj in split_objs:
+                split_obj.location.x -= self.x
+                split_obj.location.y -= self.y
+                split_obj.location.z -= self.z
+
+            all_objs.extend(split_objs)
+            all_mats.extend(child.data.materials)
+        
+        #Create the collections for each material
+        all_mats = list(set(all_mats))  # Remove duplicates
+
+        self.resoures = []
+        for mat in all_mats:
+            #Create a new collection for this material
+            obj_name = agp_name + "_PT_" + obj.name + "_" + mat.name + ".obj"
+            mat_collection = bpy.data.collections.new(obj_name)
+            mat_collection.xplane.layer.name = obj_name
+            self.resoures.append(obj_name)
+            mat_collection.xplane.is_exportable_collection = True
+            mat_collection.xplane.layer.export_type = 'scenery'
+            bpy.context.scene.collection.children.link(mat_collection)
+            mat_collections.append(mat_collection)
+
+        #Now we need to move our new objetcs into the correct collections
+        for obj in all_objs:
+            #Find the material for this object
+            obj_material = obj.active_material
+            if obj_material is not None:
+                #Find the collection for this material
+                mat_index = all_mats.index(obj_material.name)
+                if mat_index != -1:
+                    mat_collection = mat_collections[mat_index]
+                    #Move the object to the material collection
+                    mat_collection.objects.link(obj)
+
+        #Now we need to configure the settings for each collection
+        for col in mat_collections:
+            material_config.update_xplane_collection_settings(col)
+
+        #Now we need to disable export on all other objects, export ours, then reenable ours
+
+        original_collection_export_states = {}
+
+        for col in bpy.data.collections:
+            # Store the original export state
+            original_collection_export_states[col.name] = col.xplane.is_exportable_collection
+
+            col.xplane.is_exportable_collection = False
+
+        for col in mat_collections:
+            col.xplane.is_exportable_collection = True
+
+        bpy.ops.scene.export_to_relative_dir()
+
+        #Restore the original export states
+        for col in bpy.data.collections:
+            col.xplane.is_exportable_collection = original_collection_export_states[col.name]
+        
+        #We are now done with exporting, so we can remove the new objects and new colletcions
+        for col in mat_collections:
+            for obj in col.objects:
+                bpy.data.objects.remove(obj, do_unlink=True)
+            bpy.data.collections.remove(col, do_unlink=True)
+
+    def to_commands(self, obj_resource_list, transform: agp_utils.agp_transform):
+        cmds = []
+
+        x_pixel, y_pixel = agp_utils.to_pixel_coords(self.x, self.y, transform)
+
+        for resource in self.resoures:
+            obj_index = obj_resource_list.index(resource)
+            cmd = f"OBJ_DELTA {x_pixel} {y_pixel} {self.heading} {self.z} {obj_index} {self.show_low} {self.show_high}"
+            cmds.append(cmd)
+
+        return cmds

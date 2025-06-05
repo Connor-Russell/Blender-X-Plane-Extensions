@@ -572,6 +572,22 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         default=""
     )
 
+    attached_obj_show_between_low: bpy.props.IntProperty(
+        name="Show Between Low",
+        description="The lowest setting this obj will start to show at",
+        default=0,
+        min=0,
+        max=6
+    )
+
+    attached_obj_show_between_high: bpy.props.IntProperty(
+        name="Show Between High",
+        description="The setting this obj will always show at",
+        default=0,
+        min=0,
+        max=6
+    )
+
     facade_resource: bpy.props.StringProperty(
         name="Facade Resource",
         description="The resource for the facade",
