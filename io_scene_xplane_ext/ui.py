@@ -270,6 +270,49 @@ class MENU_lin_layer(bpy.types.Panel):
         if obj.xp_lin.exportable:
             layout.prop(obj.xp_lin, "type")
 
+class MENU_agp_obj(bpy.types.Panel):
+    """Creates a Panel in the Object properties window"""
+    bl_label = "X-Plane AGP Object"
+    bl_idname = "OBJECT_PT_agp_object"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "object"
+
+    @classmethod
+    def poll(cls, context):
+        # Only show the panel if the active object is an EMPTY
+        return context.object
+
+    def draw(self, context):
+
+        layout = self.layout
+
+        agp_obj = context.object.xp_agp
+
+        layout.prop(agp_obj, "exportable")
+        if agp_obj.exportable:
+            layout.prop(agp_obj, "type")
+            
+            if agp_obj.type == "ATTACHED_OBJ":
+                layout.separator()
+                layout.prop(agp_obj, "attached_obj_resource")
+                layout.prop(agp_obj, "attached_obj_draped")
+            elif agp_obj.type == "AUTO_SPLIT_OBJ":
+                layout.separator()
+                layout.label(text="DISCLAIMER:\nMore Materials = more .objs = more draw calls = worse performance.\nUse at own risk!")
+            elif agp_obj.type == "FACADE":
+                layout.separator()
+                layout.prop(agp_obj, "facade_resource")
+                layout.prop(agp_obj, "facade_height")
+            elif agp_obj.type == "TREE":
+                layout.separator()
+                layout.prop(agp_obj, "tree_layer")
+                layout.prop(agp_obj, "tree_width")
+                layout.prop(agp_obj, "tree_height")
+            elif agp_obj.type == "TREE_LINE":
+                layout.separator()
+                layout.prop(agp_obj, "tree_layer")
+
 class MENU_mats(bpy.types.Panel):
     bl_label = "X-Plane Material Properties"
     bl_idname = "MATERIAL_PT_mats"
@@ -689,6 +732,7 @@ def register():
     bpy.utils.register_class(MENU_attached_object)
     bpy.utils.register_class(MENU_fac_mesh)
     bpy.utils.register_class(MENU_pol_exporter)
+    bpy.utils.register_class(MENU_agp_obj)
 
 def unregister():
     bpy.utils.unregister_class(MENU_lin_exporter)
@@ -699,3 +743,4 @@ def unregister():
     bpy.utils.unregister_class(MENU_attached_object)
     bpy.utils.unregister_class(MENU_fac_mesh)
     bpy.utils.unregister_class(MENU_pol_exporter)
+    bpy.utils.unregister_class(MENU_agp_obj)

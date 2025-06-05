@@ -541,6 +541,67 @@ class PROP_pol_collection(bpy.types.PropertyGroup):
     layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
     layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
+#Autogen Point Properties
+
+class PROP_agp_obj(bpy.types.PropertyGroup):
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
+    type: bpy.props.EnumProperty(
+        name="Type",
+        description="The of object this is in the autogen point",
+        items=[
+            ('BASE_TILE', "Base Tile", "The base tile for the autogen point"),
+            ('ATTACHED_OBJ', "Attached Object", "An attached object to the parent tile"),
+            ('AUTO_SPLIT_OBJ', "Auto Split Object", "An empty whose children will be automatically split by material, exported as separate objects, and attached here in the .agp"),
+            ('FACADE', "Facade", "A facade perimeter"),
+            ('TREE', "Tree", "A tree object randomly picked from the set layer from the .agp's forest asset"),
+            ('TREE_LINE', "Tree Line", "A tree line object randomly picked from the set layer from the .agp's forest asset"),
+            ('CROP_POLY', "Crop Polygon", "A polygon used to crop the shape of the parent tile")
+        ],
+        default='BASE_TILE'
+    ) # type: ignore
+
+    attached_obj_draped: bpy.props.BoolProperty(
+        name="Draped",
+        description="Whether the attached object is draped",
+        default=False
+    )
+
+    attached_obj_resource: bpy.props.StringProperty(
+        name="Resource",
+        description="The resource for the attached object",
+        default=""
+    )
+
+    facade_resource: bpy.props.StringProperty(
+        name="Facade Resource",
+        description="The resource for the facade",
+        default=""
+    )
+
+    facade_height: bpy.props.FloatProperty(
+        name="Facade Height",
+        description="The height of the facade",
+        default=10.0
+    )
+
+    tree_layer: bpy.props.IntProperty(
+        name="Tree Layer",
+        description="The layer for the tree",
+        default=0
+    )
+
+    tree_width: bpy.props.FloatProperty(
+        name="Tree Width",
+        description="The width of the tree",
+        default=1.0
+    )
+
+    tree_height: bpy.props.FloatProperty(
+        name="Tree Height",
+        description="The height of the tree",
+        default=10.0
+    )
+
 #Facade properties
 
 class PROP_fac_mesh(bpy.types.PropertyGroup):
@@ -644,6 +705,7 @@ def register():
     bpy.utils.register_class(PROP_pol_collection)
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
+    bpy.utils.register_class(PROP_agp_obj)
     bpy.utils.register_class(PROP_xp_ext_scene)
     bpy.utils.register_class(PROP_decal)
     bpy.utils.register_class(PROP_mats)
@@ -658,6 +720,7 @@ def register():
 
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
+    bpy.types.Object.xp_agp = bpy.props.PointerProperty(type=PROP_agp_obj)
     bpy.types.Object.xp_fac_mesh = bpy.props.PointerProperty(type=PROP_fac_mesh)
     bpy.types.Collection.xp_pol = bpy.props.PointerProperty(type=PROP_pol_collection)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
@@ -680,6 +743,7 @@ def unregister():
     del bpy.types.Object.xp_fac_mesh
     del bpy.types.Object.xp_attached_obj
     del bpy.types.Object.xp_lin
+    del bpy.types.Object.xp_agp
 
     bpy.utils.unregister_class(PROP_facade)
     bpy.utils.unregister_class(PROP_fac_floor)
@@ -692,6 +756,7 @@ def unregister():
     bpy.utils.unregister_class(PROP_xp_ext_scene)
     bpy.utils.unregister_class(PROP_pol_collection)
     bpy.utils.unregister_class(PROP_lin_collection)
+    bpy.utils.unregister_class(PROP_agp_obj)
     bpy.utils.unregister_class(PROP_lin_layer)
     bpy.utils.unregister_class(PROP_attached_obj)
     bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)
