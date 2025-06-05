@@ -7,6 +7,17 @@
 import bpy
 from . import geometery_utils
 
+class agp_transform:
+    """
+    Contains the transform data for the agp tile
+    """
+
+    def __init__(self):
+        self.x_ratio = 1.0
+        self.y_ratio = 1.0
+        self.anchor_x = 0.0
+        self.anchor_y = 0.0
+
 def build_vertex_to_edge_map(obj):
     """
     Build a lookup table mapping each vertex index to a list of edge indices it is part of.
@@ -142,92 +153,43 @@ def get_perimeter_from_mesh(obj):
     #Return the coords
     return out_coords
 
-def get_translation_ratios(obj):
-    """
-    Gets multipliers to convert X/Y blender coordinates to pixel X/Y coordinates for the AGP
-    Works by finding the left/right/top/bottom verticies of the mesh, their UVs, then calculating the ratio between position and UV
-    Returns tuple of (x_ratio, y_ratio)
-    """
-
-    left_vertex = None
-    right_vertex = None
-    top_vertex = None
-    bottom_vertex = None
-
-    left_u = 0
-    right_u = 1
-    top_v = 1
-    bottom_v = 0
-
-    for v in obj.data.vertices:
-        if left_vertex is None or v.co.x < left_vertex.co.x:
-            left_vertex = v
-        if right_vertex is None or v.co.x > right_vertex.co.x:
-            right_vertex = v
-        if top_vertex is None or v.co.y > top_vertex.co.y:
-            top_vertex = v
-        if bottom_vertex is None or v.co.y < bottom_vertex.co.y:
-            bottom_vertex = v
-
-    #Get the UVs for these vertices
-    uv_layer = obj.data.uv_layers.active.data
-    if uv_layer is None:
-        raise ValueError("No active UV layer found on the object.")
-    
-    left_u = uv_layer[left_vertex.index].uv.x
-    right_u = uv_layer[right_vertex.index].uv.x
-    top_v = uv_layer[top_vertex.index].uv.y
-    bottom_v = uv_layer[bottom_vertex.index].uv.y
-
-    #Calculate the ratios
-    x_ratio = (right_vertex.co.x - left_vertex.co.x) / (right_u - left_u)
-    y_ratio = (top_vertex.co.y - bottom_vertex.co.y) / (top_v - bottom_v)
-
-    return x_ratio, y_ratio
-
-def to_pixel_coords(x, y, x_ratio, y_ratio, x_anchor, y_anchor):
+def to_pixel_coords(x, y, transform: agp_transform):
     """
     Converts the Blender X/Y coordinates relative to a tile to pixel coordinate.
     This is more complex than simply multiplying by the ratio, because the pixel coords are relative to 0/0, but the Blender coords are relative to their parent (the tile, whose origin is the anchor pt)
     Args:
         x (float): The X coordinate in Blender space.
         y (float): The Y coordinate in Blender space.
-        x_ratio (float): The ratio to convert Blender X to pixel X.
-        y_ratio (float): The ratio to convert Blender Y to pixel Y.
-        x_anchor (float): The X coordinate of the anchor point in UV space.
-        y_anchor (float): The Y coordinate of the anchor point in UV space.
+        transform (agp_transform): The transform object containing the ratios and anchors.
     Returns:
         tuple: A tuple containing the pixel X and Y coordinates.
     """
     # Calculate the pixel coordinates
-    pixel_x = x * x_ratio + x_anchor
-    pixel_y = y * y_ratio + y_anchor
+    pixel_x = x * transform.x_ratio + transform.anchor_x
+    pixel_y = y * transform.y_ratio + transform.anchor_y
 
     return pixel_x, pixel_y
 
-def to_blender_coords(pixel_x, pixel_y, x_ratio, y_ratio, x_anchor, y_anchor):
+def to_blender_coords(pixel_x, pixel_y, transform: agp_transform):
     """
     Converts pixel coordinates to Blender X/Y coordinates relative to a tile.
     This is the inverse of the to_pixel_coords function.
     Args:
         pixel_x (float): The X coordinate in pixel space.
         pixel_y (float): The Y coordinate in pixel space.
-        x_ratio (float): The ratio to convert Blender X to pixel X.
-        y_ratio (float): The ratio to convert Blender Y to pixel Y.
-        x_anchor (float): The X coordinate of the anchor point in UV space.
-        y_anchor (float): The Y coordinate of the anchor point in UV space.
+        transform (agp_transform): The transform object containing the ratios and anchors.
     Returns:
         tuple: A tuple containing the Blender X and Y coordinates.
     """
     # Calculate the Blender coordinates
-    blender_x = (pixel_x - x_anchor) / x_ratio
-    blender_y = (pixel_y - y_anchor) / y_ratio
+    blender_x = (pixel_x - transform.anchor_x) / transform.x_ratio
+    blender_y = (pixel_y - transform.anchor_y) / transform.y_ratio
 
     return blender_x, blender_y
 
-def get_tile_bounds_and_anchor(obj):
+def get_tile_bounds_and_transform(obj):
     """
-    Returns a tuple of left, bottom, right, top, anchor x, and anchor y UVs for the bounding box of the object, and the bounding box
+    Returns a tuple of left, bottom, right, top, UVs for the bounding box of the object, and the bounding box, and an agp_transform for this tile
 
     """
 
@@ -271,8 +233,14 @@ def get_tile_bounds_and_anchor(obj):
     anchor_u = left_u + (-left_vertex.co.x * x_ratio)
     anchor_v = bottom_v + (-bottom_vertex.co.y * y_ratio)
 
+    transform = agp_transform()
+    transform.x_ratio = x_ratio
+    transform.y_ratio = y_ratio
+    transform.anchor_x = anchor_u
+    transform.anchor_y = anchor_v
+
     #Return the UV bounds
-    return left_u, bottom_v, right_u, top_v, anchor_u, anchor_v
+    return left_u, bottom_v, right_u, top_v, transform
 
 def create_obj_from_perimeter(perimeter, extrude_height=0.0):
     """
@@ -301,5 +269,15 @@ def create_obj_from_perimeter(perimeter, extrude_height=0.0):
     for i in range(0, len(verts)):
         indicies.append(i)
 
-    return geometery_utils.create_obj_from_draw_call(verts, indicies, "Perimeter Obj")
-        
+    new_obj = geometery_utils.create_obj_from_draw_call(verts, indicies, "Perimeter Obj")
+
+    #Remove doubles from the new object
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = new_obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.remove_doubles(threshold=0.0001)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = None
+
+    return new_obj

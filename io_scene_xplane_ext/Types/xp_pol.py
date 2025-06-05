@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Export
-#Purpose:   Provide a class that defines the X-Plane line type
+#Module:    XP_Pol
+#Purpose:   Provide a class that defines the X-Plane polygon type
 
 #Include decal params from our material plugin
 from ..Helpers import pol_utils #type: ignore
