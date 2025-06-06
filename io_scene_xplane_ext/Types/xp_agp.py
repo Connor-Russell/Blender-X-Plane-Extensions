@@ -7,7 +7,10 @@
 from ..Helpers import agp_utils
 from .. import material_config
 from .. import misc_utils
+from ..Helpers import file_utils
+from ..Helpers import decal_utils
 
+import os
 import math
 import mathutils
 import bpy
@@ -377,7 +380,7 @@ class auto_split_obj:
     """
 
     def __init__(self):
-        self.resoures = []
+        self.resources = []
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
@@ -470,7 +473,7 @@ class auto_split_obj:
             obj_name = agp_name + "_PT_" + obj.name + "_" + mat.name + ".obj"
             mat_collection = bpy.data.collections.new(obj_name)
             mat_collection.xplane.layer.name = obj_name
-            self.resoures.append(obj_name)
+            self.resources.append(obj_name)
             mat_collection.xplane.is_exportable_collection = True
             mat_collection.xplane.layer.export_type = 'scenery'
             bpy.context.scene.collection.children.link(mat_collection)
@@ -593,8 +596,26 @@ class tile:
     def to_obj(self, obj):
         pass
 
-    def from_commands(self, command):
+    def from_commands(self, command, in_transfom):
         pass
+
+    def get_resources(self):
+        """
+        Returns a list of all used .objs and .facs as a tuple
+        """
+        objs = []
+        facs = []
+        
+        for obj in self.attached_objs:
+            objs.append(obj.resource)
+
+        for obj in self.auto_split_objs:
+            objs.extend(obj.resources)
+
+        for fac in self.facades:
+            facs.append(fac.resource)
+
+        return objs, facs
 
     def to_commands(self, fac_resource_list, obj_resource_list):
         commands = []
@@ -638,3 +659,171 @@ class tile:
             commands.extend(cmds)
 
         return commands
+
+class agp:
+    """
+    Class to represent an X-Plane AGP (autogen point) file.
+    """
+
+    def __init__(self):
+        self.alb_texture = ""
+        self.nml_texture = ""
+        self.nml_tile_rat = 1.0
+        self.lit_texture = ""
+        self.weather_texture = ""
+        self.blend_mode = "BLEND"
+        self.blend_cutoff = 0.5
+        self.cast_shadow = True
+        self.imported_decal_commands = []
+        self.layer_group = "objects"
+        self.layer_group_offset = 0
+
+        self.surface = 'NONE'
+
+        self.do_tiling = False
+        self.tiling_x_pages = 0
+        self.tiling_y_pages = 0
+        self.tiling_map_x_res = 0
+        self.tiling_map_y_res = 0
+        self.tiling_map_texture = ""
+
+        self.transform = agp_utils.agp_transform()
+
+        self.vegetation = ""
+
+        self.tiles = []  # List of tile objects
+
+        self.name = ""
+
+    def from_collection(self, in_collection):
+        #Set the layer group and offset
+        self.layer = in_collection.xp_pol.layer_group
+        self.layer_offset = in_collection.xp_pol.layer_group_offset
+
+        # Set texture tiling properties
+        self.do_tiling = in_collection.xp_pol.is_texture_tiling
+        self.tiling_x_pages = in_collection.xp_pol.texture_tiling_x_pages
+        self.tiling_y_pages = in_collection.xp_pol.texture_tiling_y_pages
+        self.tiling_map_x_res = in_collection.xp_pol.texture_tiling_map_x_res
+        self.tiling_map_y_res = in_collection.xp_pol.texture_tiling_map_y_res
+        self.tiling_map_texture = in_collection.xp_pol.texture_tiling_map_texture
+
+        #Get the material from the first mesh object in the collection
+        mat = None
+        for obj in in_collection.objects:
+            if obj.type == 'MESH':
+                #Check if it has a material
+                if len(obj.data.materials) > 0:
+                    #Get the first material
+                    mat = obj.data.materials[0]
+                    break
+
+        if mat is None:
+            raise ValueError(f"No material found in the collection {in_collection.name}")
+
+        # Extract material data
+        mat = mat.xp_materials
+
+        if mat.do_separate_material_texture:
+            raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+
+        self.alb_texture = mat.alb_texture
+        self.lit_texture = mat.lit_texture
+        self.nml_texture = mat.normal_texture
+        self.weather_texture = mat.weather_texture
+        self.do_blend = mat.blend_mode == 'BLEND'
+        self.blend_cutoff = mat.blend_cutoff
+        for decal in mat.decals:
+            self.decals.append(decal)
+        self.surface = mat.surface_type
+
+        #Now that we have the material setup, we need to load all the individual tiles and their children
+        for obj in in_collection.objects:
+            if obj.parent == None and obj.xp_agp.type == 'BASE_TILE':
+                new_tile = tile()
+                new_tile.from_obj(obj, self.name)
+                self.tiles.append(new_tile)
+
+    def write(self, output_path):
+        output_folder = os.path.dirname(output_path)
+
+        #Define a string to hold the file contents
+        of = "A\n1000\nAG_POINT\n\n"
+
+        #Write the material data
+        of += "#Materials\n"
+
+        if self.alb_texture != "":
+            of += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(self.alb_texture), output_folder) + "\n"
+        if self.lit_texture != "":
+            of += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(self.lit_texture), output_folder) + "\n"
+        if self.nml_texture != "":
+            of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
+        if self.weather_texture != "":
+            of += "WEATHER " + os.path.relpath(file_utils.rel_to_abs(self.weather_texture), output_folder) + "\n"
+        else:
+            of += "WEATHER_TRANSPARENT\n"
+        
+        if not self.do_blend:
+            of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
+        
+        of += "\n"
+
+        #Write the decals
+        if len(self.decals) > 0:
+            of += "#Decals\n"
+            for decal in self.decals:
+                #Get the decal command
+                decal_command = decal_utils.get_decal_command(decal, output_folder)
+                if decal_command:
+                    of += decal_command
+
+            of += "\n"
+
+        #Write the main polygon params
+        of += "LAYER_GROUP " + self.layer.lower() + " " + str(self.layer_offset) + "\n"
+        of += "SCALE " + str(int(self.scale_x)) + " " + str(int(self.scale_y)) + "\n"
+        if self.surface != None:
+            of += "SURFACE " + self.surface + "\n"
+        if self.do_tiling:
+            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.rel_to_abs(self.tiling_map_texture), output_folder) + "\n"
+
+        of += "\n#Scale\n"
+        of += "TEXTURE_SCALE 4096 4096\n"
+        of += "TEXTURE_WIDTH " + str(self.transform.x_ratio / 4096) + "\n"
+        of += "\n"
+
+        #Tiles
+        of += "\n#Resources\n"
+
+        fac_resource_list = []
+        obj_resource_list = []
+
+        #Now we need to get all our resources
+        for t in self.tiles:
+            objs, facs = t.get_resources()
+            obj_resource_list.extend(objs)
+            fac_resource_list.extend(facs)
+
+        fac_resource_list = list(set(fac_resource_list))  # Remove duplicates
+        obj_resource_list = list(set(obj_resource_list))  # Remove duplicates
+
+        for fac in fac_resource_list:
+            of += "FACADE " + fac + "\n"
+
+        for obj in obj_resource_list:
+            of += "OBJECT " + obj + "\n"
+
+        if self.vegetation != "":
+            of += "VEGETATION " + self.vegetation + "\n"
+
+        #Tiles
+        of += "\n#Tile Definitions\n\n"
+
+        for t in self.tiles:
+            cmds = t.to_commands(fac_resource_list, obj_resource_list)
+
+            for c in cmds:
+                of += c + "\n"
+
+            of += "\n"
