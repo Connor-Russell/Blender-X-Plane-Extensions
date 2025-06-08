@@ -583,13 +583,20 @@ class auto_split_obj:
             bpy.context.scene.collection.children.link(mat_collection)
             mat_collections.append(mat_collection)
 
+        #Add one more collection for objects that don't have a material
+        no_mat_collection = bpy.data.collections.new(agp_name + "_PT_" + obj.name + "_NO_MAT.obj")
+        no_mat_collection.xplane.layer.name = no_mat_collection.name
+        no_mat_collection.xplane.is_exportable_collection = True
+        no_mat_collection.xplane.layer.export_type = 'scenery'
+        bpy.context.scene.collection.children.link(no_mat_collection)
+        mat_collections.append(no_mat_collection)
+
         #Now we need to move our new objetcs into the correct collections
         for obj in all_objs:
             if obj.type != 'MESH':
                 #Non-mesh objects just get dumped into the first collection
-                if len(mat_collections) > 0:
-                    mat_collection = mat_collections[0]
-                    mat_collection.objects.link(obj)
+                target_col = mat_collections[-1]  # The last collection is the "no material" collection
+                target_col.objects.link(obj)
                 continue
             #Find the material for this object
             obj_material = obj.active_material
