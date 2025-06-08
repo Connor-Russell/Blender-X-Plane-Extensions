@@ -8,6 +8,7 @@ import bpy
 import mathutils
 from . import geometery_utils
 from . import log_utils
+from . import misc_utils
 
 class agp_transform:
     """
@@ -162,6 +163,8 @@ def get_perimeter_from_mesh(obj):
 
     #Now we will iterate over our list of coords and apply the rot/loc/scale of *this* object, but not the parents, to it
     out_coords = [(obj.matrix_local @ coord) * parent_scale for coord in out_coords]
+
+    out_coords = misc_utils.make_winding_ccw(out_coords)
 
     #Return the coords
     return out_coords

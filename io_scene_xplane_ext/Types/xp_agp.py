@@ -353,7 +353,7 @@ class attached_obj:
         self.x = obj.location.x * parent_scale.x
         self.y = obj.location.y * parent_scale.y
         self.z = obj.location.z * parent_scale.z
-        self.heading = obj.rotation_euler.z
+        self.heading = misc_utils.resolve_heading(math.degrees(obj.rotation_euler.z) * -1)
 
         self.show_low = obj.xp_agp.attached_obj_show_between_low
         self.show_high = obj.xp_agp.attached_obj_show_between_high
@@ -642,7 +642,16 @@ class tile:
         self.left_uv, self.bottom_uv, self.right_uv, self.top_uv, self.transform = agp_utils.get_tile_bounds_and_transform(in_obj)
 
         #Count of CCW rotations
-        self.rotation_n = int(round((((-(math.degrees(in_obj.rotation_euler.z) + 180)) % 360) / 90))) % 4
+        cur_rot = misc_utils.resolve_heading(math.degrees(in_obj.rotation_euler.z))
+
+        if abs(cur_rot) < 1:
+            self.rotation_n = 0
+        elif abs(cur_rot - 90) < 1:
+            self.rotation_n = 3
+        elif abs(cur_rot - 180) < 1:
+            self.rotation_n = 2
+        elif abs(cur_rot - 270) < 1:
+            self.rotation_n = 1
         
         #Now that we have the transform, we can get the child data
         for obj in in_obj.children:
@@ -717,7 +726,7 @@ class tile:
         cur_cmd = f"GROUND_PT {self.anchor_x_uv * 4096} {self.anchor_y_uv * 4096}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"ROTATION_N {self.rotation_n}"
+        cur_cmd = f"ROTATION {self.rotation_n}"
         commands.append(cur_cmd)
 
         if self.crop_poly != None:
@@ -877,9 +886,15 @@ class agp:
         if self.do_tiling:
             of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.rel_to_abs(self.tiling_map_texture), output_folder) + "\n"
 
+        if len(self.tiles) == 0:
+            log_utils.error("Must have at least 1 tile for .agp!")
+            return
+
+        self.transform = self.tiles[0].transform
+
         of += "\n#Scale\n"
         of += "TEXTURE_SCALE 4096 4096\n"
-        of += "TEXTURE_WIDTH " + str(self.transform.x_ratio / 4096) + "\n"
+        of += "TEXTURE_WIDTH " + str(1 / (self.transform.x_ratio / 4096)) + "\n"
         of += "\n"
 
         #Tiles
