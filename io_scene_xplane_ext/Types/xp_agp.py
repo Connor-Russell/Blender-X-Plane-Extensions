@@ -770,12 +770,40 @@ class tile:
         else:
             new_tile_obj.rotation_euler.z = 0.0
 
-    def from_commands(self, commands, in_transfom, in_x_mult, in_y_mult):
+    def from_commands(self, commands, in_transfom, in_x_mult, in_y_mult, fac_resource_list, obj_resource_list):
         #Tiles have *many* commands, their TILE, their ANCHOR_PT, and all annotations.
         #So to handle all these we'll just loop through and set properties as we encounter them
 
         for cmd in commands:
-            pass
+            tokens = cmd.strip().split()
+            if not tokens:
+                continue
+
+            if tokens[0] == 'TILE':
+                self.left_uv = float(tokens[1]) * in_x_mult
+                self.bottom_uv = float(tokens[2]) * in_y_mult
+                self.right_uv = float(tokens[3]) * in_x_mult
+                self.top_uv = float(tokens[4]) * in_y_mult
+            elif tokens[0] == 'ANCHOR_PT':
+                self.anchor_x_uv = float(tokens[1]) * in_x_mult
+                self.anchor_y_uv = float(tokens[2]) * in_y_mult
+            elif tokens[0] == 'ROTATION':
+                self.rotation_n = int(float(tokens[1]))
+            elif tokens[0] == 'CROP_POLY':
+                self.crop_poly = crop_polygon()
+                self.crop_poly.from_command(cmd, [], in_transfom)
+            elif tokens[0] == 'FAC':
+                self.facades.append(facade())
+                self.facades[-1].from_command(cmd, fac_resource_list, in_transfom)
+            elif tokens[0] == 'OBJ_DELTA' or tokens[0] == 'OBJ_DRAPED' or tokens[0] == 'OBJ_GRADED' or tokens[0] == 'OBJ_SCRAPER':
+                self.attached_objs.append(attached_obj())
+                self.attached_objs[-1].from_command(cmd, obj_resource_list, in_transfom)
+            elif tokens[0] == 'TREE':
+                self.trees.append(tree())
+                self.trees[-1].from_command(cmd, [], in_transfom)
+            elif tokens[0] == 'TREE_LINE':
+                self.tree_lines.append(tree_line())
+                self.tree_lines[-1].from_command(cmd, [], in_transfom)
 
     def get_resources(self):
         """
