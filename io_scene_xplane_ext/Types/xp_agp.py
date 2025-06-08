@@ -15,6 +15,7 @@ import os
 import math
 import mathutils
 import bpy
+import bmesh
 
 class crop_polygon:
     """
@@ -499,56 +500,73 @@ class auto_split_obj:
 
         def split_obj_by_material(obj):
             """
-            Splits the given mesh object by material, returning a list of the new objects.
-            Args:
-                obj (bpy.types.Object): The mesh object to split.
-            Returns:
-                list: List of new objects, one per material.
+            Splits the given mesh object by material, returning a list of new objects (one per material).
+            The original object is not modified.
             """
-            bpy.ops.object.select_all(action='DESELECT')
-            obj.select_set(True)
-            bpy.context.view_layer.objects.active = obj
-
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='DESELECT')
-
-            # Store original object name for later
-            original_name = obj.name
+            mesh = obj.data
+            mat_count = len(mesh.materials)
             new_objects = []
 
-            mat_count = len(obj.data.materials)
             for mat_index in range(mat_count):
-                bpy.ops.mesh.select_all(action='DESELECT')
-                bpy.ops.object.material_slot_select()
-                # Only separate if faces are selected
-                bpy.ops.mesh.separate(type='SELECTED')
-                bpy.ops.object.mode_set(mode='OBJECT')
-                # Find the new object (it will be selected)
-                separated_objs = [o for o in bpy.context.selected_objects if o != obj]
-                new_objects.extend(separated_objs)
-                bpy.ops.object.mode_set(mode='EDIT')
+                # Create a new mesh and object
+                new_mesh = bpy.data.meshes.new(f"{obj.name}_mat_{mat_index}")
+                new_obj = bpy.data.objects.new(f"{obj.name}_mat_{mat_index}", new_mesh)
+                new_obj.matrix_world = obj.matrix_world.copy()
+                new_obj.data.materials.append(mesh.materials[mat_index])
 
-            bpy.ops.object.mode_set(mode='OBJECT')
-            # Optionally, remove the original object if needed
-            # bpy.data.objects.remove(obj, do_unlink=True)
+                # Use bmesh to filter faces by material
+                bm = bmesh.new()
+                bm.from_mesh(mesh)
+                faces_to_keep = [f for f in bm.faces if f.material_index == mat_index]
+                if not faces_to_keep:
+                    bm.free()
+                    bpy.data.meshes.remove(new_mesh)
+                    continue
 
-            return new_objects    
+                # Deselect all, then select only the faces for this material
+                for f in bm.faces:
+                    f.select_set(False)
+                for f in faces_to_keep:
+                    f.select_set(True)
+
+                # Duplicate the selected faces into a new bmesh
+                bm_new = bmesh.new()
+                bmesh.ops.duplicate(bm_new, geom=faces_to_keep)
+                bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index != mat_index], context='FACES')
+
+                # Write the new bmesh to the new mesh
+                bm.to_mesh(new_mesh)
+                bm.free()
+                bm_new.free()
+
+                new_objects.append(new_obj)
+
+            return new_objects
 
         all_mats = []
         mat_collections = []    #Aligned with all_mats
         all_objs = []
 
         for child in children:
-            split_objs = split_obj_by_material(child)
+            if child.type == 'MESH':
+                split_objs = split_obj_by_material(child)
 
-            #Move all the split objects by the inverse of their parent's location
-            for split_obj in split_objs:
-                split_obj.location.x -= self.x
-                split_obj.location.y -= self.y
-                split_obj.location.z -= self.z
+                #Move all the split objects by the inverse of their parent's location
+                for split_obj in split_objs:
+                    split_obj.location.x -= self.x
+                    split_obj.location.y -= self.y
+                    split_obj.location.z -= self.z
 
-            all_objs.extend(split_objs)
-            all_mats.extend(child.data.materials)
+                all_objs.extend(split_objs)
+                all_mats.extend(child.data.materials)
+
+            else:
+                #Move the object by the inverse of the parent's location
+                child.location.x -= self.x
+                child.location.y -= self.y
+                child.location.z -= self.z
+
+                all_objs.append(child)
         
         #Create the collections for each material
         all_mats = list(set(all_mats))  # Remove duplicates
@@ -567,6 +585,12 @@ class auto_split_obj:
 
         #Now we need to move our new objetcs into the correct collections
         for obj in all_objs:
+            if obj.type != 'MESH':
+                #Non-mesh objects just get dumped into the first collection
+                if len(mat_collections) > 0:
+                    mat_collection = mat_collections[0]
+                    mat_collection.objects.link(obj)
+                continue
             #Find the material for this object
             obj_material = obj.active_material
             if obj_material is not None:
@@ -611,7 +635,7 @@ class auto_split_obj:
 
         x_pixel, y_pixel = agp_utils.to_pixel_coords(self.x, self.y, transform)
 
-        for resource in self.resoures:
+        for resource in self.resources:
             obj_index = obj_resource_list.index(resource)
             cmd = f"OBJ_DELTA {x_pixel} {y_pixel} {self.heading} {self.z} {obj_index} {self.show_low} {self.show_high}"
             cmds.append(cmd)
