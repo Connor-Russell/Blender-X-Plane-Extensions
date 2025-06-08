@@ -724,7 +724,7 @@ class tile:
                 new_crop_poly.from_obj(obj)
                 self.crop_poly = new_crop_poly
 
-    def to_obj(self):
+    def to_obj(self, target_collection):
         new_objs = []
         if self.crop_poly is not None:
             new_obj = self.crop_poly.to_obj()
@@ -759,6 +759,9 @@ class tile:
         #Link the new objects to the tile object
         for new_obj in new_objs:
             new_obj.parent = new_tile_obj
+            
+            #Link to the target collection
+            target_collection.objects.link(new_obj)
 
         #Rotate the tile object based on the rotation_n
         if self.rotation_n == 1:
@@ -962,8 +965,34 @@ class agp:
                 new_tile.from_obj(obj, self.name)
                 self.tiles.append(new_tile)
 
+    def to_collection(self):
+        #Create the collection and set it's settings
+        new_collection = bpy.data.collections.new(name=self.name)
+        bpy.context.scene.collection.children.link(new_collection)
+
+        new_collection.xp_agp.exportable = True
+        new_collection.xp_agp.layer_group = self.layer.lower()
+        new_collection.xp_agp.layer_group_offset = self.layer_offset
+        new_collection.xp_agp.is_texture_tiling = self.do_tiling
+        new_collection.xp_agp.texture_tiling_x_pages = self.tiling_x_pages
+        new_collection.xp_agp.texture_tiling_y_pages = self.tiling_y_pages
+        new_collection.xp_agp.texture_tiling_map_x_res = self.tiling_map_x_res
+        new_collection.xp_agp.texture_tiling_map_y_res = self.tiling_map_y_res
+        new_collection.xp_agp.texture_tiling_map_texture = self.tiling_map_texture
+        new_collection.xp_agp.render_tiles = self.render_tiles
+        new_collection.xp_agp.tile_lod = self.tile_lod
+
+        for tile in self.tiles:
+            #Create the tile object and link it to the collection
+            tile.to_obj(new_collection)
+        pass
+
     def write(self, output_path):
         output_folder = os.path.dirname(output_path)
+
+        if len(self.tiles) == 0:
+            log_utils.error("Must have at least 1 tile for .agp!")
+            return
 
         #Define a string to hold the file contents
         of = "A\n1000\nAG_POINT\n\n"
@@ -1008,10 +1037,6 @@ class agp:
             of += "HIDE_TILES\n"
         if self.tile_lod != 20000:
             of += "TILE_LOD " + str(self.tile_lod) + "\n"
-
-        if len(self.tiles) == 0:
-            log_utils.error("Must have at least 1 tile for .agp!")
-            return
 
         self.transform = self.tiles[0].transform
 
@@ -1176,6 +1201,6 @@ class agp:
         if len(cur_tile_commands) > 0:
             # We have a tile to process
             new_tile = tile()
-            new_tile.from_commands(cur_tile_commands, self.transform, self.imported_texture_width, self.imported_texture_height, fac_resource_list, obj_resource_list)
+            new_tile.from_commands(cur_tile_commands, self.transform, 4096 / self.imported_texture_width, 4096 / self.imported_texture_height, fac_resource_list, obj_resource_list)
             self.tiles.append(new_tile)
     

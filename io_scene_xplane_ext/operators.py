@@ -127,6 +127,24 @@ class IMPORT_obj(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
 
+class IMPORT_agp(bpy.types.Operator, ImportHelper):
+    bl_idname = "import_scene.xp_agp"
+    bl_label = "Import X-Plane Autogen Points"
+    filename_ext = ".agp"
+    filter_glob: bpy.props.StringProperty(default="*.agp", options={'HIDDEN'}) # type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
+
+    def execute(self, context):
+        # Implement your import logic here
+        directory = self.filepath
+        directory = directory[:directory.rfind(os.sep)]
+
+        for cf in self.files:
+            filepath = f"{directory}{os.sep}{cf.name}"
+            importer.import_agp(filepath)
+
+        return {'FINISHED'}
+
 class TEST_IMPORT_obj(bpy.types.Operator):
     bl_idname = "xp_ext.test_import_obj"
     bl_label = "Test Import X-Plane Lines"
@@ -486,6 +504,7 @@ def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
     self.layout.operator(IMPORT_fac.bl_idname, text="X-Plane Facade (.fac)")
     self.layout.operator(IMPORT_obj.bl_idname, text="X-Plane Object (.obj)")
+    self.layout.operator(IMPORT_agp.bl_idname, text="X-Plane Autogen Point (.agp)")
     
 def register():
     bpy.utils.register_class(BTN_lin_exporter)
@@ -494,6 +513,7 @@ def register():
     bpy.utils.register_class(IMPORT_pol)
     bpy.utils.register_class(IMPORT_fac)
     bpy.utils.register_class(IMPORT_obj)
+    bpy.utils.register_class(IMPORT_agp)
     bpy.utils.register_class(TEST_IMPORT_obj)
     bpy.utils.register_class(TEST_import_lin)
     bpy.utils.register_class(TEST_import_pol)
@@ -519,6 +539,7 @@ def unregister():
     bpy.utils.unregister_class(IMPORT_pol)
     bpy.utils.unregister_class(IMPORT_fac)
     bpy.utils.unregister_class(IMPORT_obj)
+    bpy.utils.unregister_class(IMPORT_agp)
     bpy.utils.unregister_class(TEST_IMPORT_obj)
     bpy.utils.unregister_class(TEST_import_lin)
     bpy.utils.unregister_class(TEST_import_pol)

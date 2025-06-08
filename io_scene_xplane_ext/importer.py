@@ -56,3 +56,13 @@ def import_obj(in_path):
     obj.read(in_path)
     obj.to_scene()
     
+def import_agp(in_path):
+    #Define just the file name from the path
+    in_name = in_path
+    in_name = in_path.split(os.sep)[-1]
+
+    #Read it
+    agp = xp_obj.agp()
+    print(f"Importing {in_name}...")
+    agp.read(in_path)
+    agp.to_scene()
