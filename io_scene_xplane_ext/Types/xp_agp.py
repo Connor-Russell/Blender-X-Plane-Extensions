@@ -35,11 +35,13 @@ class crop_polygon:
             self.valid = False
             return
 
-    def to_obj(self, obj):
+    def to_obj(self):
         if len(self.perimeter) == 0:
             return
         #Set the vertices in world coordinates
         new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, self.height)
+        new_obj.xp_agp.exportable = True
+        new_obj.xp_agp.type = 'CROP_POLY'
 
         return new_obj
 
@@ -108,15 +110,17 @@ class facade:
             self.valid = False
             return
 
-    def to_obj(self, obj):
+    def to_obj(self):
         if not self.valid:
             return
-        
-        obj.xp_agp.facade_resource = self.resource
-        obj.xp_agp.facade_height = self.height
 
         #Set the vertices in world coordinates
         new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, self.height)
+
+        new_obj.xp_agp.facade_resource = self.resource
+        new_obj.xp_agp.facade_height = self.height
+        new_obj.xp_agp.exportable = True
+        new_obj.xp_agp.type = 'FACADE'
 
         return new_obj
 
@@ -204,6 +208,8 @@ class tree_line:
         new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, self.layer)
 
         new_obj.xp_agp.tree_layer = self.layer
+        new_obj.xp_agp.exportable = True
+        new_obj.xp_agp.type = 'TREE_LINE'
 
         return new_obj
 
@@ -299,6 +305,9 @@ class tree:
 
         new_empty.location.x = self.x
         new_empty.location.y = self.y
+
+        new_empty.xp_agp.exportable = True
+        new_empty.xp_agp.type = 'TREE'
         
         return new_empty
 
@@ -371,6 +380,9 @@ class attached_obj:
 
         new_empty.xp_agp.attached_obj_show_between_low = self.show_low
         new_empty.xp_agp.attached_obj_show_between_high = self.show_high
+
+        new_empty.xp_agp.exportable = True
+        new_empty.xp_agp.type = 'ATTACHED_OBJ'
 
         new_empty.location.x = self.x
         new_empty.location.y = self.y
@@ -712,11 +724,58 @@ class tile:
                 new_crop_poly.from_obj(obj)
                 self.crop_poly = new_crop_poly
 
-    def to_obj(self, obj):
-        pass
+    def to_obj(self):
+        new_objs = []
+        if self.crop_poly is not None:
+            new_obj = self.crop_poly.to_obj()
+            if new_obj is not None:
+                new_objs.append(new_obj)
 
-    def from_commands(self, command, in_transfom):
-        pass
+        for obj in self.attached_objs:
+            new_obj = obj.to_obj()
+            if new_obj is not None:
+                new_objs.append(new_obj)
+
+        for obj in self.facades:
+            new_obj = obj.to_obj()
+            if new_obj is not None:
+                new_objs.append(new_obj)
+
+        for obj in self.trees:
+            new_obj = obj.to_obj()
+            if new_obj is not None:
+                new_objs.append(new_obj)
+
+        for obj in self.tree_lines:
+            new_obj = obj.to_obj()
+            if new_obj is not None:
+                new_objs.append(new_obj)
+
+        #Create our tile object
+        new_tile_obj = agp_utils.create_tile_obj(self.left_uv, self.bottom_uv, self.right_uv, self.top_uv, self.transform)
+        new_tile_obj.xp_agp.exportable = True
+        new_tile_obj.xp_agp.type = 'BASE_TILE'
+
+        #Link the new objects to the tile object
+        for new_obj in new_objs:
+            new_tile_obj.children.link(new_obj)
+
+        #Rotate the tile object based on the rotation_n
+        if self.rotation_n == 1:
+            new_tile_obj.rotation_euler.z = math.radians(270)
+        elif self.rotation_n == 2:
+            new_tile_obj.rotation_euler.z = math.radians(180)
+        elif self.rotation_n == 3:
+            new_tile_obj.rotation_euler.z = math.radians(90)
+        else:
+            new_tile_obj.rotation_euler.z = 0.0
+
+    def from_commands(self, commands, in_transfom, in_x_mult, in_y_mult):
+        #Tiles have *many* commands, their TILE, their ANCHOR_PT, and all annotations.
+        #So to handle all these we'll just loop through and set properties as we encounter them
+
+        for cmd in commands:
+            pass
 
     def get_resources(self):
         """

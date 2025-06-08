@@ -265,6 +265,54 @@ def get_tile_bounds_and_transform(obj):
     #Return the UV bounds
     return left_u, bottom_v, right_u, top_v, transform
 
+def create_tile_obj(left: float, bottom: float, right: float, top: float, in_transform: agp_transform):
+    """
+    Creates a flat plane mesh object with edges at the given left, bottom, right, and top coordinates.
+    Sets the UVs to left/bottom/right/top.
+    Returns the new Blender object.
+    """
+    import bpy
+    import mathutils
+
+    # Define the 4 corners of the plane (Z=0 for flatness)
+    verts = [
+        (left / in_transform.x_ratio, bottom / in_transform.y_ratio, 0.0),  # 0: Bottom Left
+        (right / in_transform.x_ratio, bottom / in_transform.y_ratio, 0.0), # 1: Bottom Right
+        (right / in_transform.x_ratio, top / in_transform.y_ratio, 0.0),    # 2: Top Right
+        (left / in_transform.x_ratio, top / in_transform.y_ratio, 0.0),     # 3: Top Left
+    ]
+
+    for i, v in enumerate(verts):
+        v[0] -= in_transform.anchor_x / in_transform.x_ratio
+        v[1] -= in_transform.anchor_y / in_transform.y_ratio
+        verts[i] = v
+        
+    # Define the face using the 4 vertices
+    faces = [ (0, 1, 2, 3) ]
+
+    mesh = bpy.data.meshes.new("TilePlaneMesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+
+    # Create the object and link it
+    obj = bpy.data.objects.new("TilePlane", mesh)
+    bpy.context.collection.objects.link(obj)
+
+    # Set up UVs: create a UV layer if not present
+    if not mesh.uv_layers:
+        mesh.uv_layers.new(name="UVMap")
+    uv_layer = mesh.uv_layers.active.data
+
+    # There is only one face, so 4 loops (one per corner)
+    # Blender face loop order matches verts order in from_pydata for quads
+    # Assign UVs: (left, bottom), (right, bottom), (right, top), (left, top)
+    uv_layer[0].uv = (left / 4096, bottom / 4096)
+    uv_layer[1].uv = (right / 4096, bottom / 4096)
+    uv_layer[2].uv = (right / 4096, top / 4096)
+    uv_layer[3].uv = (left / 4096, top / 4096)
+
+    return obj
+
 def create_obj_from_perimeter(perimeter, extrude_height=0.0):
     """
     Creates a new object from the given perimeter points.
