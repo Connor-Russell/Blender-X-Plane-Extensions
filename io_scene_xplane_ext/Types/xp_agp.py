@@ -5,10 +5,11 @@
 #Purpose:   Provide classes that abstracts the X-Plane AGP format
 
 from ..Helpers import agp_utils
-from .. import material_config
-from .. import misc_utils
 from ..Helpers import file_utils
 from ..Helpers import decal_utils
+from ..Helpers import misc_utils
+from ..Helpers import log_utils
+from .. import material_config
 
 import os
 import math
@@ -22,18 +23,29 @@ class crop_polygon:
 
     def __init__(self):
         self.perimeter = [] #List of mathutils.Vector. Stored in world coordinates
+        self.valid = True
 
     def from_obj(self, obj):
         #Get the vertices in world coordinates
         self.perimeter = agp_utils.get_perimeter_from_mesh(obj)
 
+        if len(self.perimeter) < 3:
+            log_utils.warning(f"CROP_POLY must have at least three coordinates! {obj.name}")
+            self.valid = False
+            return
+
     def to_obj(self, obj):
+        if len(self.perimeter) == 0:
+            return
         #Set the vertices in world coordinates
         new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, self.height)
 
         return new_obj
 
     def to_command(self, transform: agp_utils.agp_transform):
+        if not self.valid:
+            return ""
+
         cmd = ""
 
         #Now we need to copy our perimeter and transform it
@@ -49,7 +61,9 @@ class crop_polygon:
             cmd += f"{vert.x} {vert.y} "
 
         if len(transformed_perimeter) < 3:
-            raise ValueError("CROP_POLY must have at least 3 vertices.")
+            log_utils.warning("CROP_POLY must have at least 3 vertices.")
+            self.perimeter = []
+            return
         
         return cmd
 
@@ -59,7 +73,9 @@ class crop_polygon:
         # The rest are perimeter coordinates (x, y pairs)
         coords = tokens[1:]
         if len(coords) % 2 != 0:
-            raise ValueError(f"Invalid number of coordinates in CROP_POLY command: {in_command}")
+            log_utils.warning(f"Invalid number of coordinates in CROP_POLY command: {in_command}")
+            self.perimeter = []
+            return
 
         self.perimeter = []
         for i in range(0, len(coords), 2):
@@ -77,6 +93,7 @@ class facade:
         self.resource = ""
         self.height = 10.0
         self.perimeter = [] #List of mathutils.Vector. Stored in world coordinates
+        self.valid = True
 
     def from_obj(self, obj):
         self.resource = obj.xp_agp.facade_resource
@@ -85,7 +102,15 @@ class facade:
         #Get the vertices in world coordinates
         self.perimeter = agp_utils.get_perimeter_from_mesh(obj)
 
+        if len(self.perimeter) < 2:
+            log_utils.warning(f"FAC must have at least two coordinates! {obj.name}")
+            self.valid = False
+            return
+
     def to_obj(self, obj):
+        if not self.valid:
+            return
+        
         obj.xp_agp.facade_resource = self.resource
         obj.xp_agp.facade_height = self.height
 
@@ -95,6 +120,9 @@ class facade:
         return new_obj
 
     def to_command(self, fac_resource_list, transform: agp_utils.agp_transform):
+        if not self.valid:
+            return ""
+
         cmd = ""
 
         #Find out resource index
@@ -112,6 +140,8 @@ class facade:
         for vert in transformed_perimeter:
             cmd += f"{vert.x} {vert.y} "
 
+        return cmd
+
     def from_command(self, in_command, fac_resource_list, transform: agp_utils.agp_transform):
         """
         Parse a FAC command and set the facade's properties accordingly.
@@ -122,7 +152,9 @@ class facade:
         """
         tokens = in_command.strip().split()
         if len(tokens) < 4 or tokens[0] != 'FAC':
-            raise ValueError(f"Invalid FAC command: {in_command}")
+            log_utils.warning(f"Invalid FAC command: {in_command}")
+            self.valid = False
+            return
 
         resource_index = int(tokens[1])
         self.resource = fac_resource_list[resource_index]
@@ -131,7 +163,9 @@ class facade:
         # The rest are perimeter coordinates (x, y pairs)
         coords = tokens[3:]
         if len(coords) % 2 != 0:
-            raise ValueError(f"Invalid number of coordinates in FAC command: {in_command}")
+            log_utils.warning(f"Invalid number of coordinates in FAC command: {in_command}")
+            self.valid = False
+            return
 
         self.perimeter = []
         for i in range(0, len(coords), 2):
@@ -148,6 +182,7 @@ class tree_line:
     def __init__(self):
         self.layer = 0
         self.perimeter = [] #List of mathutils.Vector. Stored in world coordinates
+        self.valid = True
 
     def from_obj(self, obj):
         self.layer = obj.xp_agp.tree_layer
@@ -155,15 +190,26 @@ class tree_line:
         #Get the vertices in world coordinates
         self.perimeter = agp_utils.get_perimeter_from_mesh(obj)
 
-    def to_obj(self, obj):
-        obj.xp_agp.tree_layer = self.layer
+        if len(self.perimeter) < 2:
+            log_utils.warning(f"Tree Line must have at least two coordinates! {obj.name}")
+            self.valid = False
+            return
+
+    def to_obj(self):
+        if not self.valid:
+            return
 
         #Set the vertices in world coordinates
         new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, self.layer)
 
+        new_obj.xp_agp.tree_layer = self.layer
+
         return new_obj
 
     def to_commands(self, transform: agp_utils.agp_transform):
+        if not self.valid:
+            return []
+
         #TREE_LINE commands in .agps are only a start and end.
         # In here we allow more but will auto split them into multiple commands
         cmds = []
@@ -191,7 +237,9 @@ class tree_line:
 
         tokens = in_command.strip().split()
         if len(tokens) < 4 or tokens[0] != 'FAC':
-            raise ValueError(f"Invalid FAC command: {in_command}")
+            log_utils.warning(f"Invalid Tree Line command: {in_command}")
+            self.valid = False
+            return
 
         resource_index = int(tokens[1])
         start_x = float(tokens[2])
@@ -218,22 +266,30 @@ class tree:
         self.y = 0.0
         self.width = 10
         self.height = 10
+        self.valid = True
 
     def from_obj(self, obj):
-        self.resource = obj.xp_agp.tree_resource
+        #Make sure this is an empty
+        if obj.type != 'EMPTY':
+            log_utils.warning(f"Tree must be an empty! {obj.name}")
+            self.valid = False
+            return
+        
+        parent_scale = mathutils.Vector((1, 1, 1))
+        if obj.parent is not None:
+            parent_scale = obj.parent.scale
 
         #We'll extract the width and height from the empty
         #First we'll get the arrow length. Then we'll multiply that by 2, then the avg x/y scale and z scale for width/height, respectively
         self.width = obj.empty_display_size * 2 * ((obj.scale.x + obj.scale.y) / 2)
         self.height = obj.empty_display_size * 2 * obj.scale.z
 
-        self.x = obj.location.x
-        self.y = obj.location.y
+        self.x = obj.location.x * parent_scale.x
+        self.y = obj.location.y * parent_scale.y
 
     def to_obj(self):
         #Create a new empty and set it's properties
         new_empty = bpy.data.objects.new("Tree", None)
-        new_empty.xp_agp.tree_resource = self.resource
         new_empty.empty_display_size = 1
 
         new_empty.scale.x = self.width / (2 * new_empty.empty_display_size)
@@ -246,11 +302,16 @@ class tree:
         return new_empty
 
     def to_command(self, transform: agp_utils.agp_transform):
+        if not self.valid:
+            return ""
+
         cmd = ""
 
         x_pixel, y_pixel = agp_utils.to_pixel_coords(self.x, self.y, transform)
 
         cmd = f"TREE {x_pixel} {y_pixel} {self.height} {self.width} {self.layer}"
+
+        return cmd
 
     def from_command(self, in_command, fac_resource_list, transform: agp_utils.agp_transform):
         tokens = in_command.split()
@@ -278,20 +339,29 @@ class attached_obj:
         self.draped = False
         self.show_low = 0
         self.show_high = 0
+        self.valid = True
 
     def from_obj(self, obj):
+
+        parent_scale = mathutils.Vector((1, 1, 1))
+        if obj.parent is not None:
+            parent_scale = obj.parent.scale
+
         self.resource = obj.xp_agp.attached_obj_resource
         self.draped = obj.xp_agp.attached_obj_draped
 
-        self.x = obj.location.x
-        self.y = obj.location.y
-        self.z = obj.location.z
+        self.x = obj.location.x * parent_scale.x
+        self.y = obj.location.y * parent_scale.y
+        self.z = obj.location.z * parent_scale.z
         self.heading = obj.rotation_euler.z
 
         self.show_low = obj.xp_agp.attached_obj_show_between_low
         self.show_high = obj.xp_agp.attached_obj_show_between_high
 
     def to_obj(self):
+        if not self.valid:
+            return None
+
         #Create a new empty and set it's properties
         new_empty = bpy.data.objects.new("Attached Obj", None)
 
@@ -320,6 +390,8 @@ class attached_obj:
         else:
             cmd = f"OBJ_DRAPED {x_pixel} {y_pixel} {self.heading} {obj_index} {self.show_low} {self.show_high}"
 
+        return cmd
+
     def from_command(self, in_command, obj_resource_list, transform: agp_utils.agp_transform):
         """
         Parse an OBJ_DELTA or OBJ_DRAPED command and set the attached_obj's properties accordingly.
@@ -330,11 +402,15 @@ class attached_obj:
         """
         tokens = in_command.strip().split()
         if not tokens:
-            raise ValueError(f"Empty command: {in_command}")
+            log_utils.warning(f"Empty command: {in_command}")
+            self.valid = False
+            return
         if tokens[0] == 'OBJ_DELTA':
             # OBJ_DELTA x_pixel y_pixel heading z obj_index show_low show_high
             if len(tokens) < 6:
-                raise ValueError(f"Invalid OBJ_DELTA command: {in_command}")
+                log_utils.warning(f"Invalid OBJ_DELTA command: {in_command}")
+                self.valid = False
+                return
             x_pixel = float(tokens[1])
             y_pixel = float(tokens[2])
             self.heading = float(tokens[3])
@@ -346,7 +422,9 @@ class attached_obj:
             self.draped = False
         elif tokens[0] == 'OBJ_DRAPED':
             if len(tokens) < 5:
-                raise ValueError(f"Invalid OBJ_DRAPED command: {in_command}")
+                log_utils.warning(f"Invalid OBJ_DRAPED command: {in_command}")
+                self.valid = False
+                return
             x_pixel = float(tokens[1])
             y_pixel = float(tokens[2])
             self.heading = float(tokens[3])
@@ -358,7 +436,9 @@ class attached_obj:
             self.draped = True
         elif tokens[0] == 'OBJ_GRADED' or tokens[0] == 'OBJ_SCRAPER':
             if len(tokens) < 5:
-                raise ValueError(f"Invalid OBJ_GRADED command: {in_command}")
+                log_utils.warning(f"Invalid OBJ_GRADED command: {in_command}")
+                self.valid = False
+                return
             x_pixel = float(tokens[1])
             y_pixel = float(tokens[2])
             self.heading = float(tokens[3])
@@ -369,7 +449,9 @@ class attached_obj:
             self.z = 0.0
             self.draped = False
         else:
-            raise ValueError(f"Unknown command type for attached_obj: {tokens[0]}")
+            log_utils.warning(f"Unknown command type for attached_obj: {tokens[0]}")
+            self.valid = False
+            return
 
         self.resource = obj_resource_list[obj_index]
         self.x, self.y = agp_utils.to_blender_coords(x_pixel, y_pixel, transform)
@@ -394,9 +476,13 @@ class auto_split_obj:
         Automatically splits the object by material, exports all the parts, and configures the settings
         """
 
-        self.x = obj.location.x
-        self.y = obj.location.y
-        self.z = obj.location.z
+        parent_scale = mathutils.Vector((1, 1, 1))
+        if obj.parent is not None:
+            parent_scale = obj.parent.scale
+
+        self.x = obj.location.x * parent_scale.x
+        self.y = obj.location.y * parent_scale.y
+        self.z = obj.location.z * parent_scale.z
         self.draped = False
         self.show_low = 0
         self.show_high = 0
@@ -576,7 +662,7 @@ class tile:
             elif obj.xp_agp.type == 'FACADE':
                 new_fac = facade()
                 new_fac.from_obj(obj)
-                self.facades.append(obj)
+                self.facades.append(new_fac)
 
             elif obj.xp_agp.type == 'TREE':
                 new_tree = tree()
@@ -586,7 +672,7 @@ class tile:
             elif obj.xp_agp.type == 'TREE_LINE':
                 new_tree_line = tree_line()
                 new_tree_line.from_obj(obj)
-                self.tree_lines.append(obj)
+                self.tree_lines.append(new_tree_line)
 
             elif obj.xp_agp.type == 'CROP_POLY':
                 new_crop_poly = crop_polygon()
@@ -622,13 +708,13 @@ class tile:
         
         cur_cmd = ""
 
-        cur_cmd = f"TILE {self.left_uv} {self.bottom_uv} {self.right_uv} {self.top_uv}"
+        cur_cmd = f"TILE {self.left_uv * 4096} {self.bottom_uv * 4096} {self.right_uv * 4096} {self.top_uv * 4096}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"ANCHOR_PT {self.anchor_x_uv} {self.anchor_y_uv}"
+        cur_cmd = f"ANCHOR_PT {self.anchor_x_uv * 4096} {self.anchor_y_uv * 4096}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"GROUND_PT {self.anchor_x_uv} {self.anchor_y_uv}"
+        cur_cmd = f"GROUND_PT {self.anchor_x_uv * 4096} {self.anchor_y_uv * 4096}"
         commands.append(cur_cmd)
 
         cur_cmd = f"ROTATION_N {self.rotation_n}"
@@ -674,9 +760,11 @@ class agp:
         self.blend_mode = "BLEND"
         self.blend_cutoff = 0.5
         self.cast_shadow = True
+        self.decals = []
         self.imported_decal_commands = []
         self.layer_group = "objects"
         self.layer_group_offset = 0
+        
 
         self.surface = 'NONE'
 
@@ -719,13 +807,15 @@ class agp:
                     break
 
         if mat is None:
-            raise ValueError(f"No material found in the collection {in_collection.name}")
+            log_utils.error(f"No material found in the collection {in_collection.name}")
+            return
 
         # Extract material data
         mat = mat.xp_materials
 
         if mat.do_separate_material_texture:
-            raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+            log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades/agps. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+            return
 
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
@@ -758,7 +848,7 @@ class agp:
         if self.lit_texture != "":
             of += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(self.lit_texture), output_folder) + "\n"
         if self.nml_texture != "":
-            of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
+            of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
         if self.weather_texture != "":
             of += "WEATHER " + os.path.relpath(file_utils.rel_to_abs(self.weather_texture), output_folder) + "\n"
         else:
@@ -782,7 +872,6 @@ class agp:
 
         #Write the main polygon params
         of += "LAYER_GROUP " + self.layer.lower() + " " + str(self.layer_offset) + "\n"
-        of += "SCALE " + str(int(self.scale_x)) + " " + str(int(self.scale_y)) + "\n"
         if self.surface != None:
             of += "SURFACE " + self.surface + "\n"
         if self.do_tiling:
@@ -823,7 +912,13 @@ class agp:
         for t in self.tiles:
             cmds = t.to_commands(fac_resource_list, obj_resource_list)
 
+            print(cmds)
+
             for c in cmds:
                 of += c + "\n"
 
             of += "\n"
+
+        #Write the output to the file
+        with open(output_path, 'w') as f:
+            f.write(of)

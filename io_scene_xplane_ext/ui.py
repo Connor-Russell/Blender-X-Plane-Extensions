@@ -313,6 +313,73 @@ class MENU_agp_obj(bpy.types.Panel):
                 layout.separator()
                 layout.prop(agp_obj, "tree_layer")
 
+class MENU_agp_exporter(bpy.types.Panel):
+    bl_label = "X-Plane AGP Exporter"
+    bl_idname = "SCENE_PT_agp_exporter"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+
+        #Export button
+        layout.operator("xp_ext.export_agps", text="Export AGPs")
+        layout.separator()
+
+        layout.prop(scene.xp_ext, "agp_collection_search")
+
+        if scene.xp_ext.agp_collection_search != "":
+            layout.label(text="Filtered Collections")
+
+        # Function to draw all the properties for the collection. Just so we can reuse it for the disabled collections
+        def draw_collection(col, in_layout):
+            agp = col.xp_agp
+
+            box = in_layout.box()
+            top_row = box.row()
+            top_row.prop(agp, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if agp.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+            top_row.prop(agp, "exportable", text="Export Enabled")
+            if agp.is_ui_expanded:
+                box.prop(agp, "name")
+                row = box.row()
+                row.prop(agp, "layer_group")
+                row.prop(agp, "layer_group_offset")
+
+                box.separator()
+                box.prop(agp, "is_texture_tiling")
+                
+                if agp.is_texture_tiling:
+                    row = box.row()
+                    row.prop(agp, "texture_tiling_x_pages")
+                    row.prop(agp, "texture_tiling_y_pages")
+                    row = box.row()
+                    row.prop(agp, "texture_tiling_map_x_res")
+                    row.prop(agp, "texture_tiling_map_y_res")
+                    box.prop(agp, "texture_tiling_map_texture")
+
+                box.separator()
+
+                box.prop(agp, "vegetation_asset")
+
+        # Draw enabled collections
+        for col in bpy.data.collections:
+            if col.xp_agp.exportable:
+                if scene.xp_ext.agp_collection_search != "" and not (col.name.startswith(scene.xp_ext.agp_collection_search) or col.name.endswith(scene.xp_ext.agp_collection_search)):
+                    continue
+                draw_collection(col, layout)
+
+        # Draw disabled collections
+        disabled_collections = layout.box()
+        disabled_collections.prop(scene.xp_ext, "agp_disabled_collections_expanded", text="Disabled Collections", icon='TRIA_DOWN' if scene.xp_ext.agp_disabled_collections_expanded else 'TRIA_RIGHT', emboss=False)
+        if scene.xp_ext.agp_disabled_collections_expanded:
+            for col in bpy.data.collections:
+                if not col.xp_agp.exportable:
+                    if scene.xp_ext.agp_collection_search != "" and not (col.name.startswith(scene.xp_ext.agp_collection_search) or col.name.endswith(scene.xp_ext.agp_collection_search)):
+                        continue
+                    draw_collection(col, disabled_collections)
+
 class MENU_mats(bpy.types.Panel):
     bl_label = "X-Plane Material Properties"
     bl_idname = "MATERIAL_PT_mats"
@@ -726,6 +793,7 @@ class MENU_pol_exporter(bpy.types.Panel):
 def register():
     bpy.utils.register_class(MENU_lin_exporter)
     bpy.utils.register_class(MENU_lin_layer)
+    bpy.utils.register_class(MENU_agp_exporter)
     bpy.utils.register_class(MENU_mats)
     bpy.utils.register_class(MENU_operations)
     bpy.utils.register_class(MENU_facade)
@@ -737,6 +805,7 @@ def register():
 def unregister():
     bpy.utils.unregister_class(MENU_lin_exporter)
     bpy.utils.unregister_class(MENU_lin_layer)
+    bpy.utils.unregister_class(MENU_agp_exporter)
     bpy.utils.unregister_class(MENU_mats)
     bpy.utils.unregister_class(MENU_operations)
     bpy.utils.unregister_class(MENU_facade)

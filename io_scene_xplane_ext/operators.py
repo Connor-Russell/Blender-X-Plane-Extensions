@@ -42,6 +42,19 @@ class BTN_pol_exporter(bpy.types.Operator):
 
         return {'FINISHED'}
     
+class BTN_agp_exporter(bpy.types.Operator):
+    bl_idname = "xp_ext.export_agps"
+    bl_label = "Export X-Plane Autogen Points"
+
+    def execute(self, context):
+
+        # Iterate through every collection. If it is exportable and visible, export
+        for col in bpy.data.collections:
+            if col.xp_agp.exportable and collection_utils.get_collection_is_visible(col):
+                exporter.export_agp(col)
+
+        return {'FINISHED'}  
+
 class IMPORT_lin(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_lin"
     bl_label = "Import X-Plane Lines"
@@ -495,9 +508,11 @@ def register():
     bpy.utils.register_class(BTN_fac_export_all)
     bpy.utils.register_class(BTN_run_tests)
     bpy.utils.register_class(BTN_TEST_config_bake_settings)
+    bpy.utils.register_class(BTN_agp_exporter)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
+    bpy.utils.unregister_class(BTN_agp_exporter)
     bpy.utils.unregister_class(BTN_lin_exporter)
     bpy.utils.unregister_class(BTN_pol_exporter)
     bpy.utils.unregister_class(IMPORT_lin)

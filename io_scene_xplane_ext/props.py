@@ -58,7 +58,8 @@ def get_all_collection_names(self, context):
 
 #Triggers UI redraw
 def update_ui(self, context):
-    context.area.tag_redraw()
+    if context != None:
+        context.area.tag_redraw()
 
 #General properties
 
@@ -72,6 +73,19 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         name="Last Saved Plugin Version",
         default=1
     ) #type: ignore
+
+    agp_collection_search: bpy.props.StringProperty(
+        name="Search",
+        default="",
+        description="Search for a collection to configure export",
+        update=update_ui
+    ) # type: ignore
+
+    agp_disabled_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
 
     pol_collection_search: bpy.props.StringProperty(
         name="Search",
@@ -618,6 +632,23 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         default=10.0
     )
 
+class PROP_agp_collection(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", description="The name of the autogen point collection") # type: ignore
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the autogen point collection is exportable", default=False) # type: ignore
+    is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the autogen point collection is expanded in the UI", default=False, update=update_ui) # type: ignore
+
+    is_texture_tiling: bpy.props.BoolProperty(name="Enable Texture Tiling", description="Whether the polygon uses texture tiling", default=False) # type: ignore
+    texture_tiling_x_pages: bpy.props.IntProperty(name="Texture Tiling X Pages", description="The number of pages in the x direction", default=1) # type: ignore
+    texture_tiling_y_pages: bpy.props.IntProperty(name="Texture Tiling Y Pages", description="The number of pages in the y direction", default=1) # type: ignore
+    texture_tiling_map_x_res: bpy.props.IntProperty(name="Texture Tiling Map X Resolution", description="The resolution of the texture tiling map in the x direction", default=4096) # type: ignore
+    texture_tiling_map_y_res: bpy.props.IntProperty(name="Texture Tiling Map Y Resolution", description="The resolution of the texture tiling map in the y direction", default=4096) # type: ignore
+    texture_tiling_map_texture: bpy.props.StringProperty(name="Texture Tiling Map Texture", description="The texture used for the texture tiling map", default="", subtype="FILE_PATH") # type: ignore
+
+    layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
+    layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
+
+    vegetation_asset: bpy.props.StringProperty(name="Vegetation Asset", description="The asset to use for the vegetation in the autogen point collection", default="", subtype='FILE_PATH', update=update_ui) # type: ignore
+
 #Facade properties
 
 class PROP_fac_mesh(bpy.types.PropertyGroup):
@@ -722,6 +753,7 @@ def register():
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
     bpy.utils.register_class(PROP_agp_obj)
+    bpy.utils.register_class(PROP_agp_collection)
     bpy.utils.register_class(PROP_xp_ext_scene)
     bpy.utils.register_class(PROP_decal)
     bpy.utils.register_class(PROP_mats)
@@ -741,6 +773,7 @@ def register():
     bpy.types.Collection.xp_pol = bpy.props.PointerProperty(type=PROP_pol_collection)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Collection.xp_fac = bpy.props.PointerProperty(type=PROP_facade)
+    bpy.types.Collection.xp_agp = bpy.props.PointerProperty(type=PROP_agp_collection)
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
     bpy.types.Material.xp_materials = bpy.props.PointerProperty(type=PROP_mats)
 
@@ -756,6 +789,7 @@ def unregister():
     del bpy.types.Collection.xp_fac
     del bpy.types.Collection.xp_lin
     del bpy.types.Collection.xp_pol
+    del bpy.types.Collection.xp_agp
     del bpy.types.Object.xp_fac_mesh
     del bpy.types.Object.xp_attached_obj
     del bpy.types.Object.xp_lin
@@ -773,6 +807,7 @@ def unregister():
     bpy.utils.unregister_class(PROP_pol_collection)
     bpy.utils.unregister_class(PROP_lin_collection)
     bpy.utils.unregister_class(PROP_agp_obj)
+    bpy.utils.unregister_class(PROP_agp_collection)
     bpy.utils.unregister_class(PROP_lin_layer)
     bpy.utils.unregister_class(PROP_attached_obj)
     bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)
