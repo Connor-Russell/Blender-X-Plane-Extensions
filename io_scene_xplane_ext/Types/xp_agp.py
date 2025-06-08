@@ -498,50 +498,43 @@ class auto_split_obj:
         
         children = get_children_recursive(obj)
 
+        #This function is slow, but it gets *all* data. In the future this should probably be optimized
         def split_obj_by_material(obj):
-            """
-            Splits the given mesh object by material, returning a list of new objects (one per material).
-            The original object is not modified.
-            """
-            mesh = obj.data
-            mat_count = len(mesh.materials)
-            new_objects = []
+            #Deselect all in obj mode
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.select_all(action='DESELECT')
 
-            for mat_index in range(mat_count):
-                # Create a new mesh and object
-                new_mesh = bpy.data.meshes.new(f"{obj.name}_mat_{mat_index}")
-                new_obj = bpy.data.objects.new(f"{obj.name}_mat_{mat_index}", new_mesh)
-                new_obj.matrix_world = obj.matrix_world.copy()
-                new_obj.data.materials.append(mesh.materials[mat_index])
+            #Duplicate the object, clear it's parent, and move it so it remains in the same world space position/rotation
+            bpy.ops.object.duplicate(linked=False)
+            obj = bpy.context.active_object
 
-                # Use bmesh to filter faces by material
-                bm = bmesh.new()
-                bm.from_mesh(mesh)
-                faces_to_keep = [f for f in bm.faces if f.material_index == mat_index]
-                if not faces_to_keep:
-                    bm.free()
-                    bpy.data.meshes.remove(new_mesh)
-                    continue
+            #Clear the parent and restore the loc/rot/scale
+            mw = obj.matrix_world.copy()
+            obj.parent = None
+            obj.matrix_world = mw
 
-                # Deselect all, then select only the faces for this material
-                for f in bm.faces:
-                    f.select_set(False)
-                for f in faces_to_keep:
-                    f.select_set(True)
-
-                # Duplicate the selected faces into a new bmesh
-                bm_new = bmesh.new()
-                bmesh.ops.duplicate(bm_new, geom=faces_to_keep)
-                bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index != mat_index], context='FACES')
-
-                # Write the new bmesh to the new mesh
-                bm.to_mesh(new_mesh)
-                bm.free()
-                bm_new.free()
-
-                new_objects.append(new_obj)
-
-            return new_objects
+            if obj.type != 'MESH':
+                return [obj]
+            if len(obj.data.materials) == 1:
+                return [obj]
+            
+            # Select the object to split
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            
+            # Enter edit mode, select all, split by material, return to obj mode
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.separate(type='MATERIAL')
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+            # Get the newly created objects
+            resulting_objects = bpy.context.selected_objects
+            
+            # Deselect all objects
+            bpy.ops.object.select_all(action='DESELECT')
+            
+            return resulting_objects
 
         all_mats = []
         mat_collections = []    #Aligned with all_mats

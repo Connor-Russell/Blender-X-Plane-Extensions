@@ -299,7 +299,13 @@ class MENU_agp_obj(bpy.types.Panel):
                 layout.prop(agp_obj, "attached_obj_draped")
             elif agp_obj.type == "AUTO_SPLIT_OBJ":
                 layout.separator()
-                layout.label(text="DISCLAIMER:\nMore Materials = more .objs = more draw calls = worse performance.\nUse at own risk!")
+                layout.label(text="DISCLAIMER:")
+                layout.label(text="More Materials = more .objs = more draw calls = worse performance.")
+                layout.label(text="Use at your own risk!")
+                layout.separator()
+                layout.label(text="DISCLAIMER 2:")
+                layout.label(text="Parent-child hierarchies are not maintained.")
+                layout.label(text="For complex animations use a standalone object!")
             elif agp_obj.type == "FACADE":
                 layout.separator()
                 layout.prop(agp_obj, "facade_resource")
