@@ -165,8 +165,6 @@ class polygon():
                 'WEATHER': 2,
                 'SUPER_ROUGHNESS': 1,
                 'NO_BLEND': 2,
-                'DECAL': 1,
-                'NORMAL_DECAL': 1,
                 'LAYER_GROUP': 2, # can be 2 or 3, but 2 is safe
                 'SCALE': 3,
                 'SURFACE': 2,

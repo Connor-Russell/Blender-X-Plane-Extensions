@@ -285,8 +285,10 @@ def create_tile_obj(left: float, bottom: float, right: float, top: float, in_tra
     for i, v in enumerate(verts):
         v[0] -= in_transform.anchor_x / in_transform.x_ratio
         v[1] -= in_transform.anchor_y / in_transform.y_ratio
+        v[0] /= 4096
+        v[1] /= 4096
         verts[i] = v
-        
+
     # Define the face using the 4 vertices
     faces = [ (0, 1, 2, 3) ]
 

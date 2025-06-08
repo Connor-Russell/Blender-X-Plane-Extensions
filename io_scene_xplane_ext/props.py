@@ -648,7 +648,10 @@ class PROP_agp_collection(bpy.types.PropertyGroup):
     layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
     layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
-    vegetation_asset: bpy.props.StringProperty(name="Vegetation Asset", description="The asset to use for the vegetation in the autogen point collection", default="", subtype='FILE_PATH', update=update_ui) # type: ignore
+    vegetation_asset: bpy.props.StringProperty(name="Vegetation Asset", description="The asset to use for the vegetation in the autogen point collection", default="", update=update_ui) # type: ignore
+
+    render_tiles: bpy.props.BoolProperty(name="Render Tile", description="Whether the tile is rendered", default=True, update=update_ui) # type: ignore
+    tile_lod: bpy.props.IntProperty(name="Tile LOD", description="The LOD for the tile", default=20000, min=0) # type: ignore
 
 #Facade properties
 

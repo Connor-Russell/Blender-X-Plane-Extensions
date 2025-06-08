@@ -758,7 +758,7 @@ class tile:
 
         #Link the new objects to the tile object
         for new_obj in new_objs:
-            new_tile_obj.children.link(new_obj)
+            new_obj.parent = new_tile_obj
 
         #Rotate the tile object based on the rotation_n
         if self.rotation_n == 1:
@@ -884,7 +884,10 @@ class agp:
         self.imported_decal_commands = []
         self.layer_group = "objects"
         self.layer_group_offset = 0
-        
+
+        self.imported_texture_scale = 1
+        self.imported_texture_width = 4096
+        self.imported_texture_height = 4096
 
         self.surface = 'NONE'
 
@@ -901,20 +904,25 @@ class agp:
 
         self.tiles = []  # List of tile objects
 
+        self.render_tiles = True
+        self.tile_lod = 20000
+
         self.name = ""
 
     def from_collection(self, in_collection):
         #Set the layer group and offset
-        self.layer = in_collection.xp_pol.layer_group
-        self.layer_offset = in_collection.xp_pol.layer_group_offset
+        self.layer = in_collection.xp_agp.layer_group
+        self.layer_offset = in_collection.xp_agp.layer_group_offset
 
         # Set texture tiling properties
-        self.do_tiling = in_collection.xp_pol.is_texture_tiling
-        self.tiling_x_pages = in_collection.xp_pol.texture_tiling_x_pages
-        self.tiling_y_pages = in_collection.xp_pol.texture_tiling_y_pages
-        self.tiling_map_x_res = in_collection.xp_pol.texture_tiling_map_x_res
-        self.tiling_map_y_res = in_collection.xp_pol.texture_tiling_map_y_res
-        self.tiling_map_texture = in_collection.xp_pol.texture_tiling_map_texture
+        self.do_tiling = in_collection.xp_agp.is_texture_tiling
+        self.tiling_x_pages = in_collection.xp_agp.texture_tiling_x_pages
+        self.tiling_y_pages = in_collection.xp_agp.texture_tiling_y_pages
+        self.tiling_map_x_res = in_collection.xp_agp.texture_tiling_map_x_res
+        self.tiling_map_y_res = in_collection.xp_agp.texture_tiling_map_y_res
+        self.tiling_map_texture = in_collection.xp_agp.texture_tiling_map_texture
+        self.render_tiles = in_collection.xp_agp.render_tiles
+        self.tile_lod = in_collection.xp_agp.tile_lod
 
         #Get the material from the first mesh object in the collection
         mat = None
@@ -996,6 +1004,10 @@ class agp:
             of += "SURFACE " + self.surface + "\n"
         if self.do_tiling:
             of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.rel_to_abs(self.tiling_map_texture), output_folder) + "\n"
+        if not self.render_tiles:
+            of += "HIDE_TILES\n"
+        if self.tile_lod != 20000:
+            of += "TILE_LOD " + str(self.tile_lod) + "\n"
 
         if len(self.tiles) == 0:
             log_utils.error("Must have at least 1 tile for .agp!")
@@ -1048,3 +1060,122 @@ class agp:
         #Write the output to the file
         with open(output_path, 'w') as f:
             f.write(of)
+
+    def read(self, in_file):
+        log_utils.new_section(f"Reading .agp {in_file}")
+
+        self.name = in_file.split(os.sep)[-1]
+
+        # Read the file
+        with open(in_file, 'r') as f:
+            lines = f.readlines()
+
+        obj_resource_list = []
+        fac_resource_list = []
+
+        cur_tile_commands = []
+
+
+        # Now we need to parse the file
+        for line in lines:
+            # Get the line
+            line = line.strip()
+
+            tokens = line.split()
+            if not tokens:
+                continue
+
+            # Defensive: check token count for each command before using tokens
+            cmd = tokens[0]
+            min_tokens = {
+                'TEXTURE_NOWRAP': 2,
+                'TEXTURE': 2,
+                'TEXTURE_LIT': 2,
+                'WEATHER': 2,
+                'NO_BLEND': 2,
+                'LAYER_GROUP': 2, # can be 2 or 3, but 2 is safe
+                'SURFACE': 2,
+                'LOAD_CENTER': 5,
+                'TEXTURE_TILE': 6
+            }
+            if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
+                from ..Helpers import log_utils
+                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
+                continue
+
+            #If we are in a tile command we need to add it to the list of current tile commands'
+            if len(cur_tile_commands) > 0 and not line.startswith("TILE"):
+                cur_tile_commands.append(line)
+                continue
+
+            # Check for material data
+            elif line.startswith("TEXTURE_NORMAL"):
+                self.nml_texture = line.split()[2]
+                self.normal_scale = float(line.split()[1])
+            elif line.startswith("TEXTURE"):
+                self.alb_texture = line.split()[1]
+            elif line.startswith("TEXTURE_LIT"):
+                self.lit_texture = line.split()[1]
+            elif line.startswith("WEATHER") and not line.startswith("WEATHER_TRANSPARENT"):
+                self.weather_texture = line.split()[1]
+            elif line.startswith("NO_BLEND"):
+                self.do_blend = False
+                self.blend_cutoff = float(line.split()[1])
+            if line.startswith("DECAL") or line.startswith("NORMAL_DECAL"):
+                self.imported_decal_commands.append(line)
+            elif line.startswith("LAYER_GROUP"):
+                parts = line.split()
+                self.layer = parts[1].upper()
+                if len(parts) > 2:
+                    self.layer_offset = parts[2]
+            elif line.startswith("TEXTURE_WIDTH"):
+                self.imported_texture_width = int(float(line.split()[1]))
+            elif line.startswith("TEXTURE_SCALE"):
+                tokens = line.split()
+                self.imported_texture_width = int(float(tokens[1]))
+                if len(tokens) > 2:
+                    self.imported_texture_height = int(float(tokens[2]))
+                else:
+                    self.imported_texture_height = self.imported_texture_width
+            elif line.startswith("SURFACE"):
+                self.surface = line.split()[1]
+                self.surface = self.surface.upper()
+            elif line.startswith("TEXTURE_TILE"):
+                tokens = line.split()
+                self.do_tiling = True
+                self.tiling_x_pages = int(tokens[1])
+                self.tiling_y_pages = int(tokens[2])
+                self.tiling_map_x_res = int(tokens[3])
+                self.tiling_map_y_res = int(tokens[4])
+                self.tiling_map_texture = tokens[5]
+            elif line.startswith("VEGETATION"):
+                self.vegetation = line.split()[1]
+            elif line.startswith("OBJECT"):
+                # Add the object resource to the list
+                obj_resource = line.split()[1]
+                obj_resource_list.append(obj_resource)
+            elif line.startswith("FACADE"):
+                # Add the facade resource to the list
+                facade_resource = line.split()[1]
+                fac_resource_list.append(facade_resource)
+            elif line.startswith("HIDE_TILES"):
+                self.render_tiles = False
+            elif line.startswith("TILE_LOD"):
+                self.tile_lod = int(float(line.split()[1]))
+            elif line.startswith("TILE"):
+                if len(cur_tile_commands) > 0:
+                    # We have a tile to process
+                    new_tile = tile()
+                    new_tile.from_commands(cur_tile_commands, self.transform, self.imported_texture_width, self.imported_texture_height, fac_resource_list, obj_resource_list)
+                    self.tiles.append(new_tile)
+                    cur_tile_commands = []
+                
+                #Add this command and all future to the current tile
+                cur_tile_commands.append(line)
+
+        if len(cur_tile_commands) > 0:
+            # We have a tile to process
+            new_tile = tile()
+            new_tile.from_commands(cur_tile_commands, self.transform, self.imported_texture_width, self.imported_texture_height, fac_resource_list, obj_resource_list)
+            self.tiles.append(new_tile)
+    

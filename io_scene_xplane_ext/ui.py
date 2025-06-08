@@ -352,6 +352,15 @@ class MENU_agp_exporter(bpy.types.Panel):
                 row = box.row()
                 row.prop(agp, "layer_group")
                 row.prop(agp, "layer_group_offset")
+                
+                box.separator()
+
+                box.prop(agp, "render_tiles")
+                box.prop(agp, "tile_lod")
+
+                box.separator()
+
+                box.prop(agp, "vegetation_asset")
 
                 box.separator()
                 box.prop(agp, "is_texture_tiling")
@@ -364,10 +373,6 @@ class MENU_agp_exporter(bpy.types.Panel):
                     row.prop(agp, "texture_tiling_map_x_res")
                     row.prop(agp, "texture_tiling_map_y_res")
                     box.prop(agp, "texture_tiling_map_texture")
-
-                box.separator()
-
-                box.prop(agp, "vegetation_asset")
 
         # Draw enabled collections
         for col in bpy.data.collections:
