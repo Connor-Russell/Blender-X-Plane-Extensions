@@ -11,6 +11,10 @@ from .Helpers import decal_utils
 def operator_wrapped_update_settings(self = None, context = None):
     if bpy.context.active_object == None:
         return
+    
+    if context != None and context.area != None:
+        #Force a UI update
+        context.area.tag_redraw()
 
     #This function is called when the user updates a property in the UI. It will call the update_settings function to update the material settings.
     #Get the material from the context
@@ -26,6 +30,10 @@ def operator_wrapped_update_settings(self = None, context = None):
 def operator_wrapped_update_nodes(self = None, context = None):
     if bpy.context.active_object == None:
         return
+
+    if context != None and context.area != None:
+        #Force a UI update
+        context.area.tag_redraw()
     
     #This function is called when the user updates a property in the UI. It will call the update_nodes function to update the material nodes.
     #Get the material from the context
@@ -131,9 +139,6 @@ def update_settings(in_material):
             #Set XP hard mode based on the hard property ("none" or "concrete") - .xplane.surfaceType
                 #If hard is true, set "xplane.deck" to true, otherwise set it to false
             #Set XP polygon offset based on the polygon_offset property - xplane.poly_os
-    
-    #Force a UI update
-    bpy.context.view_layer.update()
 
     xp_mat = in_material.xp_materials
 

@@ -59,7 +59,8 @@ def get_all_collection_names(self, context):
 #Triggers UI redraw
 def update_ui(self, context):
     if context != None:
-        context.area.tag_redraw()
+        if context.area != None:
+            context.area.tag_redraw()
 
 #General properties
 
