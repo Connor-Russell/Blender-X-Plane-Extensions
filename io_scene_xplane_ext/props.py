@@ -579,13 +579,13 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         name="Draped",
         description="Whether the attached object is draped",
         default=False
-    )
+    ) # type: ignore
 
     attached_obj_resource: bpy.props.StringProperty(
         name="Resource",
         description="The resource for the attached object",
         default=""
-    )
+    ) # type: ignore
 
     attached_obj_show_between_low: bpy.props.IntProperty(
         name="Show Between Low",
@@ -593,7 +593,7 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         default=0,
         min=0,
         max=6
-    )
+    ) # type: ignore
 
     attached_obj_show_between_high: bpy.props.IntProperty(
         name="Show Between High",
@@ -601,37 +601,25 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         default=0,
         min=0,
         max=6
-    )
+    ) # type: ignore
 
     facade_resource: bpy.props.StringProperty(
         name="Facade Resource",
         description="The resource for the facade",
         default=""
-    )
+    ) # type: ignore
 
     facade_height: bpy.props.FloatProperty(
         name="Facade Height",
         description="The height of the facade",
         default=10.0
-    )
+    ) # type: ignore
 
     tree_layer: bpy.props.IntProperty(
         name="Tree Layer",
         description="The layer for the tree",
         default=0
-    )
-
-    tree_width: bpy.props.FloatProperty(
-        name="Tree Width",
-        description="The width of the tree",
-        default=1.0
-    )
-
-    tree_height: bpy.props.FloatProperty(
-        name="Tree Height",
-        description="The height of the tree",
-        default=10.0
-    )
+    ) # type: ignore
 
 class PROP_agp_collection(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", description="The name of the autogen point collection") # type: ignore

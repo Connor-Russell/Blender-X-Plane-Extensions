@@ -11,6 +11,7 @@ from .Types import xp_lin
 from .Types import xp_fac
 from .Types import xp_obj
 from .Types import xp_pol
+from .Types import xp_agp
 import os
 
 def import_lin(in_path):
@@ -62,7 +63,7 @@ def import_agp(in_path):
     in_name = in_path.split(os.sep)[-1]
 
     #Read it
-    agp = xp_obj.agp()
+    agp = xp_agp.agp()
     print(f"Importing {in_name}...")
     agp.read(in_path)
-    agp.to_scene()
+    agp.to_collection()

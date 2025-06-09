@@ -313,8 +313,6 @@ class MENU_agp_obj(bpy.types.Panel):
             elif agp_obj.type == "TREE":
                 layout.separator()
                 layout.prop(agp_obj, "tree_layer")
-                layout.prop(agp_obj, "tree_width")
-                layout.prop(agp_obj, "tree_height")
             elif agp_obj.type == "TREE_LINE":
                 layout.separator()
                 layout.prop(agp_obj, "tree_layer")

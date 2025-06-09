@@ -283,11 +283,9 @@ def create_tile_obj(left: float, bottom: float, right: float, top: float, in_tra
     ]
 
     for i, v in enumerate(verts):
-        v[0] -= in_transform.anchor_x / in_transform.x_ratio
-        v[1] -= in_transform.anchor_y / in_transform.y_ratio
-        v[0] /= 4096
-        v[1] /= 4096
-        verts[i] = v
+        new_x = v[0] - in_transform.anchor_x / in_transform.x_ratio
+        new_y = v[1] - in_transform.anchor_y / in_transform.y_ratio
+        verts[i] = (new_x, new_y, 0)
 
     # Define the face using the 4 vertices
     faces = [ (0, 1, 2, 3) ]
@@ -298,7 +296,6 @@ def create_tile_obj(left: float, bottom: float, right: float, top: float, in_tra
 
     # Create the object and link it
     obj = bpy.data.objects.new("TilePlane", mesh)
-    bpy.context.collection.objects.link(obj)
 
     # Set up UVs: create a UV layer if not present
     if not mesh.uv_layers:
@@ -325,7 +322,7 @@ def create_obj_from_perimeter(perimeter, extrude_height=0.0):
 
     for i, pt in enumerate(perimeter):
         if i == len(perimeter) - 1:
-            return
+            break
         cur_vert = geometery_utils.xp_vertex(pt.x, pt.y, pt.z, 0, 0, 1, 0, 0) 
         next_vert = geometery_utils.xp_vertex(perimeter[i + 1].x, perimeter[i + 1].y, perimeter[i + 1].z, 0, 0, 1, 0, 0)
         top_cur_vert = geometery_utils.xp_vertex(pt.x, pt.y, pt.z + extrude_height, 0, 0, 1, 0, 0)
@@ -343,14 +340,20 @@ def create_obj_from_perimeter(perimeter, extrude_height=0.0):
         indicies.append(i)
 
     new_obj = geometery_utils.create_obj_from_draw_call(verts, indicies, "Perimeter Obj")
+    #Link
+    bpy.context.collection.objects.link(new_obj)
 
-    #Remove doubles from the new object
+    #Remove doubles from the new object and recalc normals
     bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = new_obj
     bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.remove_doubles(threshold=0.0001)
+    bpy.ops.mesh.remove_doubles(threshold=0.01)
+    bpy.ops.mesh.normals_make_consistent(inside=False)
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = None
+
+    #Unlink so it can be placed in the appropriate collecton by caller
+    bpy.context.collection.objects.unlink(new_obj)
 
     return new_obj

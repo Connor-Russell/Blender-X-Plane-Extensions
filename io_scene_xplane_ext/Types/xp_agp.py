@@ -39,7 +39,7 @@ class crop_polygon:
         if len(self.perimeter) == 0:
             return
         #Set the vertices in world coordinates
-        new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, self.height)
+        new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, 0)
         new_obj.xp_agp.exportable = True
         new_obj.xp_agp.type = 'CROP_POLY'
 
@@ -70,7 +70,7 @@ class crop_polygon:
         
         return cmd
 
-    def from_command(self, in_command, fac_resource_list, transform: agp_utils.agp_transform):
+    def from_command(self, in_command, transform: agp_utils.agp_transform):
         tokens = in_command.strip().split()
 
         # The rest are perimeter coordinates (x, y pairs)
@@ -205,7 +205,7 @@ class tree_line:
             return
 
         #Set the vertices in world coordinates
-        new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, self.layer)
+        new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, 1)
 
         new_obj.xp_agp.tree_layer = self.layer
         new_obj.xp_agp.exportable = True
@@ -243,22 +243,23 @@ class tree_line:
         """
 
         tokens = in_command.strip().split()
-        if len(tokens) < 4 or tokens[0] != 'FAC':
+        if len(tokens) < 6:
             log_utils.warning(f"Invalid Tree Line command: {in_command}")
             self.valid = False
             return
 
-        resource_index = int(tokens[1])
-        start_x = float(tokens[2])
-        start_y = float(tokens[3])
-        end_x = float(tokens[4])
-        end_y = float(tokens[5])
+        start_x = float(tokens[1])
+        start_y = float(tokens[2])
+        end_x = float(tokens[3])
+        end_y = float(tokens[4])
+        self.layer = int(tokens[5])
+
+        temp_perimeter = []
+        temp_perimeter.append(mathutils.Vector((start_x, start_y, 0)))
+        temp_perimeter.append(mathutils.Vector((end_x, end_y, 0)))
 
         self.perimeter = []
-        self.perimeter.append(mathutils.Vector((start_x, start_y, 0)))
-        self.perimeter.append(mathutils.Vector((end_x, end_y, 0)))
-
-        for vert in self.perimeter:
+        for vert in temp_perimeter:
             blender_x, blender_y = agp_utils.to_blender_coords(vert.x, vert.y, transform)
             self.perimeter.append(mathutils.Vector((blender_x, blender_y, 0)))
 
@@ -268,7 +269,7 @@ class tree:
     """
 
     def __init__(self):
-        self.layer = ""
+        self.layer = 0
         self.x = 0.0
         self.y = 0.0
         self.width = 10
@@ -294,6 +295,8 @@ class tree:
         self.x = obj.location.x * parent_scale.x
         self.y = obj.location.y * parent_scale.y
 
+        self.layer = obj.xp_agp.tree_layer
+
     def to_obj(self):
         #Create a new empty and set it's properties
         new_empty = bpy.data.objects.new("Tree", None)
@@ -308,6 +311,7 @@ class tree:
 
         new_empty.xp_agp.exportable = True
         new_empty.xp_agp.type = 'TREE'
+        new_empty.xp_agp.tree_layer = self.layer
         
         return new_empty
 
@@ -323,7 +327,7 @@ class tree:
 
         return cmd
 
-    def from_command(self, in_command, fac_resource_list, transform: agp_utils.agp_transform):
+    def from_command(self, in_command, transform: agp_utils.agp_transform):
         tokens = in_command.split()
 
         x_pixel = float(tokens[1])
@@ -387,7 +391,7 @@ class attached_obj:
         new_empty.location.x = self.x
         new_empty.location.y = self.y
         new_empty.location.z = self.z
-        new_empty.rotation_euler.z = self.heading
+        new_empty.rotation_euler.z = math.radians(misc_utils.resolve_heading(self.heading * -1))
 
         return new_empty
 
@@ -751,17 +755,20 @@ class tile:
             if new_obj is not None:
                 new_objs.append(new_obj)
 
+        print(target_collection.name)
+
         #Create our tile object
         new_tile_obj = agp_utils.create_tile_obj(self.left_uv, self.bottom_uv, self.right_uv, self.top_uv, self.transform)
         new_tile_obj.xp_agp.exportable = True
         new_tile_obj.xp_agp.type = 'BASE_TILE'
+        target_collection.objects.link(new_tile_obj)
 
         #Link the new objects to the tile object
         for new_obj in new_objs:
-            new_obj.parent = new_tile_obj
-            
             #Link to the target collection
             target_collection.objects.link(new_obj)
+
+            new_obj.parent = new_tile_obj
 
         #Rotate the tile object based on the rotation_n
         if self.rotation_n == 1:
@@ -788,13 +795,13 @@ class tile:
                 self.right_uv = float(tokens[3]) * in_x_mult
                 self.top_uv = float(tokens[4]) * in_y_mult
             elif tokens[0] == 'ANCHOR_PT':
-                self.anchor_x_uv = float(tokens[1]) * in_x_mult
-                self.anchor_y_uv = float(tokens[2]) * in_y_mult
+                self.transform.anchor_x = float(tokens[1]) * in_x_mult
+                self.transform.anchor_y = float(tokens[2]) * in_y_mult
             elif tokens[0] == 'ROTATION':
                 self.rotation_n = int(float(tokens[1]))
             elif tokens[0] == 'CROP_POLY':
                 self.crop_poly = crop_polygon()
-                self.crop_poly.from_command(cmd, [], in_transfom)
+                self.crop_poly.from_command(cmd, in_transfom)
             elif tokens[0] == 'FAC':
                 self.facades.append(facade())
                 self.facades[-1].from_command(cmd, fac_resource_list, in_transfom)
@@ -803,10 +810,10 @@ class tile:
                 self.attached_objs[-1].from_command(cmd, obj_resource_list, in_transfom)
             elif tokens[0] == 'TREE':
                 self.trees.append(tree())
-                self.trees[-1].from_command(cmd, [], in_transfom)
+                self.trees[-1].from_command(cmd, in_transfom)
             elif tokens[0] == 'TREE_LINE':
                 self.tree_lines.append(tree_line())
-                self.tree_lines[-1].from_command(cmd, [], in_transfom)
+                self.tree_lines[-1].from_command(cmd, in_transfom)
 
     def get_resources(self):
         """
@@ -971,8 +978,8 @@ class agp:
         bpy.context.scene.collection.children.link(new_collection)
 
         new_collection.xp_agp.exportable = True
-        new_collection.xp_agp.layer_group = self.layer.lower()
-        new_collection.xp_agp.layer_group_offset = self.layer_offset
+        new_collection.xp_agp.layer_group = self.layer
+        new_collection.xp_agp.layer_group_offset = int(self.layer_offset)
         new_collection.xp_agp.is_texture_tiling = self.do_tiling
         new_collection.xp_agp.texture_tiling_x_pages = self.tiling_x_pages
         new_collection.xp_agp.texture_tiling_y_pages = self.tiling_y_pages
@@ -1087,7 +1094,7 @@ class agp:
             f.write(of)
 
     def read(self, in_file):
-        log_utils.new_section(f"Reading .agp {in_file}")
+        #log_utils.new_section(f"Reading .agp {in_file}")
 
         self.name = in_file.split(os.sep)[-1]
 
@@ -1099,6 +1106,9 @@ class agp:
         fac_resource_list = []
 
         cur_tile_commands = []
+
+        original_tex_width = 4096
+        original_tex_height = 4096
 
 
         # Now we need to parse the file
@@ -1154,14 +1164,17 @@ class agp:
                 if len(parts) > 2:
                     self.layer_offset = parts[2]
             elif line.startswith("TEXTURE_WIDTH"):
-                self.imported_texture_width = int(float(line.split()[1]))
+                self.imported_texture_scale = int(float(line.split()[1]))
             elif line.startswith("TEXTURE_SCALE"):
                 tokens = line.split()
                 self.imported_texture_width = int(float(tokens[1]))
+                original_tex_width = self.imported_texture_width
                 if len(tokens) > 2:
                     self.imported_texture_height = int(float(tokens[2]))
+                    original_tex_height = self.imported_texture_height
                 else:
                     self.imported_texture_height = self.imported_texture_width
+                    original_tex_height = self.imported_texture_width
             elif line.startswith("SURFACE"):
                 self.surface = line.split()[1]
                 self.surface = self.surface.upper()
@@ -1189,9 +1202,25 @@ class agp:
                 self.tile_lod = int(float(line.split()[1]))
             elif line.startswith("TILE"):
                 if len(cur_tile_commands) > 0:
+                    #Define our transform
+                    #First scale up our texture dimensions to 4096x4096 and scale down our texture scale so positions remain the same
+                    
+                    upscale_factor = 4096 / self.imported_texture_width
+                    self.imported_texture_height *= upscale_factor
+                    self.imported_texture_width *= upscale_factor
+                    self.imported_texture_scale /= upscale_factor
+
+                    self.transform.x_ratio = self.imported_texture_width / self.imported_texture_scale
+                    self.transform.y_ratio = self.imported_texture_height / self.imported_texture_scale
+
+                    print("Transforms")
+                    print(self.transform.x_ratio)
+                    print(self.transform.y_ratio)
+                    
                     # We have a tile to process
                     new_tile = tile()
-                    new_tile.from_commands(cur_tile_commands, self.transform, self.imported_texture_width, self.imported_texture_height, fac_resource_list, obj_resource_list)
+                    new_tile.transform = self.transform
+                    new_tile.from_commands(cur_tile_commands, self.transform, 4096 / self.imported_texture_width, 4096 / self.imported_texture_height, fac_resource_list, obj_resource_list)
                     self.tiles.append(new_tile)
                     cur_tile_commands = []
                 
@@ -1199,8 +1228,20 @@ class agp:
                 cur_tile_commands.append(line)
 
         if len(cur_tile_commands) > 0:
+            #Define our transform
+            #First scale up our texture dimensions to 4096x4096 and scale down our texture scale so positions remain the same
+            
+            upscale_factor = 4096 / self.imported_texture_width
+            self.imported_texture_height *= upscale_factor
+            self.imported_texture_width *= upscale_factor
+            self.imported_texture_scale /= upscale_factor
+
+            self.transform.x_ratio = self.imported_texture_width / self.imported_texture_scale
+            self.transform.y_ratio = self.imported_texture_height / self.imported_texture_scale
+            
             # We have a tile to process
             new_tile = tile()
-            new_tile.from_commands(cur_tile_commands, self.transform, 4096 / self.imported_texture_width, 4096 / self.imported_texture_height, fac_resource_list, obj_resource_list)
+            new_tile.transform = self.transform
+            new_tile.from_commands(cur_tile_commands, self.transform, 4096 / original_tex_width, 4096 / original_tex_height, fac_resource_list, obj_resource_list)
             self.tiles.append(new_tile)
     
