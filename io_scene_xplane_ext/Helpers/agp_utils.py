@@ -21,6 +21,8 @@ class agp_transform:
         self.anchor_x = 0.0
         self.anchor_y = 0.0
 
+        self.height_ratio = 1.0
+
 def build_vertex_to_edge_map(obj):
     """
     Build a lookup table mapping each vertex index to a list of edge indices it is part of.
@@ -261,6 +263,22 @@ def get_tile_bounds_and_transform(obj):
     transform.y_ratio = y_ratio
     transform.anchor_x = anchor_u
     transform.anchor_y = anchor_v
+
+    #Now we need to get the image
+    try:
+        alb_name = obj.data.materials[0].xp_materials.alb_texture
+        alb_image = bpy.data.images.get(alb_name)
+        
+        #Get the dimensions
+        if alb_image is not None:
+            alb_width = alb_image.size[0]
+            alb_height = alb_image.size[1]
+
+            #Save the ratio
+            transform.height_ratio = alb_height / alb_width
+    except Exception as e:
+        log_utils.warning(f"Error getting ALB texture for {obj.name}: {e}, assuming texture is square")
+        alb_image = None
 
     #Return the UV bounds
     return left_u, bottom_v, right_u, top_v, transform
