@@ -72,7 +72,7 @@ def update_xplane_collection_settings(col):
                             col.xplane.layer.luminance = 1000
 
                         if xp_props.normal_texture != "":
-                            col.xplane.layer.normal_metalness_draped = True
+                            col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
                     else:
                         col.xplane.layer.luminance_override = False
                         col.xplane.layer.luminance = 1000
@@ -81,16 +81,16 @@ def update_xplane_collection_settings(col):
                     col.xplane.layer.texture_lit = xp_props.lit_texture
                     col.xplane.layer.texture_normal = xp_props.normal_texture
                     col.xplane.layer.texture_map_material_gloss = xp_props.material_texture
-                    col.xplane.layer.normal_metalness = True
+                    col.xplane.layer.normal_metalness = xp_props.normal_texture != ""
 
                     if xp_props.draped:
                         col.xplane.layer.texture_draped = xp_props.alb_texture
                         col.xplane.layer.texture_draped_normal = xp_props.normal_texture
-                        col.xplane.layer.normal_metalness_draped = True
+                        col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
                     else:
                         col.xplane.layer.texture_draped = ""
                         col.xplane.layer.texture_draped_normal = ""
-                        col.xplane.layer.normal_metalness_draped = False
+                        col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
                     updated = True
 
                     #Now we need to set the decal properties
@@ -121,8 +121,8 @@ def update_xplane_collection_settings(col):
                     col.xplane.layer.texture_normal = xp_props.normal_texture
                     col.xplane.layer.texture_draped = xp_props.alb_texture
                     col.xplane.layer.texture_draped_normal = xp_props.normal_texture
-                    col.xplane.layer.normal_metalness = True
-                    col.xplane.layer.normal_metalness_draped = True
+                    col.xplane.layer.normal_metalness = xp_props.normal_texture != ""
+                    col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
 
                     col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 

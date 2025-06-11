@@ -23,7 +23,6 @@ from functools import total_ordering
 #Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
 obj_does_use_lods = False
 
-@total_ordering
 class wiper_param:
     """
     Class to represent the parameters for a wiper animation.
@@ -56,6 +55,7 @@ class thermal_source:
         self.toggle_dataref = ""
         self.temperature = 0.0
 
+@total_ordering
 class light:
     """
     Class to represent a light in an X-Plane object. This class is used to store the lights for an object.
@@ -1229,109 +1229,113 @@ class anim_level:
         
         #Add all the actions, creating the hierarchy of empties with their rotations set. 
         for i, action in enumerate(self.actions):
-            #Create the empty for this action
-            name = f"Anim"
-            if len(self.draw_calls) > 0:
-                name += f" TRIS {self.draw_calls[0].start_index} {self.draw_calls[0].length}"
-            name += f" Pt {i}"
-            if action.type == 'rot_table_vector_transform':
-                name += " Rotation Transform"
-            elif action.type == 'rot_keyframe':
-                name += " Static Rotation"
-                cur_static_offsets.actions.append((action.rot_vector, action.rot))
-                cur_static_offsets.action_types.append('rotate')
-                continue  #Static rotations are not animated, so we don't create a new empty for them
-            elif action.type == 'loc_keyframe':
-                name += " Static Translation"
-                cur_static_offsets.actions.append(action.loc)
-                cur_static_offsets.action_types.append('translate')
-                continue  #Static translations are not animated, so we don't create a new empty for them
-            elif action.type == 'loc_table':
-                name += " Keyframed Translation"
-            elif action.type == 'rot_table':
-                name += " Keyframed Rotation"
-            elif action.type == 'show_hide_series':
-                name += " Show/Hide Series"
-                for cmd in action.commands:
-                    cur_show_hide_commands.append(cmd.copy())
-                continue  #Show/hide series are not animated, so we don't create a new empty for them. Their commands will be attached to all their direct children
-            
-            #Create the new objetc and link it
-            anim_empty = bpy.data.objects.new(name, None)
-            anim_empty.empty_display_type = "ARROWS"
-            anim_empty.empty_display_size = 0.05
-            in_collection.objects.link(anim_empty)
-            self.actions[i].empty = anim_empty
+            # Check if this is a drawcall or light. If so, we'll parent them to the last action. 
+            # We need to do this on an action level because some objects may have actions, dc, more actions, more dcs, etc. And the dcs only have the actions *before* them applied.
+            # So treating everything in an ANIM_begin/end pair as being effected by all the actions don't work :(
+            # We don't actually have to do anything different with actions though because we are just parenting the dcs/lights to the last aciton. We don't actually change the meat of the action hierarchy
+            # Also note again because next actions are *siblings* rather than children of this dc/light, we don't reset show/hide or static offset
+            if isinstance(action, draw_call):
+                dc_obj = action.add_to_scene(all_verts, all_indicies, in_mats, in_collection)
+                dc_obj.parent = self.last_action
 
-            #Set this actions base loc/rot transforms and reset the offsets
-            action.static_offsets = cur_static_offsets.copy()
-            cur_static_offsets = static_offsets()  #Reset the static offsets for the next action
-
-            #Apply show hide animations
-            for cmd in cur_show_hide_commands:
-                cmd.apply(anim_empty)
-
-            #Reset dataref show/hide commands
-            action.show_hide_commands = cur_show_hide_commands.copy()
-            cur_show_hide_commands = []  #Reset the show/hide commands for the next action
-
-
-            #Reset the offsets because future objetcs will be parented to this one,
-            if cur_parent != None:
-                anim_empty.parent = cur_parent
-            cur_parent = anim_empty
-
-            #If it is a rotation we need to align it to the rotation vector
-            if action.type == 'rot_table_vector_transform':
-                eular = anim_utils.euler_to_align_z_with_vector(action.rot_vector)  #We align rotations to their rotation vector so they can be rotated into static place, or their child keyframe controller can be rotated along it's local Z (which is this vector)
-                anim_utils.set_obj_rotation_world(anim_empty, eular)
-            elif action.type == "rot_table":
-                #Rotation tables are always aligned with their parent. Their parent is transformed so it points in the vector of the rotation vector.
-                #By having no rotation, our Z rotates along the rotation vector
-                anim_empty.rotation_euler = mathutils.Vector((0, 0, 0)).xyz
-            elif action.type == 'loc_keyframe' or action.type == 'loc_table' or action.type == "show_hide_series":
-                #Most actions should have no rotation in world space
+                #So it doesn't take up it's parent's rotation
                 eular = mathutils.Vector((0, 0, 0))
-                anim_utils.set_obj_rotation_world(anim_empty, eular)
+                anim_utils.set_obj_rotation_world(dc_obj, eular)
+
+                #Apply the static offsets to the draw call object
+                cur_static_offsets.apply(dc_obj)
+
+                #Apply show hide animations
+                for cmd in cur_show_hide_commands:
+                    cmd.apply(dc_obj)
+
+            elif isinstance(action, light):
+                #Add the light to the scene. THis function takes the parent and sets the world space positon/rotation
+                new_light = action.add_to_scene(in_collection, self.last_action)
+
+                #Apply the static offsets to the light object
+                cur_static_offsets.apply(new_light)  
+
+                #Apply show hide animations
+                for cmd in cur_show_hide_commands:
+                    cmd.apply(new_light)
+
+            elif isinstance(action, anim_action):
+                #Create the empty for this action
+                name = f"Anim"
+                if len(self.draw_calls) > 0:
+                    name += f" TRIS {self.draw_calls[0].start_index} {self.draw_calls[0].length}"
+                name += f" Pt {i}"
+                if action.type == 'rot_table_vector_transform':
+                    name += " Rotation Transform"
+                elif action.type == 'rot_keyframe':
+                    name += " Static Rotation"
+                    cur_static_offsets.actions.append((action.rot_vector, action.rot))
+                    cur_static_offsets.action_types.append('rotate')
+                    continue  #Static rotations are not animated, so we don't create a new empty for them
+                elif action.type == 'loc_keyframe':
+                    name += " Static Translation"
+                    cur_static_offsets.actions.append(action.loc)
+                    cur_static_offsets.action_types.append('translate')
+                    continue  #Static translations are not animated, so we don't create a new empty for them
+                elif action.type == 'loc_table':
+                    name += " Keyframed Translation"
+                elif action.type == 'rot_table':
+                    name += " Keyframed Rotation"
+                elif action.type == 'show_hide_series':
+                    name += " Show/Hide Series"
+                    for cmd in action.commands:
+                        cur_show_hide_commands.append(cmd.copy())
+                    continue  #Show/hide series are not animated, so we don't create a new empty for them. Their commands will be attached to all their direct children
+                
+                #Create the new objetc and link it
+                anim_empty = bpy.data.objects.new(name, None)
+                anim_empty.empty_display_type = "ARROWS"
+                anim_empty.empty_display_size = 0.05
+                in_collection.objects.link(anim_empty)
+                self.actions[i].empty = anim_empty
+
+                #Set this actions base loc/rot transforms and reset the offsets
+                action.static_offsets = cur_static_offsets.copy()
+                cur_static_offsets = static_offsets()  #Reset the static offsets for the next action
+
+                #Apply show hide animations
+                for cmd in cur_show_hide_commands:
+                    cmd.apply(anim_empty)
+
+                #Reset dataref show/hide commands
+                action.show_hide_commands = cur_show_hide_commands.copy()
+                cur_show_hide_commands = []  #Reset the show/hide commands for the next action
+
+                #Reset the offsets because future objetcs will be parented to this one,
+                if cur_parent != None:
+                    anim_empty.parent = cur_parent
+                cur_parent = anim_empty
+            
+                #If it is a rotation we need to align it to the rotation vector
+                if action.type == 'rot_table_vector_transform':
+                    eular = anim_utils.euler_to_align_z_with_vector(action.rot_vector)  #We align rotations to their rotation vector so they can be rotated into static place, or their child keyframe controller can be rotated along it's local Z (which is this vector)
+                    anim_utils.set_obj_rotation_world(anim_empty, eular)
+                elif action.type == "rot_table":
+                    #Rotation tables are always aligned with their parent. Their parent is transformed so it points in the vector of the rotation vector.
+                    #By having no rotation, our Z rotates along the rotation vector
+                    anim_empty.rotation_euler = mathutils.Vector((0, 0, 0)).xyz
+                elif action.type == 'loc_keyframe' or action.type == 'loc_table' or action.type == "show_hide_series":
+                    #Most actions should have no rotation in world space
+                    eular = mathutils.Vector((0, 0, 0))
+                    anim_utils.set_obj_rotation_world(anim_empty, eular)
+                else:
+                    log_utils.warning(f"Unknown action type {action.type} for animation {anim_empty.name}. This is not expected, please report this on this plugin's Github.")
+
+                #Set the first/last actions
+                if i == 0:
+                    self.first_action = anim_empty
+                self.last_action = anim_empty
+
+                #Reset our frame
+                anim_utils.goto_frame(0)
             else:
-                log_utils.warning(f"Unknown action type {action.type} for animation {anim_empty.name}. This is not expected, please report this on this plugin's Github.")
-
-            #Set the first/last actions
-            if i == 0:
-                self.first_action = anim_empty
-            self.last_action = anim_empty
-
-            #Reset our frame
-            anim_utils.goto_frame(0)
-
-        #Now we need to add all the draw calls to the scene, then parent them to the empty
-        for dc in self.draw_calls:
-            dc_obj = dc.add_to_scene(all_verts, all_indicies, in_mats, in_collection)
-            dc_obj.parent = self.last_action
-
-            #So it doesn't take up it's parent's rotation
-            eular = mathutils.Vector((0, 0, 0))
-            anim_utils.set_obj_rotation_world(dc_obj, eular)
-
-            #Apply the static offsets to the draw call object
-            cur_static_offsets.apply(dc_obj)
-
-            #Apply show hide animations
-            for cmd in cur_show_hide_commands:
-                cmd.apply(dc_obj)
-
-        #Dedupe our lights
-        self.lights = misc_utils.dedupe_list(self.lights)
-        for lt in self.lights:
-            #Add the light to the scene. THis function takes the parent and sets the world space positon/rotation
-            new_light = lt.add_to_scene(in_collection, self.last_action)
-
-            #Apply the static offsets to the light object
-            cur_static_offsets.apply(new_light)  
-
-            #Apply show hide animations
-            for cmd in cur_show_hide_commands:
-                cmd.apply(new_light)
+                log_utils.warning(f"Unknown action type for animation {action}. This is not expected, please report this on this plugin's Github.")
 
         #Now that we added out draw calls, it's time to recurse
         for child in self.children:
@@ -1343,6 +1347,10 @@ class anim_level:
         #Now that everything is parented, we add the keyframes in reverse order so everything is applied correctly
         for i, action in enumerate(reversed(self.actions)):
 
+            if isinstance(action, draw_call) or isinstance(action, light):
+                #If this is a draw call or light, we don't need to do anything here. They were already added to the scene
+                continue
+        
             anim_empty = action.empty
 
             #Skip animations that just have their data propagated to their children
@@ -1580,7 +1588,7 @@ class object:
                 #Add the draw call to the list of draw calls. This is the current animation in the tree, or the list of static draw calls it there is no current animation
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this draw call to the current animation tree
-                    cur_anim_tree[-1].draw_calls.append(dc)
+                    cur_anim_tree[-1].actions.append(dc)
                 else:
                     self.draw_calls.append(dc)
 
@@ -1762,9 +1770,8 @@ class object:
                 
                 #Check if we have a current show/hide series
                 cur_show_hide_series = None
-                if len(cur_anim_tree[-1].actions) > 0:
-                    if cur_anim_tree[-1].actions[-1].type == 'show_hide_series':
-                        cur_show_hide_series = cur_anim_tree[-1].actions[-1]
+                if len(cur_anim_tree[-1].actions) > 0 and isinstance(cur_anim_tree[-1].actions[-1], anim_show_hide_series):
+                    cur_show_hide_series = cur_anim_tree[-1].actions[-1]
 
                 #If we don't have a current show/hide series, create one
                 if cur_show_hide_series == None:
@@ -1788,9 +1795,8 @@ class object:
                 
                 #Check if we have a current show/hide series
                 cur_show_hide_series = None
-                if len(cur_anim_tree[-1].actions) > 0:
-                    if cur_anim_tree[-1].actions[-1].type == 'show_hide_series':
-                        cur_show_hide_series = cur_anim_tree[-1].actions[-1]
+                if len(cur_anim_tree[-1].actions) > 0 and isinstance(cur_anim_tree[-1].actions[-1], anim_show_hide_series):
+                    cur_show_hide_series = cur_anim_tree[-1].actions[-1]
 
                 #If we don't have a current show/hide series, create one
                 if cur_show_hide_series == None:
@@ -1861,7 +1867,7 @@ class object:
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
-                    cur_anim_tree[-1].lights.append(new_light)
+                    cur_anim_tree[-1].actions.append(new_light)
 
                 else:
                     #Otherwise, add it directly to the lights list
@@ -1892,7 +1898,7 @@ class object:
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
-                    cur_anim_tree[-1].lights.append(new_light)
+                    cur_anim_tree[-1].actions.append(new_light)
 
                 else:
                     #Otherwise, add it directly to the lights list
@@ -1924,7 +1930,7 @@ class object:
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
-                    cur_anim_tree[-1].lights.append(new_light)
+                    cur_anim_tree[-1].actions.append(new_light)
 
                 else:
                     #Otherwise, add it directly to the lights list
@@ -2000,7 +2006,7 @@ class object:
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
-                    cur_anim_tree[-1].lights.append(new_light)
+                    cur_anim_tree[-1].actions.append(new_light)
 
                 else:
                     #Otherwise, add it directly to the lights list

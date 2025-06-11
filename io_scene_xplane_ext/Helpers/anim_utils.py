@@ -48,7 +48,6 @@ def euler_to_axis_angle(euler):
     
     return axis, math.degrees(angle)
 
-
 def rotate_point_and_euler(point, euler_angles, axis, angle_deg):
         """
         Rotates a location and euler around an arbitrary axis by a given angle in degrees.
