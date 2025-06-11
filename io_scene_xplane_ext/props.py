@@ -566,11 +566,11 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         items=[
             ('BASE_TILE', "Base Tile", "The base tile for the autogen point"),
             ('ATTACHED_OBJ', "Attached Object", "An attached object to the parent tile"),
-            ('AUTO_SPLIT_OBJ', "Auto Split Object", "An empty whose children will be automatically split by material, exported as separate objects, and attached here in the .agp"),
             ('FACADE', "Facade", "A facade perimeter"),
             ('TREE', "Tree", "A tree object randomly picked from the set layer from the .agp's forest asset"),
             ('TREE_LINE', "Tree Line", "A tree line object randomly picked from the set layer from the .agp's forest asset"),
             ('CROP_POLY', "Crop Polygon", "A polygon used to crop the shape of the parent tile")
+            #('AUTO_SPLIT_OBJ', "Auto Split Object", "An empty whose children will be automatically split by material, exported as separate objects, and attached here in the .agp"),
         ],
         default='BASE_TILE'
     ) # type: ignore
@@ -684,7 +684,6 @@ class PROP_fac_floor(bpy.types.PropertyGroup):
     roof_two_sided: bpy.props.BoolProperty(name="Roof Two Sided", description="Whether the roof is two sided", default=False, update=update_ui)# type: ignore
 
 class PROP_facade(bpy.types.PropertyGroup):
-
     #Facade name
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the facade is exportable", default=False, update=update_ui)# type: ignore
     name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade")# type: ignore
