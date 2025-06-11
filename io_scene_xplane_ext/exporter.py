@@ -8,7 +8,7 @@ import bpy #type: ignore
 import os
 
 from .Helpers import file_utils
-from .Helpers import line_utils
+from .Helpers import log_utils
 from .Types import xp_lin
 from .Types import xp_fac
 from .Types import xp_pol
@@ -30,6 +30,8 @@ def export_fac(in_col):
 
     #Write the file
     output.write(export_path)
+
+    log_utils.display_messages()
     
 def export_lin(in_col):
     #Create an xp_lin, load it from the collection, and write it to a file
@@ -48,6 +50,8 @@ def export_lin(in_col):
     #Write the file
     output.write(export_path)
 
+    log_utils.display_messages()
+
 def export_pol(in_col):
     # Create an xp_pol, load it from the collection, and write it to a file
     output = xp_pol.polygon()
@@ -65,6 +69,8 @@ def export_pol(in_col):
     # Write the file
     output.write(export_path)
 
+    log_utils.display_messages()
+
 def export_agp(in_col):
     # Create an xp_agp, load it from the collection, and write it to a file
     output = xp_agp.agp()
@@ -81,3 +87,5 @@ def export_agp(in_col):
 
     # Write the file
     output.write(export_path)
+
+    log_utils.display_messages()

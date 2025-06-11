@@ -54,6 +54,8 @@ class line():
         self.surface = "NONE"
 
     def write(self, output_path):
+        log_utils.new_section(f"Writing .lin {output_path}")
+
         output_folder = os.path.dirname(output_path)
 
         #Define a string to hold the file contents
@@ -132,6 +134,7 @@ class line():
     
     def read(self, in_file):
         log_utils.new_section(f"Reading .lin {in_file}")
+
         #Read the file
         with open(in_file, 'r') as f:
             lines = f.readlines()
@@ -246,6 +249,8 @@ class line():
                 self.caps.append(cur_cap)
 
     def from_collection(self, in_collection):
+        log_utils.new_section(f"Reading .lin collection {in_collection.name}")
+
         #First iterate through all the objects in this collection. Here we will determine a list of objects eligable for export
         exportable_objects = []
 
@@ -259,7 +264,8 @@ class line():
         if len(exportable_objects) == 0:
             return
         if len([obj for obj in exportable_objects if obj.xp_lin.type == "SEGMENT"]) == 0:
-            raise Exception("Error: No segment objects found in collection" + in_collection.name)
+            log_utils.error("Error: No segment objects found in collection" + in_collection.name)
+            return
         
         #Now we want to sort them based on their Z position. While not *necessary*, it makes the output nicer
         exportable_objects.sort(key=lambda x: x.location.z)
@@ -275,7 +281,8 @@ class line():
         for obj in exportable_objects:
             local_scale_x, local_scale_y = line_utils.get_scale_from_layer(obj)
             if abs(local_scale_x - scale_x) > max_scale_diff_x or abs(local_scale_y - scale_y) > max_scale_diff_y:
-                raise Exception("Error: Object " + obj.name + " has a different scale than the rest of the collection. Please make sure all objects share the same UV scale.")
+                log_utils.error("Error: Object " + obj.name + " has a different scale than the rest of the collection. Please make sure all objects share the same UV scale.")
+                return
             break
 
         self.scale_x = scale_x
@@ -285,12 +292,14 @@ class line():
 
         #Ensure we have a material. Then we will extract material data from it
         if len(exportable_objects[0].data.materials) == 0:
-            raise Exception(f"Error: No material found on object! { exportable_objects[0].name } Please configure material with my X-Plane Material Plugin!")
+            log_utils.error(f"Error: No material found on object! { exportable_objects[0].name } Please configure material with my X-Plane Material Plugin!")
+            return
         
         mat = in_collection.objects[0].data.materials[0].xp_materials
 
         if mat.do_separate_material_texture:
-            raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+            log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+            return
 
         self.layer = in_collection.xp_lin.layer_group
         self.layer_offset = in_collection.xp_lin.layer_group_offset
@@ -337,6 +346,8 @@ class line():
         #That is it! We got the material data, scale, and layer commands. Now the caller just needs to call write() to write the file.
 
     def to_collection(self, in_name):
+        log_utils.new_section(f"Creating .lin collection {in_name}")
+
         #Define a new collection with the same name as the file
         new_collection = bpy.data.collections.new(name=in_name)
         bpy.context.scene.collection.children.link(new_collection)
@@ -364,12 +375,14 @@ class line():
         for decal in self.imported_decal_commands:
             if decal.startswith("NORMAL"):
                 if decal_nml_index > 3:
-                    raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                 decal_nml_index += 1
             else:
                 if decal_alb_index > 2:
-                    raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 

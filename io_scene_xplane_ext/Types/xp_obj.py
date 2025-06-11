@@ -24,6 +24,38 @@ from functools import total_ordering
 obj_does_use_lods = False
 
 @total_ordering
+class wiper_param:
+    """
+    Class to represent the parameters for a wiper animation.
+    """
+
+    def __init__(self):
+        self.dataref = ""
+        self.start = 0.0
+        self.end = 0.0
+        self.width = 0.0
+
+class cockpit_region:
+    """
+    Class to represent a region in the cockpit for panel textures.
+    """
+    
+    def __init__(self):
+        self.left = 0.0
+        self.bottom = 0.0
+        self.width = 1.0
+        self.height = 1.0
+
+class thermal_source:
+    """
+    Class to represent a thermal source in an X-Plane object.
+    """
+
+    def __init__(self):
+        self.dataref = ""
+        self.toggle_dataref = ""
+        self.temperature = 0.0
+
 class light:
     """
     Class to represent a light in an X-Plane object. This class is used to store the lights for an object.
@@ -517,11 +549,15 @@ class manipulator:
                 obj.xplane.manip.type = "drag_rotate_detent"
             obj.xplane.manip.cursor = self.params[1].lower()
 
+            log_utils.warning(f"Drag rotate manipulators are autodetected by X-Plane2Blender. Depending on this object's authoring, X-Plane2Blender may not autodetect this manipulator, requiring manual changes. Obj is {obj.name}")
+
         for det in self.detents:
             obj.xplane.manip.axis_detent_ranges.add()
             obj.xplane.manip.axis_detent_ranges[-1].start = det.start
             obj.xplane.manip.axis_detent_ranges[-1].end = det.end
             obj.xplane.manip.axis_detent_ranges[-1].height = det.length
+
+            log_utils.warning("This manipulator has detents. X-Plane2Blender autodetects detents, but depending on the authoring of this object, it may not be able to detect them, requiring manual changes. Obj is " + obj.name)
 
         #Now we need to add animations if applicable
         if do_animate:
@@ -764,7 +800,7 @@ class draw_call:
             #Check if *any* of the parents here use the same datarefs. Not perfect but it's a best guess of whether the parent provides the given animation
             #Temporarily disabled. See line 517, toward end of manipulator.apply_to_obj
             #TODO: Re-enable this, but give a warning instead if we find we're not animated
-            while False:
+            while True:
                 if cur_parent == None:
                     break
                 for dref in cur_parent.xplane.datarefs:
@@ -775,6 +811,9 @@ class draw_call:
                             break
 
                 cur_parent = cur_parent.parent
+
+            if do_need_animate and (self.manipulator.params[0] == "ATTR_manip_drag_axis" or self.manipulator.params[0] == "ATTR_manip_drag_rotate"):
+                log_utils.warning(f"Manipulator {self.manipulator.params[0]} on object {dc_obj.name} is not animated. X-Plane2Blender autodetects these manipulators from animations, so without animations, the manipulator will throw an error on export. Manual fixing is required for this object's manipulator. Obj is {dc_obj.name}")
 
             override_return_obj = self.manipulator.apply_to_obj(dc_obj)
 
@@ -1255,8 +1294,7 @@ class anim_level:
                 eular = mathutils.Vector((0, 0, 0))
                 anim_utils.set_obj_rotation_world(anim_empty, eular)
             else:
-                #TODO: Warn here once we have a proper logging system
-                pass
+                log_utils.warning(f"Unknown action type {action.type} for animation {anim_empty.name}. This is not expected, please report this on this plugin's Github.")
 
             #Set the first/last actions
             if i == 0:
@@ -1367,38 +1405,6 @@ class anim_level:
 
             #Reset our frame
             anim_utils.goto_frame(0)
-
-class wiper_param:
-    """
-    Class to represent the parameters for a wiper animation.
-    """
-
-    def __init__(self):
-        self.dataref = ""
-        self.start = 0.0
-        self.end = 0.0
-        self.width = 0.0
-
-class cockpit_region:
-    """
-    Class to represent a region in the cockpit for panel textures.
-    """
-    
-    def __init__(self):
-        self.left = 0.0
-        self.bottom = 0.0
-        self.width = 1.0
-        self.height = 1.0
-
-class thermal_source:
-    """
-    Class to represent a thermal source in an X-Plane object.
-    """
-
-    def __init__(self):
-        self.dataref = ""
-        self.toggle_dataref = ""
-        self.temperature = 0.0
 
 class object:
     """
@@ -1533,6 +1539,7 @@ class object:
                 'WIPER_texture': 2,
                 'WIPER_blend': 2,
             }
+            
             # Only check if command is in our map
             if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
                 log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
@@ -2190,7 +2197,7 @@ class object:
                 self.wiper_params.append(new_wiper)
             
     def to_scene(self):
-        log_utils.new_section(f"Convert read data to collection for object {self.name}")
+        log_utils.new_section(f"Creating .obj collection {self.name}")
 
         #Create a new collection for this object
         collection = bpy.data.collections.new(self.name)

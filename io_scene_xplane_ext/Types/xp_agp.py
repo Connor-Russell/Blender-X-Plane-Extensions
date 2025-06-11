@@ -937,6 +937,8 @@ class agp:
         self.name = ""
 
     def from_collection(self, in_collection):
+        log_utils.new_section(f"Loading .agp collection {in_collection.name}")
+
         #Set the layer group and offset
         self.layer_group = in_collection.xp_agp.layer_group
         self.layer_offset_offset = in_collection.xp_agp.layer_group_offset
@@ -991,6 +993,8 @@ class agp:
                 self.tiles.append(new_tile)
 
     def to_collection(self):
+        log_utils.new_section(f"Creating .agp collection {self.name}")
+
         #Create the collection and set it's settings
         new_collection = bpy.data.collections.new(name=self.name)
         bpy.context.scene.collection.children.link(new_collection)
@@ -1014,6 +1018,8 @@ class agp:
         pass
 
     def write(self, output_path):
+        log_utils.new_section(f"Writing .agp {output_path}")
+
         output_folder = os.path.dirname(output_path)
 
         if len(self.tiles) == 0:
@@ -1114,7 +1120,7 @@ class agp:
             f.write(of)
 
     def read(self, in_file):
-        #log_utils.new_section(f"Reading .agp {in_file}")
+        log_utils.new_section(f"Reading .agp {in_file}")
 
         self.name = in_file.split(os.sep)[-1]
 
