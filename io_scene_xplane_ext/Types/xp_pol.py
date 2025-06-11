@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Export
-#Purpose:   Provide a class that defines the X-Plane line type
+#Module:    XP_Pol
+#Purpose:   Provide a class that defines the X-Plane polygon type
 
 #Include decal params from our material plugin
 from ..Helpers import pol_utils #type: ignore
@@ -10,6 +10,7 @@ from ..Helpers import decal_utils #type: ignore
 from ..Helpers import file_utils #type: ignore
 from ..Helpers import misc_utils #type: ignore
 from ..Helpers import geometery_utils
+from ..Helpers import log_utils #type: ignore
 import bpy #type: ignore
 import os
 
@@ -58,6 +59,8 @@ class polygon():
         self.subtextures = [[]] #List of arrays of 4 values (translating to left, bottom, right, top, UVs)
 
     def write(self, output_path):
+        log_utils.new_section(f"Writing .pol {output_path}")
+
         output_folder = os.path.dirname(output_path)
 
         #Define a string to hold the file contents
@@ -165,8 +168,6 @@ class polygon():
                 'WEATHER': 2,
                 'SUPER_ROUGHNESS': 1,
                 'NO_BLEND': 2,
-                'DECAL': 1,
-                'NORMAL_DECAL': 1,
                 'LAYER_GROUP': 2, # can be 2 or 3, but 2 is safe
                 'SCALE': 3,
                 'SURFACE': 2,
@@ -252,13 +253,16 @@ class polygon():
                 self.subtextures.append(subtexture)
 
     def from_collection(self, in_collection):
+        log_utils.new_section(f"Reading .pol collection {in_collection.name}")
+
         # Check if the collection is exportable
         if not in_collection.xp_pol.exportable:
             return
         
         #Make sure there are objects in the collection
         if len(in_collection.objects) == 0:
-            raise ValueError(f"Collection {in_collection.name} has no objects to use for scaling/material.")
+            log_utils.error(f"Collection {in_collection.name} has no objects to export as a polygon.")
+            return
 
         # Set nowrap property
         self.nowrap = in_collection.xp_pol.texture_is_nowrap
@@ -302,13 +306,15 @@ class polygon():
                     break
 
         if mat is None:
-            raise ValueError(f"No material found in the collection {in_collection.name}")
+            log_utils.error(f"Collection {in_collection.name} has no mesh objects with materials to export as a polygon.")
+            return
 
         # Extract material data
         mat = mat.xp_materials
 
         if mat.do_separate_material_texture:
-            raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+            log_utils.error(f"Collection {in_collection.name} has a material with separate textures. This is not supported for polygons.")
+            return
 
         
         self.alb_texture = mat.alb_texture
@@ -354,6 +360,8 @@ class polygon():
                     self.subtextures.append(subtexture)
 
     def to_scene(self):
+        log_utils.new_section(f"Creating .pol collection {self.name}")
+
         in_name = self.name.split(".")[0]
 
         # Define a new collection with the same name as the file
@@ -376,12 +384,14 @@ class polygon():
         for decal in self.imported_decal_commands:
             if decal.startswith("NORMAL"):
                 if decal_nml_index > 3:
-                    raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    log_utils.warning("Error: Too many normal decals! X-Plane only supports 3 decals per material.")
+                    break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                 decal_nml_index += 1
             else:
                 if decal_alb_index > 2:
-                    raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    log_utils.warning("Error: Too many decals! X-Plane only supports 3 decals per material.")
+                    break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 

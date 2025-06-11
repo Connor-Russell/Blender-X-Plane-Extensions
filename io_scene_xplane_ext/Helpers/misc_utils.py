@@ -3,6 +3,9 @@
 #Date: 11/9/2024
 #Purpose: Provide simple utility functions (like linear_search) to help with various tasks.
 
+import mathutils
+import math
+
 def linear_search_list(in_list, search_value):
     """
     Searches for a value in a list and returns its index if found, otherwise returns -1.
@@ -19,7 +22,6 @@ def linear_search_list(in_list, search_value):
             return i
     return -1
 
-#Converts a float to a string with a given precision
 def ftos(value, precision):
     """
     Simple float to string with specified precision.
@@ -31,7 +33,6 @@ def ftos(value, precision):
     """
     return "{:.{precision}f}".format(value, precision=precision)
 
-#Converts a Blender heading to an X-Plane heading. positive being to the right vs negative to the right.
 def resolve_heading(heading):
     """
     Normalizes a heading to the range 0-360 degrees.
@@ -73,3 +74,40 @@ def dedupe_list(in_list):
             new_list.append(item)
 
     return new_list
+
+def winding_is_ccw(verts):
+    """
+    Determines if a list of 2D mathutils.Vector points is wound counterclockwise.
+    Uses the signed area (shoelace formula): positive area = CCW, negative = CW.
+
+    Args:
+        verts (list of mathutils.Vector): List of 2D vectors (x, y) or 3D vectors (x, y, z).
+
+    Returns:
+        bool: True if the winding is counterclockwise, False if clockwise.
+    """
+    area = 0.0
+    n = len(verts)
+    for i in range(n):
+        v1 = verts[i]
+        v2 = verts[(i + 1) % n]
+        # Use only x and y for area calculation
+        area += (v2.x - v1.x) * (v2.y + v1.y)
+    return area < 0  # CCW if area is negative
+
+def make_winding_ccw(verts):
+    """
+    Ensures that a list of 2D mathutils.Vector points is wound counterclockwise.
+    If the winding is clockwise, it reverses the order of the vertices.
+
+    Args:
+        verts (list of mathutils.Vector): List of 2D vectors (x, y) or 3D vectors (x, y, z).
+
+    Returns:
+        list of mathutils.Vector: The input list with vertices ordered counterclockwise.
+    """
+    new_verts = verts
+    if not winding_is_ccw(verts):
+        new_verts = verts.copy()
+        new_verts.reverse()
+    return new_verts

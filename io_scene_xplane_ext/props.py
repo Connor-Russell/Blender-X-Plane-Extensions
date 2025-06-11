@@ -58,7 +58,9 @@ def get_all_collection_names(self, context):
 
 #Triggers UI redraw
 def update_ui(self, context):
-    context.area.tag_redraw()
+    if context != None:
+        if context.area != None:
+            context.area.tag_redraw()
 
 #General properties
 
@@ -72,6 +74,19 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         name="Last Saved Plugin Version",
         default=1
     ) #type: ignore
+
+    agp_collection_search: bpy.props.StringProperty(
+        name="Search",
+        default="",
+        description="Search for a collection to configure export",
+        update=update_ui
+    ) # type: ignore
+
+    agp_disabled_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
 
     pol_collection_search: bpy.props.StringProperty(
         name="Search",
@@ -541,6 +556,91 @@ class PROP_pol_collection(bpy.types.PropertyGroup):
     layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
     layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
+#Autogen Point Properties
+
+class PROP_agp_obj(bpy.types.PropertyGroup):
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
+    type: bpy.props.EnumProperty(
+        name="Type",
+        description="The of object this is in the autogen point",
+        items=[
+            ('BASE_TILE', "Base Tile", "The base tile for the autogen point"),
+            ('ATTACHED_OBJ', "Attached Object", "An attached object to the parent tile"),
+            ('FACADE', "Facade", "A facade perimeter"),
+            ('TREE', "Tree", "A tree object randomly picked from the set layer from the .agp's forest asset"),
+            ('TREE_LINE', "Tree Line", "A tree line object randomly picked from the set layer from the .agp's forest asset"),
+            ('CROP_POLY', "Crop Polygon", "A polygon used to crop the shape of the parent tile")
+            #('AUTO_SPLIT_OBJ', "Auto Split Object", "An empty whose children will be automatically split by material, exported as separate objects, and attached here in the .agp"),
+        ],
+        default='BASE_TILE'
+    ) # type: ignore
+
+    attached_obj_draped: bpy.props.BoolProperty(
+        name="Draped",
+        description="Whether the attached object is draped",
+        default=False
+    ) # type: ignore
+
+    attached_obj_resource: bpy.props.StringProperty(
+        name="Resource",
+        description="The resource for the attached object",
+        default=""
+    ) # type: ignore
+
+    attached_obj_show_between_low: bpy.props.IntProperty(
+        name="Show Between Low",
+        description="The lowest setting this obj will start to show at",
+        default=0,
+        min=0,
+        max=6
+    ) # type: ignore
+
+    attached_obj_show_between_high: bpy.props.IntProperty(
+        name="Show Between High",
+        description="The setting this obj will always show at",
+        default=0,
+        min=0,
+        max=6
+    ) # type: ignore
+
+    facade_resource: bpy.props.StringProperty(
+        name="Facade Resource",
+        description="The resource for the facade",
+        default=""
+    ) # type: ignore
+
+    facade_height: bpy.props.FloatProperty(
+        name="Facade Height",
+        description="The height of the facade",
+        default=10.0
+    ) # type: ignore
+
+    tree_layer: bpy.props.IntProperty(
+        name="Tree Layer",
+        description="The layer for the tree",
+        default=0
+    ) # type: ignore
+
+class PROP_agp_collection(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", description="The name of the autogen point collection") # type: ignore
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the autogen point collection is exportable", default=False) # type: ignore
+    is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the autogen point collection is expanded in the UI", default=False, update=update_ui) # type: ignore
+
+    is_texture_tiling: bpy.props.BoolProperty(name="Enable Texture Tiling", description="Whether the polygon uses texture tiling", default=False) # type: ignore
+    texture_tiling_x_pages: bpy.props.IntProperty(name="Texture Tiling X Pages", description="The number of pages in the x direction", default=1) # type: ignore
+    texture_tiling_y_pages: bpy.props.IntProperty(name="Texture Tiling Y Pages", description="The number of pages in the y direction", default=1) # type: ignore
+    texture_tiling_map_x_res: bpy.props.IntProperty(name="Texture Tiling Map X Resolution", description="The resolution of the texture tiling map in the x direction", default=4096) # type: ignore
+    texture_tiling_map_y_res: bpy.props.IntProperty(name="Texture Tiling Map Y Resolution", description="The resolution of the texture tiling map in the y direction", default=4096) # type: ignore
+    texture_tiling_map_texture: bpy.props.StringProperty(name="Texture Tiling Map Texture", description="The texture used for the texture tiling map", default="", subtype="FILE_PATH") # type: ignore
+
+    layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
+    layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
+
+    vegetation_asset: bpy.props.StringProperty(name="Vegetation Asset", description="The asset to use for the vegetation in the autogen point collection", default="", update=update_ui) # type: ignore
+
+    render_tiles: bpy.props.BoolProperty(name="Render Tile", description="Whether the tile is rendered", default=True, update=update_ui) # type: ignore
+    tile_lod: bpy.props.IntProperty(name="Tile LOD", description="The LOD for the tile", default=20000, min=0) # type: ignore
+
 #Facade properties
 
 class PROP_fac_mesh(bpy.types.PropertyGroup):
@@ -584,7 +684,6 @@ class PROP_fac_floor(bpy.types.PropertyGroup):
     roof_two_sided: bpy.props.BoolProperty(name="Roof Two Sided", description="Whether the roof is two sided", default=False, update=update_ui)# type: ignore
 
 class PROP_facade(bpy.types.PropertyGroup):
-
     #Facade name
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the facade is exportable", default=False, update=update_ui)# type: ignore
     name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade")# type: ignore
@@ -644,6 +743,8 @@ def register():
     bpy.utils.register_class(PROP_pol_collection)
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
+    bpy.utils.register_class(PROP_agp_obj)
+    bpy.utils.register_class(PROP_agp_collection)
     bpy.utils.register_class(PROP_xp_ext_scene)
     bpy.utils.register_class(PROP_decal)
     bpy.utils.register_class(PROP_mats)
@@ -658,10 +759,12 @@ def register():
 
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
+    bpy.types.Object.xp_agp = bpy.props.PointerProperty(type=PROP_agp_obj)
     bpy.types.Object.xp_fac_mesh = bpy.props.PointerProperty(type=PROP_fac_mesh)
     bpy.types.Collection.xp_pol = bpy.props.PointerProperty(type=PROP_pol_collection)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Collection.xp_fac = bpy.props.PointerProperty(type=PROP_facade)
+    bpy.types.Collection.xp_agp = bpy.props.PointerProperty(type=PROP_agp_collection)
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
     bpy.types.Material.xp_materials = bpy.props.PointerProperty(type=PROP_mats)
 
@@ -677,9 +780,11 @@ def unregister():
     del bpy.types.Collection.xp_fac
     del bpy.types.Collection.xp_lin
     del bpy.types.Collection.xp_pol
+    del bpy.types.Collection.xp_agp
     del bpy.types.Object.xp_fac_mesh
     del bpy.types.Object.xp_attached_obj
     del bpy.types.Object.xp_lin
+    del bpy.types.Object.xp_agp
 
     bpy.utils.unregister_class(PROP_facade)
     bpy.utils.unregister_class(PROP_fac_floor)
@@ -692,6 +797,8 @@ def unregister():
     bpy.utils.unregister_class(PROP_xp_ext_scene)
     bpy.utils.unregister_class(PROP_pol_collection)
     bpy.utils.unregister_class(PROP_lin_collection)
+    bpy.utils.unregister_class(PROP_agp_obj)
+    bpy.utils.unregister_class(PROP_agp_collection)
     bpy.utils.unregister_class(PROP_lin_layer)
     bpy.utils.unregister_class(PROP_attached_obj)
     bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)

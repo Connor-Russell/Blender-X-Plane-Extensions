@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      4/18/2025
-#Module:    Export
+#Module:    XP_Fac
 #Purpose:   Provide classes that abstracts the X-Plane facade format
 
 from ..Helpers import facade_utils # type: ignore
@@ -170,8 +170,8 @@ class floor:
                     break
 
             if col is None:
-                print("Could not find collection: " + cur_segment)
-                raise Exception("Could not find collection: " + cur_segment + " Maybe it was deleted?")
+                log_utils.error("Could not find collection: " + cur_segment + " Maybe it was deleted?")
+                return
             
             #Check if there is an _Curved variant of this segment.
             segment_curved = cur_segment + "_Curved"
@@ -204,8 +204,7 @@ class floor:
                 break
         
         if roof_col is None:
-            print("Could not find roof collection: " + self.name + "_roof")
-            raise Exception("Could not find roof collection: " + self.name + "_roof")
+            log_utils.error("Could not find roof collection: " + self.name + "_roof")
         
         #Get the roof params
         self.roof_scale_x, self.roof_scale_y, self.roof_objs, self.roof_heights = facade_utils.get_roof_data(roof_col)
@@ -542,6 +541,8 @@ class facade:
 
     def write(self, out_path):
 
+        log_utils.new_section(f"Writing .fac {out_path}")
+
         output_folder = os.path.dirname(out_path)
         output = ""
 
@@ -568,7 +569,8 @@ class facade:
             mat = self.wall_material.xp_materials
 
             if mat.do_separate_material_texture:
-                raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+                log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+                return
 
             #Textures
             if mat.alb_texture != "":
@@ -611,7 +613,8 @@ class facade:
             mat = self.roof_material.xp_materials
 
             if mat.do_separate_material_texture:
-                raise Exception("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+                log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+                return
 
             #Textures
             if mat.alb_texture != "":
@@ -751,8 +754,8 @@ class facade:
                                 break
 
                         if idx_cur_wall == -1:
-                            print("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?")
-                            raise Exception("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?")
+                            log_utils.error("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?")
+                            return
 
                         output += str(idx_cur_wall) + " "
                     output += "\n"
@@ -765,6 +768,9 @@ class facade:
             f.close()
 
     def from_collection(self, in_collection):
+
+        log_utils.new_section(f"Reading .fac collection {in_collection.name}")
+
         fac = in_collection.xp_fac
 
         #Set the general properties
@@ -792,8 +798,7 @@ class facade:
 
         #Make sure we have at least one floor
         if len(self.floors) == 0:
-            print("No floors found in facade: " + self.name)
-            raise Exception("No floors found in facade: " + self.name)
+            log_utils.error("No floors found in facade: " + self.name)
 
         #Get the roof scale from the first floor.
         self.roof_scale_x = self.floors[0].roof_scale_x
@@ -804,6 +809,9 @@ class facade:
         Converts the facade object into a Blender scene.
         This method should be called after the `read` function to populate the scene with the facade's data.
         """
+
+        log_utils.new_section(f"Creating .fac collection {self.name}")
+
         # Create a new collection for the facade
         facade_collection = bpy.data.collections.new(self.name)
         bpy.context.scene.collection.children.link(facade_collection)
@@ -838,12 +846,14 @@ class facade:
             for decal in self.imported_decal_commands:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
-                        raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        break
                     decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_nml_index])
                     decal_nml_index += 1
                 else:
                     if decal_alb_index > 2:
-                        raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        break
                     decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
 
@@ -866,12 +876,14 @@ class facade:
             for decal in self.imported_decal_commands:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
-                        raise Exception("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        break
                     decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_nml_index])
                     decal_nml_index += 1
                 else:
                     if decal_alb_index > 2:
-                        raise Exception("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        break
                     decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
 
@@ -880,8 +892,6 @@ class facade:
             # Create a collection for the floor
             floor_collection = bpy.data.collections.new(floor_obj.name)
             facade_collection.children.link(floor_collection)
-
-            
 
             # Add segments
             for segment in floor_obj.all_segments:

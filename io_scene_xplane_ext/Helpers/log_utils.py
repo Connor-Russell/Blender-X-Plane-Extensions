@@ -7,6 +7,9 @@
 import bpy
 from datetime import datetime
 
+warning_count = 0
+error_count = 0
+
 def get_log_file():
     """
     Retrieve the Blender internal text block used for logging. If it does not exist, create it.
@@ -42,12 +45,16 @@ def warning(message):
     Args:
         message (str): The warning message to log.
     """
+    global warning_count
+    warning_count += 1
     log = get_log_file()
 
     now = datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
     msg = current_time + " [WARNING] " + message + "\n"
+
+    print(msg)  # Print to console for immediate feedback
 
     log.write(msg)
 
@@ -57,12 +64,16 @@ def error(message):
     Args:
         message (str): The error message to log.
     """
+    global error_count
+    error_count += 1
     log = get_log_file()
 
     now = datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
     msg = current_time + " [ERROR] " + message + "\n"
+
+    print(msg)  # Print to console for immediate feedback
 
     log.write(msg)
 
@@ -79,6 +90,26 @@ def new_section(name):
 
     sides = "--------------------"
 
-    msg = sides + " " + name + " On: " + current_time + " " + sides + "\n"
+    msg = current_time + " " + sides + " " + name + " " + sides + "\n"
+
+    print(msg)  # Print to console for immediate feedback
 
     log.write(msg)
+
+def display_messages():
+    """
+    Display a popup message in Blender if there are any warnings or errors logged.
+    This function is typically called after logging operations to inform the user.
+    """
+    global warning_count
+    global error_count
+    if warning_count > 0 or error_count > 0:
+        message = f"{warning_count} warnings and {error_count} errors occured. Please check the \"X-Plane Extensions Log.txt\" in the text editor for details\n\n"
+
+        def draw(self, context):
+            self.layout.label(text=message)
+
+        bpy.context.window_manager.popup_menu(draw, title = "Warnings/Errors Occured:", icon = 'ERROR')
+    
+    warning_count = 0
+    error_count = 0

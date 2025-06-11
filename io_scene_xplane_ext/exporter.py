@@ -8,10 +8,11 @@ import bpy #type: ignore
 import os
 
 from .Helpers import file_utils
-from .Helpers import line_utils
+from .Helpers import log_utils
 from .Types import xp_lin
 from .Types import xp_fac
 from .Types import xp_pol
+from .Types import xp_agp
 
 def export_fac(in_col):
     #Create an xp_fac, load it from the collection, and write it to a file
@@ -29,6 +30,8 @@ def export_fac(in_col):
 
     #Write the file
     output.write(export_path)
+
+    log_utils.display_messages()
     
 def export_lin(in_col):
     #Create an xp_lin, load it from the collection, and write it to a file
@@ -47,6 +50,8 @@ def export_lin(in_col):
     #Write the file
     output.write(export_path)
 
+    log_utils.display_messages()
+
 def export_pol(in_col):
     # Create an xp_pol, load it from the collection, and write it to a file
     output = xp_pol.polygon()
@@ -64,4 +69,23 @@ def export_pol(in_col):
     # Write the file
     output.write(export_path)
 
+    log_utils.display_messages()
 
+def export_agp(in_col):
+    # Create an xp_agp, load it from the collection, and write it to a file
+    output = xp_agp.agp()
+    output.from_collection(in_col)
+
+    export_path = ""
+    if in_col.xp_agp.name != "":
+        export_path = file_utils.rel_to_abs(in_col.xp_agp.name + ".agp")
+    else:
+        export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".agp")
+
+    if export_path.lower().endswith(".agp.agp"):
+        export_path = export_path[:-4]
+
+    # Write the file
+    output.write(export_path)
+
+    log_utils.display_messages()

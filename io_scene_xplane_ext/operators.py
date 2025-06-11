@@ -42,6 +42,19 @@ class BTN_pol_exporter(bpy.types.Operator):
 
         return {'FINISHED'}
     
+class BTN_agp_exporter(bpy.types.Operator):
+    bl_idname = "xp_ext.export_agps"
+    bl_label = "Export X-Plane Autogen Points"
+
+    def execute(self, context):
+
+        # Iterate through every collection. If it is exportable and visible, export
+        for col in bpy.data.collections:
+            if col.xp_agp.exportable and collection_utils.get_collection_is_visible(col):
+                exporter.export_agp(col)
+
+        return {'FINISHED'}  
+
 class IMPORT_lin(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_lin"
     bl_label = "Import X-Plane Lines"
@@ -111,6 +124,24 @@ class IMPORT_obj(bpy.types.Operator, ImportHelper):
         for cf in self.files:
             filepath = f"{directory}{os.sep}{cf.name}"
             importer.import_obj(filepath)
+
+        return {'FINISHED'}
+
+class IMPORT_agp(bpy.types.Operator, ImportHelper):
+    bl_idname = "import_scene.xp_agp"
+    bl_label = "Import X-Plane Autogen Points"
+    filename_ext = ".agp"
+    filter_glob: bpy.props.StringProperty(default="*.agp", options={'HIDDEN'}) # type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
+
+    def execute(self, context):
+        # Implement your import logic here
+        directory = self.filepath
+        directory = directory[:directory.rfind(os.sep)]
+
+        for cf in self.files:
+            filepath = f"{directory}{os.sep}{cf.name}"
+            importer.import_agp(filepath)
 
         return {'FINISHED'}
 
@@ -260,87 +291,8 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
         # for each object, get the material
         # IF that material has textures set, update that collection, set flag that that collection has been updated. Keep looping through the object, if we find one that is draped, update with that material
         for col in bpy.context.scene.collection.children:
+            material_config.update_xplane_collection_settings(col)
 
-            #Define flag
-            updated = False
-
-            #Get all the objects in the collection
-            for obj in col.objects:
-                mat = obj.active_material
-
-                if mat != None:
-                    xp_props = mat.xp_materials
-
-                    #Check for textures
-                    if xp_props.alb_texture != "":
-
-                        #If we haven't updated yet, update
-                        if not updated:
-                            if xp_props.lit_texture != "":
-                                if xp_props.brightness > 0:
-                                    col.xplane.layer.luminance_override = True
-                                    col.xplane.layer.luminance = int(xp_props.brightness)
-                                else:
-                                    col.xplane.layer.luminance_override = False
-                                    col.xplane.layer.luminance = 1000
-
-                                if xp_props.normal_texture != "":
-                                    col.xplane.layer.normal_metalness_draped = True
-                            else:
-                                col.xplane.layer.luminance_override = False
-                                col.xplane.layer.luminance = 1000
-
-                            col.xplane.layer.texture = xp_props.alb_texture
-                            col.xplane.layer.texture_lit = xp_props.lit_texture
-                            col.xplane.layer.texture_normal = xp_props.normal_texture
-                            col.xplane.layer.texture_map_material_gloss = xp_props.material_texture
-                            col.xplane.layer.normal_metalness = True
-
-                            if xp_props.draped:
-                                col.xplane.layer.texture_draped = xp_props.alb_texture
-                                col.xplane.layer.texture_draped_normal = xp_props.normal_texture
-                                col.xplane.layer.normal_metalness_draped = True
-                            else:
-                                col.xplane.layer.texture_draped = ""
-                                col.xplane.layer.texture_draped_normal = ""
-                                col.xplane.layer.normal_metalness_draped = False
-                            updated = True
-
-                            #Now we need to set the decal properties
-                            #Reset decal properties
-                            col.xplane.layer.file_decal1 = ""
-                            col.xplane.layer.file_decal2 = ""
-                            col.xplane.layer.file_draped_decal1 = ""
-                            col.xplane.layer.file_draped_decal2 = ""
-                            col.xplane.layer.file_normal_decal1 = ""
-                            col.xplane.layer.file_normal_decal2 = ""
-                            col.xplane.layer.file_draped_normal_decal1 = ""
-                            col.xplane.layer.file_draped_normal_decal2 = ""
-                            col.xplane.layer.texture_modulator = ""
-                            col.xplane.layer.texture_draped_modulator = ""
-
-                            col.xplane.layer.texture_modulator = xp_props.decal_modulator
-
-                            if xp_props.draped:
-                                col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
-
-                            decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                            decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
-
-                        #If we have updated, but this one is draped, update with this one. Then we can skip the rest of the objects in this collection
-                        if xp_props.draped:
-                            col.xplane.layer.texture = xp_props.alb_texture
-                            col.xplane.layer.texture_lit = xp_props.lit_texture
-                            col.xplane.layer.texture_normal = xp_props.normal_texture
-                            col.xplane.layer.texture_draped = xp_props.alb_texture
-                            col.xplane.layer.texture_draped_normal = xp_props.normal_texture
-                            col.xplane.layer.normal_metalness = True
-                            col.xplane.layer.normal_metalness_draped = True
-
-                            col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
-
-                            decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                            decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
         return {'FINISHED'}
 
 class BTN_bake_low_poly(bpy.types.Operator):
@@ -552,6 +504,7 @@ def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
     self.layout.operator(IMPORT_fac.bl_idname, text="X-Plane Facade (.fac)")
     self.layout.operator(IMPORT_obj.bl_idname, text="X-Plane Object (.obj)")
+    self.layout.operator(IMPORT_agp.bl_idname, text="X-Plane Autogen Point (.agp)")
     
 def register():
     bpy.utils.register_class(BTN_lin_exporter)
@@ -560,6 +513,7 @@ def register():
     bpy.utils.register_class(IMPORT_pol)
     bpy.utils.register_class(IMPORT_fac)
     bpy.utils.register_class(IMPORT_obj)
+    bpy.utils.register_class(IMPORT_agp)
     bpy.utils.register_class(TEST_IMPORT_obj)
     bpy.utils.register_class(TEST_import_lin)
     bpy.utils.register_class(TEST_import_pol)
@@ -574,15 +528,18 @@ def register():
     bpy.utils.register_class(BTN_fac_export_all)
     bpy.utils.register_class(BTN_run_tests)
     bpy.utils.register_class(BTN_TEST_config_bake_settings)
+    bpy.utils.register_class(BTN_agp_exporter)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
+    bpy.utils.unregister_class(BTN_agp_exporter)
     bpy.utils.unregister_class(BTN_lin_exporter)
     bpy.utils.unregister_class(BTN_pol_exporter)
     bpy.utils.unregister_class(IMPORT_lin)
     bpy.utils.unregister_class(IMPORT_pol)
     bpy.utils.unregister_class(IMPORT_fac)
     bpy.utils.unregister_class(IMPORT_obj)
+    bpy.utils.unregister_class(IMPORT_agp)
     bpy.utils.unregister_class(TEST_IMPORT_obj)
     bpy.utils.unregister_class(TEST_import_lin)
     bpy.utils.unregister_class(TEST_import_pol)
