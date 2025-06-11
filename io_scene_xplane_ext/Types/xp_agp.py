@@ -11,6 +11,8 @@ from ..Helpers import misc_utils
 from ..Helpers import log_utils
 from .. import material_config
 
+from ..Helpers.misc_utils import ftos
+
 import os
 import math
 import mathutils
@@ -39,7 +41,7 @@ class crop_polygon:
         if len(self.perimeter) == 0:
             return
         #Set the vertices in world coordinates
-        new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, 0)
+        new_obj = agp_utils.create_obj_from_perimeter(self.perimeter, 0.1)
         new_obj.xp_agp.exportable = True
         new_obj.xp_agp.type = 'CROP_POLY'
 
@@ -58,10 +60,14 @@ class crop_polygon:
             pixel_x, pixel_y = agp_utils.to_pixel_coords(vert.x, vert.y, transform)
             transformed_perimeter.append(mathutils.Vector((pixel_x, pixel_y, 0)))
 
+        #If the last point is the same as the first, remove it
+        if len(transformed_perimeter) > 0 and transformed_perimeter[-1] == transformed_perimeter[0]:
+            transformed_perimeter.pop()
+
         cmd = f"CROP_POLY "
 
         for vert in transformed_perimeter:
-            cmd += f"{vert.x} {vert.y} "
+            cmd += f"{ftos(vert.x, 4)} {ftos(vert.y, 4)} "
 
         if len(transformed_perimeter) < 3:
             log_utils.warning("CROP_POLY must have at least 3 vertices.")
@@ -86,6 +92,10 @@ class crop_polygon:
             pixel_y = float(coords[i+1]) * in_y_mult
             blender_x, blender_y = agp_utils.to_blender_coords(pixel_x, pixel_y, transform)
             self.perimeter.append(mathutils.Vector((blender_x, blender_y, 0)))
+
+        #Re add the last point to close the polygon
+        if len(self.perimeter) > 0:
+            self.perimeter.append(self.perimeter[0])
 
 class facade:
     """
@@ -140,10 +150,10 @@ class facade:
             pixel_x, pixel_y = agp_utils.to_pixel_coords(vert.x, vert.y, transform)
             transformed_perimeter.append(mathutils.Vector((pixel_x, pixel_y, 0)))
 
-        cmd = f"FAC {resource_index} {self.height} "
+        cmd = f"FAC {int(resource_index)} {ftos(self.height, 2)} "
 
         for vert in transformed_perimeter:
-            cmd += f"{vert.x} {vert.y} "
+            cmd += f"{ftos(vert.x, 4)} {ftos(vert.y, 4)} "
 
         return cmd
 
@@ -229,7 +239,7 @@ class tree_line:
             transformed_perimeter.append(mathutils.Vector((pixel_x, pixel_y, 0)))
 
         for i in range(0, len(transformed_perimeter) - 1):
-            cur_cmd = f"TREE_LINE {transformed_perimeter[i].x} {transformed_perimeter[i].y} {transformed_perimeter[i+1].x} {transformed_perimeter[i+1].y} {self.layer}"
+            cur_cmd = f"TREE_LINE {ftos(transformed_perimeter[i].x, 4)} {ftos(transformed_perimeter[i].y, 4)} {ftos(transformed_perimeter[i+1].x, 4)} {ftos(transformed_perimeter[i+1].y, 4)} {self.layer}"
             cmds.append(cur_cmd)
 
         return cmds
@@ -323,7 +333,7 @@ class tree:
 
         x_pixel, y_pixel = agp_utils.to_pixel_coords(self.x, self.y, transform)
 
-        cmd = f"TREE {x_pixel} {y_pixel} {self.height} {self.width} {self.layer}"
+        cmd = f"TREE {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.height, 2)} {ftos(self.width, 2)} {self.layer}"
 
         return cmd
 
@@ -403,9 +413,9 @@ class attached_obj:
         obj_index = obj_resource_list.index(self.resource)
 
         if not self.draped:
-            cmd = f"OBJ_DELTA {x_pixel} {y_pixel} {self.heading} {self.z} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DELTA {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {ftos(self.z, 4)} {obj_index} {self.show_low} {self.show_high}"
         else:
-            cmd = f"OBJ_DRAPED {x_pixel} {y_pixel} {self.heading} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DRAPED {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {obj_index} {self.show_low} {self.show_high}"
 
         return cmd
 
@@ -653,7 +663,7 @@ class auto_split_obj:
 
         for resource in self.resources:
             obj_index = obj_resource_list.index(resource)
-            cmd = f"OBJ_DELTA {x_pixel} {y_pixel} {self.heading} {self.z} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DELTA {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {ftos(self.z, 4)} {obj_index} {self.show_low} {self.show_high}"
             cmds.append(cmd)
 
         return cmds
@@ -844,13 +854,13 @@ class tile:
         
         cur_cmd = ""
 
-        cur_cmd = f"TILE {self.left_uv * 4096} {self.bottom_uv * 4096} {self.right_uv * 4096} {self.top_uv * 4096}"
+        cur_cmd = f"TILE {ftos(self.left_uv * 4096, 4)} {ftos(self.bottom_uv * 4096, 4)} {ftos(self.right_uv * 4096, 4)} {ftos(self.top_uv * 4096, 4)}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"ANCHOR_PT {self.anchor_x_uv * 4096} {self.anchor_y_uv * 4096}"
+        cur_cmd = f"ANCHOR_PT {ftos(self.anchor_x_uv * 4096, 4)} {ftos(self.anchor_y_uv * 4096, 4)}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"GROUND_PT {self.anchor_x_uv * 4096} {self.anchor_y_uv * 4096}"
+        cur_cmd = f"GROUND_PT {ftos(self.anchor_x_uv * 4096, 4)} {ftos(self.anchor_y_uv * 4096, 4)}"
         commands.append(cur_cmd)
 
         cur_cmd = f"ROTATION {self.rotation_n}"
@@ -940,6 +950,7 @@ class agp:
         self.tiling_map_texture = in_collection.xp_agp.texture_tiling_map_texture
         self.render_tiles = in_collection.xp_agp.render_tiles
         self.tile_lod = in_collection.xp_agp.tile_lod
+        self.vegetation = in_collection.xp_agp.vegetation_asset
 
         #Get the material from the first mesh object in the collection
         mat = None
@@ -995,6 +1006,7 @@ class agp:
         new_collection.xp_agp.texture_tiling_map_texture = self.tiling_map_texture
         new_collection.xp_agp.render_tiles = self.render_tiles
         new_collection.xp_agp.tile_lod = self.tile_lod
+        new_collection.xp_agp.vegetation_asset = self.vegetation
 
         for tile in self.tiles:
             #Create the tile object and link it to the collection
@@ -1042,7 +1054,7 @@ class agp:
             of += "\n"
 
         #Write the main polygon params
-        of += "LAYER_GROUP " + self.layer.lower() + " " + str(self.layer_offset) + "\n"
+        of += "LAYER_GROUP " + self.layer_group.lower() + " " + str(self.layer_group_offset) + "\n"
         if self.surface != None:
             of += "SURFACE " + self.surface + "\n"
         if self.do_tiling:
@@ -1056,8 +1068,8 @@ class agp:
 
         of += "\n#Scale\n"
         of += "TEXTURE_SCALE 4096 4096\n"
-        of += "TEXTURE_WIDTH " + str(1 / (self.transform.x_ratio / 4096)) + "\n"
-        of += "TEXTURE_HEIGHT " + str(1 / (self.transform.x_ratio / 4096)) * self.transform.height_ratio + "\n"
+        of += "TEXTURE_WIDTH " + ftos(1 / (self.transform.x_ratio / 4096), 4) + "\n"
+        of += "TEXTURE_HEIGHT " + ftos(1 / (self.transform.x_ratio / 4096) * self.transform.height_ratio, 4) + "\n"
         of += "\n"
 
         #Tiles
@@ -1167,9 +1179,9 @@ class agp:
                 self.imported_decal_commands.append(line)
             elif line.startswith("LAYER_GROUP"):
                 parts = line.split()
-                self.layer = parts[1].upper()
+                self.layer_group = parts[1].upper()
                 if len(parts) > 2:
-                    self.layer_offset = parts[2]
+                    self.layer_group_offset = parts[2]
             elif line.startswith("TEXTURE_WIDTH"):
                 self.imported_texture_scale_w = int(float(line.split()[1]))
                 if self.imported_texture_scale_h == -1:
