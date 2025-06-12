@@ -2320,6 +2320,8 @@ class object:
         decal_alb_index = 0
         decal_nml_index = 2
 
+        material_config.update_settings(mat)
+
         for decal in self.imported_decal_commands:
             if decal.startswith("NORMAL"):
                 if decal_nml_index > 3:

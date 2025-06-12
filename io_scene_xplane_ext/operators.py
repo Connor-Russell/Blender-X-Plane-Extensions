@@ -19,6 +19,7 @@ import os
 class BTN_lin_exporter(bpy.types.Operator):
     bl_idname = "xp_ext.export_lines"
     bl_label = "Export X-Plane Lines"
+    bl_description = "Export X-Plane lines from the visible collections."
 
     def execute(self, context):
 
@@ -32,6 +33,7 @@ class BTN_lin_exporter(bpy.types.Operator):
 class BTN_pol_exporter(bpy.types.Operator):
     bl_idname = "xp_ext.export_polygons"
     bl_label = "Export X-Plane Polygons"
+    bl_description = "Export X-Plane polygons from the visible collections."
 
     def execute(self, context):
 
@@ -45,6 +47,7 @@ class BTN_pol_exporter(bpy.types.Operator):
 class BTN_agp_exporter(bpy.types.Operator):
     bl_idname = "xp_ext.export_agps"
     bl_label = "Export X-Plane Autogen Points"
+    bl_description = "Export X-Plane autogen points from the visible collections."
 
     def execute(self, context):
 
@@ -186,22 +189,6 @@ class TEST_import_fac(bpy.types.Operator):
 
     def execute(self, context):
         importer.import_fac(self.import_path)
-
-        return {'FINISHED'}
-    
-class BTN_clear_split_normals(bpy.types.Operator):
-    """Clears split normals from the selected objects"""
-    bl_idname = "xp_ext.clear_split_normals"
-    bl_label = "Clear Split Normals"
-    bl_description = "Clears split normals from the selected objects. This is useful if you want to switch to autosmooth normals after importing an object"
-    bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
-
-    def execute(self, context):
-        #Iterate through all selected objects
-        for obj in bpy.context.selected_objects:
-            if obj.type == 'MESH':
-                #Clear split normals
-                bpy.ops.mesh.customdata_custom_splitnormals_clear()
 
         return {'FINISHED'}
 
@@ -442,7 +429,7 @@ class BTN_fac_export_all(bpy.types.Operator):
     """Export all facades in the scene"""
     bl_idname = "xp_ext.export_facades"
     bl_label = "Export Facades"
-    bl_description = "Export all facades in the scene that are visible in the viewport. Export is relative to the .blend"
+    bl_description = "Export X-Plane facades from the visible collections."
 
     def execute(self, context):
         #Iterate over all the collections in the scene
@@ -518,7 +505,6 @@ def register():
     bpy.utils.register_class(TEST_import_lin)
     bpy.utils.register_class(TEST_import_pol)
     bpy.utils.register_class(TEST_import_fac)
-    bpy.utils.register_class(BTN_clear_split_normals)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_mats_update_all_mat_nodes)
@@ -544,7 +530,6 @@ def unregister():
     bpy.utils.unregister_class(TEST_import_lin)
     bpy.utils.unregister_class(TEST_import_pol)
     bpy.utils.unregister_class(TEST_import_fac)
-    bpy.utils.unregister_class(BTN_clear_split_normals)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_mats_update_all_mat_nodes)

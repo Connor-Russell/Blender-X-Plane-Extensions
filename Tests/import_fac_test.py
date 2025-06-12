@@ -25,7 +25,7 @@ def test(test_dir):
 
     for fac in import_facs:
         try:
-            bpy.ops.xp_ext.test_import_obj(import_path=fac)
+            bpy.ops.xp_ext.test_import_fac(import_path=fac)
         except Exception as e:
             failed_count += 1
             error_messages += (f"Failed to import {fac}: {str(e)},")

@@ -11,6 +11,7 @@ from ..Helpers import file_utils #type: ignore
 from ..Helpers import misc_utils #type: ignore
 from ..Helpers import geometery_utils
 from ..Helpers import log_utils #type: ignore
+from .. import material_config #type: ignore
 import bpy #type: ignore
 import os
 
@@ -178,73 +179,71 @@ class polygon():
                 '#subtex': 5,
             }
             if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
-                from ..Helpers import log_utils
                 log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
                 continue
 
             # Check for material data
-            if line.startswith("TEXTURE_NOWRAP"):
+            if cmd == "TEXTURE_NOWRAP":
                 self.nowrap = True
-                self.alb_texture = line.split()[1]
-            elif line.startswith("TEXTURE_LIT_NOWRAP"):
+                self.alb_texture = tokens[1]
+            elif cmd == "TEXTURE_LIT_NOWRAP":
                 self.nowrap = True
-                self.lit_texture = line.split()[1]
-            elif line.startswith("TEXTURE_NORMAL"):
-                self.nml_texture = line.split()[2]
-                self.normal_scale = float(line.split()[1])
-            elif line.startswith("TEXTURE"):
-                self.alb_texture = line.split()[1]
-            elif line.startswith("TEXTURE_LIT"):
-                self.lit_texture = line.split()[1]
-            elif line.startswith("WEATHER") and not line.startswith("WEATHER_TRANSPARENT"):
-                self.weather_texture = line.split()[1]
-            elif line.startswith("SUPER_ROUGHNESS"):
+                self.lit_texture = tokens[1]
+            elif cmd == "TEXTURE_NORMAL":
+                self.nml_texture = tokens[2]
+                self.normal_scale = float(tokens[1])
+            elif cmd == "TEXTURE":
+                self.alb_texture = tokens[1]
+            elif cmd == "TEXTURE_LIT":
+                self.lit_texture = tokens[1]
+            elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT":
+                self.weather_texture = tokens[1]
+            elif cmd == "SUPER_ROUGHNESS":
                 self.super_rough = True
-            elif line.startswith("NO_BLEND"):
+            elif cmd == "NO_BLEND":
                 self.do_blend = False
-                self.blend_cutoff = float(line.split()[1])
+                self.blend_cutoff = float(tokens[1])
 
             #Check for decals
-            if line.startswith("DECAL") or line.startswith("NORMAL_DECAL"):
+            if cmd.startswith("DECAL") or cmd.startswith("NORMAL_DECAL"):
                 self.imported_decal_commands.append(line)
 
             # Check for main polygon params
-            elif line.startswith("LAYER_GROUP"):
-                parts = line.split()
-                self.layer = parts[1].upper()
-                if len(parts) > 2:
-                    self.layer_offset = parts[2]
-            elif line.startswith("SCALE"):
-                self.scale_x = int(line.split()[1])
-                self.scale_y = int(line.split()[2])
-            elif line.startswith("SURFACE"):
-                self.surface = line.split()[1]
+            elif cmd == "LAYER_GROUP":
+                self.layer = tokens[1].upper()
+                if len(tokens) > 2:
+                    self.layer_offset = tokens[2]
+            elif cmd == "SCALE":
+                self.scale_x = int(tokens[1])
+                self.scale_y = int(tokens[2])
+            elif cmd == "SURFACE":
+                self.surface = tokens[1]
                 self.surface = self.surface.upper()
-            elif line.startswith("LOAD_CENTER"):
+            elif cmd == "LOAD_CENTER":
                 self.do_load_center = True
-                self.load_center_lat = float(line.split()[1])
-                self.load_center_lon = float(line.split()[2])
-                self.load_center_size = float(line.split()[3])
-                self.load_center_res = float(line.split()[4])
-            elif line.startswith("TEXTURE_TILE"):
+                self.load_center_lat = float(tokens[1])
+                self.load_center_lon = float(tokens[2])
+                self.load_center_size = float(tokens[3])
+                self.load_center_res = float(tokens[4])
+            elif cmd == "TEXTURE_TILE":
                 self.do_tiling = True
-                self.tiling_x_pages = float(line.split()[1])
-                self.tiling_y_pages = float(line.split()[2])
-                self.tiling_map_x_res = float(line.split()[3])
-                self.tiling_map_y_res = float(line.split()[4])
-                self.tiling_map_texture = line.split()[5]
-            elif line.startswith("RUNWAY_MARKINGS"):
+                self.tiling_x_pages = float(tokens[1])
+                self.tiling_y_pages = float(tokens[2])
+                self.tiling_map_x_res = float(tokens[3])
+                self.tiling_map_y_res = float(tokens[4])
+                self.tiling_map_texture = tokens[5]
+            elif cmd == "RUNWAY_MARKINGS":
                 self.do_runway_markings = True
-                self.runway_r = float(line.split()[1])
-                self.runway_g = float(line.split()[2])
-                self.runway_b = float(line.split()[3])
-                self.runway_a = float(line.split()[4])
-                self.runway_marking_texture = line.split()[5]
-            elif line.startswith("RUNWAY_NOISE"):
+                self.runway_r = float(tokens[1])
+                self.runway_g = float(tokens[2])
+                self.runway_b = float(tokens[3])
+                self.runway_a = float(tokens[4])
+                self.runway_marking_texture = tokens[5]
+            elif cmd == "RUNWAY_NOISE":
                 self.do_runway_noise = True
-            elif line.startswith("#subtex"):
+            elif cmd == "#subtex":
                 # Get the subtexture values
-                subtexture = line.split()[1:]
+                subtexture = tokens[1:]
                 if len(subtexture) != 4:
                     continue
 
@@ -370,6 +369,7 @@ class polygon():
 
         # Create a new material for the polygon
         mat = bpy.data.materials.new(name=in_name)
+        material_config.update_settings(mat)
         mat.xp_materials.alb_texture = self.alb_texture
         mat.xp_materials.lit_texture = self.lit_texture
         mat.xp_materials.normal_texture = self.nml_texture

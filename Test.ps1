@@ -30,18 +30,18 @@ $BlenderExe44 = "D:\Blender Versions\4.43\blender.exe"
 
 #Define bools to control what versions are tested
 $Test29 = $true
-$Test30 = $false
-$Test31 = $false
-$Test32 = $false
-$Test33 = $false
-$Test34 = $false
-$Test35 = $false
-$Test36 = $false
-$Test40 = $false
-$Test41 = $false
-$Test42 = $false
-$Test43 = $false
-$Test44 = $false
+$Test30 = $true
+$Test31 = $true
+$Test32 = $true
+$Test33 = $true
+$Test34 = $true
+$Test35 = $true
+$Test36 = $true
+$Test40 = $true
+$Test41 = $true
+$Test42 = $true
+$Test43 = $true
+$Test44 = $true
 
 $TestExportFacade =     $true
 $TestExportLine =       $true

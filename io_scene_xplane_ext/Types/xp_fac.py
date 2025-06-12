@@ -10,6 +10,7 @@ from ..Helpers import decal_utils # type: ignore
 from ..Helpers import file_utils # type: ignore
 from ..Helpers import misc_utils # type: ignore
 from ..Helpers import log_utils
+from .. import material_config
 from . import xp_attached_obj # type: ignore
 import os
 
@@ -255,7 +256,7 @@ class facade_material:
         self.do_blend_alpha = True
         self.alpha_cutoff = 0.5
         self.cast_shadow = True
-        self.layer_group = ""
+        self.layer_group = "OBJECTS"
         self.layer_group_offset = 0
         self.decals = []  # List of decals, each decal is a facade_decal object
         self.imported_decal_commands = []
@@ -370,11 +371,13 @@ class facade:
                 # Wall material data
                 current_material = facade_material()
                 self.import_wall_material = current_material
+                current_mat_name = "WALL"
 
             elif command == "SHADER_ROOF":
                 # Roof material data
                 current_material = facade_material()
                 self.import_roof_material = current_material
+                current_mat_name = "ROOF"
 
             elif command == "TEXTURE":
                 if current_material:
@@ -585,7 +588,7 @@ class facade:
             #Write the decals
             if len(mat.decals) > 0:
                 output += "#Decals\n"
-                for decal in self.decals:
+                for decal in mat.decals:
                     #Get the decal command
                     decal_command = decal_utils.get_decal_command(decal, output_folder)
                     if decal_command:
@@ -629,7 +632,7 @@ class facade:
             #Write the decals
             if len(mat.decals) > 0:
                 output += "#Decals\n"
-                for decal in self.decals:
+                for decal in mat.decals:
                     #Get the decal command
                     decal_command = decal_utils.get_decal_command(decal, output_folder)
                     if decal_command:
@@ -833,7 +836,7 @@ class facade:
             wall_material.xp_materials.alb_texture = self.import_wall_material.alb_texture
             wall_material.xp_materials.normal_texture = self.import_wall_material.nml_texture
             wall_material.xp_materials.lit_texture = self.import_wall_material.lit_texture
-            wall_material.xp_materials.blend_alpha = self.import_wall_material.do_blend_alpha
+            wall_material.xp_materials.blend_mode = 'BLEND' if self.import_wall_material.do_blend_alpha else 'NO_BLEND'
             wall_material.xp_materials.blend_cutoff = self.import_wall_material.alpha_cutoff
             wall_material.xp_materials.cast_shadow = self.import_wall_material.cast_shadow
             facade_props.wall_layer_group = self.import_wall_material.layer_group.upper()
@@ -843,7 +846,9 @@ class facade:
             decal_alb_index = 0
             decal_nml_index = 2
 
-            for decal in self.imported_decal_commands:
+            material_config.update_settings(wall_material)
+
+            for decal in self.import_wall_material.imported_decal_commands:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
                         log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
@@ -863,7 +868,7 @@ class facade:
             roof_material.xp_materials.alb_texture = self.import_roof_material.alb_texture
             roof_material.xp_materials.normal_texture = self.import_roof_material.nml_texture
             roof_material.xp_materials.lit_texture = self.import_roof_material.lit_texture
-            roof_material.xp_materials.blend_alpha = self.import_roof_material.do_blend_alpha
+            roof_material.xp_materials.blend_mode = 'BLEND' if self.import_roof_material.do_blend_alpha else 'NO_BLEND'
             roof_material.xp_materials.blend_cutoff = self.import_roof_material.alpha_cutoff
             roof_material.xp_materials.cast_shadow = self.import_roof_material.cast_shadow
             facade_props.roof_layer_group = self.import_roof_material.layer_group.upper()
@@ -873,7 +878,9 @@ class facade:
             decal_alb_index = 0
             decal_nml_index = 2
 
-            for decal in self.imported_decal_commands:
+            material_config.update_settings(roof_material)
+
+            for decal in self.import_roof_material.imported_decal_commands:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
                         log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")

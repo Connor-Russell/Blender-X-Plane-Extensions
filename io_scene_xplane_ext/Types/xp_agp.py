@@ -738,7 +738,7 @@ class tile:
                 new_crop_poly.from_obj(obj)
                 self.crop_poly = new_crop_poly
 
-    def to_obj(self, target_collection):
+    def to_obj(self, target_collection, in_material):
         new_objs = []
         if self.crop_poly is not None:
             new_obj = self.crop_poly.to_obj()
@@ -769,6 +769,7 @@ class tile:
 
         #Create our tile object
         new_tile_obj = agp_utils.create_tile_obj(self.left_uv, self.bottom_uv, self.right_uv, self.top_uv, self.transform)
+        new_tile_obj.data.materials.append(in_material)
         new_tile_obj.xp_agp.exportable = True
         new_tile_obj.xp_agp.type = 'BASE_TILE'
         target_collection.objects.link(new_tile_obj)
@@ -1012,10 +1013,38 @@ class agp:
         new_collection.xp_agp.tile_lod = self.tile_lod
         new_collection.xp_agp.vegetation_asset = self.vegetation
 
+        #Create the material for the collection
+        mat = bpy.data.materials.new(name=self.name + "_Material")
+        mat.xp_materials.alb_texture = self.alb_texture
+        mat.xp_materials.lit_texture = self.lit_texture
+        mat.xp_materials.normal_texture = self.nml_texture
+        mat.xp_materials.blend_mode = self.blend_mode
+        mat.xp_materials.blend_cutoff = self.blend_cutoff
+        mat.xp_materials.surface_type = self.surface
+        mat.xp_materials.is_separate_material_texture = False  # X-Plane does not support separate material textures on lines/polygons/facades/agps
+
+        decal_alb_index = 0
+        decal_nml_index = 2
+
+        material_config.update_settings(mat)
+
+        for decal in self.imported_decal_commands:
+            if decal.startswith("NORMAL"):
+                if decal_nml_index > 3:
+                    log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    break
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
+                decal_nml_index += 1
+            else:
+                if decal_alb_index > 2:
+                    log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    break
+                decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
+                decal_alb_index += 1
+
         for tile in self.tiles:
             #Create the tile object and link it to the collection
-            tile.to_obj(new_collection)
-        pass
+            tile.to_obj(new_collection, mat)
 
     def write(self, output_path):
         log_utils.new_section(f"Writing .agp {output_path}")
@@ -1159,43 +1188,40 @@ class agp:
                 'TEXTURE_TILE': 6
             }
             if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
-                from ..Helpers import log_utils
                 log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
                 continue
 
             #If we are in a tile command we need to add it to the list of current tile commands'
-            if len(cur_tile_commands) > 0 and not line.startswith("TILE"):
+            if len(cur_tile_commands) > 0 and cmd != "TILE":
                 cur_tile_commands.append(line)
                 continue
 
             # Check for material data
-            elif line.startswith("TEXTURE_NORMAL"):
-                self.nml_texture = line.split()[2]
-                self.normal_scale = float(line.split()[1])
-            elif line.startswith("TEXTURE"):
-                self.alb_texture = line.split()[1]
-            elif line.startswith("TEXTURE_LIT"):
-                self.lit_texture = line.split()[1]
-            elif line.startswith("WEATHER") and not line.startswith("WEATHER_TRANSPARENT"):
-                self.weather_texture = line.split()[1]
-            elif line.startswith("NO_BLEND"):
+            if cmd == "TEXTURE_NORMAL":
+                self.nml_texture = tokens[2]
+                self.normal_scale = float(tokens[1])
+            elif cmd == "TEXTURE":
+                self.alb_texture = tokens[1]
+            elif cmd == "TEXTURE_LIT":
+                self.lit_texture = tokens[1]
+            elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT":
+                self.weather_texture = tokens[1]
+            elif cmd == "NO_BLEND":
                 self.do_blend = False
-                self.blend_cutoff = float(line.split()[1])
-            if line.startswith("DECAL") or line.startswith("NORMAL_DECAL"):
+                self.blend_cutoff = float(tokens[1])
+            if cmd.startswith("DECAL") or cmd.startswith("NORMAL_DECAL"):
                 self.imported_decal_commands.append(line)
-            elif line.startswith("LAYER_GROUP"):
-                parts = line.split()
-                self.layer_group = parts[1].upper()
-                if len(parts) > 2:
-                    self.layer_group_offset = parts[2]
-            elif line.startswith("TEXTURE_WIDTH"):
-                self.imported_texture_scale_w = int(float(line.split()[1]))
+            elif cmd == "LAYER_GROUP":
+                self.layer_group = tokens[1].upper()
+                if len(tokens) > 2:
+                    self.layer_group_offset = tokens[2]
+            elif cmd == "TEXTURE_WIDTH":
+                self.imported_texture_scale_w = int(float(tokens[1]))
                 if self.imported_texture_scale_h == -1:
                     self.imported_texture_scale_h = self.imported_texture_scale_w
-            elif line.startswith("TEXTURE_HEIGHT"):
-                self.imported_texture_scale_h = int(float(line.split()[1]))
-            elif line.startswith("TEXTURE_SCALE"):
-                tokens = line.split()
+            elif cmd == "TEXTURE_HEIGHT":
+                self.imported_texture_scale_h = int(float(tokens[1]))
+            elif cmd == "TEXTURE_SCALE":
                 self.imported_texture_width = int(float(tokens[1]))
                 if len(tokens) > 2:
                     self.imported_texture_height = int(float(tokens[2]))
@@ -1208,32 +1234,31 @@ class agp:
                 self.imported_texture_width *= upscale_w
                 self.imported_texture_height *= upscale_h
 
-            elif line.startswith("SURFACE"):
-                self.surface = line.split()[1]
+            elif cmd == "SURFACE":
+                self.surface = tokens[1]
                 self.surface = self.surface.upper()
-            elif line.startswith("TEXTURE_TILE"):
-                tokens = line.split()
+            elif cmd == "TEXTURE_TILE":
                 self.do_tiling = True
                 self.tiling_x_pages = int(tokens[1])
                 self.tiling_y_pages = int(tokens[2])
                 self.tiling_map_x_res = int(tokens[3])
                 self.tiling_map_y_res = int(tokens[4])
                 self.tiling_map_texture = tokens[5]
-            elif line.startswith("VEGETATION"):
-                self.vegetation = line.split()[1]
-            elif line.startswith("OBJECT"):
+            elif cmd == "VEGETATION":
+                self.vegetation = tokens[1]
+            elif cmd == "OBJECT":
                 # Add the object resource to the list
-                obj_resource = line.split()[1]
+                obj_resource = tokens[1]
                 obj_resource_list.append(obj_resource)
-            elif line.startswith("FACADE"):
+            elif cmd == "FACADE":
                 # Add the facade resource to the list
-                facade_resource = line.split()[1]
+                facade_resource = tokens[1]
                 fac_resource_list.append(facade_resource)
-            elif line.startswith("HIDE_TILES"):
+            elif cmd == "HIDE_TILES":
                 self.render_tiles = False
-            elif line.startswith("TILE_LOD"):
-                self.tile_lod = int(float(line.split()[1]))
-            elif line.startswith("TILE"):
+            elif cmd == "TILE_LOD":
+                self.tile_lod = int(float(tokens[1]))
+            elif cmd == "TILE":
                 if len(cur_tile_commands) > 0:
                     #Define our transform
                     #First scale up our texture dimensions to 4096x4096 and scale down our texture scale so positions remain the same
@@ -1265,4 +1290,3 @@ class agp:
             new_tile.transform = self.transform
             new_tile.from_commands(cur_tile_commands, self.transform, upscale_w, upscale_h, fac_resource_list, obj_resource_list)
             self.tiles.append(new_tile)
-    

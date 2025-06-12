@@ -667,7 +667,7 @@ class MENU_facade(bpy.types.Panel):
 
 class MENU_attached_object(bpy.types.Panel):
     """Creates a Panel in the object properties window"""
-    bl_label = "X-Plane Attached Object"
+    bl_label = "X-Plane Facade Attached Object"
     bl_idname = "OBJECT_PT_attached_object"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'

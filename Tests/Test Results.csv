@@ -1,7 +1,7 @@
-2025-05-30 20-03-00
+2025-06-11 19-10-05
 Test Name,Result
 2.9 Tests
-Facade Exporter,PASS,100.0000% 
+Facade Exporter,PASS,99.9549% 
 Line Exporter,PASS,100.0000% 
 Polygon Exporter,PASS,100.0000% 
 TEST_get_all_collections_from_view_layer,PASS
@@ -13,6 +13,5 @@ Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,99.9610%
 Object Importer,PASS,Imported 2 objects
-Facade Importer,PASS,Imported 2 facades
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons

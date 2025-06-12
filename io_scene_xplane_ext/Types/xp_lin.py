@@ -182,70 +182,68 @@ class line():
                 continue
 
             #Check for material data
-            if line.startswith("TEXTURE_NORMAL"):
-                self.nml_texture = line.split()[2]
-            elif line.startswith("TEXTURE_LIT"):
-                self.lit_texture = line.split()[1]
-            elif line.startswith("TEXTURE"):
-                self.alb_texture = line.split()[1]
-            elif line.startswith("WEATHER") and not line.startswith("WEATHER_TRANSPARENT"):
-                self.weather_texture = line.split()[1]
-            elif line.startswith("SUPER_ROUGHNESS"):
+            if cmd == "TEXTURE_NORMAL":
+                self.nml_texture = tokens[2]
+            elif cmd == "TEXTURE_LIT":
+                self.lit_texture = tokens[1]
+            elif cmd == "TEXTURE":
+                self.alb_texture = tokens[1]
+            elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT":
+                self.weather_texture = tokens[1]
+            elif cmd == "SUPER_ROUGHNESS":
                 self.super_rough = True
-            elif line.startswith("NO_BLEND"):
+            elif cmd == "NO_BLEND":
                 self.do_blend = False
-                self.blend_cutoff = float(line.split()[1])
+                self.blend_cutoff = float(tokens[1])
 
             #Check for a texture resolution specifier
-            if line.startswith("TEX_WIDTH"):
-                uv_scalar_x = int(line.split()[1])
-            if line.startswith("TEX_HEIGHT"):
-                uv_scalar_y = int(line.split()[1])
+            if cmd == "TEX_WIDTH":
+                uv_scalar_x = int(tokens[1])
+            if cmd == "TEX_HEIGHT":
+                uv_scalar_y = int(tokens[1])
 
             #Check for decals
-            if line.startswith("DECAL") or line.startswith("NORMAL_DECAL"):
+            if cmd.startswith("DECAL") or cmd.startswith("NORMAL_DECAL"):
                 self.imported_decal_commands.append(line)
 
             #Check for position params
-            if line.startswith("LAYER_GROUP"):
-                tokens = line.split()
+            if cmd == "LAYER_GROUP":
                 self.layer = tokens[1]
                 if len(tokens) > 2:
                     self.layer_offset = float(tokens[2])
-            if line.startswith("MIRROR"):
+            if cmd == "MIRROR":
                 self.mirror = True
-            if line.startswith("ALIGN"):
-                self.segment_count = int(line.split()[1])
-            if line.startswith("SCALE"):
-                tokens = line.split()
+            if cmd == "ALIGN":
+                self.segment_count = int(tokens[1])
+            if cmd == "SCALE":
                 self.scale_x = float(tokens[1])
                 if len(tokens) > 2:
                     self.scale_y = float(tokens[2])
-            if line.startswith("SURFACE"):
-                self.surface = line.split()[1]
+            if cmd == "SURFACE":
+                self.surface = tokens[1]
 
             #Check for segments
-            if line.startswith("S_OFFSET"):
+            if cmd == "S_OFFSET":
                 cur_seg = segment()
-                cur_seg.layer = int(line.split()[1])
-                cur_seg.l = float(line.split()[2]) / uv_scalar_x
-                cur_seg.c = float(line.split()[3]) / uv_scalar_x
-                cur_seg.r = float(line.split()[4]) / uv_scalar_x
+                cur_seg.layer = int(tokens[1])
+                cur_seg.l = float(tokens[2]) / uv_scalar_x
+                cur_seg.c = float(tokens[3]) / uv_scalar_x
+                cur_seg.r = float(tokens[4]) / uv_scalar_x
                 self.segments.append(cur_seg)
 
             #Check for caps
-            if line.startswith("START_CAP") or line.startswith("END_CAP"):
+            if cmd == "START_CAP" or cmd == "END_CAP":
                 cur_cap = cap()
-                if line.startswith("START_CAP"):
+                if cmd == "START_CAP":
                     cur_cap.type = "START"
                 else:
                     cur_cap.type = "END"
-                cur_cap.layer = int(line.split()[1])
-                cur_cap.l = float(line.split()[2]) / uv_scalar_x
-                cur_cap.c = float(line.split()[3]) / uv_scalar_x
-                cur_cap.r = float(line.split()[4]) / uv_scalar_x
-                cur_cap.bottom = float(line.split()[5]) / uv_scalar_y
-                cur_cap.top = float(line.split()[6]) / uv_scalar_y
+                cur_cap.layer = int(tokens[1])
+                cur_cap.l = float(tokens[2]) / uv_scalar_x
+                cur_cap.c = float(tokens[3]) / uv_scalar_x
+                cur_cap.r = float(tokens[4]) / uv_scalar_x
+                cur_cap.bottom = float(tokens[5]) / uv_scalar_y
+                cur_cap.top = float(tokens[6]) / uv_scalar_y
                 self.caps.append(cur_cap)
 
     def from_collection(self, in_collection):

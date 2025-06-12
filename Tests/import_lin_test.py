@@ -25,7 +25,7 @@ def test(test_dir):
 
     for lin in import_lins:
         try:
-            bpy.ops.xp_ext.test_import_obj(import_path=lin)
+            bpy.ops.xp_ext.test_import_lin(import_path=lin)
         except Exception as e:
             failed_count += 1
             error_messages += (f"Failed to import {lin}: {str(e)},")
