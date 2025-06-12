@@ -553,9 +553,6 @@ class MENU_operations(bpy.types.Panel):
         layout.label(text="X-Plane Exporter Sync")
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
 
-        layout.separator()
-        layout.operator("xp_ext.clear_split_normals", text="Clear Split Normals From Selected")
-
         do_test_operators = False
         if do_test_operators:
             layout.separator()
