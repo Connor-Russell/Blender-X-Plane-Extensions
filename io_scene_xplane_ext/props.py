@@ -650,17 +650,11 @@ class PROP_fac_mesh(bpy.types.PropertyGroup):
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
 
 class PROP_fac_filtered_spelling_choices(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Name")  #type: ignore
-
-class PROP_fac_spelling_entry(bpy.types.PropertyGroup):
-    collection: bpy.props.EnumProperty(
-        name="Collection",
-        items=get_all_collection_names
-    ) # type: ignore
+    collection: bpy.props.StringProperty(name="Name")  #type: ignore
 
 class PROP_fac_spelling(bpy.types.PropertyGroup):
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the spelling is expanded in the UI", default=False, update=update_ui)# type: ignore
-    entries: bpy.props.CollectionProperty(type=PROP_fac_spelling_entry)# type: ignore
+    entries: bpy.props.CollectionProperty(type=PROP_fac_filtered_spelling_choices)# type: ignore
 
 class PROP_fac_wall(bpy.types.PropertyGroup):
     min_length: bpy.props.FloatProperty(name="Min Length", description="The minimum length of the wall", default=0, min=0, max=10000)# type: ignore
@@ -673,11 +667,7 @@ class PROP_fac_wall(bpy.types.PropertyGroup):
 
 class PROP_fac_floor(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Floor Name", description="The name of the floor")# type: ignore
-    roof_collection: bpy.props.EnumProperty(
-        name="Roof Collection",
-        items=get_all_collection_names,
-        update=update_ui  # type: ignore
-    )
+    roof_collection: bpy.props.StringProperty(name="Name")  #type: ignore
     walls: bpy.props.CollectionProperty(type=PROP_fac_wall)# type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the floor is expanded in the UI", default=False, update=update_ui)# type: ignore
     roof_collisions: bpy.props.BoolProperty(name="Roof Collisions", description="Whether the roof has collisions enabled", default=True, update=update_ui)# type: ignore
@@ -750,7 +740,6 @@ def register():
     bpy.utils.register_class(PROP_mats)
     bpy.utils.register_class(PROP_attached_obj)
     bpy.utils.register_class(PROP_fac_mesh)
-    bpy.utils.register_class(PROP_fac_spelling_entry)
     bpy.utils.register_class(PROP_fac_spelling)
     bpy.utils.register_class(PROP_fac_wall)
     bpy.utils.register_class(PROP_fac_floor)
@@ -790,7 +779,6 @@ def unregister():
     bpy.utils.unregister_class(PROP_fac_floor)
     bpy.utils.unregister_class(PROP_fac_wall)
     bpy.utils.unregister_class(PROP_fac_spelling)
-    bpy.utils.unregister_class(PROP_fac_spelling_entry)
     bpy.utils.unregister_class(PROP_fac_mesh)
     bpy.utils.unregister_class(PROP_mats)
     bpy.utils.unregister_class(PROP_decal)

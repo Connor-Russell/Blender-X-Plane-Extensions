@@ -163,13 +163,20 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
     btn_rem.add = False
 
 def draw_fac_floor(layout, floor, collection_name, floor_index):
+    #Get the collection from the collection name
+    col = None
+    for collection in bpy.data.collections:
+        if collection.name == collection_name:
+            col = collection
+            break
+
     box = layout.box()
     row = box.row()
     row.prop(floor, "is_ui_expanded", text=floor.name, icon='TRIA_DOWN' if floor.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
     if floor.is_ui_expanded:
         box.label(text=f"Floor")
         box.prop(floor, "name", text="Name")
-        box.prop(floor, "roof_collection", text="Roof Collection")
+        box.prop_search(floor, "roof_collection", col.xp_fac, "spelling_choices", text="Roof Collection")
         box.separator()
         box.label(text="Wall Rules:")
 
