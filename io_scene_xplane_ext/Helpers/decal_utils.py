@@ -84,26 +84,25 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
                 setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_constant", dcl.alpha_strength_constant)
                 setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_modulator", dcl.alpha_strength_modulator)
                     
-    if dcl.nml != "":
-        #Clear the file path if disabled
-        if not dcl.enabled:
-            setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, "")
+    #Clear the file path if disabled
+    if not dcl.enabled:
+        setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, "")
+    else:
+        setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, dcl.texture)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_projected", dcl.projected)
+
+        if dcl.projected:
+            setattr(in_collection.xplane.layer, dcl_name_nml + "_x_scale", dcl.scale_x)
+            setattr(in_collection.xplane.layer, dcl_name_nml + "_y_scale", dcl.scale_y)
         else:
-            setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, dcl.texture)
-            setattr(in_collection.xplane.layer, dcl_name_nml + "_projected", dcl.projected)
+            setattr(in_collection.xplane.layer, dcl_name_nml + "_scale", dcl.tile_ratio)
 
-            if dcl.projected:
-                setattr(in_collection.xplane.layer, dcl_name_nml + "_x_scale", dcl.scale_x)
-                setattr(in_collection.xplane.layer, dcl_name_nml + "_y_scale", dcl.scale_y)
-            else:
-                setattr(in_collection.xplane.layer, dcl_name_nml + "_scale", dcl.tile_ratio)
-
-            setattr(in_collection.xplane.layer, dcl_name_nml + "_red_key", dcl.strength_key_red)
-            setattr(in_collection.xplane.layer, dcl_name_nml + "_green_key", dcl.strength_key_green)
-            setattr(in_collection.xplane.layer, dcl_name_nml + "_blue_key", dcl.strength_key_blue)
-            setattr(in_collection.xplane.layer, dcl_name_nml + "_alpha_key", dcl.strength_key_alpha)
-            setattr(in_collection.xplane.layer, dcl_name_nml + "_constant", dcl.rgb_strength_constant)
-            setattr(in_collection.xplane.layer, dcl_name_nml + "_modulator", dcl.rgb_strength_modulator)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_red_key", dcl.strength_key_red)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_green_key", dcl.strength_key_green)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_blue_key", dcl.strength_key_blue)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_alpha_key", dcl.strength_key_alpha)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_constant", dcl.rgb_strength_constant)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_modulator", dcl.rgb_strength_modulator)
             
 def get_decal_command(in_decal, in_output_folder):
     """

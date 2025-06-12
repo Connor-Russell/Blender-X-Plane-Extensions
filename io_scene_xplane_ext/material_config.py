@@ -111,8 +111,10 @@ def update_xplane_collection_settings(col):
                     if xp_props.draped:
                         col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
 
                 #If we have updated, but this one is draped, update with this one. Then we can skip the rest of the objects in this collection
                 if xp_props.draped:
@@ -126,8 +128,10 @@ def update_xplane_collection_settings(col):
 
                     col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_one, 1)
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decal_two, 2)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
+                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
 
 #Function to update settings when a property is updated:
 def update_settings(in_material):
