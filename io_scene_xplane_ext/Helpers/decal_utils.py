@@ -116,13 +116,13 @@ def get_decal_command(in_decal, in_output_folder):
 
     out_cmd = ""
 
+    if not in_decal.enabled or in_decal.texture == "":
+        return ""
+    
     texture_path = in_decal.texture
 
     if in_output_folder != "":
         texture_path = os.path.relpath(file_utils.rel_to_abs(in_decal.texture), in_output_folder)
-
-    if not in_decal.enabled:
-        return ""
 
     if not in_decal.is_normal:
         if in_decal.projected:

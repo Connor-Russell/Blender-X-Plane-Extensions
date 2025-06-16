@@ -108,20 +108,25 @@ def test(test_dir):
         error_messages += "Image comparison failed: " + str(e) + "\n"
         return
 
+    #Get error message string
+    if error_messages:
+        error_messages = error_messages.strip().replace("\n", " | ")
+        error_messages = error_messages.replace("\"", "\"\"")
+
     #Append the test results to the exporter_output file
     with open(test_output, 'a') as output:
         if albedo_similarity > 0.98:
             output.write("Bake Test Albedo,PASS," + "{:.{precision}f}".format(albedo_similarity * 100, precision=4) + "%\n")
         else:
-            output.write("Bake Test Albedo,FAIL," + "{:.{precision}f}".format(albedo_similarity * 100, precision=4) + "%\n")
+            output.write("Bake Test Albedo,FAIL," + "{:.{precision}f}".format(albedo_similarity * 100, precision=4) + "%\n" + f",\"{error_messages}\"")
         if normal_similarity > 0.98:
             output.write("Bake Test Normal,PASS," + "{:.{precision}f}".format(normal_similarity * 100, precision=4) + "%\n")
         else:
-            output.write("Bake Test Normal,FAIL," + "{:.{precision}f}".format(normal_similarity * 100, precision=4) + "%\n")
+            output.write("Bake Test Normal,FAIL," + "{:.{precision}f}".format(normal_similarity * 100, precision=4) + "%\n" + f",\"{error_messages}\"")
         if lit_similarity > 0.98:
             output.write("Bake Test Lit,PASS," + "{:.{precision}f}".format(lit_similarity * 100, precision=4) + "%\n")
         else:
-            output.write("Bake Test Lit,FAIL," + "{:.{precision}f}".format(lit_similarity * 100, precision=4) + "%\n")
+            output.write("Bake Test Lit,FAIL," + "{:.{precision}f}".format(lit_similarity * 100, precision=4) + "%\n" + f",\"{error_messages}\"")
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":

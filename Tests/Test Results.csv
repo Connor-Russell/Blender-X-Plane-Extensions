@@ -1,14 +1,14 @@
-2025-06-11 19-27-25
+2025-06-16 12-24-03
 Test Name,Result
 2.9 Tests
-Facade Exporter,PASS,100.0000% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,100.0000%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,99.9610%
@@ -16,14 +16,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 3.0 Tests
-Facade Exporter,PASS,100.0000% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,100.0000%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,99.9610%
@@ -31,14 +31,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 3.1 Tests
-Facade Exporter,PASS,100.0000% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,100.0000%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,99.9610%
@@ -46,14 +46,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 3.2 Tests
-Facade Exporter,PASS,99.9962% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.9962%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,99.9610%
@@ -61,14 +61,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 3.3 Tests
-Facade Exporter,PASS,99.9962% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.9962%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,99.9610%
@@ -76,14 +76,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 3.4 Tests
-Facade Exporter,PASS,99.9962% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.9962%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,99.9610%
@@ -91,14 +91,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 3.5 Tests
-Facade Exporter,PASS,99.9962% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.9962%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,100.0000%
 Bake Test Lit,PASS,99.9610%
@@ -106,14 +106,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 3.6 Tests
-Facade Exporter,PASS,99.9549% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.9549%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,100.0000%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,99.9610%
@@ -121,14 +121,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 4.0 Tests
-Facade Exporter,PASS,99.9549% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.9549%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,99.9610%
@@ -136,14 +136,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 4.1 Tests
-Facade Exporter,PASS,99.5841% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.5842%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,99.9610%
@@ -151,14 +151,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 4.2 Tests
-Facade Exporter,PASS,99.5841% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.5842%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,99.9610%
@@ -166,14 +166,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 4.3 Tests
-Facade Exporter,PASS,99.5841% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.5842%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,99.9610%
@@ -181,14 +181,14 @@ Object Importer,PASS,Imported 2 objects
 Line Importer,PASS,Imported 2 lines
 Polygon Importer,PASS,Imported 2 polygons
 4.4 Tests
-Facade Exporter,PASS,99.5841% 
-Line Exporter,PASS,100.0000% 
-Polygon Exporter,PASS,100.0000% 
-TEST_get_all_collections_from_view_layer,PASS
-TEST_get_roof_data,PASS
-TEST_keyframing,PASS
-TEST_get_draw_call_from_obj,PASS
-TEST_world_space_transform,PASS
+Facade Exporter,PASS,99.5842%,""
+Line Exporter,PASS,100.0000%,""
+Polygon Exporter,PASS,100.0000%,""
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
 Bake Test Albedo,PASS,99.9973%
 Bake Test Normal,PASS,99.9996%
 Bake Test Lit,PASS,99.9610%

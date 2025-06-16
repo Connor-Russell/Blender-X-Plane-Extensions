@@ -94,12 +94,15 @@ def test(test_dir):
     if line_count_diff > 0:
         b_pass = False
 
+    error_message = error_message.replace("\n", " | ")
+    error_message = error_message.replace("\"", "\"\"")
+
     #Append the test results to the exporter_output file
     with open(exporter_output, 'a') as output:
         if b_pass:
-            output.write("Facade Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + error_message + "\n")
+            output.write("Facade Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%,\"" + error_message + "\"\n")
         else:
-            output.write("Facade Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + " Difference in line count: " + str(line_count_diff) + " " + error_message + "\n")
+            output.write("Facade Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%," + "Difference in line count: " + str(line_count_diff) + "," + error_message + "\n")
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":

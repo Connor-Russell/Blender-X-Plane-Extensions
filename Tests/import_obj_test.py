@@ -31,11 +31,14 @@ def test(test_dir):
             error_messages += (f"Failed to import {obj}: {str(e)},")
             continue
 
+    error_message = error_messages.replace("\n", " | ")
+    error_message = error_message.replace("\"", "\"\"")
+
     with open(exporter_output, 'a') as output:
         if failed_count == 0:
             output.write(f"Object Importer,PASS,Imported {len(import_objs)} objects\n")
         else:
-            output.write("Object Importer,FAIL," + f"Failed to import {failed_count} of {len(import_objs)} objects with errors: " + error_messages + "\n")
+            output.write("Object Importer,FAIL," + f"Failed to import {failed_count} of {len(import_objs)} objects with errors:,\"" + error_messages + "\"\n")
 
 
 #Program entry point. Here we get the test directory, and call the test function

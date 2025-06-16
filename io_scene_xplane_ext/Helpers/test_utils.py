@@ -369,11 +369,25 @@ def run_all_tests():
     result5 = TEST_world_space_transform()
     print(f"TEST_world_space_transform: {result5}")
 
+    #Remove newlines
+    result1 = result1.replace("\n", " | ")
+    result2 = result2.replace("\n", " | ")
+    result3 = result3.replace("\n", " | ")
+    result4 = result4.replace("\n", " | ")
+    result5 = result5.replace("\n", " | ")
+
+    #Replace quotes with double quotes for CSV compatibility
+    result1 = result1.replace("\"", "\"\"")
+    result2 = result2.replace("\"", "\"\"")
+    result3 = result3.replace("\"", "\"\"")
+    result4 = result4.replace("\"", "\"\"")
+    result5 = result5.replace("\"", "\"\"")
+
     test_results_file = file_utils.rel_to_abs("../Test Results.csv")
     with open(test_results_file, 'a') as output:
-        output.write(f"TEST_get_all_collections_from_view_layer,{result1}\n")
-        output.write(f"TEST_get_roof_data,{result2}\n")
-        output.write(f"TEST_keyframing,{result3}\n")
-        output.write(f"TEST_get_draw_call_from_obj,{result4}\n")
-        output.write(f"TEST_world_space_transform,{result5}\n")
+        output.write(f"TEST_get_all_collections_from_view_layer,\"{result1}\"\n")
+        output.write(f"TEST_get_roof_data,\"{result2}\"\n")
+        output.write(f"TEST_keyframing,\"{result3}\"\n")
+        output.write(f"TEST_get_draw_call_from_obj,\"{result4}\"\n")
+        output.write(f"TEST_world_space_transform,\"{result5}\"\n")
 

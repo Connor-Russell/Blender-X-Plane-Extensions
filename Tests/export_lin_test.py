@@ -81,12 +81,15 @@ def test(test_dir):
     if similarity < 1.0:
         b_pass = False
 
+    error_message = error_message.replace("\n", " | ")
+    error_message = error_message.replace("\"", "\"\"")
+
     #Append the test results to the exporter_output file
     with open(exporter_output, 'a') as output:
         if b_pass:
-            output.write("Line Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + error_message + "\n")
+            output.write("Line Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%,\"" + error_message + "\"\n")
         else:
-            output.write("Line Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "% " + error_message + "\n")
+            output.write("Line Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%,\"" + error_message + "\"\n")
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
