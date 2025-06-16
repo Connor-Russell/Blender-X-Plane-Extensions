@@ -5,6 +5,7 @@
 
 import mathutils
 import math
+import bpy
 
 def linear_search_list(in_list, search_value):
     """
@@ -111,3 +112,9 @@ def make_winding_ccw(verts):
         new_verts = verts.copy()
         new_verts.reverse()
     return new_verts
+
+def copy_to_clipboard(text):
+    bpy.context.window_manager.clipboard = text
+
+def get_from_clipboard():
+    return bpy.context.window_manager.clipboard

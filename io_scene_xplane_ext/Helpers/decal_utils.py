@@ -116,24 +116,29 @@ def get_decal_command(in_decal, in_output_folder):
 
     out_cmd = ""
 
+    texture_path = in_decal.texture
+
+    if in_output_folder != "":
+        texture_path = os.path.relpath(file_utils.rel_to_abs(in_decal.texture), in_output_folder)
+
     if not in_decal.enabled:
         return ""
 
     if not in_decal.is_normal:
         if in_decal.projected:
             #Format: DECAL_PARAMS_PROJ <x> <y> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <alpha r key> <alpha g key> <alpha b key> <alpha alpha key> <alpha modulator> <alpha constant> <file>
-            out_cmd = f"DECAL_PARAMS_PROJ {in_decal.scale_x} {in_decal.scale_y} {in_decal.dither_ratio} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {in_decal.strength2_key_red} {in_decal.strength2_key_green} {in_decal.strength2_key_blue} {in_decal.strength2_key_alpha} {in_decal.strength2_modulator} {in_decal.strength2_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.texture), in_output_folder)}\n"
+            out_cmd = f"DECAL_PARAMS_PROJ {in_decal.scale_x} {in_decal.scale_y} {in_decal.dither_ratio} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {in_decal.strength2_key_red} {in_decal.strength2_key_green} {in_decal.strength2_key_blue} {in_decal.strength2_key_alpha} {in_decal.strength2_modulator} {in_decal.strength2_constant} {texture_path}\n"
         else:
             #Format: DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <alpha r key> <alpha g key> <alpha b key> <alpha alpha key> <alpha modulator> <alpha constant> <file>
-            out_cmd = f"DECAL_PARAMS {in_decal.tile_ratio} {in_decal.dither_ratio} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {in_decal.strength2_key_red} {in_decal.strength2_key_green} {in_decal.strength2_key_blue} {in_decal.strength2_key_alpha} {in_decal.strength2_modulator} {in_decal.strength2_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.texture), in_output_folder)}\n"
+            out_cmd = f"DECAL_PARAMS {in_decal.tile_ratio} {in_decal.dither_ratio} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {in_decal.strength2_key_red} {in_decal.strength2_key_green} {in_decal.strength2_key_blue} {in_decal.strength2_key_alpha} {in_decal.strength2_modulator} {in_decal.strength2_constant} {texture_path}\n"
 
     else:
         if in_decal.projected:
             #Format: NORMAL_DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <file>
-            out_cmd = f"NORMAL_DECAL_PARAMS_PROJ {in_decal.scale_x} {in_decal.scale_y} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.texture), in_output_folder)}\n"
+            out_cmd = f"NORMAL_DECAL_PARAMS_PROJ {in_decal.scale_x} {in_decal.scale_y} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {texture_path} {0.30234139}\n"
         else:
             #Format: NORMAL_DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <file>
-            out_cmd = f"NORMAL_DECAL_PARAMS {in_decal.tile_ratio} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {os.path.relpath(file_utils.rel_to_abs(in_decal.texture), in_output_folder)}\n"
+            out_cmd = f"NORMAL_DECAL_PARAMS {in_decal.tile_ratio} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {texture_path} {0.30234139}\n"
     
     return out_cmd
 

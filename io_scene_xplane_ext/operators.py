@@ -13,6 +13,8 @@ from . import material_config
 from .Helpers import file_utils
 from .Helpers import collection_utils
 from .Helpers import decal_utils
+from .Helpers import misc_utils
+from .Helpers import log_utils
 from . import auto_baker
 import os
 
@@ -486,6 +488,118 @@ class BTN_TEST_config_bake_settings(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_copy_decal(bpy.types.Operator):
+    """Copy a PROP_decal from a material's collection property"""
+    bl_idname = "xp_ext.copy_decal"
+    bl_label = "Copy Decal"
+    bl_description = "Copies a decal from the material's decals collection property to the clipboard in a format that can be pasted into another material's decal collection property. This is useful for copying decals between materials."
+    bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
+
+    material_name: bpy.props.StringProperty() # type: ignore
+    decal_index: bpy.props.IntProperty() # type: ignore
+
+    def execute(self, context):
+        # Boilerplate: get material and decal
+        mat = bpy.data.materials.get(self.material_name)
+        if not mat:
+            self.report({'ERROR'}, f"Material '{self.material_name}' not found.")
+            return {'CANCELLED'}
+        if self.decal_index < 0 or self.decal_index >= len(mat.xp_materials.decals):
+            self.report({'ERROR'}, f"Decal index {self.decal_index} out of range.")
+            return {'CANCELLED'}
+        decal = mat.xp_materials.decals[self.decal_index]
+
+        misc_utils.copy_to_clipboard(decal_utils.get_decal_command(decal, ""))
+
+        return {'FINISHED'}
+
+class BTN_paste_decal(bpy.types.Operator):
+    """Paste to a PROP_decal in a material's collection property"""
+    bl_idname = "xp_ext.paste_decal"
+    bl_label = "Paste Decal"
+    bl_description = "Pastes a PROP_decal from the clipboard to a material's collection property. The clipboard must contain a valid decal command."
+    bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
+
+    material_name: bpy.props.StringProperty() # type: ignore
+    decal_index: bpy.props.IntProperty() # type: ignore
+
+    def execute(self, context):
+        # Boilerplate: get material and decal
+        mat = bpy.data.materials.get(self.material_name)
+        if not mat:
+            self.report({'ERROR'}, f"Material '{self.material_name}' not found.")
+            return {'CANCELLED'}
+        if self.decal_index < 0 or self.decal_index >= len(mat.xp_materials.decals):
+            self.report({'ERROR'}, f"Decal index {self.decal_index} out of range.")
+            return {'CANCELLED'}
+        decal = mat.xp_materials.decals[self.decal_index]
+
+        # Place paste logic here
+        clipboard_content = misc_utils.get_from_clipboard()
+
+        #Make sure it starts with the appropriate command
+        if clipboard_content.startswith("NORMAL_DECAL"):
+            if decal.is_normal:
+                #Now more in depth check
+                tokens = clipboard_content.split()
+                if tokens[0] == "NORMAL_DECAL_PARAMS_PROJ":
+                    if len(tokens) == 11:
+                        decal_utils.get_decal_from_command(clipboard_content, decal)
+                    else:
+                        log_utils.new_section("Decal Paste")
+                        log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS_PROJ' with 11 parameters. Got: " + clipboard_content)
+                        log_utils.display_messages()
+                elif tokens[0] == "NORMAL_DECAL_PARAMS":
+                    if len(tokens) == 10:
+                        decal_utils.get_decal_from_command(clipboard_content, decal)
+                    else:
+                        log_utils.new_section("Decal Paste")
+                        log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS' with 10 parameters. Got: " + clipboard_content)
+                        log_utils.display_messages()
+                else:
+                    log_utils.new_section("Decal Paste")
+                    log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS_PROJ' or 'NORMAL_DECAL_PARAMS' with correct number of parameters. Got: " + clipboard_content)
+                    log_utils.display_messages()
+            else:
+                log_utils.new_section("Decal Paste")
+                log_utils.error("Cannot paste a NORMAL_DECAL command into a non-normal map decal slot. The clipboard content is: " + clipboard_content)
+                log_utils.display_messages()
+                return {'CANCELLED'}
+                
+        elif clipboard_content.startswith("DECAL"):
+            if not decal.is_normal:
+                #Now more in depth check
+                tokens = clipboard_content.split()
+                if tokens[0] == "DECAL_PARAMS_PROJ":
+                    if len(tokens) == 17:
+                        decal_utils.get_decal_from_command(clipboard_content, decal)
+                    else:
+                        log_utils.new_section("Decal Paste")
+                        log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS_PROJ' with 17 parameters. Got: " + clipboard_content)
+                        log_utils.display_messages()
+                elif tokens[0] == "DECAL_PARAMS":
+                    if len(tokens) == 16:
+                        decal_utils.get_decal_from_command(clipboard_content, decal)
+                    else:
+                        log_utils.new_section("Decal Paste")
+                        log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS' with 16 parameters. Got: " + clipboard_content)
+                        log_utils.display_messages()
+                else:
+                    log_utils.new_section("Decal Paste")
+                    log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS_PROJ' or 'DECAL_PARAMS' with correct number of parameters. Got: " + clipboard_content)
+                    log_utils.display_messages()
+            else:
+                log_utils.new_section("Decal Paste")
+                log_utils.error("Cannot paste a DECAL command into a normal map decal slot. The clipboard content is: " + clipboard_content)
+                log_utils.display_messages()
+        else:
+            log_utils.new_section("Decal Paste")
+            log_utils.error("Clipboard content does not start with 'NORMAL_DECAL' or 'DECAL'. Got: " + clipboard_content)
+            log_utils.display_messages()
+            return {'CANCELLED'}
+
+        return {'FINISHED'}
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -515,6 +629,8 @@ def register():
     bpy.utils.register_class(BTN_run_tests)
     bpy.utils.register_class(BTN_TEST_config_bake_settings)
     bpy.utils.register_class(BTN_agp_exporter)
+    bpy.utils.register_class(BTN_copy_decal)
+    bpy.utils.register_class(BTN_paste_decal)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -539,4 +655,6 @@ def unregister():
     bpy.utils.unregister_class(BTN_fac_export_all)
     bpy.utils.unregister_class(BTN_run_tests)
     bpy.utils.unregister_class(BTN_TEST_config_bake_settings)
+    bpy.utils.unregister_class(BTN_copy_decal)
+    bpy.utils.unregister_class(BTN_paste_decal)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

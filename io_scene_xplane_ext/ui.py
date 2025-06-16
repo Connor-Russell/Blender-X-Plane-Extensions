@@ -7,15 +7,30 @@
 import bpy # type: ignore
 from . import props
 
-def draw_decal_prop(layout, property_item, index):
+def draw_decal_prop(layout, property_item, index, material_name=""):
     box = layout.box()
 
-    row = box.row()
-    
     decal_name = "Decal " + str(index + 1) + (" - Normal" if property_item.is_normal else " - Albedo")
 
-    row.prop(property_item, "is_ui_expanded", text=f"", icon='TRIA_DOWN' if property_item.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
-    row.prop(property_item, "enabled", text=decal_name)
+    row = box.row()
+    split = row.split(factor=0.7)
+
+    col_left = split.column()
+    row_left = col_left.row(align=True)
+    row_left.alignment = 'LEFT'
+    row_left.prop(property_item, "is_ui_expanded", text=decal_name, icon='TRIA_DOWN' if property_item.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+    row_left.prop(property_item, "enabled", text="")
+
+    #Copy and paste operators
+    col_right = split.column()
+    row_right = col_right.row(align=True)
+    row_right.alignment = 'RIGHT'
+    btn_copy = row_right.operator("xp_ext.copy_decal", text="", icon='COPYDOWN')
+    btn_copy.decal_index = index
+    btn_copy.material_name = material_name
+    btn_paste = row_right.operator("xp_ext.paste_decal", text="", icon='PASTEDOWN')
+    btn_paste.decal_index = index
+    btn_paste.material_name = material_name
 
     if property_item.is_ui_expanded:
         box.prop(property_item, "texture")
@@ -491,7 +506,7 @@ class MENU_mats(bpy.types.Panel):
                 box.label(text="Change any XP Material setting to trigger an update to add the decals slots")
             
             for i, decal in enumerate(xp_materials.decals):
-                draw_decal_prop(box, decal, i)
+                draw_decal_prop(box, decal, i, material.name)
 
             box = layout.box()
 
