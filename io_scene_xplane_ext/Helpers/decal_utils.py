@@ -51,15 +51,15 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
                 setattr(in_collection.xplane.layer, "draped_rgb_" + dcl_name + "_green_key", dcl.strength_key_green)
                 setattr(in_collection.xplane.layer, "draped_rgb_" + dcl_name + "_blue_key", dcl.strength_key_blue)
                 setattr(in_collection.xplane.layer, "draped_rgb_" + dcl_name + "_alpha_key", dcl.strength_key_alpha)
-                setattr(in_collection.xplane.layer, "draped_rgb_" + dcl_name + "_constant", dcl.rgb_strength_constant)
-                setattr(in_collection.xplane.layer, "draped_rgb_" + dcl_name + "_modulator", dcl.rgb_strength_modulator)
+                setattr(in_collection.xplane.layer, "draped_rgb_" + dcl_name + "_constant", dcl.strength_constant)
+                setattr(in_collection.xplane.layer, "draped_rgb_" + dcl_name + "_modulator", dcl.strength_modulator)
 
                 setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_red_key", dcl.strength2_key_red)
                 setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_green_key", dcl.strength2_key_green)
                 setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_blue_key", dcl.strength2_key_blue)
                 setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_alpha_key", dcl.strength2_key_alpha)
-                setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_constant", dcl.alpha_strength_constant)
-                setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_modulator", dcl.alpha_strength_modulator)
+                setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_constant", dcl.strength2_constant)
+                setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_modulator", dcl.strength2_modulator)
             else:
                 setattr(in_collection.xplane.layer, "file_" + dcl_name, dcl.texture)
                 setattr(in_collection.xplane.layer, dcl_name + "_projected", dcl.projected)
@@ -74,15 +74,15 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
                 setattr(in_collection.xplane.layer, "rgb_" + dcl_name + "_green_key", dcl.strength_key_green)
                 setattr(in_collection.xplane.layer, "rgb_" + dcl_name + "_blue_key", dcl.strength_key_blue)
                 setattr(in_collection.xplane.layer, "rgb_" + dcl_name + "_alpha_key", dcl.strength_key_alpha)
-                setattr(in_collection.xplane.layer, "rgb_" + dcl_name + "_constant", dcl.rgb_strength_constant)
-                setattr(in_collection.xplane.layer, "rgb_" + dcl_name + "_modulator", dcl.rgb_strength_modulator)
+                setattr(in_collection.xplane.layer, "rgb_" + dcl_name + "_constant", dcl.strength_constant)
+                setattr(in_collection.xplane.layer, "rgb_" + dcl_name + "_modulator", dcl.strength_modulator)
 
                 setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_red_key", dcl.strength2_key_red)
                 setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_green_key", dcl.strength2_key_green)
                 setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_blue_key", dcl.strength2_key_blue)
                 setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_alpha_key", dcl.strength2_key_alpha)
-                setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_constant", dcl.alpha_strength_constant)
-                setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_modulator", dcl.alpha_strength_modulator)
+                setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_constant", dcl.strength2_constant)
+                setattr(in_collection.xplane.layer, "alpha_" + dcl_name + "_modulator", dcl.strength2_modulator)
                     
     #Clear the file path if disabled
     if not dcl.enabled:
@@ -101,8 +101,8 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
         setattr(in_collection.xplane.layer, dcl_name_nml + "_green_key", dcl.strength_key_green)
         setattr(in_collection.xplane.layer, dcl_name_nml + "_blue_key", dcl.strength_key_blue)
         setattr(in_collection.xplane.layer, dcl_name_nml + "_alpha_key", dcl.strength_key_alpha)
-        setattr(in_collection.xplane.layer, dcl_name_nml + "_constant", dcl.rgb_strength_constant)
-        setattr(in_collection.xplane.layer, dcl_name_nml + "_modulator", dcl.rgb_strength_modulator)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_constant", dcl.strength_constant)
+        setattr(in_collection.xplane.layer, dcl_name_nml + "_modulator", dcl.strength_modulator)
             
 def get_decal_command(in_decal, in_output_folder):
     """
