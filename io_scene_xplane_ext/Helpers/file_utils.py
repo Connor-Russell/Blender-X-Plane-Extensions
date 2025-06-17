@@ -84,7 +84,6 @@ def check_for_dds_or_png(image_path):
     
     return ""
         
-
 def get_or_load_image(image_path, do_reload=False):
     """
     Get an existing image or load a new one if not already loaded.
@@ -94,9 +93,12 @@ def get_or_load_image(image_path, do_reload=False):
     Returns:
         bpy.types.Image: The loaded or existing image.
     """
+    #Get our prefs to determine our reload behavior
+    addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
+
     # Check if the image is already loaded. We have to check by the name because Blender uses only the image name as a key vs the whole path
     existing_image = bpy.data.images.get(os.path.basename(image_path))
-    if existing_image:
+    if existing_image and not addon_prefs.always_fully_reload_images:
         # Reload the image if requested
         if do_reload:
             existing_image.reload()

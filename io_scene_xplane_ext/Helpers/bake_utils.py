@@ -405,17 +405,18 @@ def save_baked_textures(target_obj):
 
     # Assign the final pixels back to the nml_image
     nml_image.pixels = final_pixels.tolist()
+
+    #Get our prefs for suffixes
+    addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
     
     #Define the output paths
     base_output_path = ""
     nml_output_path = ""
     lit_output_path = ""
     adjusted_name = parent_collections[0].name
-    if adjusted_name.endswith("_LOD01"):
-        adjusted_name = adjusted_name[:-6]
-    base_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LOD01.png")
-    nml_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LOD01_NML.png")
-    lit_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + "_LOD01_LIT.png")
+    base_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_albedo + ".png")
+    nml_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_combined_normal + ".png")
+    lit_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_lit + ".png")
 
     #Save the images
     print("Saving base image to " + base_output_path)
@@ -466,11 +467,14 @@ def config_target_object_with_new_textures(target_obj):
     except:
         print("Parent collection not found for object " + target_obj.name + ". What!?")
         return
+    
+    #Get our prefs for suffixes
+    addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
 
     #Set the material properties
-    mat.xp_materials.alb_texture = parent_collections[0].name + "_LOD01.png"
-    mat.xp_materials.normal_texture = parent_collections[0].name + "_LOD01_NML.png"
-    mat.xp_materials.lit_texture = parent_collections[0].name + "_LOD01_LIT.png"
+    mat.xp_materials.alb_texture = parent_collections[0].name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_albedo + ".png"
+    mat.xp_materials.normal_texture = parent_collections[0].name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_combined_normal + ".png"
+    mat.xp_materials.lit_texture = parent_collections[0].name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_lit + ".png"
 
     #Set the active material, then call the update material nodes operator
     material_config.update_nodes(mat)

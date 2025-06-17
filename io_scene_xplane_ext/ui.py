@@ -279,7 +279,20 @@ class MENU_lin_layer(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         # Only show the panel if the active object is a MESH
-        return context.object and context.object.type == 'MESH'
+        result = context.object and context.object.type == 'MESH'
+
+        #Get our prefs for whether we hide this in non-agp collections
+        addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
+
+        #Get the parent collection
+        if result:
+            #Check if the parent collection has the xp_fac property
+            parent_collection = context.object.users_collection[0] if context.object.users_collection else None
+            if parent_collection and addon_prefs.show_only_relevant_settings:
+                result = result and parent_collection.xp_lin.exportable
+
+        # Only show the panel if the active object is a MESH
+        return result
 
     def draw(self, context):
         layout = self.layout
@@ -303,7 +316,20 @@ class MENU_agp_obj(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         # Only show the panel if the active object is an EMPTY
-        return context.object
+        result = context.object
+
+        #Get our prefs for whether we hide this in non-agp collections
+        addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
+
+        #Get the parent collection
+        if result:
+            #Check if the parent collection has the xp_fac property
+            parent_collection = context.object.users_collection[0] if context.object.users_collection else None
+            if parent_collection and addon_prefs.show_only_relevant_settings:
+                result = result and parent_collection.xp_agp.exportable
+
+        # Only show the panel if the active object is an EMPTY
+        return result
 
     def draw(self, context):
 
@@ -695,7 +721,20 @@ class MENU_attached_object(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         # Only show the panel if the active object is an EMPTY
-        return context.object and context.object.type == 'EMPTY'
+        result = context.object and context.object.type == 'EMPTY'
+
+        #Get our prefs for whether we hide this in none-facade collections
+        addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
+
+        #Get the parent collection
+        if result:
+            #Check if the parent collection has the xp_fac property
+            parent_collection = context.object.users_collection[0] if context.object.users_collection else None
+            if parent_collection and addon_prefs.show_only_relevant_settings:
+                result = result and parent_collection.xp_fac.exportable
+
+        # Only show the panel if the active object is an EMPTY
+        return result
 
     def draw(self, context):
 
@@ -719,7 +758,18 @@ class MENU_fac_mesh(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         # Only show the panel if the active object is a MESH
-        return context.object and context.object.type == 'MESH'
+        result = context.object and context.object.type == 'MESH'
+
+        #Get our prefs for whether we hide this in none-facade collections
+        addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
+
+        #Get the parent collection
+        if result:
+            #Check if the parent collection has the xp_fac property
+            parent_collection = context.object.users_collection[0] if context.object.users_collection else None
+            if parent_collection and addon_prefs.show_only_relevant_settings:
+                result = result and parent_collection.xp_fac.exportable
+        return result
 
     def draw(self, context):
 
