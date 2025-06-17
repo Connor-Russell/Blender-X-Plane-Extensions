@@ -7,6 +7,7 @@ This Blender Plugin provides additional functionality for X-Plane projects in Bl
 - Line Importer
 - Object Importer
 - Autogen Point Exporter
+
 Planned:
 - Auto-splitting of objects with multiple materials in .agps
 
