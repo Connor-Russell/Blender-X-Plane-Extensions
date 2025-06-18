@@ -6,6 +6,7 @@
 
 import os
 import bpy
+from . import log_utils
 
 #Gets an absolute path out of a path that is relative to the blender file.
 def rel_to_abs(in_path):
@@ -96,13 +97,23 @@ def get_or_load_image(image_path, do_reload=False):
     #Get our prefs to determine our reload behavior
     addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
 
-    # Check if the image is already loaded. We have to check by the name because Blender uses only the image name as a key vs the whole path
-    existing_image = bpy.data.images.get(os.path.basename(image_path))
-    if existing_image and not addon_prefs.always_fully_reload_images:
-        # Reload the image if requested
-        if do_reload:
-            existing_image.reload()
-        return existing_image
+    #Iterate through the existing images, get their paths, turn them to absolute, and check if they match the given path
+    if not addon_prefs.always_fully_reload_images:
+        try:
+            for image in bpy.data.images:
+                if image.filepath == "":
+                    continue
+                abs_image_path = rel_to_abs(image.filepath)
+                if abs_image_path == image_path:
+                    # If the image is already loaded and we don't need to reload, return it
+                    if not do_reload:
+                        return image
+                    
+                    # If we do need to reload, reload the image
+                    image.reload()
+                    return image
+        except Exception as e:
+            log_utils.warning(f"Error checking existing images when trying to find image {image_path}: {e}")
 
     # Load the image
     new_image = bpy.data.images.load(image_path)
