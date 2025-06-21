@@ -44,9 +44,14 @@ def compare_images(file1, file2):
         return 0
 
 def test(test_dir):
-    b_pass = False
+    # Add the directory containing this script to sys.path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+
+    import test_helpers
+
     error_messages = ""
-    test_output = test_dir + "/../Test Results.csv"
 
     # Sometimes Blender tries to change the name to .000 (or similar). This *seems* to be a bug in their unique name code since there's no actual conflict
     # But that's not super important to the core plugin so we have this bandaid
@@ -108,25 +113,26 @@ def test(test_dir):
         error_messages += "Image comparison failed: " + str(e) + "\n"
         return
 
-    #Get error message string
-    if error_messages:
-        error_messages = error_messages.strip().replace("\n", " | ")
-        error_messages = error_messages.replace("\"", "\"\"")
+    test_helpers.append_test_results(
+        "Bake Test Albedo",
+        albedo_similarity > 0.98,
+        albedo_similarity * 100,
+        error_messages
+    )
 
-    #Append the test results to the exporter_output file
-    with open(test_output, 'a') as output:
-        if albedo_similarity > 0.98:
-            output.write("Bake Test Albedo,PASS," + "{:.{precision}f}".format(albedo_similarity * 100, precision=4) + "%\n")
-        else:
-            output.write("Bake Test Albedo,FAIL," + "{:.{precision}f}".format(albedo_similarity * 100, precision=4) + "%\n" + f",\"{error_messages}\"")
-        if normal_similarity > 0.98:
-            output.write("Bake Test Normal,PASS," + "{:.{precision}f}".format(normal_similarity * 100, precision=4) + "%\n")
-        else:
-            output.write("Bake Test Normal,FAIL," + "{:.{precision}f}".format(normal_similarity * 100, precision=4) + "%\n" + f",\"{error_messages}\"")
-        if lit_similarity > 0.98:
-            output.write("Bake Test Lit,PASS," + "{:.{precision}f}".format(lit_similarity * 100, precision=4) + "%\n")
-        else:
-            output.write("Bake Test Lit,FAIL," + "{:.{precision}f}".format(lit_similarity * 100, precision=4) + "%\n" + f",\"{error_messages}\"")
+    test_helpers.append_test_results(
+        "Bake Test Normal",
+        normal_similarity > 0.98,
+        normal_similarity * 100,
+        error_messages
+    )
+
+    test_helpers.append_test_results(
+        "Bake Test Lit",
+        lit_similarity > 0.98,
+        lit_similarity * 100,
+        error_messages
+    )
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
@@ -134,12 +140,7 @@ if __name__ == "__main__":
     #The test dir is the parent of the blender file path. THis is just so we don't have to deal with passing in an extra argument, or hard coding the path in every test tilf
     test_dir = bpy.data.filepath.rsplit("\\", 1)[0]
 
-    try:
-        test(test_dir)
-    except Exception as e:
-        test_output = test_dir + "/../Test Results.csv"
-
-        with open(test_output, 'a') as output:
-            output.write("Bake Test,FAIL,Critical error: " + str(e) + "\n")
+    test(test_dir)
+    
 
 

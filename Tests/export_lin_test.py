@@ -7,42 +7,14 @@ import bpy
 import sys
 import os
 
-#Function that compares each byte of two files to check how similar the files are. Returns a value 0-1 for 0% to 100% similarity.
-def compare_files(file1, file2):
-    b_pass = True
-    chr_same = 0
-    chr_total = 0
-    similarity = 0.0
-    
-    try:
-        with open(file1, 'r') as new, open(file2, 'r') as good:
-            f_new = new.read()
-            f_good = good.read()
-
-            #Iterate over each line in both file. Then compare the characters in each line one by one
-            new_lines = f_new.splitlines()
-            good_lines = f_good.splitlines()
-
-            for i in range(min(len(new_lines), len(good_lines))):
-                new_line_len = len(new_lines[i])
-                good_line_len = len(good_lines[i])
-
-                for j in range(min(new_line_len, good_line_len)):
-                    chr_total += 1
-                    if new_lines[i][j] == good_lines[i][j]:
-                        chr_same += 1
-                
-                chr_total += abs(new_line_len - good_line_len)
-                
-        
-        similarity = chr_same / chr_total
-        similarity *= (abs(len(new_lines) - len(good_lines)) / max(len(new_lines) - len(good_lines)))
-    except:
-        pass
-
-    return similarity
-
 def test(test_dir):
+    # Add the directory containing this script to sys.path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+
+    import test_helpers
+
     b_pass = False
     similarity = 0.0
     error_message = ""
@@ -73,7 +45,7 @@ def test(test_dir):
 
         #Compare the exported file with the known good file
         b_pass = True
-        similarity = compare_files(new_file, known_good_file)
+        similarity = test_helpers.compare_files(new_file, known_good_file)
     except Exception as e:
         error_message = str(e)
         pass
@@ -81,15 +53,12 @@ def test(test_dir):
     if similarity < 1.0:
         b_pass = False
 
-    error_message = error_message.replace("\n", " | ")
-    error_message = error_message.replace("\"", "\"\"")
-
-    #Append the test results to the exporter_output file
-    with open(exporter_output, 'a') as output:
-        if b_pass:
-            output.write("Line Exporter,PASS," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%,\"" + error_message + "\"\n")
-        else:
-            output.write("Line Exporter,FAIL," + "{:.{precision}f}".format(similarity * 100, precision=4) + "%,\"" + error_message + "\"\n")
+    test_helpers.append_test_results(
+        "Line Exporter",
+        b_pass,
+        similarity * 100,
+        error_message
+    )
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
