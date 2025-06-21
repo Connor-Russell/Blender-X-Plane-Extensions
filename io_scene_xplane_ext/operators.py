@@ -603,6 +603,50 @@ class BTN_paste_decal(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_preview_lods_for_distance(bpy.types.Operator):
+    """Preview LODs for a given distance"""
+    bl_idname = "xp_ext.preview_lods_for_distance"
+    bl_label = "Preview LODs for Distance"
+    bl_description = "Preview the LODs for a given distance. This is a development tool and should not be used in production."
+    bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
+
+    def execute(self, context):
+        #Iterate over all objects.
+        # Get their parent collection to learn the LOD settings
+        # Get the object's LOD bucket, and thereby whether it's visible or not
+        # Then show or hide the object
+        for obj in bpy.data.objects:
+            #Get the parent collection
+            parent_col = obj.users_collection[0] if obj.users_collection else None
+
+            if parent_col is None:
+                continue
+            
+            lod_ranges = []
+
+            if obj.xplane.lod[0]:
+                lod_ranges.append([parent_col.xplane.layer.lod[0].near, parent_col.xplane.layer.lod[0].far])
+            
+            if obj.xplane.lod[1]:
+                lod_ranges.append([parent_col.xplane.layer.lod[1].near, parent_col.xplane.layer.lod[1].far])
+
+            if obj.xplane.lod[2]:
+                lod_ranges.append([parent_col.xplane.layer.lod[2].near, parent_col.xplane.layer.lod[2].far])
+
+            if obj.xplane.lod[3]:
+                lod_ranges.append([parent_col.xplane.layer.lod[3].near, parent_col.xplane.layer.lod[3].far])
+
+            for range in lod_ranges:
+                if range[0] <= bpy.context.scene.xp_ext.lod_distance_preview <= range[1]:
+                    #If the distance is within the range, show the object
+                    obj.hide_viewport = False
+                    break
+                else:
+                    #If the distance is not within the range, hide the object
+                    obj.hide_viewport = True
+
+        return {'FINISHED'}
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -634,6 +678,7 @@ def register():
     bpy.utils.register_class(BTN_agp_exporter)
     bpy.utils.register_class(BTN_copy_decal)
     bpy.utils.register_class(BTN_paste_decal)
+    bpy.utils.register_class(BTN_preview_lods_for_distance)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -660,4 +705,5 @@ def unregister():
     bpy.utils.unregister_class(BTN_TEST_config_bake_settings)
     bpy.utils.unregister_class(BTN_copy_decal)
     bpy.utils.unregister_class(BTN_paste_decal)
+    bpy.utils.unregister_class(BTN_preview_lods_for_distance)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

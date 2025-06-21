@@ -142,6 +142,13 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
          min=1.0,
          max=4.0
      ) #type: ignore
+    
+    lod_distance_preview: bpy.props.FloatProperty(
+        name="LOD Distance Preview",
+        description="Show objects whose LODs would make them visible at this range",
+        default=0.0,
+        min=0.0
+    ) # type: ignore
 
 #Material properties
 

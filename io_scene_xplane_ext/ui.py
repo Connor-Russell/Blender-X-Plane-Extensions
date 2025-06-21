@@ -594,6 +594,11 @@ class MENU_operations(bpy.types.Panel):
         layout.label(text="X-Plane Exporter Sync")
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
 
+        layout.separator()
+        layout.label(text="LOD Previews")
+        layout.prop(xp_ext, "lod_distance_preview")
+        layout.operator("xp_ext.preview_lods_for_distance", text="Preview LODs for Distance")
+
         do_test_operators = False
         if do_test_operators:
             layout.separator()
