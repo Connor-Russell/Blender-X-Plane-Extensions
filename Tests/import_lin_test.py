@@ -1,7 +1,7 @@
 #Project: BlenderFacadeExporter
 #Author: Connor Russell
 #Date: 11/9/2024
-#Purpose: Provide a test to import various lins and compare them to the existing imported .lin
+#Purpose: Provide a test to import various objects and compare them to a previously imported known good obj
 
 import bpy
 import os
@@ -15,62 +15,71 @@ def test(test_dir):
 
     import test_helpers
 
-    relative_test_dir = "LineImportTests"
+    relative_test_dir = "Line Import Tests"
 
     failed_count = 0
-    error_messages = ""
+    total_count = 0
+    differences = []
 
     #Get all the .blend files in the test directory
-    import_lins = []
+    import_lin = []
     for root, dirs, files in os.walk(os.path.join(test_dir, relative_test_dir)):
         for file in files:
             if file.endswith(".blend"):
-                import_lins.append(os.path.join(root, file))
+                import_lin.append(os.path.join(root, file))
 
-    #For each blender file open it, import the associated .lin (same base file name), then compare the two collections in the scene
-    for lin_file in import_lins:
+    #For each blender file open it, import the associated .fac (same base file name), then compare the two collections in the scene
+    for lin_file in import_lin:
         #Get the base name of the file without extension
         base_name = os.path.splitext(os.path.basename(lin_file))[0]
         lin_import_path = os.path.join(test_dir, relative_test_dir, base_name + ".lin")
 
         #Open the .blend file
         bpy.ops.wm.open_mainfile(filepath=lin_file)
+        total_count += 1
 
         #Import the .lin file
         try:
-            bpy.ops.TEST_import_lin(import_path=lin_import_path)
+            bpy.ops.xp_ext.test_import_lin(import_path=lin_import_path)
+
+            col1 = None
+            col2 = None
+            for i, col in enumerate(bpy.data.collections):
+                if i == 0:
+                    col1 = col
+                elif i == 1:
+                    col2 = col
+                    break
+
+            if col1 is None or col2 is None:
+                raise ValueError(f"Failed to find two collections in {base_name} after import.")
+                continue
+
+            differences.extend(test_helpers.compare_collections(col1, col2))
+            differences.extend(test_helpers.compare_property_groups(col1.xp_lin, col2.xp_lin))
+
         except Exception as e:
-            error_messages += f"Error importing {base_name}: {str(e)}\n"
+            differences += f"Error importing {base_name}: {str(e)}\n"
             failed_count += 1
-            continue
 
-        col1 = None
-        col2 = None
-        for i, col in enumerate(bpy.data.collections):
-            if i == 0:
-                col1 = col
-            elif i == 1:
-                col2 = col
-                break
-
-        if col1 is None or col2 is None:
-            test_helpers.append_test_results(
-                "Line Importer",
-                False,
-                0.0,
-                f"Failed to find two collections in {base_name} after import."
-            )
-            continue
-
-        differences = test_helpers.compare_collections(col1, col2)
+        if len(differences) > 0:
+            failed_count += 1
         
         test_helpers.append_test_results(
-            "Line Importer",
+            f"Line Importer {base_name}",
             len(differences) == 0,
             100.0 if len(differences) == 0 else 0.0,
             f"Imported {base_name} with {len(differences)} differences: {differences}"
-        )            
-            
+        )
+
+        differences = []
+    
+    test_helpers.append_test_results(
+        "Line Importer Summary",
+        failed_count == 0,
+        100.0 if failed_count == 0 else (1 - (failed_count / total_count)) * 100,
+        f"Total tests: {total_count}, Failed: {failed_count}"
+    )
 
 
 #Program entry point. Here we get the test directory, and call the test function

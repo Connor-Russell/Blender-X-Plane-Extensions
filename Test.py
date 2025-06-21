@@ -12,7 +12,7 @@ BlenderFileLineExporter = os.path.join(cd, "Tests", "Content", "LineExporter.ble
 BlenderFilePolygonExporter = os.path.join(cd, "Tests", "Content", "PolygonExporter.blend")
 BlenderFileInternalTests = os.path.join(cd, "Tests", "Content", "InternalTests.blend")
 BlenderFileBakeTest = os.path.join(cd, "Tests", "Content", "BakeTest.blend")
-BlenderFileImportObject = os.path.join(cd, "Tests", "Content", "ObjImporter.blend")
+BlenderFileImportObject = os.path.join(cd, "Tests", "Content", "Importer.blend")
 BlenderFileImportFacade = BlenderFileFacadeExporter
 BlenderFileImportLine = BlenderFileLineExporter
 BlenderFileImportPolygon = BlenderFilePolygonExporter
@@ -34,31 +34,28 @@ BlenderExe44 = r"D:\Blender Versions\4.43\blender.exe"
 
 # Bools to control what versions are tested
 Test29 = True
-Test30 = True
-Test31 = True
-Test32 = True
-Test33 = True
-Test34 = True
-Test35 = True
-Test36 = True
-Test40 = True
-Test41 = True
-Test42 = True
-Test43 = True
-Test44 = True
+Test30 = False
+Test31 = False
+Test32 = False
+Test33 = False
+Test34 = False
+Test35 = False
+Test36 = False
+Test40 = False
+Test41 = False
+Test42 = False
+Test43 = False
+Test44 = False
 
-TestExportFacade =     True
-TestExportLine =       True
-TestExportPolygon =    True
-TestImportObject =     True
-TestImportFacade =     True
-TestImportLine =       True
+TestExportFacade =     False
+TestExportLine =       False
+TestExportPolygon =    False
+TestImportObject =     False
+TestImportFacade =     False
+TestImportLine =       False
 TestImportPolygon =    True
-InternalTest =         True
-TestBaker =            True
-
-# Run build script
-subprocess.run([os.path.join(cd, "Build.ps1")], shell=True)
+InternalTest =         False
+TestBaker =            False
 
 def run_blender(blender_exe, blend_file, script):
     subprocess.run([

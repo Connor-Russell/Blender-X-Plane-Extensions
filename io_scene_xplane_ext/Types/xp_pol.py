@@ -402,12 +402,12 @@ class polygon():
         new_collection.xp_pol.load_center_lat = self.load_center_lat
         new_collection.xp_pol.load_center_lon = self.load_center_lon
         new_collection.xp_pol.load_center_size = self.load_center_size
-        new_collection.xp_pol.load_center_resolution = self.load_center_res
+        new_collection.xp_pol.load_center_resolution = int(self.load_center_res)
         new_collection.xp_pol.is_texture_tiling = self.do_tiling
-        new_collection.xp_pol.texture_tiling_x_pages = self.tiling_x_pages
-        new_collection.xp_pol.texture_tiling_y_pages = self.tiling_y_pages
-        new_collection.xp_pol.texture_tiling_map_x_res = self.tiling_map_x_res
-        new_collection.xp_pol.texture_tiling_map_y_res = self.tiling_map_y_res
+        new_collection.xp_pol.texture_tiling_x_pages = int(self.tiling_x_pages)
+        new_collection.xp_pol.texture_tiling_y_pages = int(self.tiling_y_pages)
+        new_collection.xp_pol.texture_tiling_map_x_res = int(self.tiling_map_x_res)
+        new_collection.xp_pol.texture_tiling_map_y_res = int(self.tiling_map_y_res)
         new_collection.xp_pol.texture_tiling_map_texture = self.tiling_map_texture
         new_collection.xp_pol.is_runway_markings = self.do_runway_markings
         new_collection.xp_pol.runway_markings_r = self.runway_r
