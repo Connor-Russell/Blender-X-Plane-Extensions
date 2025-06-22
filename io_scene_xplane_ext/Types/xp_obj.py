@@ -652,7 +652,6 @@ class manipulator:
                 pass
         return None
         
-    
     def copy(self):
         """
         Returns a copy of this manipulator object.
@@ -1685,10 +1684,15 @@ class object:
                 #If this command is missing the dataref, we assume it is a static translation
                 if len(tokens) < 10:
                     #ANIM_trans <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
+                    cur_table = anim_loc_table()
+
                     cur_static_translation = anim_loc_keyframe()
                     cur_static_translation.time = 0
                     cur_static_translation.loc = (float(tokens[1]) * trans_matrix[0], float(tokens[3]) * trans_matrix[1], float(tokens[2] * trans_matrix[2]))
-                    cur_anim_tree[-1].actions.append(cur_static_translation)
+
+                    cur_table.add_keyframe(0, cur_static_translation.loc)
+
+                    cur_anim_tree[-1].actions.append(cur_table)
 
                 #Otherwise, we assume this is a shortened keyframe table
                 elif len(tokens) == 10:
@@ -1712,16 +1716,23 @@ class object:
                 #This is the same as the translation, but for rotation
                 if len(tokens) < 9:
                     #ANIM_rotate <ratiox> <ratioy> <ratioz> <rotate1> <rotate2> <v1> <v2> <dataref>
-                    cur_static_rotation = anim_rot_keyframe()
-                    cur_static_rotation.time = 0
+                    cur_rotate_transform = anim_rot_table_vector_transform()
 
                     cur_rotate_keyframe_do_x = float(tokens[1]) * trans_matrix[0]
                     cur_rotate_keyframe_do_y = float(tokens[3]) * trans_matrix[1]
                     cur_rotate_keyframe_do_z = float(tokens[2]) * trans_matrix[2]
-                    cur_static_rotation.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
-                    cur_static_rotation.rot = float(tokens[4])
+                    cur_rotate_transform.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
 
-                    cur_anim_tree[-1].actions.append(cur_static_rotation)
+                    cur_table = anim_rot_table()
+                    
+                    key1 = anim_rot_keyframe()
+                    key1.time = 0
+                    key1.rot = float(tokens[4])
+                    
+                    cur_table.add_keyframe(key1.time, key1.rot)
+                    
+                    cur_anim_tree[-1].actions.append(cur_rotate_transform)
+                    cur_anim_tree[-1].actions.append(cur_table)
 
                 elif len(tokens) == 9:
                     #ANIM_rotate <ratiox> <ratioy> <ratioz> <rotate1> <rotate2> <v1> <v2> <dataref>
