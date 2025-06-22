@@ -652,6 +652,7 @@ class manipulator:
                 pass
         return None
         
+    
     def copy(self):
         """
         Returns a copy of this manipulator object.
@@ -1359,8 +1360,9 @@ class anim_level:
             if action.type == 'loc_keyframe' or action.type == 'rot_keyframe' or action.type == 'show_hide_series':
                 continue
 
-            #Apply the base static translation offset
-            action.static_offsets.apply(anim_empty)
+            if action.type != 'loc_table':
+                #Apply the base static translation offset
+                action.static_offsets.apply(anim_empty)
 
             #Apply show/hide commands. We do this here vs a dedicated empty because that can mess up manipulators sadly
             for cmd in action.show_hide_commands:
@@ -1369,6 +1371,8 @@ class anim_level:
             if action.type == 'loc_table':
                 
                 base_pos = anim_utils.get_obj_position_world(anim_empty)
+
+                rotation_euler_after_first_static_offset_application = None
 
                 dataref = action.dataref
 
@@ -1386,9 +1390,20 @@ class anim_level:
                     new_pos = (base_pos[0] + kf.loc[0], base_pos[1] + kf.loc[1], base_pos[2] + kf.loc[2])
                     anim_utils.set_obj_position_world(anim_empty, new_pos)
 
+                    #Apply the static offsets to the empty
+                    action.static_offsets.apply(anim_empty)
+
+                    #Save the rotation euler after the first static offset application
+                    if rotation_euler_after_first_static_offset_application == None:
+                        rotation_euler_after_first_static_offset_application = anim_empty.rotation_euler.copy()
+                    anim_utils.set_obj_rotation_world(anim_empty, (0, 0, 0))  #Reset the rotation to zero so it doesn't affect the next application
+
                     #Set the value of the dataref to the keyframe value
                     anim_utils.keyframe_obj_location(anim_empty)
                     anim_utils.keyframe_xp_dataref(anim_empty, dataref, kf.time)
+                
+                if rotation_euler_after_first_static_offset_application != None:
+                    anim_empty.rotation_euler = rotation_euler_after_first_static_offset_application
             
             elif action.type == 'rot_table':
                 dataref = action.dataref
@@ -1684,15 +1699,10 @@ class object:
                 #If this command is missing the dataref, we assume it is a static translation
                 if len(tokens) < 10:
                     #ANIM_trans <x1> <y1> <z1> <x2> <y2> <z2> <v1> <v2>
-                    cur_table = anim_loc_table()
-
                     cur_static_translation = anim_loc_keyframe()
                     cur_static_translation.time = 0
                     cur_static_translation.loc = (float(tokens[1]) * trans_matrix[0], float(tokens[3]) * trans_matrix[1], float(tokens[2] * trans_matrix[2]))
-
-                    cur_table.add_keyframe(0, cur_static_translation.loc)
-
-                    cur_anim_tree[-1].actions.append(cur_table)
+                    cur_anim_tree[-1].actions.append(cur_static_translation)
 
                 #Otherwise, we assume this is a shortened keyframe table
                 elif len(tokens) == 10:
@@ -1716,23 +1726,16 @@ class object:
                 #This is the same as the translation, but for rotation
                 if len(tokens) < 9:
                     #ANIM_rotate <ratiox> <ratioy> <ratioz> <rotate1> <rotate2> <v1> <v2> <dataref>
-                    cur_rotate_transform = anim_rot_table_vector_transform()
+                    cur_static_rotation = anim_rot_keyframe()
+                    cur_static_rotation.time = 0
 
                     cur_rotate_keyframe_do_x = float(tokens[1]) * trans_matrix[0]
                     cur_rotate_keyframe_do_y = float(tokens[3]) * trans_matrix[1]
                     cur_rotate_keyframe_do_z = float(tokens[2]) * trans_matrix[2]
-                    cur_rotate_transform.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
+                    cur_static_rotation.rot_vector = mathutils.Vector((cur_rotate_keyframe_do_x, cur_rotate_keyframe_do_y, cur_rotate_keyframe_do_z))
+                    cur_static_rotation.rot = float(tokens[4])
 
-                    cur_table = anim_rot_table()
-                    
-                    key1 = anim_rot_keyframe()
-                    key1.time = 0
-                    key1.rot = float(tokens[4])
-                    
-                    cur_table.add_keyframe(key1.time, key1.rot)
-                    
-                    cur_anim_tree[-1].actions.append(cur_rotate_transform)
-                    cur_anim_tree[-1].actions.append(cur_table)
+                    cur_anim_tree[-1].actions.append(cur_static_rotation)
 
                 elif len(tokens) == 9:
                     #ANIM_rotate <ratiox> <ratioy> <ratioz> <rotate1> <rotate2> <v1> <v2> <dataref>
