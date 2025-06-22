@@ -2075,8 +2075,9 @@ class object:
                 cur_state.light_level_override = True
                 cur_state.light_level_v1 = float(tokens[1])
                 cur_state.light_level_v2 = float(tokens[2])
-                cur_state.light_level_dataref = tokens[3]
-                if len(tokens) > 4:
+                if len(tokens) >= 4:
+                    cur_state.light_level_dataref = tokens[3]
+                if len(tokens) >= 5:
                     cur_state.light_level_photometric = True
                     if tokens[4].endswith('cd'):
                         cur_state.light_level_brightness = float(tokens[4][:-2])

@@ -50,10 +50,10 @@ Test44 = False
 TestExportFacade =     False
 TestExportLine =       False
 TestExportPolygon =    False
-TestImportObject =     False
+TestImportObject =     True
 TestImportFacade =     False
 TestImportLine =       False
-TestImportPolygon =    True
+TestImportPolygon =    False
 InternalTest =         False
 TestBaker =            False
 

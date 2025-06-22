@@ -1,5 +1,5 @@
-2025-06-20 21-37-31
+2025-06-21 15-16-54
 Test Name,Result
 2.9 Tests
-Polygon Importer MyConcrete,True,100.0,Imported MyConcrete with 0 differences: []
-Polygon Importer Summary,True,100.0,"Total tests: 1, Failed: 0"
+Line Importer MyLine,False,0.0,"Imported MyLine with 10 differences: ['Plane, Plane.006, vertex 0 differs: <test_helpers.xp_vertex object at 0x000001DF5BE3A040> vs <test_helpers.xp_vertex object at 0x000001DF5BE3A550>', 'Plane, Plane.006, vertex 1 differs: <test_helpers.xp_vertex object at 0x000001DF5BE3A0D0> vs <test_helpers.xp_vertex object at 0x000001DF5BE3A6A0>', 'Plane, Plane.006, vertex 2 differs: <test_helpers.xp_vertex object at 0x000001DF5BE3A2E0> vs <test_helpers.xp_vertex object at 0x000001DF5BE3AEB0>', 'Plane, Plane.006, vertex 3 differs: <test_helpers.xp_vertex object at 0x000001DF5BE3A100> vs <test_helpers.xp_vertex object at 0x000001DF5BE3A490>', 'Plane, Plane.006, vertex 4 differs: <test_helpers.xp_vertex object at 0x000001DF5BE3A0A0> vs <test_helpers.xp_vertex object at 0x000001DF5BE3A4C0>', 'Plane, Plane.006, vertex 5 differs: <test_helpers.xp_vertex object at 0x000001DF5BE3A070> vs <test_helpers.xp_vertex object at 0x000001DF5BE3A520>', 'Plane.001, Plane.007, vertex 0 differs: <test_helpers.xp_vertex object at 0x000001DF5BCF9A90> vs <test_helpers.xp_vertex object at 0x000001DF5BCF9550>', 'Plane.001, Plane.007, vertex 1 differs: <test_helpers.xp_vertex object at 0x000001DF5BCF9A60> vs <test_helpers.xp_vertex object at 0x000001DF5BCF9580>', 'Plane.001, Plane.007, vertex 4 differs: <test_helpers.xp_vertex object at 0x000001DF5BCF9880> vs <test_helpers.xp_vertex object at 0x000001DF5BCF9AC0>', 'segment_count (value 2 != 1)']"
+Line Importer Summary,False,0.0,"Total tests: 1, Failed: 1"
