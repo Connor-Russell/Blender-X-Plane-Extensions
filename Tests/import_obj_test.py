@@ -56,7 +56,7 @@ def test(test_dir):
                 continue
 
             differences.extend(test_helpers.compare_collections(col1, col2))
-            differences.extend(test_helpers.compare_property_groups(col1.xp_obj, col2.xp_obj))
+            differences.extend(test_helpers.compare_property_groups(col1.xplane, col2.xplane))
 
         except Exception as e:
             differences += f"Error importing {base_name}: {str(e)}\n"

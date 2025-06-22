@@ -821,6 +821,7 @@ class facade:
 
         # Set facade properties
         facade_props = facade_collection.xp_fac
+        facade_props.exportable = True
         facade_props.name = self.name
         facade_props.wall_material = self.wall_material
         facade_props.roof_material = self.roof_material
@@ -862,6 +863,8 @@ class facade:
                     decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
 
+            facade_props.wall_material = wall_material
+            
         if self.import_roof_material:
             roof_material = bpy.data.materials.new(name="RoofMaterial")
             roof_material.use_nodes = True
@@ -894,6 +897,7 @@ class facade:
                     decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
 
+            facade_props.roof_material = roof_material
         # Add floors to the collection
         for floor_obj in self.floors:
             # Create a collection for the floor

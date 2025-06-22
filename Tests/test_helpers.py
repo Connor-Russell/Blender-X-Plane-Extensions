@@ -363,36 +363,39 @@ def compare_objects(obj1, obj2):
     differences.extend(compare_property_groups(obj1.xp_attached_obj, obj2.xp_attached_obj))
     differences.extend(compare_property_groups(obj1.xp_agp, obj2.xp_agp))
 
-    #Now we need to compare the geometry/normals/UVs via 
-    dc1 = get_draw_call_from_obj(obj1)
-    dc2 = get_draw_call_from_obj(obj2)
-    if dc1[1] != dc2[1]:
-        differences.append((f"{obj1.name}, {obj2.name}, geometry indices count difference: {len(dc1[1])} vs {len(dc2[1])}"))
-    if len(dc1[0]) != len(dc2[0]):
-        differences.append((f"{obj1.name}, {obj2.name}, geometry vertices count difference: {len(dc1[0])} vs {len(dc2[0])}"))
-    else:
-        #Now we compare the vertices
-        for i in range(len(dc1[0])):
-            v1 = dc1[0][i]
-            v2 = dc2[0][i]
-            if not v1.almost_equal(v2):
-                differences.append((f"{obj1.name}, {obj2.name}, vertex {i} differs: {v1} vs {v2}"))
+    #If these are both a mesh we'll compare geometry and materials
+    if obj1.type == 'MESH' and obj2.type == 'MESH':
+        dc1 = get_draw_call_from_obj(obj1)
+        dc2 = get_draw_call_from_obj(obj2)
+        if dc1[1] != dc2[1]:
+            differences.append((f"{obj1.name}, {obj2.name}, geometry indices count difference: {len(dc1[1])} vs {len(dc2[1])}"))
+        if len(dc1[0]) != len(dc2[0]):
+            differences.append((f"{obj1.name}, {obj2.name}, geometry vertices count difference: {len(dc1[0])} vs {len(dc2[0])}"))
+        else:
+            #Now we compare the vertices
+            for i in range(len(dc1[0])):
+                v1 = dc1[0][i]
+                v2 = dc2[0][i]
+                if not v1.almost_equal(v2):
+                    differences.append((f"{obj1.name}, {obj2.name}, vertex {i} differs: {v1} vs {v2}"))
 
-        #Now we compare the indices
-        for i in range(len(dc1[1])):
-            if dc1[1][i] != dc2[1][i]:
-                differences.append((f"{obj1.name}, {obj2.name}, index {i} differs: {dc1[1][i]} vs {dc2[1][i]}"))
+            #Now we compare the indices
+            for i in range(len(dc1[1])):
+                if dc1[1][i] != dc2[1][i]:
+                    differences.append((f"{obj1.name}, {obj2.name}, index {i} differs: {dc1[1][i]} vs {dc2[1][i]}"))
     
-    #Now we compare the materials
-    mats1 = obj1.data.materials
-    mats2 = obj2.data.materials
-    if len(mats1) != len(mats2):
-        return False, "Different number of material slots"
-    for i, (mat1, mat2) in enumerate(zip(mats1, mats2)):
-        if not mat1 or not mat2:
-            differences.append((f"{obj1.name}, {obj2.name}, material slot {i} is empty"))
-            continue
-        differences.extend(compare_property_groups(mat1.xp_materials, mat2.xp_materials))
+        #Now we compare the materials
+        mats1 = obj1.data.materials
+        mats2 = obj2.data.materials
+        if len(mats1) != len(mats2):
+            return False, "Different number of material slots"
+        for i, (mat1, mat2) in enumerate(zip(mats1, mats2)):
+            if not mat1 or not mat2:
+                differences.append((f"{obj1.name}, {obj2.name}, material slot {i} is empty"))
+                continue
+            differences.extend(compare_property_groups(mat1.xp_materials, mat2.xp_materials))
+    elif obj1.type != obj2.type:
+        differences.append((f"{obj1.name}, {obj2.name}, object type difference: {obj1.type} vs {obj2.type}"))
 
     #Finally, we will compare the children
     children1 = obj1.children

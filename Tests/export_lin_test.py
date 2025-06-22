@@ -45,7 +45,7 @@ def test(test_dir):
 
         #Compare the exported file with the known good file
         b_pass = True
-        similarity = test_helpers.compare_files(new_file, known_good_file)
+        line_diff_count, similarity = test_helpers.compare_files(new_file, known_good_file)
     except Exception as e:
         error_message = str(e)
         pass
