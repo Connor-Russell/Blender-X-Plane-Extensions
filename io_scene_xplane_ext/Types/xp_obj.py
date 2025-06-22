@@ -1229,12 +1229,14 @@ class anim_level:
         
         #Add all the actions, creating the hierarchy of empties with their rotations set. 
         for i, action in enumerate(self.actions):
-            # Check if this is a drawcall or light. If so, we'll parent them to the last action. 
+            # Check if this is a drawcall, light, or. If so, we'll parent them to the last action. 
             # We need to do this on an action level because some objects may have actions, dc, more actions, more dcs, etc. And the dcs only have the actions *before* them applied.
             # So treating everything in an ANIM_begin/end pair as being effected by all the actions don't work :(
             # We don't actually have to do anything different with actions though because we are just parenting the dcs/lights to the last aciton. We don't actually change the meat of the action hierarchy
             # Also note again because next actions are *siblings* rather than children of this dc/light, we don't reset show/hide or static offset
-            if isinstance(action, draw_call):
+            if isinstance(action, anim_level):
+                action.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection, cur_static_offsets.copy(), cur_show_hide_commands.copy())
+            elif isinstance(action, draw_call):
                 dc_obj = action.add_to_scene(all_verts, all_indicies, in_mats, in_collection)
                 dc_obj.parent = self.last_action
 
@@ -1334,12 +1336,13 @@ class anim_level:
 
                 #Reset our frame
                 anim_utils.goto_frame(0)
+            
             else:
                 log_utils.warning(f"Unknown action type for animation {action}. This is not expected, please report this on this plugin's Github.")
 
         #Now that we added out draw calls, it's time to recurse
-        for child in self.children:
-            child.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection, cur_static_offsets.copy(), cur_show_hide_commands.copy())
+        #for child in self.children:
+         #   child.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection, cur_static_offsets.copy(), cur_show_hide_commands.copy())
 
         #Reset our frame
         anim_utils.goto_frame(0)
@@ -1347,7 +1350,7 @@ class anim_level:
         #Now that everything is parented, we add the keyframes in reverse order so everything is applied correctly
         for i, action in enumerate(reversed(self.actions)):
 
-            if isinstance(action, draw_call) or isinstance(action, light):
+            if isinstance(action, draw_call) or isinstance(action, light) or isinstance(action, anim_level):
                 #If this is a draw call or light, we don't need to do anything here. They were already added to the scene
                 continue
         
@@ -1671,7 +1674,7 @@ class object:
 
                 #If we are in an animation tree, add this animation to the current animation tree. Otherwise, add it directly to the anim list
                 if len(cur_anim_tree) > 0:
-                    cur_anim_tree[-1].children.append(new_anim)
+                    cur_anim_tree[-1].actions.append(new_anim)
                 else:
                     self.anims.append(new_anim)
 
