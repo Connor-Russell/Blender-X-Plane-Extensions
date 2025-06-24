@@ -445,7 +445,7 @@ def compare_collections(col1, col2):
     #Return the results     
     return differences
 
-def append_test_results(test_name, b_did_pass, percentage, message):
+def append_test_results(b_did_pass, percentage, message):
     """
     Append a test result to the 'Test Results.csv' file in the current Blender project directory.
     Args:
@@ -466,8 +466,75 @@ def append_test_results(test_name, b_did_pass, percentage, message):
     except FileExistsError:
         pass  # File already exists, we can append to it
 
-    print(csv_file_path)
+    #Make all the text safe for csv
+    str_b_did_pass = "PASS" if b_did_pass else "FAIL"
+    str_percentage = f"{percentage:.2f}" if percentage is not None else "N/A"
+    str_message = message.replace('\n', ';')  # Replace newlines to avoid CSV issues
+    str_message = str_message.replace('\"', '\"\"')  # Replace quotes to avoid CSV issues
+    str_message = f'"{str_message}"'  # Enclose in quotes to handle commas
 
     with open(csv_file_path, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow([test_name, b_did_pass, percentage, message])
+        csvfile.write(f",{str_b_did_pass},{str_percentage},{str_message}\n")
+
+def append_test_fail(message):
+    """
+    Append a test failure message to the 'Test Failures.txt' file in the current Blender project directory.
+    Args:
+        message (str): Failure message to append.
+    """
+    #Get path of this script
+    script_path = os.path.dirname(os.path.abspath(__file__))
+
+    #Create the text file if it doesn't exist
+    txt_file_path = script_path + os.sep + 'Test Failures.txt'
+    try:
+        with open(txt_file_path, 'x') as txtfile:
+            pass  # Create an empty file
+    except FileExistsError:
+        pass  # File already exists, we can append to it
+
+    #Open the text file in append mode and write the failure message
+    with open(txt_file_path, 'a') as txtfile:
+        txtfile.write(",FAIL,N/A," + message + '\n')
+
+def add_test_name(test_name):
+    """
+    Add a test name to the 'Test Results.csv' file in the current Blender project directory.
+    Args:
+        test_name (str): Name of the test to add.
+    """
+    #Get path of this script
+    script_path = os.path.dirname(os.path.abspath(__file__))
+
+    #Create the text file if it doesn't exist
+    txt_file_path = script_path + os.sep + 'Test Results.csv'
+    try:
+        with open(txt_file_path, 'x') as txtfile:
+            pass  # Create an empty file
+    except FileExistsError:
+        pass  # File already exists, we can append to it
+
+    #Open the CSV file in append mode and write the test name: in the next cell
+    with open(txt_file_path, 'a') as txtfile:
+        txtfile.write(test_name + ':')
+
+def add_test_category(test_category):
+    """
+    Add a test category to the 'Test Results.csv' file in the current Blender project directory.
+    Args:
+        test_name (str): Name of the test to add.
+    """
+    #Get path of this script
+    script_path = os.path.dirname(os.path.abspath(__file__))
+
+    #Create the text file if it doesn't exist
+    txt_file_path = script_path + os.sep + 'Test Results.csv'
+    try:
+        with open(txt_file_path, 'x') as txtfile:
+            pass  # Create an empty file
+    except FileExistsError:
+        pass  # File already exists, we can append to it
+
+    #Open the CSV file in append mode and write the test name: in the next cell
+    with open(txt_file_path, 'a') as txtfile:
+        txtfile.write(test_category + ' Tests:\n')

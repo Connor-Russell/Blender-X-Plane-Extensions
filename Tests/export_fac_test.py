@@ -7,22 +7,21 @@ import bpy
 import sys
 import os
 
-def test(test_dir):
-    # Add the directory containing this script to sys.path
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    if script_dir not in sys.path:
-        sys.path.insert(0, script_dir)
+# Add the directory containing this script to sys.path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
 
-    import test_helpers
+import test_helpers
+
+def test(test_dir):
 
     b_pass = False
     line_count_diff = 0
     similarity = 0.0
     error_message = ""
-    exporter_output = test_dir + "/../Test Results.csv"
 
     try:
-
         new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.fac"
         new_file = test_dir + "/" + new_file_name
 
@@ -38,14 +37,6 @@ def test(test_dir):
         bpy.ops.xp_ext.export_facades()
 
         known_good_file = test_dir + "/Exporter.good.fac"
-
-        #Check if this is Blender version 3.6 or greater. If so we need to check against a different file as there are tiny coordinate differences between the versions
-        #if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
-        #    known_good_file = test_dir + "/Exporter.good.41.fac"
-        #elif bpy.app.version[0] >= 4 and bpy.app.version[1] >= 0:
-        #    known_good_file = test_dir + "/Exporter.good.40.fac"
-        #elif bpy.app.version[0] >= 3 and bpy.app.version[1] >= 6:
-        #    known_good_file = test_dir + "/Exporter.good.36.fac"
 
         #Resolve the file paths to use \\ instead of / for windows compatibility
         new_file = new_file.replace("/", "\\")
@@ -66,7 +57,6 @@ def test(test_dir):
         b_pass = False
 
     test_helpers.append_test_results(
-        "Facade Exporter",
         b_pass,
         similarity * 100,
         error_message
@@ -79,11 +69,10 @@ if __name__ == "__main__":
     test_dir = os.path.dirname(bpy.data.filepath)
 
     try:
+        test_helpers.add_test_name("Export Facade")
         test(test_dir)
     except Exception as e:
-        test_output = test_dir + "/../Test Results.csv"
-
-        with open(test_output, 'a') as output:
-            output.write("Facade Exporter,FAIL,Critical error: " + str(e) + "\n")
+        print("An error occurred during the test: ", str(e))
+        test_helpers.append_test_fail(str(e))
 
 

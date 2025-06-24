@@ -7,18 +7,17 @@ import bpy
 import sys
 import os
 
+# Add the directory containing this script to sys.path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+import test_helpers
+
 def test(test_dir):
-    # Add the directory containing this script to sys.path
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    if script_dir not in sys.path:
-        sys.path.insert(0, script_dir)
-
-    import test_helpers
-
     b_pass = False
     similarity = 0.0
     error_message = ""
-    exporter_output = test_dir + "/../Test Results.csv"
     try:
 
         new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.lin"
@@ -54,7 +53,6 @@ def test(test_dir):
         b_pass = False
 
     test_helpers.append_test_results(
-        "Line Exporter",
         b_pass,
         similarity * 100,
         error_message
@@ -67,11 +65,9 @@ if __name__ == "__main__":
     test_dir = os.path.dirname(bpy.data.filepath)
 
     try:
+        test_helpers.add_test_name("Export Line")
         test(test_dir)
     except Exception as e:
-        test_output = test_dir + "/../Test Results.csv"
-
-        with open(test_output, 'a') as output:
-            output.write("Line Exporter,FAIL,Critical error: " + str(e) + "\n")
-
+        print("An error occurred during the test: ", str(e))
+        test_helpers.append_test_fail(str(e))
 

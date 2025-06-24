@@ -7,75 +7,87 @@ import bpy
 import os
 import sys
 
+# Add the directory containing this script to sys.path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+import test_helpers
+
 def test(test_dir):
-    # Add the directory containing this script to sys.path
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    if script_dir not in sys.path:
-        sys.path.insert(0, script_dir)
-
-    import test_helpers
-
-    relative_test_dir = "Line Import Tests"
+    relative_test_dir = "Import Line Tests"
 
     failed_count = 0
     total_count = 0
     differences = []
 
     #Get all the .blend files in the test directory
-    import_lin = []
-    for root, dirs, files in os.walk(os.path.join(test_dir, relative_test_dir)):
-        for file in files:
-            if file.endswith(".blend"):
-                import_lin.append(os.path.join(root, file))
+    try:
+        import_lin = []
+        for root, dirs, files in os.walk(os.path.join(test_dir, relative_test_dir)):
+            for file in files:
+                if file.endswith(".blend"):
+                    import_lin.append(os.path.join(root, file))
+    except Exception as e:
+        test_helpers.add_test_name("Import Line Test Error")
+        test_helpers.append_test_fail("Error finding .blend files: " + str(e))
+        return
+    
+    test_helpers.add_test_category("Import Line Tests")
 
-    #For each blender file open it, import the associated .fac (same base file name), then compare the two collections in the scene
+    #For each blender file open it, import the associated .lin (same base file name), then compare the two collections in the scene
     for lin_file in import_lin:
         #Get the base name of the file without extension
         base_name = os.path.splitext(os.path.basename(lin_file))[0]
         lin_import_path = os.path.join(test_dir, relative_test_dir, base_name + ".lin")
 
-        #Open the .blend file
-        bpy.ops.wm.open_mainfile(filepath=lin_file)
-        total_count += 1
+        test_helpers.add_test_name(base_name)
 
-        #Import the .lin file
         try:
-            bpy.ops.xp_ext.test_import_lin(import_path=lin_import_path)
+            #Open the .blend file
+            bpy.ops.wm.open_mainfile(filepath=lin_file)
+            total_count += 1
 
-            col1 = None
-            col2 = None
-            for i, col in enumerate(bpy.data.collections):
-                if i == 0:
-                    col1 = col
-                elif i == 1:
-                    col2 = col
-                    break
+            #Import the .lin file
+            try:
+                bpy.ops.xp_ext.test_import_lin(import_path=lin_import_path)
 
-            if col1 is None or col2 is None:
-                raise ValueError(f"Failed to find two collections in {base_name} after import.")
-                continue
+                col1 = None
+                col2 = None
+                for i, col in enumerate(bpy.data.collections):
+                    if i == 0:
+                        col1 = col
+                    elif i == 1:
+                        col2 = col
+                        break
 
-            differences.extend(test_helpers.compare_collections(col1, col2))
-            differences.extend(test_helpers.compare_property_groups(col1.xp_lin, col2.xp_lin))
+                if col1 is None or col2 is None:
+                    raise ValueError(f"Failed to find two collections in {base_name} after import.")
 
+                differences.extend(test_helpers.compare_collections(col1, col2))
+                differences.extend(test_helpers.compare_property_groups(col1.xp_lin, col2.xp_lin))
+
+            except Exception as e:
+                differences += f"Error importing {base_name}: {str(e)}\n"
+                failed_count += 1
+
+            if len(differences) > 0:
+                failed_count += 1
+
+            test_helpers.append_test_results(
+                len(differences) == 0,
+                100.0 if len(differences) == 0 else 0.0,
+                f"Imported {base_name} with {len(differences)} differences: {differences}"
+            )
+
+            differences = []
         except Exception as e:
-            differences += f"Error importing {base_name}: {str(e)}\n"
+            print(f"Error processing {lin_file}: {str(e)}")
             failed_count += 1
+            test_helpers.append_test_fail(os.path.splitext(os.path.basename(lin_file))[0])
 
-        if len(differences) > 0:
-            failed_count += 1
-        
-        test_helpers.append_test_results(
-            f"Line Importer {base_name}",
-            len(differences) == 0,
-            100.0 if len(differences) == 0 else 0.0,
-            f"Imported {base_name} with {len(differences)} differences: {differences}"
-        )
-
-        differences = []
-    
+    test_helpers.add_test_name("Line Importer Summary")
     test_helpers.append_test_results(
-        "Line Importer Summary",
         failed_count == 0,
         100.0 if failed_count == 0 else (1 - (failed_count / total_count)) * 100,
         f"Total tests: {total_count}, Failed: {failed_count}"

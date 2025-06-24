@@ -7,19 +7,18 @@ import bpy
 import sys
 import os
 
+# Add the directory containing this script to sys.path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+import test_helpers
+
 def test(test_dir):
-    # Add the directory containing this script to sys.path
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    if script_dir not in sys.path:
-        sys.path.insert(0, script_dir)
-
-    import test_helpers
-
     b_pass = False
 
     similarity = 0.0
     error_message = ""
-    exporter_output = test_dir + "/../Test Results.csv"
     try:
 
         new_file_name = "Exporter_" + str(bpy.app.version[0]) + str(bpy.app.version[1]) + ".test_result.pol"
@@ -56,7 +55,6 @@ def test(test_dir):
         b_pass = False
 
     test_helpers.append_test_results(
-        "Polygon Exporter",
         b_pass,
         similarity * 100,
         error_message
@@ -68,7 +66,11 @@ if __name__ == "__main__":
     #The test dir is the parent of the blender file path. THis is just so we don't have to deal with passing in an extra argument, or hard coding the path in every test tilf
     test_dir = os.path.dirname(bpy.data.filepath)
 
-    test(test_dir)
+    try:
+        test(test_dir)
+    except Exception as e:
+        print("An error occurred during the test: " + str(e))
+        test_helpers.append_test_fail(str(e))
     
 
 
