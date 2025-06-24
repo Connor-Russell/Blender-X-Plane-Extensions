@@ -15,14 +15,14 @@ if script_dir not in sys.path:
 import test_helpers
 
 def test(test_dir):
-    relative_test_dir = "Import Tests"
+    relative_test_dir = "Export Tests"
 
     failed_count = 0
     total_count = 0
 
     import_files = []
 
-    test_helpers.add_test_category("Import Tests")
+    test_helpers.add_test_category("Export Tests")
 
     #Get all the .blend files in the test directory
     try:
@@ -32,7 +32,7 @@ def test(test_dir):
                 if file.endswith(".blend"):
                     import_files.append(os.path.join(root, file))
     except Exception as e:
-        test_helpers.add_test_name("Import Test Error")
+        test_helpers.add_test_name("Export Test Error")
         test_helpers.append_test_fail("Error finding .blend files: " + str(e))
         return
     
@@ -57,55 +57,37 @@ def test(test_dir):
                 col1 = col
                 break
 
-            asset_import_path = os.path.join(parent_folder, col1.name)
-            asset_extension = os.path.splitext(asset_import_path)[1].lower()
+            #Define the output path, should be parent_folder + collection name (minus extension) + blender version + .good + (extension)
+            col_name = col1.name
+            col_name_base = col_name.split("_")[0]  # Get the name from the collection name
+            col_name_ext = col_name.split(".")[1]  # Get the extension from the collection name
 
-            if os.path.exists(asset_import_path) is False:
-                raise FileNotFoundError(f"Asset file not found: {asset_import_path}")
+            output_path = os.path.join(parent_folder, f"{col_name_base}_{bpy.app.version_string}.{col_name_ext}")
 
-            if asset_extension == '.fac':
-                bpy.ops.xp_ext.test_import_fac(import_path=asset_import_path)
-            elif asset_extension == '.obj':
-                bpy.ops.xp_ext.test_import_obj(import_path=asset_import_path)
-            elif asset_extension == '.pol':
-                bpy.ops.xp_ext.test_import_pol(import_path=asset_import_path)
-            elif asset_extension == '.lin':
-                bpy.ops.xp_ext.test_import_lin(import_path=asset_import_path)
-            elif asset_extension == '.agp':
-                bpy.ops.xp_ext.test_import_agp(import_path=asset_import_path)
-            
-            #Now we will get the two collections
-            col1 = None
-            col2 = None
+            #Define the "good" file to compare to
+            good_file = os.path.join(test_dir, relative_test_dir, f"{col_name_base}_good.{col_name_ext}")
 
-            for i, col in enumerate(bpy.data.collections):
-                if i == 0:
-                    col1 = col
-                elif i == 1:
-                    col2 = col
-                    break
+            #Call the export operators. We'll just call them all, those that aren't applicable will simply do nothing
+            bpy.ops.xp_ext.export_lines()
+            bpy.ops.xp_ext.export_polygons()
+            bpy.ops.xp_ext.export_facades()
+            bpy.ops.xp_ext.export_agps()
 
-            #Make sure we have two collections
-            if col1 is None or col2 is None:
-                raise ValueError(f"Failed to find two collections in {base_name} after import.")
-            
-            #Compare the two collections
-            differences = test_helpers.compare_collections(col1, col2)
+            #Compare the two files
+            line_diff, similarity = test_helpers.compare_files(output_path, good_file)
 
-            if len(differences) > 0:
+            if similarity < 0.98:
                 failed_count += 1
 
-            test_helpers.append_test_results(len(differences) == 0, 
-                100.0 if len(differences) == 0 else 0.0,
-                f"{len(differences)} differences: {differences}"
-            )
+            test_helpers.append_test_results(similarity >= 0.98, similarity, 
+                f"Imported {base_name} with similarity {similarity:.2f}. Different line count {line_diff}")
 
         except Exception as e:
             test_helpers.append_test_fail(f"Error importing {base_name}: {str(e)}")
             failed_count += 1
             continue
 
-    test_helpers.add_test_name("Import Test Summary")
+    test_helpers.add_test_name("Export Test Summary")
     test_helpers.append_test_results(
         failed_count == 0,
         100.0 if failed_count == 0 else (1 - (failed_count / total_count)) * 100,

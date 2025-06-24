@@ -8,6 +8,13 @@ import sys
 import os
 import numpy as np
 
+# Add the directory containing this script to sys.path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+import test_helpers
+
 #Function that compares each byte of two files to check how similar the files are. Returns a value 0-1 for 0% to 100% similarity.
 def compare_images(file1, file2):
     """
@@ -44,44 +51,41 @@ def compare_images(file1, file2):
         return 0
 
 def test(test_dir):
-    # Add the directory containing this script to sys.path
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    if script_dir not in sys.path:
-        sys.path.insert(0, script_dir)
-
-    import test_helpers
 
     error_messages = ""
 
-    # Sometimes Blender tries to change the name to .000 (or similar). This *seems* to be a bug in their unique name code since there's no actual conflict
-    # But that's not super important to the core plugin so we have this bandaid
-    for col in bpy.data.collections:
-        if col.name.startswith("BakeTest."):
-            col.name = "BakeTest"
-
-    #Set params
-    bpy.context.scene.xp_ext.low_poly_bake_resolution = 256
-    bpy.context.scene.xp_ext.low_poly_bake_ss_factor = 2
-
-    #File Paths
-    known_good_albedo = test_dir + "/BakeTest_LOD01.good.png"
-    known_good_normal = test_dir + "/BakeTest_LOD01_NML.good.png"
-    known_good_lit = test_dir + "/BakeTest_LOD01_LIT.good.png"
-
-    test_albedo = test_dir + "/BakeTest_LOD01.png"
-    test_normal = test_dir + "/BakeTest_LOD01_NML.png"
-    test_lit = test_dir + "/BakeTest_LOD01_LIT.png"
-
-    #Delete existing images
-    if os.path.exists(test_albedo):
-        os.remove(test_albedo)
-    if os.path.exists(test_normal):
-        os.remove(test_normal)
-    if os.path.exists(test_lit):
-        os.remove(test_lit)
+    test_helpers.add_test_category("Bake Tests")
 
     #Bake
     try:
+
+        # Sometimes Blender tries to change the name to .000 (or similar). This *seems* to be a bug in their unique name code since there's no actual conflict
+        # But that's not super important to the core plugin so we have this bandaid
+        for col in bpy.data.collections:
+            if col.name.startswith("BakeTest."):
+                col.name = "BakeTest"
+
+        #Set params
+        bpy.context.scene.xp_ext.low_poly_bake_resolution = 256
+        bpy.context.scene.xp_ext.low_poly_bake_ss_factor = 2
+
+        #File Paths
+        known_good_albedo = test_dir + "/BakeTest_LOD01.good.png"
+        known_good_normal = test_dir + "/BakeTest_LOD01_NML.good.png"
+        known_good_lit = test_dir + "/BakeTest_LOD01_LIT.good.png"
+
+        test_albedo = test_dir + "/BakeTest_LOD01.png"
+        test_normal = test_dir + "/BakeTest_LOD01_NML.png"
+        test_lit = test_dir + "/BakeTest_LOD01_LIT.png"
+
+        #Delete existing images
+        if os.path.exists(test_albedo):
+            os.remove(test_albedo)
+        if os.path.exists(test_normal):
+            os.remove(test_normal)
+        if os.path.exists(test_lit):
+            os.remove(test_lit)
+    
         bpy.ops.xp_ext.bake_low_poly()
     except Exception as e:
         error_messages += "Bake failed: " + str(e) + "\n"
@@ -107,28 +111,24 @@ def test(test_dir):
             os.remove(test_lit)
         os.rename(test_dir + "/BakeTest_LOD01.png", test_albedo)
         os.rename(test_dir + "/BakeTest_LOD01_NML.png", test_normal)
-        os.rename(test_dir + "/BakeTest_LOD01_LIT.png", test_lit)
-        
+        os.rename(test_dir + "/BakeTest_LOD01_LIT.png", test_lit)       
     except Exception as e:
         error_messages += "Image comparison failed: " + str(e) + "\n"
         return
 
     test_helpers.append_test_results(
-        "Bake Test Albedo",
         albedo_similarity > 0.98,
         albedo_similarity * 100,
         error_messages
     )
 
     test_helpers.append_test_results(
-        "Bake Test Normal",
         normal_similarity > 0.98,
         normal_similarity * 100,
         error_messages
     )
 
     test_helpers.append_test_results(
-        "Bake Test Lit",
         lit_similarity > 0.98,
         lit_similarity * 100,
         error_messages
