@@ -168,6 +168,7 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
         btn_add.spelling_index = len(wall.spellings)
         btn_add.level = "spelling"
         btn_add.add = True
+        btn_add.duplicate = False
 
 
     btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
