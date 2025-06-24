@@ -528,6 +528,9 @@ class MENU_mats(bpy.types.Panel):
 
             box.label(text="Decals:")
 
+            box.prop(xp_materials, "decal_modulator")
+            box.separator()
+
             if len(xp_materials.decals) == 0:
                 box.label(text="Change any XP Material setting to trigger an update to add the decals slots")
             

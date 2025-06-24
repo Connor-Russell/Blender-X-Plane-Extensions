@@ -798,7 +798,7 @@ def update_nodes(material):
             node_uv_decal_nml_1.location = (-4750, -750)
             node_uv_decal_nml_1.label = "UV Scale Nml 1"
             node_uv_decal_nml_1.operation = 'MULTIPLY'
-            node_uv_decal_nml_1.inputs[1].default_value = (xp_material_props.decals[2].nml_tile_ratio, xp_material_props.decals[2].nml_tile_ratio, xp_material_props.decals[2].nml_tile_ratio)
+            node_uv_decal_nml_1.inputs[1].default_value = (xp_material_props.decals[2].tile_ratio, xp_material_props.decals[2].tile_ratio, xp_material_props.decals[2].tile_ratio)
             material.node_tree.links.new(node_uv.outputs[0], node_uv_decal_nml_1.inputs[0])
 
             output_uv_decal_nml_1 = node_uv_decal_nml_1.outputs[0]
@@ -818,7 +818,7 @@ def update_nodes(material):
             node_uv_decal_nml_2.location = (-4750, -1250)
             node_uv_decal_nml_2.label = "UV Scale Nml 2"
             node_uv_decal_nml_2.operation = 'MULTIPLY'
-            node_uv_decal_nml_2.inputs[1].default_value = (xp_material_props.decals[3].nml_tile_ratio, xp_material_props.decals[3].nml_tile_ratio, xp_material_props.decals[3].nml_tile_ratio)
+            node_uv_decal_nml_2.inputs[1].default_value = (xp_material_props.decals[3].tile_ratio, xp_material_props.decals[3].tile_ratio, xp_material_props.decals[3].tile_ratio)
             material.node_tree.links.new(node_uv.outputs[0], node_uv_decal_nml_2.inputs[0])
 
             output_uv_decal_nml_2 = node_uv_decal_nml_2.outputs[0]
