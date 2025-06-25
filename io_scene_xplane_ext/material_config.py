@@ -757,7 +757,7 @@ def update_nodes(material):
                 xp_material_props.decals[0].strength2_constant, xp_material_props.decals[0].strength2_modulator)
 
         if image_decal_1_nml != None:
-            output_key_1_nml = create_decal_key_nodes(material, -4000, 6000, output_mod_r, node_alb, \
+            output_key_1_nml = create_decal_key_nodes(material, -4000, 4000, output_mod_r, node_alb, \
                 xp_material_props.decals[2].strength_key_red, xp_material_props.decals[2].strength_key_green, \
                 xp_material_props.decals[2].strength_key_blue, xp_material_props.decals[2].strength_key_alpha, \
                 xp_material_props.decals[2].strength_constant, xp_material_props.decals[2].strength_modulator)
@@ -774,7 +774,7 @@ def update_nodes(material):
                 xp_material_props.decals[1].strength2_constant, xp_material_props.decals[1].strength2_modulator)
             
         if image_decal_2_nml != None:
-            output_key_2_nml = create_decal_key_nodes(material, -4000, 6000, output_mod_r, node_alb, \
+            output_key_2_nml = create_decal_key_nodes(material, -4000, 1000, output_mod_g, node_alb, \
                 xp_material_props.decals[3].strength_key_red, xp_material_props.decals[3].strength_key_green, \
                 xp_material_props.decals[3].strength_key_blue, xp_material_props.decals[3].strength_key_alpha, \
                 xp_material_props.decals[3].strength_constant, xp_material_props.decals[3].strength_modulator)
