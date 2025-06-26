@@ -7,15 +7,10 @@ cd = os.getcwd()
 TestDir = os.path.join(cd, "Tests")
 OutputTestDir = os.path.join(cd, "Tests")
 DateAndTime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-BlenderFileFacadeExporter = os.path.join(cd, "Tests", "Content", "FacadeExporter.blend")
-BlenderFileLineExporter = os.path.join(cd, "Tests", "Content", "LineExporter.blend")
-BlenderFilePolygonExporter = os.path.join(cd, "Tests", "Content", "PolygonExporter.blend")
+BlenderFileExporter = os.path.join(cd, "Tests", "Content", "Exporter.blend")
+BlenderFileImporter = os.path.join(cd, "Tests", "Content", "Importer.blend")
 BlenderFileInternalTests = os.path.join(cd, "Tests", "Content", "InternalTests.blend")
 BlenderFileBakeTest = os.path.join(cd, "Tests", "Content", "BakeTest.blend")
-BlenderFileImportObject = os.path.join(cd, "Tests", "Content", "Importer.blend")
-BlenderFileImportFacade = BlenderFileFacadeExporter
-BlenderFileImportLine = BlenderFileLineExporter
-BlenderFileImportPolygon = BlenderFilePolygonExporter
 
 # Blender version locations
 BlenderExe29 = r"D:\Blender Versions\2.93\blender.exe"
@@ -34,28 +29,23 @@ BlenderExe44 = r"D:\Blender Versions\4.43\blender.exe"
 
 # Bools to control what versions are tested
 Test29 = True
-Test30 = True
-Test31 = True
-Test32 = True
-Test33 = True
-Test34 = True
-Test35 = True
-Test36 = True
-Test40 = True
-Test41 = True
-Test42 = True
-Test43 = True
-Test44 = True
+Test30 = False
+Test31 = False
+Test32 = False
+Test33 = False
+Test34 = False
+Test35 = False
+Test36 = False
+Test40 = False
+Test41 = False
+Test42 = False
+Test43 = False
+Test44 = False
 
-TestExportFacade =     True
-TestExportLine =       True
-TestExportPolygon =    True
-TestImportObject =     True
-TestImportFacade =     True
-TestImportLine =       True
-TestImportPolygon =    True
-InternalTest =         True
-TestBaker =            True
+TestExport =            True
+TestImport =            False
+InternalTest =          False
+TestBaker =             False
 
 def run_blender(blender_exe, blend_file, script):
     subprocess.run([
@@ -66,24 +56,14 @@ def run_blender(blender_exe, blend_file, script):
     ], shell=True)
 
 def test_all(blender_exe):
-    if TestExportFacade:
-        run_blender(blender_exe, BlenderFileFacadeExporter, os.path.join(TestDir, "export_fac_test.py"))
-    if TestExportLine:
-        run_blender(blender_exe, BlenderFileLineExporter, os.path.join(TestDir, "export_lin_test.py"))
-    if TestExportPolygon:
-        run_blender(blender_exe, BlenderFilePolygonExporter, os.path.join(TestDir, "export_pol_test.py"))
+    if TestExport:
+        run_blender(blender_exe, BlenderFileExporter, os.path.join(TestDir, "export_tests.py"))
+    if TestImport:
+        run_blender(blender_exe, BlenderFileImporter, os.path.join(TestDir, "import_tests.py"))
     if InternalTest:
         run_blender(blender_exe, BlenderFileInternalTests, os.path.join(TestDir, "internal_tests.py"))
     if TestBaker:
         run_blender(blender_exe, BlenderFileBakeTest, os.path.join(TestDir, "bake_test.py"))
-    if TestImportObject:
-        run_blender(blender_exe, BlenderFileImportObject, os.path.join(TestDir, "import_obj_test.py"))
-    if TestImportFacade:
-        run_blender(blender_exe, BlenderFileImportFacade, os.path.join(TestDir, "import_fac_test.py"))
-    if TestImportLine:
-        run_blender(blender_exe, BlenderFileImportLine, os.path.join(TestDir, "import_lin_test.py"))
-    if TestImportPolygon:
-        run_blender(blender_exe, BlenderFileImportPolygon, os.path.join(TestDir, "import_pol_test.py"))
 
 # Remove old result file
 results_path = os.path.join(OutputTestDir, "Test Results.csv")

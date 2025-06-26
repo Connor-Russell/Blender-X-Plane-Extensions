@@ -460,15 +460,14 @@ def append_test_results(b_did_pass, percentage, message):
     #Create the CSV file if it doesn't exist
     csv_file_path = script_path + os.sep + 'Test Results.csv'
     try:
-        with open(csv_file_path, 'x', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(['Test Name', 'Did Pass?', 'Percentage', 'Message'])  # Write header
+        with open(csv_file_path, 'x', newline='') as txtfile:
+            pass  # Create an empty file
     except FileExistsError:
         pass  # File already exists, we can append to it
 
     #Make all the text safe for csv
     str_b_did_pass = "PASS" if b_did_pass else "FAIL"
-    str_percentage = f"{percentage:.2f}" if percentage is not None else "N/A"
+    str_percentage = f"{percentage:.2f}%" if percentage is not None else "N/A"
     str_message = message.replace('\n', ';')  # Replace newlines to avoid CSV issues
     str_message = str_message.replace('\"', '\"\"')  # Replace quotes to avoid CSV issues
     str_message = f'"{str_message}"'  # Enclose in quotes to handle commas
@@ -478,7 +477,7 @@ def append_test_results(b_did_pass, percentage, message):
 
 def append_test_fail(message):
     """
-    Append a test failure message to the 'Test Failures.txt' file in the current Blender project directory.
+    Append a test failure message to the 'Test Results.csv' file in the current Blender project directory.
     Args:
         message (str): Failure message to append.
     """
@@ -486,7 +485,7 @@ def append_test_fail(message):
     script_path = os.path.dirname(os.path.abspath(__file__))
 
     #Create the text file if it doesn't exist
-    txt_file_path = script_path + os.sep + 'Test Failures.txt'
+    txt_file_path = script_path + os.sep + 'Test Results.csv'
     try:
         with open(txt_file_path, 'x') as txtfile:
             pass  # Create an empty file

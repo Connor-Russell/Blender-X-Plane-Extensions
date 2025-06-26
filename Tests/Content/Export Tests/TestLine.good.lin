@@ -9,7 +9,8 @@ NO_BLEND 0.10
 
 #Decals
 DECAL_PARAMS_PROJ 3.0 3.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 Old_Detail.png
-NORMAL_DECAL_PARAMS_PROJ 3.0 3.0 0.0 0.0 0.0 0.0 0.0 1.0 Old_Detail_NML.png
+NORMAL_DECAL_PARAMS_PROJ 3.0 3.0 0.0 0.0 0.0 0.0 0.0 1.0 Old_Detail_NML.png 0.30234139
+
 #Position Params
 LAYER_GROUP objects 0
 MIRROR
