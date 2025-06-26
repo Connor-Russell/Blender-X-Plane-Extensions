@@ -608,7 +608,8 @@ class facade:
             output += "LAYER_GROUP " + str(self.export_wall_layer_group) + " " + str(self.export_wall_layer_group_offset) + "\n"
 
             output += "\n"
-        
+        elif not self.do_wall_mesh:
+            output += "NO_WALL_MESH\n"
         #Roof shader
         if self.roof_material is not None and self.do_roof_mesh:
             output += "SHADER_ROOF\n"
@@ -658,7 +659,8 @@ class facade:
             #Hard
             if mat.surface_type != "NONE":
                 output += "ROOF_HARD concrete\n"
-
+        elif not self.do_roof_mesh:
+            output += "NO_ROOF_MESH\n"
         #Roof scale
         output += "ROOF_SCALE " + str(self.roof_scale_x) + " " + str(self.roof_scale_y) + "\n\n"
 
