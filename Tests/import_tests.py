@@ -37,6 +37,10 @@ def test(test_dir):
         return
     
     for import_file in import_files:
+        #Define the file name, and the parent folder
+        base_name = os.path.splitext(os.path.basename(import_file))[0]
+        parent_folder = os.path.dirname(import_file)
+
         test_helpers.add_test_name(base_name)
         total_count += 1
 
@@ -44,18 +48,14 @@ def test(test_dir):
             #Open the .blend file
             bpy.ops.wm.open_mainfile(filepath=import_file)
 
-            #Define the file name, and the parent folder
-            base_name = os.path.splitext(os.path.basename(import_file))[0]
-            parent_folder = os.path.dirname(import_file)
-
             #Get the first collection. Then we'll get the path of the asset to import from the collection name
             if len(bpy.data.collections) < 1:
                 raise ValueError("No collections found in the scene. Ensure the .blend file has a collection with the asset name.")
 
             col1 = None
             for col in bpy.data.collections:
-                col1 = col
-                break
+                if col.xp_fac.exportable or col.xp_pol.exportable or col.xp_lin.exportable or col.xp_agp.exportable or col.xplane.is_exportable_collection:
+                    col1 = col
 
             asset_import_path = os.path.join(parent_folder, col1.name)
             asset_extension = os.path.splitext(asset_import_path)[1].lower()
@@ -77,13 +77,14 @@ def test(test_dir):
             #Now we will get the two collections
             col1 = None
             col2 = None
-
+        
             for i, col in enumerate(bpy.data.collections):
-                if i == 0:
-                    col1 = col
-                elif i == 1:
-                    col2 = col
-                    break
+                if col.xp_fac.exportable or col.xp_pol.exportable or col.xp_lin.exportable or col.xp_agp.exportable or col.xplane.is_exportable_collection:
+                    if col1 is None:
+                        col1 = col
+                    elif col2 is None:
+                        col2 = col
+                        break
 
             #Make sure we have two collections
             if col1 is None or col2 is None:
@@ -95,9 +96,27 @@ def test(test_dir):
             if len(differences) > 0:
                 failed_count += 1
 
-            test_helpers.append_test_results(len(differences) == 0, 
+            #Define a map to hold the differences, that way we can summarize them
+            differences_map = {}
+            for diff in differences:
+                if diff.category not in differences_map:
+                    differences_map[diff.category] = []
+                differences_map[diff.category].append(diff.message)
+                print(f"Difference found in {base_name}: {diff.category} - {diff.message}")
+
+            #Define a summary string
+            differences_summary = "Differences: "
+            for diff_category in differences_map.keys():
+                differences_summary += f"{diff_category}: {len(differences_map[diff_category])} "
+
+            for diff_category in differences_map.keys():
+                differences_summary += f"\n{diff_category}: "
+                for message in differences_map[diff_category]:
+                    differences_summary += f"{message} "
+
+            test_helpers.append_test_results(len(differences) == 0,
                 100.0 if len(differences) == 0 else 0.0,
-                f"{len(differences)} differences: {differences}"
+                differences_summary
             )
 
         except Exception as e:

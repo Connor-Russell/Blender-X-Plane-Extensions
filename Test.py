@@ -43,9 +43,9 @@ Test43 = False
 Test44 = False
 
 TestExport =            True
-TestImport =            False
-InternalTest =          False
-TestBaker =             False
+TestImport =            True
+InternalTest =          True
+TestBaker =             True
 
 def run_blender(blender_exe, blend_file, script):
     subprocess.run([

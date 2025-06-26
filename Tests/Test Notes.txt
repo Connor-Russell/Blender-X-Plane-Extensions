@@ -1,12 +1,31 @@
 Versions:
-Each test will be run on all desired versions of Blender (see Test.ps1). Every test will be run on one version, then the next version, etc. So results are grouped by version.
+Each test will be run on all desired versions of Blender (see Test.py)
 
-Exporter:
-This tests whether the file exports the same.
+Import Tests:
+These tests test importing an asset and compare it to a previously imported asset that has been manually verified to be imported correctly
+These files must in Tests/Content/Import Tests/, and the .blend name must have a single collection who's name matches that of an asset in the same directory
+That asset will then be imported, and all geometry, objects, and properties will be compared to the collection that was already imported.
+Any differences will cause the test to fail.
+Importer.blend must exist in Tests/Content. This is just to open so we get the base file path to work with
 
-In the Tests WorkingDir there should be a file named Exporter.blend and Exporter.good.fac.
+Export Tests:
+These tests test exporting an asset, the exported file is then compared to a known good file that was exported and manually verified to be correct
+These files should be in Tests/Content/Export Tests. Like import tests, they should have a single collection who's name matches that of the asset to export
+For example,  a line test file might have a collection MyLine.lin. There should then in the same folder be a file MyLine.good.lin which the exported file will be compared to. 
+The exported file would be named MyLine.<blender version>.lin
+Exporter.blend must exist in Tests/Content. This is just to open so we get the base file path to work with
 
-Exporter.blend should be configured to export a facade by the name of Exporter.fac into the same dir. This Exporter.fac is then compared with the Exporter.good.fac which should be verified (upon setup of this test) to be the correct output from that file.
+Internal Tests:
+This just calls the internal test operator. These do provide some usage but should really be rewritten to be more comprehensive.
 
-Output:
-Output will be appended to Test Results.csv. It's a simple CSV with two columns, the test name, and the result.
+Bake Test:
+This bakes opens Test/Content/BakeTest.blend and runs the included high poly to low poly baker. Then, the test compares the
+that have been produced to those saved in Tests/Content (BakeTest_LOD<suffix>.good.png). Please note the X-Plane Extensions preferences
+must specify the following suffixes (these are default):
+Albedo: None
+Combined Normal: _NML
+Lit: _LIT
+LOD Bake: _LOD
+This test also depends on all the textures used by BakeTest to be present. Currently these are Alb.png, Lit.png, and Nml.png
+
+Results will be written to Tests/Test Results.csv in the form of <blender version>\n<test name>,<pass/fail>,<percentage similarity if applicable>,<messages>

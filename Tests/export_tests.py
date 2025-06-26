@@ -47,7 +47,6 @@ def test(test_dir):
         try:
             #Open the .blend file
             bpy.ops.wm.open_mainfile(filepath=import_file)
-            print(f"Opened {import_file}")
 
             #Get the first collection. Then we'll get the path of the asset to import from the collection name
             if len(bpy.data.collections) < 1:
@@ -55,8 +54,7 @@ def test(test_dir):
 
             col1 = None
             for col in bpy.data.collections:
-                print(col.name)
-                if col.name.endswith(".fac") or col.name.endswith(".agp") or col.name.endswith(".pol") or col.name.endswith(".lin"):
+                if col.xp_fac.exportable or col.xp_pol.exportable or col.xp_lin.exportable or col.xp_agp.exportable:
                     col1 = col
 
             if col1 is None:

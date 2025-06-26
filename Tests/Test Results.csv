@@ -1,8 +1,23 @@
-2025-06-26 14-16-03
+2025-06-26 16-48-58
 Test Name,Result
 2.9 Tests
-Export Tests Tests:
-FacadeExporter:,PASS,99.98,"Different line count 0"
-LineExporter:,PASS,100.00,"Different line count 0"
-PolygonExporter:,PASS,100.00,"Different line count 0"
-Export Test Summary:,PASS,100.00,"Total tests: 3, Failed: 0"
+Export Tests:
+FacadeExporter:,PASS,99.98%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""

@@ -12,6 +12,11 @@ import mathutils
 import math
 import os
 
+class difference:
+    def __init__(self, category="Unspecified", message="Unspecified"):
+        self.category = category
+        self.message = message
+
 #Simple container to hold an X-Plane Vertex
 class xp_vertex:
     """
@@ -253,37 +258,33 @@ def compare_files(file1, file2):
     Returns:
         tuple: (line_count_diff, similarity) where similarity is a float between 0 and 1.
     """
-    b_pass = True
     chr_same = 0
     chr_total = 0
     similarity = 0.0
     line_count_diff = 0
     
-    try:
-        with open(file1, 'r') as new, open(file2, 'r') as good:
-            f_new = new.read()
-            f_good = good.read()
+    with open(file1, 'r') as new, open(file2, 'r') as good:
+        f_new = new.read()
+        f_good = good.read()
 
-            #Iterate over each line in both file. Then compare the characters in each line one by one
-            new_lines = f_new.splitlines()
-            good_lines = f_good.splitlines()
+        #Iterate over each line in both file. Then compare the characters in each line one by one
+        new_lines = f_new.splitlines()
+        good_lines = f_good.splitlines()
 
-            for i in range(min(len(new_lines), len(good_lines))):
-                new_line_len = len(new_lines[i])
-                good_line_len = len(good_lines[i])
+        for i in range(min(len(new_lines), len(good_lines))):
+            new_line_len = len(new_lines[i])
+            good_line_len = len(good_lines[i])
 
-                for j in range(min(new_line_len, good_line_len)):
-                    chr_total += 1
-                    if new_lines[i][j] == good_lines[i][j]:
-                        chr_same += 1
-                
-                chr_total += abs(new_line_len - good_line_len)
-                
-        
-        similarity = chr_same / chr_total
-        line_count_diff = abs(len(new_lines) - len(good_lines))
-    except:
-        pass
+            for j in range(min(new_line_len, good_line_len)):
+                chr_total += 1
+                if new_lines[i][j] == good_lines[i][j]:
+                    chr_same += 1
+            
+            chr_total += abs(new_line_len - good_line_len)
+            
+    
+    similarity = chr_same / chr_total
+    line_count_diff = abs(len(new_lines) - len(good_lines))
 
     return line_count_diff, similarity
 
@@ -308,7 +309,7 @@ def compare_property_groups(pg1, pg2, path=""):
 
         if prop.type == 'COLLECTION':
             if len(val1) != len(val2):
-                diffs.append(f"{prop_path} (collection length {len(val1)} != {len(val2)})")
+                diffs.append(difference("Property", f"{prop_path} (collection length {len(val1)} != {len(val2)})"))
                 continue
             for i, (item1, item2) in enumerate(zip(val1, val2)):
                 if hasattr(item1, "bl_rna") and hasattr(item2, "bl_rna"):
@@ -316,23 +317,27 @@ def compare_property_groups(pg1, pg2, path=""):
                     diffs.extend(subdiffs)
                 else:
                     if item1 != item2:
-                        diffs.append(f"{prop_path}[{i}] (value {item1} != {item2})")
+                        diffs.append(difference("Property", f"{prop_path}[{i}] (value {item1} != {item2})"))
 
         elif prop.type == 'POINTER':
             if hasattr(val1, "bl_rna") and hasattr(val2, "bl_rna"):
                 subdiffs = compare_property_groups(val1, val2, prop_path)
                 diffs.extend(subdiffs)
-            else:
-                if val1 != val2:
-                    diffs.append(f"{prop_path} (pointer value {val1} != {val2})")
 
         else:
             if isinstance(val1, bpy.types.bpy_prop_array) or isinstance(val2, bpy.types.bpy_prop_array):
-                if not tuple(val1) == tuple(val2):
-                    diffs.append(f"{prop_path} (array value {tuple(val1)} != {tuple(val2)})")
+                #Check if the length is the same
+                if len(val1) != len(val2):
+                    diffs.append(difference("Property", f"{prop_path} (array length {len(val1)} != {len(val2)})"))
+                    continue
+                
+                #Compare each element in the array
+                for i in range(len(val1)):
+                    if val1[i] != val2[i]:
+                        diffs.append(difference("Property", f"{prop_path}[{i}] (value {val1[i]} != {val2[i]})"))
                 
             elif val1 != val2:
-                diffs.append(f"{prop_path} (value {val1} != {val2})")
+                diffs.append(difference("Property", f"{prop_path} (value {val1} != {val2})"))
 
     return diffs
 
@@ -348,13 +353,13 @@ def compare_objects(obj1, obj2):
 
     #Compare the location, rotation, scale and matrix world are close
     if vectors_close(obj1.location, obj2.location) is False:
-        differences.append((f"{obj1.name}, {obj2.name}, location difference: {obj1.location} vs {obj2.location}"))
+        differences.append((difference("Object Transform", f"{obj1.name}, {obj2.name}, location difference: {obj1.location} vs {obj2.location}")))
     if euler_close(obj1.rotation_euler, obj2.rotation_euler) is False:
-        differences.append((f"{obj1.name}, {obj2.name}, rotation difference: {obj1.rotation_euler} vs {obj2.rotation_euler}"))
+        differences.append((difference("Object Transform", f"{obj1.name}, {obj2.name}, rotation difference: {obj1.rotation_euler} vs {obj2.rotation_euler}")))
     if vectors_close(obj1.scale, obj2.scale) is False:
-        differences.append((f"{obj1.name}, {obj2.name}, scale difference: {obj1.scale} vs {obj2.scale}"))
+        differences.append((difference("Object Transform", f"{obj1.name}, {obj2.name}, scale difference: {obj1.scale} vs {obj2.scale}")))
     if matrix_close(obj1.matrix_world, obj2.matrix_world) is False:
-        differences.append((f"{obj1.name}, {obj2.name}, matrix world difference: {obj1.matrix_world} vs {obj2.matrix_world}"))
+        differences.append((difference("Object Transform", f"{obj1.name}, {obj2.name}, matrix world difference: {obj1.matrix_world} vs {obj2.matrix_world}")))
 
     #Now we need to compare the various property groups we care about
     differences.extend(compare_property_groups(obj1.xplane, obj2.xplane))
@@ -368,44 +373,76 @@ def compare_objects(obj1, obj2):
         dc1 = get_draw_call_from_obj(obj1)
         dc2 = get_draw_call_from_obj(obj2)
         if dc1[1] != dc2[1]:
-            differences.append((f"{obj1.name}, {obj2.name}, geometry indices count difference: {len(dc1[1])} vs {len(dc2[1])}"))
+            differences.append(difference("Object Geometry", f"{obj1.name}, {obj2.name}, geometry indices count difference: {len(dc1[1])} vs {len(dc2[1])}"))
         if len(dc1[0]) != len(dc2[0]):
-            differences.append((f"{obj1.name}, {obj2.name}, geometry vertices count difference: {len(dc1[0])} vs {len(dc2[0])}"))
+            differences.append(difference("Object Geometry", f"{obj1.name}, {obj2.name}, geometry vertices count difference: {len(dc1[0])} vs {len(dc2[0])}"))
         else:
             #Now we compare the vertices
             for i in range(len(dc1[0])):
                 v1 = dc1[0][i]
                 v2 = dc2[0][i]
                 if not v1.almost_equal(v2):
-                    differences.append((f"{obj1.name}, {obj2.name}, vertex {i} differs: {v1} vs {v2}"))
+                    differences.append(difference("Object Geometry", f"{obj1.name}, {obj2.name}, vertex {i} differs: {v1} vs {v2}"))
 
             #Now we compare the indices
             for i in range(len(dc1[1])):
                 if dc1[1][i] != dc2[1][i]:
-                    differences.append((f"{obj1.name}, {obj2.name}, index {i} differs: {dc1[1][i]} vs {dc2[1][i]}"))
+                    differences.append(difference("Object Geometry", f"{obj1.name}, {obj2.name}, index {i} differs: {dc1[1][i]} vs {dc2[1][i]}"))
     
         #Now we compare the materials
         mats1 = obj1.data.materials
         mats2 = obj2.data.materials
         if len(mats1) != len(mats2):
-            return False, "Different number of material slots"
-        for i, (mat1, mat2) in enumerate(zip(mats1, mats2)):
-            if not mat1 or not mat2:
-                differences.append((f"{obj1.name}, {obj2.name}, material slot {i} is empty"))
-                continue
-            differences.extend(compare_property_groups(mat1.xp_materials, mat2.xp_materials))
+            differences.append(difference("Object Materials", f"{obj1.name}, {obj2.name}, material slots count difference: {len(mats1)} vs {len(mats2)}"))
+        else:
+            for i, (mat1, mat2) in enumerate(zip(mats1, mats2)):
+                if not mat1 or not mat2:
+                    differences.append(difference("Object Materials", f"{obj1.name}, {obj2.name}, material slot {i} is empty"))
+                    continue
+                differences.extend(compare_property_groups(mat1.xp_materials, mat2.xp_materials))
     elif obj1.type != obj2.type:
-        differences.append((f"{obj1.name}, {obj2.name}, object type difference: {obj1.type} vs {obj2.type}"))
+        differences.append(difference("Object Type", f"{obj1.name}, {obj2.name}, object type difference: {obj1.type} vs {obj2.type}"))
+
+    #Next we will compare the animation data
+    # Check if both have actions
+    act1 = getattr(obj1.animation_data, "action", None)
+    act2 = getattr(obj2.animation_data, "action", None)
+    if (act1 is None) != (act2 is None):
+        differences.append(difference("Object Animation", "One object has animation action, the other does not."))
+
+    #If both have actions we will compare the fcurves
+    if act1 is not None and act2 is not None:
+        max_anim_diff = 0.001
+
+        # Compare number of fcurves
+        if len(act1.fcurves) != len(act2.fcurves):
+            differences.append(difference("Object Animation", f"Different number of fcurves: {len(act1.fcurves)} vs {len(act2.fcurves)}"))
+            return differences
+
+        # Compare each fcurve
+        for fc1, fc2 in zip(act1.fcurves, act2.fcurves):
+            if fc1.data_path != fc2.data_path or fc1.array_index != fc2.array_index:
+                differences.append(difference("Object Animation", f"Fcurve mismatch: {fc1.data_path}[{fc1.array_index}] vs {fc2.data_path}[{fc2.array_index}]"))
+                continue
+            if len(fc1.keyframe_points) != len(fc2.keyframe_points):
+                differences.append(difference("Object Animation", f"Different number of keyframes in {fc1.data_path}[{fc1.array_index}]: {len(fc1.keyframe_points)} vs {len(fc2.keyframe_points)}"))
+                continue
+            for i, (k1, k2) in enumerate(zip(fc1.keyframe_points, fc2.keyframe_points)):
+                if abs(k1.co.x - k2.co.x) > max_anim_diff or abs(k1.co.y - k2.co.y) > max_anim_diff:
+                    differences.append(difference("Object Animation", f"Keyframe {i} in {fc1.data_path}[{fc1.array_index}] differs: "
+                        f"frame {k1.co.x} vs {k2.co.x}, value {k1.co.y} vs {k2.co.y}"
+                    ))
+
 
     #Finally, we will compare the children
     children1 = obj1.children
     children2 = obj2.children
     if len(children1) != len(children2):
-        differences.append((f"{obj1.name}, {obj2.name}, children count difference: {len(children1)} vs {len(children2)}"))
+        differences.append(difference("Object Children", f"{obj1.name}, {obj2.name}, children count difference: {len(children1)} vs {len(children2)}"))
     else:
         for i, (child1, child2) in enumerate(zip(children1, children2)):
             if not child1 or not child2:
-                differences.append((f"{obj1.name}, {obj2.name}, child slot {i} is empty"))
+                differences.append(difference("Object Children", f"{obj1.name}, {obj2.name}, child slot {i} is empty"))
                 continue
             differences.extend(compare_objects(child1, child2))
 
@@ -430,8 +467,12 @@ def compare_collections(col1, col2):
         objs2 = col2.objects
 
         if len(objs1) != len(objs2):
-            differences.append((f"{col1.name}, {col2.name}, object count difference: {len(objs1)} vs {len(objs2)}"))
+            differences.append(difference("Collection", f"{col1.name}, {col2.name}, object count difference: {len(objs1)} vs {len(objs2)}"))
             return differences
+        
+        #Sort both object lists by name to ensure consistent comparison
+        objs1 = sorted(objs1, key=lambda obj: obj.name)
+        objs2 = sorted(objs2, key=lambda obj: obj.name)
 
         for i in range(min(len(objs1), len(objs2))):
             obj1 = objs1[i]
@@ -440,7 +481,29 @@ def compare_collections(col1, col2):
             if obj_diffs:
                 differences.extend(obj_diffs)
     except Exception as e:
-        differences.append((f"Error comparing objects: {str(e)}"))
+        differences.append(difference("Error", f"Error comparing objects: {str(e)}"))
+
+    #Now compare child collections
+    try:
+        child_collections1 = col1.children
+        child_collections2 = col2.children
+        if len(child_collections1) != len(child_collections2):
+            differences.append(difference("Collection", f"{col1.name}, {col2.name}, child collection count difference: {len(child_collections1)} vs {len(child_collections2)}"))
+            return differences
+        
+        #Sort both child collections by name to ensure consistent comparison
+        child_collections1 = sorted(child_collections1, key=lambda col: col.name)
+        child_collections2 = sorted(child_collections2, key=lambda col: col.name)
+
+        for i in range(min(len(child_collections1), len(child_collections2))):
+            child_col1 = child_collections1[i]
+            child_col2 = child_collections2[i]
+            
+            col_diffs = compare_collections(child_col1, child_col2)
+            if col_diffs:
+                differences.extend(col_diffs)
+    except Exception as e:
+        differences.append(difference("Error", f"Error comparing child collections: {str(e)}"))
 
     #Return the results     
     return differences
@@ -536,4 +599,4 @@ def add_test_category(test_category):
 
     #Open the CSV file in append mode and write the test name: in the next cell
     with open(txt_file_path, 'a') as txtfile:
-        txtfile.write(test_category + ' Tests:\n')
+        txtfile.write(test_category + ':\n')

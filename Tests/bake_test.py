@@ -54,6 +54,10 @@ def test(test_dir):
 
     error_messages = ""
 
+    albedo_similarity = 0
+    normal_similarity = 0
+    lit_similarity = 0
+
     test_helpers.add_test_category("Bake Tests")
 
     #Bake
@@ -70,13 +74,13 @@ def test(test_dir):
         bpy.context.scene.xp_ext.low_poly_bake_ss_factor = 2
 
         #File Paths
-        known_good_albedo = test_dir + "/BakeTest_LOD01.good.png"
-        known_good_normal = test_dir + "/BakeTest_LOD01_NML.good.png"
-        known_good_lit = test_dir + "/BakeTest_LOD01_LIT.good.png"
+        known_good_albedo = test_dir + "/BakeTest_LOD.good.png"
+        known_good_normal = test_dir + "/BakeTest_LOD_NML.good.png"
+        known_good_lit = test_dir + "/BakeTest_LOD_LIT.good.png"
 
-        test_albedo = test_dir + "/BakeTest_LOD01.png"
-        test_normal = test_dir + "/BakeTest_LOD01_NML.png"
-        test_lit = test_dir + "/BakeTest_LOD01_LIT.png"
+        test_albedo = test_dir + "/BakeTest_LOD.png"
+        test_normal = test_dir + "/BakeTest_LOD_NML.png"
+        test_lit = test_dir + "/BakeTest_LOD_LIT.png"
 
         #Delete existing images
         if os.path.exists(test_albedo):
@@ -89,7 +93,6 @@ def test(test_dir):
         bpy.ops.xp_ext.bake_low_poly()
     except Exception as e:
         error_messages += "Bake failed: " + str(e) + "\n"
-        return
 
     #Compare the images
     try:
@@ -109,25 +112,24 @@ def test(test_dir):
             os.remove(test_normal)
         if os.path.exists(test_lit):
             os.remove(test_lit)
-        os.rename(test_dir + "/BakeTest_LOD01.png", test_albedo)
-        os.rename(test_dir + "/BakeTest_LOD01_NML.png", test_normal)
-        os.rename(test_dir + "/BakeTest_LOD01_LIT.png", test_lit)       
     except Exception as e:
         error_messages += "Image comparison failed: " + str(e) + "\n"
-        return
 
+    test_helpers.add_test_name("Bake Test Albedo")
     test_helpers.append_test_results(
         albedo_similarity > 0.98,
         albedo_similarity * 100,
         error_messages
     )
 
+    test_helpers.add_test_name("Bake Test Normal")
     test_helpers.append_test_results(
         normal_similarity > 0.98,
         normal_similarity * 100,
         error_messages
     )
 
+    test_helpers.add_test_name("Bake Test Lit")
     test_helpers.append_test_results(
         lit_similarity > 0.98,
         lit_similarity * 100,
