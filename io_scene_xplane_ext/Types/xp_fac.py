@@ -581,7 +581,7 @@ class facade:
             if mat.lit_texture != "":
                 output += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(mat.lit_texture), output_folder) + "\n"
             if mat.normal_texture != "":
-                output += "TEXTURE_NORMAL " + os.path.relpath(file_utils.rel_to_abs(mat.normal_texture), output_folder)+ "\n"
+                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.rel_to_abs(mat.normal_texture), output_folder)+ "\n"
             if mat.decal_modulator != "":
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
 
