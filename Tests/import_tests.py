@@ -137,4 +137,7 @@ if __name__ == "__main__":
 
     test_dir = os.path.dirname(bpy.data.filepath)
 
-    test(test_dir)
+    try:
+        test(test_dir)
+    except Exception as e:
+        print("Fatal error in import tests: " + str(e))

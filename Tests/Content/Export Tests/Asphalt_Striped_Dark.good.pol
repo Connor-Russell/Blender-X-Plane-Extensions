@@ -1,0 +1,19 @@
+A
+850
+DRAPED_POLYGON
+
+#Materials
+TEXTURE Asphalt_Striped_Dark.png
+TEXTURE_NORMAL 1	Asphalt_Striped_NML.png
+WEATHER Asphalt_Striped_Weather.png
+NO_BLEND 0.00
+
+#Decals
+DECAL_PARAMS 8.0 0.5 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 ..\Asphalt_Detail.png
+NORMAL_DECAL_PARAMS 8.0 0.0 0.0 0.0 0.0 1.0 0.0 ..\Asphalt_Detail_NML.png 0.30234139
+
+LAYER_GROUP runways 0
+SCALE 30 30
+SURFACE ASPHALT
+
+#Subtextures

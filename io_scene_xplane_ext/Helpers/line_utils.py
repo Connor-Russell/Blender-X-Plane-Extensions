@@ -9,6 +9,7 @@ import bmesh # type: ignore
 
 from ..Types import xp_lin # type: ignore
 from . import geometery_utils
+from . import log_utils
 
 class lin_vertex:
     """
@@ -196,22 +197,27 @@ def get_scale_from_layer(in_object):
     if len(in_object.data.materials) == 0:
         return actual_width, actual_width
     
-    #If there is a material, we will get the texture from the material
-    mat_texture = in_object.data.materials[0].node_tree.nodes.get("Image Texture")
+    try:
+        #If there is a material, we will get the texture from the material
+        mat_texture = in_object.data.materials[0].node_tree.nodes.get("Image Texture")
 
-    #Get the X and Y dimensions
-    if mat_texture is None:
+        #Get the X and Y dimensions
+        if mat_texture is None:
+            
+            #Throw an error if there is no texture
+            raise Exception(f"Error: No texture found on object { in_object.name }! Please configure material with my X-Plane Material Plugin!")
+
+            return actual_width, actual_width
         
-        #Throw an error if there is no texture
-        raise Exception(f"Error: No texture found on object { in_object.name }! Please configure material with my X-Plane Material Plugin!")
+        x_dim = mat_texture.image.size[0]
+        y_dim = mat_texture.image.size[1]
 
-        return None
-    
-    x_dim = mat_texture.image.size[0]
-    y_dim = mat_texture.image.size[1]
-
-    #Calculate the height based on the ratio
-    y_scale = actual_width * (y_dim / x_dim)
+        #Calculate the height based on the ratio
+        y_scale = actual_width * (y_dim / x_dim)
+    except Exception as e:
+        log_utils.warning(f"Error getting texture dimensions for {in_object.name}, assuming square texture: {e}")
+        y_scale = actual_width  # If we can't get the texture dimensions, assume it's square
+        pass
 
     return actual_width, y_scale
 

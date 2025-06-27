@@ -74,7 +74,7 @@ except FileNotFoundError:
 
 # Create new results file
 with open(results_path, "w", encoding="utf-8") as f:
-    f.write(f"{DateAndTime}\nTest Name,Result\n")
+    f.write(f"{DateAndTime}\nTest Name,Result,Percentage,Message\n")
 
 # Run the tests for each version
 def add_result_header(header):

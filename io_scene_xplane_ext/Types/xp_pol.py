@@ -361,7 +361,7 @@ class polygon():
     def to_scene(self):
         log_utils.new_section(f"Creating .pol collection {self.name}")
 
-        in_name = self.name.split(".")[0]
+        in_name = self.name
 
         # Define a new collection with the same name as the file
         new_collection = bpy.data.collections.new(name=in_name)

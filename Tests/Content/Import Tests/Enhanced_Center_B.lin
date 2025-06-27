@@ -1,0 +1,29 @@
+A
+850
+LINE_PAINT
+
+#Textures
+TEXTURE Markings_Atlas.png
+TEXTURE_NORMAL 1.0 Markings_Atlas_NML.png
+
+#Weather
+WEATHER_TRANSPARENT
+
+#Detail decals (i.e. paint, or pavement if this is just a spray painted line)
+DECAL_PARAMS	14 0	0	0	0	0	0	1	0	0	0	0	0	0	../Paint_Details.png
+NORMAL_DECAL_PARAMS	14 0	0	0	0	0	1	../Paint_Details_NML.png	0.30234139
+
+#Surface decals (i.e. alpha modulating wear, albedo modulating grunge, normal cracks, etc)
+
+#General config
+LOD 3000
+TEX_WIDTH 8192
+TEX_HEIGHT 4096
+SCALE 72 36
+LAYER_GROUP markings 2
+NO_BLEND 0.25
+MIRROR
+
+#Layers
+S_OFFSET 0 1308 1434 1559
+S_OFFSET 1 4528 4636 4745

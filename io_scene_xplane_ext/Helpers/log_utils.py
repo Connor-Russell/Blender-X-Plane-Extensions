@@ -109,7 +109,13 @@ def display_messages():
         def draw(self, context):
             self.layout.label(text=message)
 
-        bpy.context.window_manager.popup_menu(draw, title = "Warnings/Errors Occured:", icon = 'ERROR')
+        try:
+            if not bpy.app.background and bpy.context.window is not None and bpy.context.area is not None:
+                bpy.context.window_manager.popup_menu(draw, title = "Warnings/Errors Occured:", icon='ERROR')
+            else:
+                print("Popup not displayed: Blender is running in background mode or no active window/area. Message is: " + message)
+        except Exception as e:
+            print(f"Error displaying popup: {e}")
     
     warning_count = 0
     error_count = 0
