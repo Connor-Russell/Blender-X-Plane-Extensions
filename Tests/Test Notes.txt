@@ -12,7 +12,7 @@ Export Tests:
 These tests test exporting an asset, the exported file is then compared to a known good file that was exported and manually verified to be correct
 These files should be in Tests/Content/Export Tests. Like import tests, they should have a single collection who's name matches that of the asset to export
 For example,  a line test file might have a collection MyLine.lin. There should then in the same folder be a file MyLine.good.lin which the exported file will be compared to. 
-The exported file would be named MyLine.<blender version>.lin
+The exported file would be named MyLine.test_result.<blender version>.lin
 Exporter.blend must exist in Tests/Content. This is just to open so we get the base file path to work with
 
 Internal Tests:

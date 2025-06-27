@@ -29,18 +29,18 @@ BlenderExe44 = r"D:\Blender Versions\4.43\blender.exe"
 
 # Bools to control what versions are tested
 Test29 = True
-Test30 = False
-Test31 = False
-Test32 = False
-Test33 = False
-Test34 = False
-Test35 = False
-Test36 = False
-Test40 = False
-Test41 = False
-Test42 = False
-Test43 = False
-Test44 = False
+Test30 = True
+Test31 = True
+Test32 = True
+Test33 = True
+Test34 = True
+Test35 = True
+Test36 = True
+Test40 = True
+Test41 = True
+Test42 = True
+Test43 = True
+Test44 = True
 
 TestExport =            True
 TestImport =            True

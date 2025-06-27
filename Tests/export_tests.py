@@ -68,9 +68,9 @@ def test(test_dir):
             col_name_base = col_name_split[0]  # Get the name from the collection name
             col_name_ext = col_name_split[1]  # Get the extension from the collection name
 
-
-            output_path = os.path.join(parent_folder, f"{col_name_base}.{bpy.app.version_string}.{col_name_ext}")
+            output_path = os.path.join(parent_folder, f"{col_name_base}.test_result.{bpy.app.version_string}.{col_name_ext}")
             output_path_name = os.path.basename(output_path)
+            print(output_path_name)
 
             #Set the export path
             col.xp_fac.name = output_path_name
@@ -78,18 +78,23 @@ def test(test_dir):
             col.xp_lin.name = output_path_name
             col.xp_agp.name = output_path_name
 
-            #Define the "good" file to compare to
-            good_file = os.path.join(test_dir, relative_test_dir, f"{col_name_base}.good.{col_name_ext}")
-            if not os.path.exists(good_file):
-                raise FileNotFoundError(f"Good file not found: {good_file}. Ensure the test directory contains the expected good files.")
-            if not os.path.exists(output_path):
-                raise FileNotFoundError(f"Output file was not created: {output_path}")
+            print(col.xp_fac.name)
+            print(col.xp_pol.name)
+            print(col.xp_lin.name)
+            print(col.xp_agp.name)
 
             #Call the export operators. We'll just call them all, those that aren't applicable will simply do nothing
             bpy.ops.xp_ext.export_lines()
             bpy.ops.xp_ext.export_polygons()
             bpy.ops.xp_ext.export_facades()
             bpy.ops.xp_ext.export_agps()
+
+            #Define the "good" file to compare to
+            good_file = os.path.join(test_dir, relative_test_dir, f"{col_name_base}.good.{col_name_ext}")
+            if not os.path.exists(good_file):
+                raise FileNotFoundError(f"Good file not found: {good_file}. Ensure the test directory contains the expected good files.")
+            if not os.path.exists(output_path):
+                raise FileNotFoundError(f"Output file was not created: {output_path}")
 
             #Compare the two files
             line_diff, similarity = test_helpers.compare_files(output_path, good_file)
@@ -101,8 +106,8 @@ def test(test_dir):
                 f"Different line count {line_diff}")
 
         except Exception as e:
-            print(f"Error importing {base_name}: {str(e)}")
-            test_helpers.append_test_fail(f"Error importing {base_name}: {str(e)}")
+            print(f"Error exporting {base_name}: {str(e)}")
+            test_helpers.append_test_fail(f"Error exporting {base_name}: {str(e)}")
             failed_count += 1
             continue
 

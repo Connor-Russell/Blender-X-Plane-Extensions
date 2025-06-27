@@ -1,8 +1,260 @@
-2025-06-26 16-48-58
+2025-06-26 17-23-25
 Test Name,Result
 2.9 Tests
 Export Tests:
 FacadeExporter:,PASS,99.98%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+3.0 Tests
+Export Tests:
+FacadeExporter:,PASS,99.98%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+3.1 Tests
+Export Tests:
+FacadeExporter:,PASS,99.98%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+3.2 Tests
+Export Tests:
+FacadeExporter:,PASS,99.98%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+3.3 Tests
+Export Tests:
+FacadeExporter:,PASS,99.98%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+3.4 Tests
+Export Tests:
+FacadeExporter:,PASS,99.98%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+3.5 Tests
+Export Tests:
+FacadeExporter:,PASS,99.98%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+3.6 Tests
+Export Tests:
+FacadeExporter:,PASS,99.93%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,FAIL,0.00%,"Differences: Object Geometry: 42 ;Object Geometry: TRIS 14271 5493.001, TRIS 14271 5493, vertex 894 differs: xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2728, 0.6575)) vs xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(0.7119, 0.1200, -0.6919), uv=(0.2728, 0.6575)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 895 differs: xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6608)) vs xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(-0.6553, -0.7203, 0.2274), uv=(0.2716, 0.6608)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 896 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.6293, 0.0000, -0.7772), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.5410, 0.5377, -0.6467), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 897 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(0.4980, 0.6098, -0.6166), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 898 differs: xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2716, 0.6686)) vs xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(0.4119, -0.6862, 0.5995), uv=(0.2716, 0.6686)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 899 differs: xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6725)) vs xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(0.5141, 0.8059, -0.2936), uv=(0.2716, 0.6725)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 894 differs: xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2728, 0.6575)) vs xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(0.9945, -0.0000, 0.1045), uv=(0.2728, 0.6575)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 895 differs: xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6608)) vs xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(0.9945, -0.0001, 0.1045), uv=(0.2716, 0.6608)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 896 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(0.9945, -0.0001, 0.1045), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 897 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(0.9945, -0.0000, 0.1045), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 898 differs: xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(-0.6293, 0.0000, -0.7772), uv=(0.2716, 0.6686)) vs xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(0.9945, -0.0000, 0.1045), uv=(0.2716, 0.6686)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 899 differs: xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6725)) vs xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(0.9945, -0.0000, 0.1045), uv=(0.2716, 0.6725)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 894 differs: xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(-0.6293, 0.0000, -0.7772), uv=(0.2728, 0.6575)) vs xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(0.0254, 0.9701, -0.2412), uv=(0.2728, 0.6575)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 895 differs: xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6608)) vs xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6608)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 896 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.2832, 0.9586, -0.0298), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 897 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.3083, 0.9036, 0.2976), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 898 differs: xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2716, 0.6686)) vs xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6686)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 899 differs: xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6725)) vs xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.9945, 0.0000, -0.1045), uv=(0.2716, 0.6725)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 894 differs: xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(-0.6293, 0.0000, -0.7772), uv=(0.2728, 0.6575)) vs xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(0.0254, 0.9701, -0.2412), uv=(0.2728, 0.6575)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 895 differs: xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6608)) vs xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6608)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 896 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.2832, 0.9586, -0.0298), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 897 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.3083, 0.9036, 0.2976), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 898 differs: xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2716, 0.6686)) vs xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6686)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 899 differs: xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6725)) vs xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.9945, 0.0000, -0.1045), uv=(0.2716, 0.6725)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 894 differs: xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2728, 0.6575)) vs xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(0.0254, 0.9701, -0.2412), uv=(0.2728, 0.6575)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 895 differs: xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6608)) vs xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6608)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 896 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.2832, 0.9586, -0.0298), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 897 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.3083, 0.9036, 0.2976), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 898 differs: xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2716, 0.6686)) vs xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6686)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 899 differs: xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6725)) vs xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.9945, 0.0000, -0.1045), uv=(0.2716, 0.6725)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 894 differs: xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(-0.6293, 0.0000, -0.7772), uv=(0.2728, 0.6575)) vs xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(0.0254, 0.9701, -0.2412), uv=(0.2728, 0.6575)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 895 differs: xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6608)) vs xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6608)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 896 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.2832, 0.9586, -0.0298), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 897 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.3083, 0.9036, 0.2976), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 898 differs: xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2716, 0.6686)) vs xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6686)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 899 differs: xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6725)) vs xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.9945, 0.0000, -0.1045), uv=(0.2716, 0.6725)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 894 differs: xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(-0.6293, 0.0000, -0.7772), uv=(0.2728, 0.6575)) vs xp_vertex(loc=(-12.1904, 1.2500, 6.7793), normal=(0.0254, 0.9701, -0.2412), uv=(0.2728, 0.6575)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 895 differs: xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6608)) vs xp_vertex(loc=(-12.1757, 1.2500, 6.6397), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6608)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 896 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.2832, 0.9586, -0.0298), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 897 differs: xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2720, 0.6679)) vs xp_vertex(loc=(-12.1610, 1.2500, 6.5002), normal=(-0.3083, 0.9036, 0.2976), uv=(0.2720, 0.6679)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 898 differs: xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(-0.6293, 0.0000, -0.7771), uv=(0.2716, 0.6686)) vs xp_vertex(loc=(-12.1464, 1.2500, 6.3606), normal=(0.0000, 0.0000, 0.0000), uv=(0.2716, 0.6686)) TRIS 14271 5493.001, TRIS 14271 5493, vertex 899 differs: xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.0000, -1.0000, -0.0000), uv=(0.2716, 0.6725)) vs xp_vertex(loc=(-12.1317, 1.2500, 6.2210), normal=(-0.9945, 0.0000, -0.1045), uv=(0.2716, 0.6725)) "
+Import Test Summary:,FAIL,75.00%,"Total tests: 4, Failed: 1"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+4.0 Tests
+Export Tests:
+FacadeExporter:,PASS,99.93%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+4.1 Tests
+Export Tests:
+FacadeExporter:,PASS,99.56%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+4.2 Tests
+Export Tests:
+FacadeExporter:,PASS,99.56%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+4.3 Tests
+Export Tests:
+FacadeExporter:,PASS,99.56%,"Different line count 0"
+LineExporter:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,100.00%,"Different line count 0"
+Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"
+Import Tests:
+Exporter:,PASS,100.00%,"Differences: "
+MyConcrete:,PASS,100.00%,"Differences: "
+MyLine:,PASS,100.00%,"Differences: "
+XCD_Jetway:,PASS,100.00%,"Differences: "
+Import Test Summary:,PASS,100.00%,"Total tests: 4, Failed: 0"
+TEST_get_all_collections_from_view_layer,"PASS"
+TEST_get_roof_data,"PASS"
+TEST_keyframing,"PASS"
+TEST_get_draw_call_from_obj,"PASS"
+TEST_world_space_transform,"PASS"
+Bake Tests:
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,99.96%,""
+4.4 Tests
+Export Tests:
+FacadeExporter:,PASS,99.56%,"Different line count 0"
 LineExporter:,PASS,100.00%,"Different line count 0"
 PolygonExporter:,PASS,100.00%,"Different line count 0"
 Export Test Summary:,PASS,100.00%,"Total tests: 3, Failed: 0"

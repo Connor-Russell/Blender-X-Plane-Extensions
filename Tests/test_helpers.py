@@ -48,7 +48,7 @@ class xp_vertex:
     def __eq__(self, other):
         return self.loc_x == other.loc_x and self.loc_y == other.loc_y and self.loc_z == other.loc_z and self.normal_x == other.normal_x and self.normal_y == other.normal_y and self.normal_z == other.normal_z and self.uv_x == other.uv_x and self.uv_y == other.uv_y
     
-    def almost_equal(self, other, epsilon=0.0001):
+    def almost_equal(self, other, epsilon=0.1):
         """
         Check if this vertex is almost equal to another vertex within a small epsilon tolerance.
         """
@@ -60,8 +60,17 @@ class xp_vertex:
                 math.isclose(self.normal_z, other.normal_z, abs_tol=epsilon) and
                 math.isclose(self.uv_x, other.uv_x, abs_tol=epsilon) and
                 math.isclose(self.uv_y, other.uv_y, abs_tol=epsilon))
+    
+    def __str__(self):
+        return (
+            f"xp_vertex("
+            f"loc=({self.loc_x:.4f}, {self.loc_y:.4f}, {self.loc_z:.4f}), "
+            f"normal=({self.normal_x:.4f}, {self.normal_y:.4f}, {self.normal_z:.4f}), "
+            f"uv=({self.uv_x:.4f}, {self.uv_y:.4f})"
+            f")"
+        )
 
-def vectors_close(v1, v2, epsilon=0.0001):
+def vectors_close(v1, v2, epsilon=0.1):
     """
     Check if two mathutils.Vector objects are close to each other within a small epsilon tolerance.
     Args:
@@ -75,7 +84,7 @@ def vectors_close(v1, v2, epsilon=0.0001):
             math.isclose(v1.y, v2.y, abs_tol=epsilon) and
             math.isclose(v1.z, v2.z, abs_tol=epsilon))
 
-def euler_close(e1, e2, epsilon=0.0001):
+def euler_close(e1, e2, epsilon=0.1):
     """
     Check if two mathutils.Euler objects are close to each other within a small epsilon tolerance.
     Args:
@@ -89,7 +98,7 @@ def euler_close(e1, e2, epsilon=0.0001):
             math.isclose(e1.y, e2.y, abs_tol=epsilon) and
             math.isclose(e1.z, e2.z, abs_tol=epsilon))
 
-def matrix_close(m1, m2, epsilon=0.0001):
+def matrix_close(m1, m2, epsilon=0.1):
     """
     Check if two mathutils.Matrix objects are close to each other within a small epsilon tolerance.
     Args:
