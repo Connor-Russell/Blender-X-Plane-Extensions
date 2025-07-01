@@ -788,14 +788,16 @@ class MENU_attached_object(bpy.types.Panel):
         #Get our prefs for whether we hide this in none-facade collections
         addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
 
-        #Get the parent collection
         if result:
-            #Check if the parent collection has the xp_fac property
-            parent_collection = context.object.users_collection[0] if context.object.users_collection else None
-            if parent_collection and addon_prefs.show_only_relevant_settings:
-                result = result and parent_collection.xp_fac.exportable
+            
+            #Check if there are any facades enabled in the scene
+            if addon_prefs.show_only_relevant_settings:
+                result = False
 
-        # Only show the panel if the active object is an EMPTY
+                for col in bpy.data.collections:
+                    if col.xp_fac.exportable:
+                        result = True
+                        
         return result
 
     def draw(self, context):
@@ -825,12 +827,14 @@ class MENU_fac_mesh(bpy.types.Panel):
         #Get our prefs for whether we hide this in none-facade collections
         addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
 
-        #Get the parent collection
         if result:
-            #Check if the parent collection has the xp_fac property
-            parent_collection = context.object.users_collection[0] if context.object.users_collection else None
-            if parent_collection and addon_prefs.show_only_relevant_settings:
-                result = result and parent_collection.xp_fac.exportable
+            #Check if there are any facades enabled in the scene
+            if addon_prefs.show_only_relevant_settings:
+                result = False
+                for col in bpy.data.collections:
+                    if col.xp_fac.exportable:
+                        result = True
+
         return result
 
     def draw(self, context):
