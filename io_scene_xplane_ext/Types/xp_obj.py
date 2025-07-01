@@ -17,8 +17,7 @@ from ..Helpers import anim_utils
 from ..Helpers import light_data    #These are defines for the parameter layout of PARAM lights
 from ..Helpers import decal_utils
 from ..Helpers import log_utils
-
-from functools import total_ordering
+from typing import List
 
 #Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
 obj_does_use_lods = False
@@ -55,7 +54,6 @@ class thermal_source:
         self.toggle_dataref = ""
         self.temperature = 0.0
 
-@total_ordering
 class light:
     """
     Class to represent a light in an X-Plane object. This class is used to store the lights for an object.
@@ -90,11 +88,19 @@ class light:
         self.lod_start = 0  #Start range of the LOD. We don't actually use LODs because lights aren't LODed, but, this is used to dedupe
         self.lod_end = 0    #End range of the LOD
         self.lod_bucket = -1  #LOD bucket of the light. This is used to determine which LOD bucket this light belongs to. -1 means no LOD bucket.
+        self.lod_buckets = [False, False, False, False] #List of bools that correspond to what LOD buckets this light should go into
+        self.anim_state = "" #String that describes the animation state of this light. This is used to check if this light is identical to another light but in another lod bucket
+        self.is_lod_duplicate = False  #True if this light is a duplicate of another light in a different LOD bucket. This light will be skipped if this is True
 
     def add_to_scene(self, in_collection, in_parent=None):
         """
         Adds a new light to the Blender scene with the specified properties.
         """
+
+        if self.is_lod_duplicate:
+            #If this light is a duplicate of another light in a different LOD bucket, we skip it
+            log_utils.info(f"Skipping light {self.name} because it is a duplicate of another light in a different LOD bucket")
+            return None
 
         # Create a new Blender light datablock
         light_data = bpy.data.lights.new(name="Light", type=self.type)
@@ -130,52 +136,46 @@ class light:
         b_light.data.xplane.param_freq = self.frequency
         b_light.data.xplane.param_phase = self.phase
         if obj_does_use_lods:
+            b_light.xplane.override_lods = True
+            b_light.xplane.lod[0] = self.lod_buckets[0]
+            b_light.xplane.lod[1] = self.lod_buckets[1]
+            b_light.xplane.lod[2] = self.lod_buckets[2]
+            b_light.xplane.lod[3] = self.lod_buckets[3]
+            #And always the first lod just to make sure it's visible
             b_light.xplane.lod[0] = True
 
         return b_light
-    
-    def __eq__(self, value):
-        """
-        Slightly unconventional. Checks if all params BUT LOD are equal. This is because if there are multiple lights in the SAME LOD they are intentional.
-        But, if they are in DIFFERENT LODs, then they are a duplicate of the SAME light because of how LODs work in XP .objs.
-        """
-        if not isinstance(value, light):
-            return NotImplemented
 
-        return (self.name == value.name and
-                self.type == value.type and
-                self.xp_type == value.xp_type and
-                self.color_r == value.color_r and
-                self.color_g == value.color_g and
-                self.color_b == value.color_b and
-                self.loc_x == value.loc_x and
-                self.loc_y == value.loc_y and
-                self.loc_z == value.loc_z and
-                self.dir_x == value.dir_x and
-                self.dir_y == value.dir_y and
-                self.dir_z == value.dir_z and
-                self.cone_angle == value.cone_angle and
-                self.dataref == value.dataref and
-                self.size == value.size and
-                self.is_photometric == value.is_photometric and
-                self.params == value.params and
-                self.xp_type == value.xp_type and
-                self.bb_s1 == value.bb_s1 and
-                self.bb_s2 == value.bb_s2 and
-                self.bb_t1 == value.bb_t1 and
-                self.bb_t2 == value.bb_t2 and
-                self.frequency == value.frequency and
-                self.phase == value.phase and
-                self.index == value.index and
-                (self.lod_start != value.lod_start or
-                self.lod_end != value.lod_end))
+    def is_duplicate_of(self, other_light):
+        """
+        Checks if this light is a duplicate of another light.
+        This is used to dedupe lights in different LOD buckets.
+        """
 
-    def __lt__(self, other):
-        """
-        Less than operator for light objects. This is used to sort lights by their LOD range.
-        """
-        return (self.name, self.type, self.xp_type, self.color_r, self.color_g,self.color_b,self.loc_x,self.loc_y,self.loc_z,self.dir_x,self.dir_y,self.dir_z,self.cone_angle,self.dataref,self.size, self.is_photometric, self.params, self.xp_type, self.bb_s1, self.bb_s2, self.bb_t1, self.bb_t2, self.frequency, self.phase, self.index) < \
-        (other.name, other.type, other.xp_type, other.color_r, other.color_g, other.color_b, other.loc_x, other.loc_y, other.loc_z, other.dir_x, other.dir_y, other.dir_z, other.cone_angle, other.dataref, other.size, other.is_photometric, other.params, other.xp_type, other.bb_s1, other.bb_s2, other.bb_t1, other.bb_t2, other.frequency, other.phase, other.index)
+        return (self.lod_bucket != other_light.lod_bucket and
+                self.type == other_light.type and
+                misc_utils.float_close(self.loc_x, other_light.loc_x) and
+                misc_utils.float_close(self.loc_y, other_light.loc_y) and
+                misc_utils.float_close(self.loc_z, other_light.loc_z) and
+                misc_utils.float_close(self.dir_x, other_light.dir_x) and
+                misc_utils.float_close(self.dir_y, other_light.dir_y) and
+                misc_utils.float_close(self.dir_z, other_light.dir_z) and
+                misc_utils.float_close(self.color_r, other_light.color_r) and
+                misc_utils.float_close(self.color_g, other_light.color_g) and
+                misc_utils.float_close(self.color_b, other_light.color_b) and
+                misc_utils.float_close(self.cone_angle, other_light.cone_angle) and
+                self.index == other_light.index and
+                self.size == other_light.size and
+                self.is_photometric == other_light.is_photometric and
+                self.params == other_light.params and
+                self.bb_s1 == other_light.bb_s1 and
+                self.bb_s2 == other_light.bb_s2 and
+                self.bb_t1 == other_light.bb_t1 and
+                self.bb_t2 == other_light.bb_t2 and
+                self.frequency == other_light.frequency and
+                self.phase == other_light.phase and
+                self.dataref == other_light.dataref and
+                self.anim_state == other_light.anim_state)
 
 class manipulator_detent:
     """
@@ -197,6 +197,14 @@ class manipulator_detent:
         new_detent.length = self.length
 
         return new_detent
+    
+    def __eq__(self, other):
+        if not isinstance(other, manipulator_detent):
+            return False
+        
+        return misc_utils.float_close(self.start, other.start) and \
+               misc_utils.float_close(self.end, other.end) and \
+               misc_utils.float_close(self.length, other.length)
 
 class manipulator:
     """
@@ -207,8 +215,8 @@ class manipulator:
     def __init__(self):
         self.valid = False  #True if this manipulator is valid. If not, it will be ignored
         #List of parameters for the manipulator. This is a list of strings. It's easier to store here then to have 500 different param types. We'll just grab directly from these string values when configuring
-        self.params = []
-        self.detents = []  #List of detents for the manipulator. This is a list of manipulator_detent objects
+        self.params = [] #type: List[str]
+        self.detents = []  #type: List[manipulator_detent]
         self.wheel_delta = 0  #Wheel delta for the manipulator. This is used to set how much the scroll wheel changes the value
         self.detent_axis = mathutils.Vector((0, 0, 0))  #Axis of the manipulator's detent. This is used to set the axis of the manipulator for drag_axis and drag_rotate manips
         self.detent_v1 = 0
@@ -651,7 +659,22 @@ class manipulator:
             elif cmd == "ATTR_manip_drag_rotate":
                 pass
         return None
-        
+
+    def __eq__(self, other):
+        """
+        Compares this manipulator to another manipulator. Returns True if they are the same, False otherwise.
+        """
+        if not isinstance(other, manipulator):
+            return False
+
+        return (self.valid == other.valid and
+                self.params == other.params and
+                self.detents == other.detents and
+                misc_utils.float_close(self.wheel_delta, other.wheel_delta) and
+                misc_utils.vectors_close(self.detent_axis, other.detent_axis) and
+                misc_utils.float_close(self.detent_v1, other.detent_v1) and
+                misc_utils.float_close(self.detent_v2, other.detent_v2) and
+                self.detent_dataref == other.detent_dataref)
     
     def copy(self):
         """
@@ -735,6 +758,35 @@ class draw_call_state:
         new_state.cockpit_device_lighting_channel = self.cockpit_device_lighting_channel
         return new_state
 
+    def __eq__(self, other):
+        if not isinstance(other, draw_call_state):
+            return NotImplemented
+        return (self.blend_mode == other.blend_mode and
+                misc_utils.float_close(self.blend_cutoff, other.blend_cutoff) and
+                self.draped == other.draped and
+                self.cast_shadow == other.cast_shadow and
+                self.surface_type == other.surface_type and
+                self.light_level_override == other.light_level_override and
+                self.draw == other.draw and
+                self.hard_camera == other.hard_camera and
+                misc_utils.float_close(self.light_level_v1, other.light_level_v1) and
+                misc_utils.float_close(self.light_level_v2, other.light_level_v2) and
+                self.light_level_photometric == other.light_level_photometric and
+                misc_utils.float_close(self.light_level_brightness, other.light_level_brightness) and
+                self.light_level_dataref == other.light_level_dataref and
+                self.is_hud == other.is_hud and
+                self.use_2d_panel == other.use_2d_panel and
+                self.panel_texture_region == other.panel_texture_region and
+                self.cockpit_device == other.cockpit_device and
+                self.custom_cockpit_device == other.custom_cockpit_device and
+                self.cockpit_device_use_bus_1 == other.cockpit_device_use_bus_1 and
+                self.cockpit_device_use_bus_2 == other.cockpit_device_use_bus_2 and
+                self.cockpit_device_use_bus_3 == other.cockpit_device_use_bus_3 and
+                self.cockpit_device_use_bus_4 == other.cockpit_device_use_bus_4 and
+                self.cockpit_device_use_bus_5 == other.cockpit_device_use_bus_5 and
+                self.cockpit_device_use_bus_6 == other.cockpit_device_use_bus_6 and
+                self.cockpit_device_lighting_channel == other.cockpit_device_lighting_channel)
+
 class draw_call:
     """
     Class to represent a draw call. This class is used to store the draw calls for an object.
@@ -747,8 +799,11 @@ class draw_call:
         self.lod_start = 0  #Start range of the LOD
         self.lod_end = 0  #End range of the LOD
         self.lod_bucket = -1  #LOD bucket of the draw call. Corresponds to the XP2B value.
+        self.lod_buckets = [False, False, False, False]  #List of LOD buckets for this draw call. This is used to store the LOD buckets for the draw call, corresponding to the XP2B value.
         self.state = draw_call_state()  #State of the draw call. This is used to store the state of the draw call, such as blend mode, alpha cutoff, etc.
         self.manipulator = None  #Manipulator for the draw call. This is used to store the manipulator for the draw call, if it has one.
+        self.anim_state = "" #String that describes the animation state of this draw call. This is used to check if this draw call is identical to another draw call but in another lod bucket
+        self.is_lod_duplicate = False  #True if this draw call is a duplicate of another draw call in a different LOD bucket. This DC will be skipped if this is True
 
     def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection, in_parent=None):
         """
@@ -762,6 +817,7 @@ class draw_call:
 
         Returns:
             bpy.types.Object: The newly created Blender mesh object representing this draw call.
+            OR None if this draw call is a duplicate of another draw call in a different LOD bucket.
 
         Notes:
             - Extracts the relevant indices and vertices for this draw call from the full object arrays.
@@ -770,6 +826,11 @@ class draw_call:
             - Assigns LOD bucket and material if applicable.
             - Links the object to the provided collection.
         """
+        if self.is_lod_duplicate:
+            #If this light is a duplicate of another light in a different LOD bucket, we skip it
+            log_utils.info(f"Skipping draw call {self.start_index}-{self.length} because it is a duplicate of another draw call in a different LOD bucket")
+            return None
+
         # When adding geometry, we need verts and indicies. We have our range of indicies, and *all* the indicies and *all* the verts
         # So to add them, we need *just* our indicies and verts. So what we do is we get all the indicies we need, in the correct order
         # Then we iterate through them, getting the verticies they reference, and offsetting the indicies to start idx is at 0 here.
@@ -820,16 +881,10 @@ class draw_call:
         if self.lod_bucket != -1:
             #Set the LOD bucket for this object
             dc_obj.xplane.override_lods = True
-            if self.lod_bucket == 0:
-                dc_obj.xplane.lod[0] = True
-            elif self.lod_bucket == 1:
-                dc_obj.xplane.lod[1] = True
-            elif self.lod_bucket == 2:
-                dc_obj.xplane.lod[2] = True
-            elif self.lod_bucket == 3:
-                dc_obj.xplane.lod[3] = True
-            else:
-                log_utils.warning(f"Unknown LOD bucket for obj {dc_obj.name} for range {self.lod_start}-{self.lod_end}. Bucket is {self.lod_bucket}. What?")
+            dc_obj.xplane.lod[0] = self.lod_buckets[0]
+            dc_obj.xplane.lod[1] = self.lod_buckets[1]
+            dc_obj.xplane.lod[2] = self.lod_buckets[2]
+            dc_obj.xplane.lod[3] = self.lod_buckets[3]
 
         #Set HUD state
         dc_obj.xplane.hud_glass = self.state.is_hud
@@ -929,6 +984,23 @@ class draw_call:
             return override_return_obj
         
         return dc_obj
+
+    def is_duplicate_of(self, other_dc: "draw_call"):
+        """
+        Checks if this draw call is a duplicate of another draw call. This is used to check if this draw call is identical to another draw call but in another lod bucket.
+        
+        Args:
+            other_dc (draw_call): The other draw call to check against.
+
+        Returns:
+            bool: True if this draw call is a duplicate of the other draw call, False otherwise.
+        """
+        return (self.start_index == other_dc.start_index and
+                self.length == other_dc.length and
+                self.lod_bucket != other_dc.lod_bucket and
+                self.state == other_dc.state and
+                self.anim_state == other_dc.anim_state and
+                self.manipulator == other_dc.manipulator)
 
 class static_offsets:
     """
@@ -1053,7 +1125,7 @@ class anim_show_hide_series(anim_action):
     def __init__(self):
         super().__init__()
         self.type = 'show_hide_series'
-        self.commands = []  #List of show/hide commands for the animation
+        self.commands = []  #type: List[anim_show_hide_command]
         self.empty = None  #Empty for the animation
 
     def add_command(self, cmd):
@@ -1114,7 +1186,7 @@ class anim_rot_table(anim_action):
         super().__init__()
         self.type = 'rot_table'
         self.dataref = ''  #Dataref for the animation
-        self.keyframes = []  #List of keyframes for the animation
+        self.keyframes = []  #type: List[anim_rot_keyframe]
         self.empty = None  #Empty for the animation
         self.loop = 0 #The *loop animation every this dref value* value.
 
@@ -1161,7 +1233,7 @@ class anim_loc_table(anim_action):
         super().__init__()
         self.type = 'loc_table'
         self.dataref = ""  #Dataref for the animation
-        self.keyframes = []  #List of keyframes for the animation
+        self.keyframes = []  #type: List[anim_loc_keyframe]
         self.empty = None  #Empty for the animation
         self.loop = 0 #The *loop animation every this dref value* value.
 
@@ -1238,29 +1310,31 @@ class anim_level:
                 action.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection, cur_static_offsets.copy(), cur_show_hide_commands.copy())
             elif isinstance(action, draw_call):
                 dc_obj = action.add_to_scene(all_verts, all_indicies, in_mats, in_collection)
-                dc_obj.parent = self.last_action
+                if dc_obj != None:
+                    dc_obj.parent = self.last_action
 
-                #So it doesn't take up it's parent's rotation
-                eular = mathutils.Vector((0, 0, 0))
-                anim_utils.set_obj_rotation_world(dc_obj, eular)
+                    #So it doesn't take up it's parent's rotation
+                    eular = mathutils.Vector((0, 0, 0))
+                    anim_utils.set_obj_rotation_world(dc_obj, eular)
 
-                #Apply the static offsets to the draw call object
-                cur_static_offsets.apply(dc_obj)
+                    #Apply the static offsets to the draw call object
+                    cur_static_offsets.apply(dc_obj)
 
-                #Apply show hide animations
-                for cmd in cur_show_hide_commands:
-                    cmd.apply(dc_obj)
+                    #Apply show hide animations
+                    for cmd in cur_show_hide_commands:
+                        cmd.apply(dc_obj)
 
             elif isinstance(action, light):
                 #Add the light to the scene. THis function takes the parent and sets the world space positon/rotation
                 new_light = action.add_to_scene(in_collection, self.last_action)
+                
+                if new_light != None:
+                    #Apply the static offsets to the light object
+                    cur_static_offsets.apply(new_light)  
 
-                #Apply the static offsets to the light object
-                cur_static_offsets.apply(new_light)  
-
-                #Apply show hide animations
-                for cmd in cur_show_hide_commands:
-                    cmd.apply(new_light)
+                    #Apply show hide animations
+                    for cmd in cur_show_hide_commands:
+                        cmd.apply(new_light)
 
             elif isinstance(action, anim_action):
                 #Create the empty for this action
@@ -1339,10 +1413,6 @@ class anim_level:
             
             else:
                 log_utils.warning(f"Unknown action type for animation {action}. This is not expected, please report this on this plugin's Github.")
-
-        #Now that we added out draw calls, it's time to recurse
-        #for child in self.children:
-         #   child.add_to_scene(self.last_action, all_verts, all_indicies, in_mats, in_collection, cur_static_offsets.copy(), cur_show_hide_commands.copy())
 
         #Reset our frame
         anim_utils.goto_frame(0)
@@ -1431,6 +1501,36 @@ class anim_level:
             #Reset our frame
             anim_utils.goto_frame(0)
 
+def get_anim_commands_as_str(anim, start_str=""):
+    """
+    Returns a string respresentign all the animation commands that make up the animations that would apply to a draw call/light
+    This is not garunteeded to be exportable, it is intended only to uniquely identify the animation state of a draw call/light for deduping multiple draw calls in different LOD levels
+    """
+    out_str = start_str
+    for action in anim.actions:
+        if isinstance(action, anim_loc_keyframe):
+            out_str += f"{action.type},{action.frame},{action.time},{action.loc}\n"
+        elif isinstance(action, anim_rot_keyframe):
+            out_str += f"{action.type},{action.frame},{action.time},{action.rot_vector},{action.rot}\n"
+        elif isinstance(action, anim_rot_table_vector_transform):
+            out_str += f"{action.type},{action.rot_vector}\n"
+        elif isinstance(action, anim_rot_table):
+            out_str += f"{action.type},{action.dataref},{action.loop}\n"
+            for kf in action.keyframes:
+                out_str += f"{kf.frame},{kf.time},{kf.rot}\n"
+        elif isinstance(action, anim_loc_table):
+            out_str += f"{action.type},{action.dataref},{action.loop}\n"
+            for kf in action.keyframes:
+                out_str += f"{kf.frame},{kf.time},{kf.loc}\n"
+        elif isinstance(action, anim_show_hide_series):
+            out_str += f"{action.type}\n"
+            for cmd in action.commands:
+                out_str += f"{cmd.hide},{cmd.start_value},{cmd.end_value},{cmd.dataref}\n"
+        elif isinstance(action, anim_level):
+            out_str += get_anim_commands_as_str(action, start_str)
+    
+    return out_str
+
 class object:
     """
     Class to represent an X-Plane object. This class provides functions to import the object into Blender.
@@ -1438,12 +1538,16 @@ class object:
 
     #Define instance variables
     def __init__(self):
-        self.verticies = []  #List of vertices in the object. geometery_utils.xp_vertex
-        self.indicies = []  #List of indices in the object
-        self.draw_calls = [] #List of draw calls. This is a list of draw_call objects.
-        self.lights = []  #List of lights in the object. This is a list of light objects
-        self.anims = []  #List of animations in the object. This is a list of anim_levels
+        self.verticies = []  #type: List[geometery_utils.xp_vertex]  #List of verticies in the object
+        self.indicies = []  #type: List[int]  #List of indices in the object
+        self.draw_calls = [] #type: List[draw_call]
+        self.lights = []  #type: List[light]
+        self.anims = []  #type: List[anim_level]
         self.name = ""
+
+        #These are used to set states so that we can dedupe draw calls and lights
+        self.all_lights = [] #type: List[light]
+        self.all_draw_calls = [] #type: List[draw_call]
 
         self.obj_mode = "aircraft"  #aircraft, scenery, or cockpit
 
@@ -1604,10 +1708,12 @@ class object:
 
                 #Add the draw call to the list of draw calls. This is the current animation in the tree, or the list of static draw calls it there is no current animation
                 if len(cur_anim_tree) > 0:
-                    #If we are in an animation tree, add this draw call to the current animation tree
+                    dc.anim_state = get_anim_commands_as_str(cur_anim_tree[-1])
                     cur_anim_tree[-1].actions.append(dc)
                 else:
                     self.draw_calls.append(dc)
+
+                self.all_draw_calls.append(dc)  #Add the draw call to the list of all draw calls
 
             elif tokens[0] == "PARTICLE_SYSTEM":
                 self.particle_system = tokens[1]
@@ -1884,11 +1990,14 @@ class object:
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
+                    new_light.anim_state = get_anim_commands_as_str(cur_anim_tree[-1])
                     cur_anim_tree[-1].actions.append(new_light)
 
                 else:
                     #Otherwise, add it directly to the lights list
                     self.lights.append(new_light)
+
+                self.all_lights.append(new_light)
 
             elif tokens[0] == "LIGHT_CUSTOM":
                 #LIGHT_CUSTOM <x> <y> <z> <r> <g> <b> <a> <s> <s1> <t1> <s2> <t2> <dataref>
@@ -1915,11 +2024,14 @@ class object:
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
+                    new_light.anim_state = get_anim_commands_as_str(cur_anim_tree[-1])
                     cur_anim_tree[-1].actions.append(new_light)
 
                 else:
                     #Otherwise, add it directly to the lights list
                     self.lights.append(new_light)
+
+                self.all_lights.append(new_light)
 
             elif tokens[0] == "LIGHT_SPILL_CUSTOM":
                 #LIGHT_SPILL_CUSTOM <x> <y> <z> <r> <g> <b> <a> <s> <dx> <dy> <dz> <semi> <dref>
@@ -1947,11 +2059,14 @@ class object:
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
+                    new_light.anim_state = get_anim_commands_as_str(cur_anim_tree[-1])
                     cur_anim_tree[-1].actions.append(new_light)
 
                 else:
                     #Otherwise, add it directly to the lights list
                     self.lights.append(new_light)
+
+                self.all_lights.append(new_light)
 
             elif tokens[0] == "LIGHT_PARAM":
                 #This is the most complex light as it's parameters are variable based on it's type.
@@ -2023,12 +2138,14 @@ class object:
 
                 if len(cur_anim_tree) > 0:
                     #If we are in an animation tree, add this light to the current animation tree
+                    new_light.anim_state = get_anim_commands_as_str(cur_anim_tree[-1])
                     cur_anim_tree[-1].actions.append(new_light)
 
                 else:
                     #Otherwise, add it directly to the lights list
                     self.lights.append(new_light)
-                pass
+                
+                self.all_lights.append(new_light)
 
             elif tokens[0] == "ATTR_draped":
                 cur_state.draped = True
@@ -2433,6 +2550,9 @@ class object:
         all_lod_buckets.sort()
 
         def put_draw_call_in_bucket(dc, all_lod_buckets, is_selective_lod):
+            """
+            Assigns the LOD bucket based on what's closest. Works for draw calls and lights.
+            """
             if all_lod_buckets == []:
                 #If there are no LOD buckets, we don't need to do anything
                 dc.lod_bucket = -1
@@ -2480,12 +2600,12 @@ class object:
             put_draw_call_in_bucket(dc, all_lod_buckets, is_selective_lod)
 
         def recurse_anim_levels_to_assign_lod_buckets(level):
-            for child in level.children:
-                recurse_anim_levels_to_assign_lod_buckets(child)
-
-            #Now assign lod buckets
-            for dc in level.draw_calls:
-                put_draw_call_in_bucket(dc, all_lod_buckets, is_selective_lod)
+            for action in level.actions:
+                if isinstance(action, anim_level):
+                    recurse_anim_levels_to_assign_lod_buckets(action)
+                elif isinstance(action, draw_call) or isinstance(action, light):
+                    #If this is a draw call, we need to assign it to a bucket
+                    put_draw_call_in_bucket(action, all_lod_buckets, is_selective_lod)
 
         for anim in self.anims:
             recurse_anim_levels_to_assign_lod_buckets(anim)
@@ -2497,6 +2617,76 @@ class object:
             collection.xplane.layer.lod[i].near = bucket[0]
             collection.xplane.layer.lod[i].far = bucket[1]
 
+        #Now that we have LODs assigned, we can now check for duplicate objects/lights
+        duplicated_dcs = []
+        duplicated_lights = []
+
+        #Check for duplicate draw calls
+        for i, dc in enumerate(self.all_draw_calls):
+            if i in duplicated_dcs:
+                #If this draw call is already marked as a duplicate, skip it
+                continue
+
+            #Compare with all other DCs
+            for j, comp_dc in enumerate(self.all_draw_calls):
+                if i != j and dc.is_duplicate_of(comp_dc):
+                    #Save this in the list of duplicated draw calls so that we can skip comparing it later. Also set it's lod duplicate property so it doesn't get added
+                    duplicated_dcs.append(j)
+                    comp_dc.is_lod_duplicate = True
+
+                    #Now get it's LOD bucket and set that LOD bucket to true in this lod bucket
+                    if comp_dc.lod_bucket == 0:
+                        dc.lod_buckets[0] = True
+                    elif comp_dc.lod_bucket == 1:
+                        dc.lod_buckets[1] = True
+                    elif comp_dc.lod_bucket == 2:
+                        dc.lod_buckets[2] = True
+                    elif comp_dc.lod_bucket == 3:
+                        dc.lod_buckets[3] = True
+
+            #Now get it's LOD bucket and set that LOD bucket to true in this lod bucket
+            if dc.lod_bucket == 0:
+                dc.lod_buckets[0] = True
+            elif dc.lod_bucket == 1:
+                dc.lod_buckets[1] = True
+            elif dc.lod_bucket == 2:
+                dc.lod_buckets[2] = True
+            elif dc.lod_bucket == 3:
+                dc.lod_buckets[3] = True
+
+        #Check for duplicate lights. Same logic as DCs
+        for i, lt in enumerate(self.all_lights):
+            if i in duplicated_lights:
+                #If this light is already marked as a duplicate, skip it
+                continue
+
+            #Compare with all other lights
+            for j, comp_lt in enumerate(self.all_lights):
+                if i != j and lt.is_duplicate_of(comp_lt):
+                    #Save this in the list of duplicated lights so that we can skip comparing it later. Also set it's lod duplicate property so it doesn't get added
+                    duplicated_lights.append(j)
+                    comp_lt.is_lod_duplicate = True
+
+                    #Now get it's LOD bucket and set that LOD bucket to true in this lod bucket
+                    if comp_lt.lod_bucket == 0:
+                        lt.lod_buckets[0] = True
+                    elif comp_lt.lod_bucket == 1:
+                        lt.lod_buckets[1] = True
+                    elif comp_lt.lod_bucket == 2:
+                        lt.lod_buckets[2] = True
+                    elif comp_lt.lod_bucket == 3:
+                        lt.lod_buckets[3] = True
+
+            #Now get it's LOD bucket and set that LOD bucket to true in this lod bucket
+            if lt.lod_bucket == 0:
+                lt.lod_buckets[0] = True
+            elif lt.lod_bucket == 1:
+                lt.lod_buckets[1] = True
+            elif lt.lod_bucket == 2:
+                lt.lod_buckets[2] = True
+            elif lt.lod_bucket == 3:
+                lt.lod_buckets[3] = True
+
         #For the basic draw calls just add 'em to the scene
         for dc in self.draw_calls:
             dc.add_to_scene(self.verticies, self.indicies, all_mats, collection)
@@ -2506,10 +2696,31 @@ class object:
         for lt in self.lights:
             lt.add_to_scene(collection)
 
+        def check_for_something_to_add_in_anims(level):
+            found_something = False
+            for action in level.actions:
+                if isinstance(action, draw_call):
+                    if not action.is_lod_duplicate:
+                        found_something = True
+                        break
+                elif isinstance(action, light):
+                    if not action.is_lod_duplicate:
+                        found_something = True
+                        break
+                elif isinstance(action, anim_level):
+                    if check_for_something_to_add_in_anims(action):
+                        found_something = True
+                        break
+            return found_something
+
         #Now that we have the basic geometery, we need to add the animated stuff.
         #This is very simple. We iterate through all our root animation levels, and add them to the scene. Aka we call the function to do the hard (sort of) stuff
         for anim in self.anims:
-            anim.add_to_scene(None, self.verticies, self.indicies, all_mats, collection)
+            #BUT! It's possible that this is an animation whose objects are *all* lod duplicates, leading to no DCs! So we need to check all it's actions to make sure there is at least *one* dc/light that isn't a lod duplicate
+            if not obj_does_use_lods or check_for_something_to_add_in_anims(anim):
+                anim.add_to_scene(None, self.verticies, self.indicies, all_mats, collection)
+            else:
+                log_utils.info(f"Animation in object {self.name} has no draw calls or lights that are not LOD duplicates. Skipping animation.")
         
         #Lastly, we'll go through and update the materials
         for mat in all_mats:

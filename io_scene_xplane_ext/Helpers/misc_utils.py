@@ -118,3 +118,59 @@ def copy_to_clipboard(text):
 
 def get_from_clipboard():
     return bpy.context.window_manager.clipboard
+
+def vectors_close(v1, v2, epsilon=0.0001):
+    """
+    Check if two mathutils.Vector objects are close to each other within a small epsilon tolerance.
+    Args:
+        v1 (mathutils.Vector): First vector.
+        v2 (mathutils.Vector): Second vector.
+        epsilon (float): Tolerance for comparison.
+    Returns:
+        bool: True if vectors are close, False otherwise.
+    """
+    return (math.isclose(v1.x, v2.x, abs_tol=epsilon) and
+            math.isclose(v1.y, v2.y, abs_tol=epsilon) and
+            math.isclose(v1.z, v2.z, abs_tol=epsilon))
+
+def euler_close(e1, e2, epsilon=0.0001):
+    """
+    Check if two mathutils.Euler objects are close to each other within a small epsilon tolerance.
+    Args:
+        e1 (mathutils.Euler): First Euler rotation.
+        e2 (mathutils.Euler): Second Euler rotation.
+        epsilon (float): Tolerance for comparison.
+    Returns:
+        bool: True if Euler rotations are close, False otherwise.
+    """
+    return (math.isclose(e1.x, e2.x, abs_tol=epsilon) and
+            math.isclose(e1.y, e2.y, abs_tol=epsilon) and
+            math.isclose(e1.z, e2.z, abs_tol=epsilon))
+
+def matrix_close(m1, m2, epsilon=0.0001):
+    """
+    Check if two mathutils.Matrix objects are close to each other within a small epsilon tolerance.
+    Args:
+        m1 (mathutils.Matrix): First matrix.
+        m2 (mathutils.Matrix): Second matrix.
+        epsilon (float): Tolerance for comparison.
+    Returns:
+        bool: True if matrices are close, False otherwise.
+    """
+    for i in range(4):
+        for j in range(4):
+            if not math.isclose(m1[i][j], m2[i][j], abs_tol=epsilon):
+                return False
+    return True
+
+def float_close(f1, f2, epsilon=0.0001):
+    """
+    Check if two float values are close to each other within a small epsilon tolerance.
+    Args:
+        f1 (float): First float value.
+        f2 (float): Second float value.
+        epsilon (float): Tolerance for comparison.
+    Returns:
+        bool: True if floats are close, False otherwise.
+    """
+    return math.isclose(f1, f2, abs_tol=epsilon)
