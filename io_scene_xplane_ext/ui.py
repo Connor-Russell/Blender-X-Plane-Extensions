@@ -149,15 +149,11 @@ def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index
         btn_add.level = "spelling_entry"
         btn_add.add = True
 
-        btn_duplicate = row.operator("xp_ext.add_rem_fac", text="Duplicate Spelling", icon='DUPLICATE')
+        btn_duplicate = row.operator("xp_ext.fac_duplicate_spelling", text="Duplicate Spelling", icon='DUPLICATE')
         btn_duplicate.collection_name = collection_name
         btn_duplicate.floor_index = floor_index
         btn_duplicate.wall_index = wall_index
         btn_duplicate.spelling_index = spelling_index
-        btn_duplicate.spelling_entry_index = len(spelling.entries)
-        btn_duplicate.level = "spelling"
-        btn_duplicate.add = True
-        btn_duplicate.duplicate = True
 
 def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index, wall_len=0):
     box = layout.box()
@@ -199,7 +195,9 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index, wall_l
 
         box.separator()
 
-        btn_add = box.operator("xp_ext.add_rem_fac", text="Add Spelling", icon='ADD')
+        row=box.row()
+
+        btn_add = row.operator("xp_ext.add_rem_fac", text="Add Spelling", icon='ADD')
         btn_add.collection_name = collection_name
         btn_add.floor_index = floor_index
         btn_add.wall_index = wall_index
@@ -207,6 +205,11 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index, wall_l
         btn_add.level = "spelling"
         btn_add.add = True
         btn_add.duplicate = False
+
+        btn_duplicate = row.operator("xp_ext.fac_duplicate_wall", text="Duplicate Wall", icon='DUPLICATE')
+        btn_duplicate.collection_name = collection_name
+        btn_duplicate.floor_index = floor_index
+        btn_duplicate.wall_index = wall_index
 
 def draw_fac_floor(layout, floor, collection_name, floor_index, floor_len=0):
     #Get the collection from the collection name
@@ -249,12 +252,19 @@ def draw_fac_floor(layout, floor, collection_name, floor_index, floor_len=0):
             draw_fac_wall(box, wall, collection_name, floor_index, i, len(floor.walls))
 
         box.separator()
-        btn_add = box.operator("xp_ext.add_rem_fac", text="Add Wall", icon='ADD')
+
+        row = box.row()
+
+        btn_add = row.operator("xp_ext.add_rem_fac", text="Add Wall", icon='ADD')
         btn_add.collection_name = collection_name
         btn_add.floor_index = floor_index
         btn_add.wall_index = len(floor.walls)
         btn_add.level = "wall"
         btn_add.add = True
+
+        btn_duplicate = row.operator("xp_ext.fac_duplicate_floor", text="Duplicate Floor", icon='DUPLICATE')
+        btn_duplicate.collection_name = collection_name
+        btn_duplicate.floor_index = floor_index
 
 class MENU_lin_exporter(bpy.types.Panel):
     bl_label = "X-Plane Line Exporter"
