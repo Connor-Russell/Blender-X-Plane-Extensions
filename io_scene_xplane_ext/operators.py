@@ -15,6 +15,7 @@ from .Helpers import collection_utils
 from .Helpers import decal_utils
 from .Helpers import misc_utils
 from .Helpers import log_utils
+from .Helpers import facade_utils
 from . import auto_baker
 import os
 
@@ -318,7 +319,7 @@ class BTN_bake_low_poly(bpy.types.Operator):
         return {'FINISHED'}
 
 class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
-    bl_idname = "xp.add_rem_fac"
+    bl_idname = "xp_ext.add_rem_fac"
     bl_label = "Spelling Operation"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -427,6 +428,138 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
             if len(spelling.entries) == 0:
                 wall.spellings.remove(self.spelling_index)
             return {'FINISHED'}
+
+        return {'FINISHED'}
+
+class MENU_BT_fac_swap_floors(bpy.types.Operator):
+    bl_idname = "xp_ext.fac_swap_floors"
+    bl_label = "Spelling Operation"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    collection_name: bpy.props.StringProperty() # type: ignore
+    floor_index_1: bpy.props.IntProperty() # type: ignore
+    floor_index_2: bpy.props.IntProperty() # type: ignore
+
+    def execute(self, context):
+        #Get the collection
+        col = None
+        for search_col in bpy.data.collections:
+            if search_col.name == self.collection_name:
+                col = search_col
+        
+        if col is None:
+            self.report({'ERROR'}, "Collection not found")
+            return {'CANCELLED'}
+        
+        #Get the floors
+        floor_1 = col.xp_fac.floors[self.floor_index_1]
+        floor_2 = col.xp_fac.floors[self.floor_index_2]
+
+        #Load them into a temporary class, then swap them
+        floor_1_temp = facade_utils.FacFloor()
+        floor_2_temp = facade_utils.FacFloor()
+
+        floor_1_temp.from_prop(floor_1)
+        floor_2_temp.from_prop(floor_2)
+
+        floor_1_temp.to_prop(floor_2)
+        floor_2_temp.to_prop(floor_1)
+
+        return {'FINISHED'}
+
+class MENU_BT_fac_swap_walls(bpy.types.Operator):
+    bl_idname = "xp_ext.fac_swap_walls"
+    bl_label = "Spelling Operation"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    collection_name: bpy.props.StringProperty() # type: ignore
+    floor_index: bpy.props.IntProperty() # type: ignore
+    wall_index_1: bpy.props.IntProperty() # type: ignore
+    wall_index_2: bpy.props.IntProperty() # type: ignore
+
+    def execute(self, context):
+        #Get the collection
+        col = None
+        for search_col in bpy.data.collections:
+            if search_col.name == self.collection_name:
+                col = search_col
+        
+        if col is None:
+            self.report({'ERROR'}, "Collection not found")
+            return {'CANCELLED'}
+        
+        #Get the floor
+        floor = col.xp_fac.floors[self.floor_index]
+
+        if floor is None:
+            self.report({'ERROR'}, "Floor not found")
+            return {'CANCELLED'}
+        
+        #Get the walls
+        wall_1 = floor.walls[self.wall_index_1]
+        wall_2 = floor.walls[self.wall_index_2]
+
+        #Load them into a temporary class, then swap them
+        wall_1_temp = facade_utils.FacWall()
+        wall_2_temp = facade_utils.FacWall()
+
+        wall_1_temp.from_prop(wall_1)
+        wall_2_temp.from_prop(wall_2)
+
+        wall_1_temp.to_prop(wall_2)
+        wall_2_temp.to_prop(wall_1)
+
+        return {'FINISHED'}
+
+class MENU_BT_fac_swap_spellings(bpy.types.Operator):
+    bl_idname = "xp_ext.fac_swap_spellings"
+    bl_label = "Spelling Operation"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    collection_name: bpy.props.StringProperty() # type: ignore
+    floor_index: bpy.props.IntProperty() # type: ignore
+    wall_index: bpy.props.IntProperty() # type: ignore
+    spelling_index_1: bpy.props.IntProperty() # type: ignore
+    spelling_index_2: bpy.props.IntProperty() # type: ignore
+
+    def execute(self, context):
+        #Get the collection
+        col = None
+        for search_col in bpy.data.collections:
+            if search_col.name == self.collection_name:
+                col = search_col
+
+        if col is None:
+            self.report({'ERROR'}, "Collection not found")
+            return {'CANCELLED'}
+
+        #Get the floor
+        floor = col.xp_fac.floors[self.floor_index]
+
+        if floor is None:
+            self.report({'ERROR'}, "Floor not found")
+            return {'CANCELLED'}
+
+        #Get the wall
+        wall = floor.walls[self.wall_index]
+
+        if wall is None:
+            self.report({'ERROR'}, "Wall not found")
+            return {'CANCELLED'}
+
+        #Get the spellings
+        spelling_1 = wall.spellings[self.spelling_index_1]
+        spelling_2 = wall.spellings[self.spelling_index_2]
+
+        #Load them into a temporary class, then swap them
+        spelling_1_temp = facade_utils.FacSpelling()
+        spelling_2_temp = facade_utils.FacSpelling()
+
+        spelling_1_temp.from_prop(spelling_1)
+        spelling_2_temp.from_prop(spelling_2)
+
+        spelling_1_temp.to_prop(spelling_2)
+        spelling_2_temp.to_prop(spelling_1)
 
         return {'FINISHED'}
 
@@ -672,6 +805,9 @@ def register():
     bpy.utils.register_class(BTN_bake_low_poly)
     bpy.utils.register_class(BTN_update_xp_export_settings)
     bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
+    bpy.utils.register_class(MENU_BT_fac_swap_floors)
+    bpy.utils.register_class(MENU_BT_fac_swap_walls)
+    bpy.utils.register_class(MENU_BT_fac_swap_spellings)
     bpy.utils.register_class(BTN_fac_export_all)
     bpy.utils.register_class(BTN_run_tests)
     bpy.utils.register_class(BTN_TEST_config_bake_settings)
@@ -700,6 +836,9 @@ def unregister():
     bpy.utils.unregister_class(BTN_bake_low_poly)
     bpy.utils.unregister_class(BTN_update_xp_export_settings)
     bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)
+    bpy.utils.unregister_class(MENU_BT_fac_swap_floors)
+    bpy.utils.unregister_class(MENU_BT_fac_swap_walls)
+    bpy.utils.unregister_class(MENU_BT_fac_swap_spellings)
     bpy.utils.unregister_class(BTN_fac_export_all)
     bpy.utils.unregister_class(BTN_run_tests)
     bpy.utils.unregister_class(BTN_TEST_config_bake_settings)

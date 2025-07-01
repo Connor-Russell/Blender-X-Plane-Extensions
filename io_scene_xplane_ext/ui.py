@@ -95,7 +95,7 @@ def draw_fac_spelling_entry(layout, entry, collection_name, floor_index, wall_in
         return
 
     row.prop_search(entry, "collection", col.xp_fac, "spelling_choices")
-    btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
+    btn_rem = row.operator("xp_ext.add_rem_fac", text="", icon='X')
     btn_rem.collection_name = collection_name
     btn_rem.floor_index = floor_index
     btn_rem.wall_index = wall_index
@@ -104,27 +104,43 @@ def draw_fac_spelling_entry(layout, entry, collection_name, floor_index, wall_in
     btn_rem.level = "spelling_entry"
     btn_rem.add = False
 
-def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index, spelling_index):
+def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index, spelling_index, spelling_len=0):
     box = layout.box()
     row = box.row()
 
     row.prop(spelling, "is_ui_expanded", text=f"Spelling {spelling_index + 1}", icon='TRIA_DOWN' if spelling.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
     
-    if spelling.is_ui_expanded:
-        btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
-        btn_rem.collection_name = collection_name
-        btn_rem.floor_index = floor_index
-        btn_rem.wall_index = wall_index
-        btn_rem.spelling_index = spelling_index
-        btn_rem.level = "spelling"
-        btn_rem.add = False
+    if spelling_index != 0:
+        btn_swap_up = row.operator("xp_ext.fac_swap_spellings", text="", icon='TRIA_UP')
+        btn_swap_up.collection_name = collection_name
+        btn_swap_up.floor_index = floor_index
+        btn_swap_up.wall_index = wall_index
+        btn_swap_up.spelling_index_1 = spelling_index - 1
+        btn_swap_up.spelling_index_2 = spelling_index
 
+    if spelling_index != spelling_len - 1:
+        btn_swap_down = row.operator("xp_ext.fac_swap_spellings", text="", icon='TRIA_DOWN')
+        btn_swap_down.collection_name = collection_name
+        btn_swap_down.floor_index = floor_index
+        btn_swap_down.wall_index = wall_index
+        btn_swap_down.spelling_index_1 = spelling_index
+        btn_swap_down.spelling_index_2 = spelling_index + 1
+
+    btn_rem = row.operator("xp_ext.add_rem_fac", text="", icon='X')
+    btn_rem.collection_name = collection_name
+    btn_rem.floor_index = floor_index
+    btn_rem.wall_index = wall_index
+    btn_rem.spelling_index = spelling_index
+    btn_rem.level = "spelling"
+    btn_rem.add = False
+    
+    if spelling.is_ui_expanded:
         for i, entry in enumerate(spelling.entries):
             draw_fac_spelling_entry(box, entry, collection_name, floor_index, wall_index, spelling_index, i)
 
         row = box.row()
 
-        btn_add = row.operator("xp.add_rem_fac", text="Add Segment", icon='ADD')
+        btn_add = row.operator("xp_ext.add_rem_fac", text="Add Segment", icon='ADD')
         btn_add.collection_name = collection_name
         btn_add.floor_index = floor_index
         btn_add.wall_index = wall_index
@@ -133,7 +149,7 @@ def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index
         btn_add.level = "spelling_entry"
         btn_add.add = True
 
-        btn_duplicate = row.operator("xp.add_rem_fac", text="Duplicate Spelling", icon='DUPLICATE')
+        btn_duplicate = row.operator("xp_ext.add_rem_fac", text="Duplicate Spelling", icon='DUPLICATE')
         btn_duplicate.collection_name = collection_name
         btn_duplicate.floor_index = floor_index
         btn_duplicate.wall_index = wall_index
@@ -143,10 +159,32 @@ def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index
         btn_duplicate.add = True
         btn_duplicate.duplicate = True
 
-def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
+def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index, wall_len=0):
     box = layout.box()
     row = box.row()
     row.prop(wall, "is_ui_expanded", text=wall.name, icon='TRIA_DOWN' if wall.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+
+    if wall_index != 0:
+        btn_swap_up = row.operator("xp_ext.fac_swap_walls", text="", icon='TRIA_UP')
+        btn_swap_up.collection_name = collection_name
+        btn_swap_up.floor_index = floor_index
+        btn_swap_up.wall_index_1 = wall_index - 1
+        btn_swap_up.wall_index_2 = wall_index
+
+    if wall_index != wall_len - 1:
+        btn_swap_down = row.operator("xp_ext.fac_swap_walls", text="", icon='TRIA_DOWN')
+        btn_swap_down.collection_name = collection_name
+        btn_swap_down.floor_index = floor_index
+        btn_swap_down.wall_index_1 = wall_index
+        btn_swap_down.wall_index_2 = wall_index + 1
+
+    btn_rem = row.operator("xp_ext.add_rem_fac", text="", icon='X')
+    btn_rem.collection_name = collection_name
+    btn_rem.floor_index = floor_index
+    btn_rem.wall_index = wall_index
+    btn_rem.level = "wall"
+    btn_rem.add = False
+
     if wall.is_ui_expanded:
         box.prop(wall, "name", text="Name")
         box.prop(wall, "min_length", text="Min Length")
@@ -157,11 +195,11 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
         box.label(text="Wall Spellings")
 
         for i, spelling in enumerate(wall.spellings):
-            draw_fac_spelling(box, spelling, collection_name, floor_index, wall_index, i)
+            draw_fac_spelling(box, spelling, collection_name, floor_index, wall_index, i, len(wall.spellings))
 
         box.separator()
 
-        btn_add = box.operator("xp.add_rem_fac", text="Add Spelling", icon='ADD')
+        btn_add = box.operator("xp_ext.add_rem_fac", text="Add Spelling", icon='ADD')
         btn_add.collection_name = collection_name
         btn_add.floor_index = floor_index
         btn_add.wall_index = wall_index
@@ -170,15 +208,7 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index):
         btn_add.add = True
         btn_add.duplicate = False
 
-
-    btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
-    btn_rem.collection_name = collection_name
-    btn_rem.floor_index = floor_index
-    btn_rem.wall_index = wall_index
-    btn_rem.level = "wall"
-    btn_rem.add = False
-
-def draw_fac_floor(layout, floor, collection_name, floor_index):
+def draw_fac_floor(layout, floor, collection_name, floor_index, floor_len=0):
     #Get the collection from the collection name
     col = None
     for collection in bpy.data.collections:
@@ -189,6 +219,25 @@ def draw_fac_floor(layout, floor, collection_name, floor_index):
     box = layout.box()
     row = box.row()
     row.prop(floor, "is_ui_expanded", text=floor.name, icon='TRIA_DOWN' if floor.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+
+    if floor_index != 0:
+        btn_swap_up = row.operator("xp_ext.fac_swap_floors", text="", icon='TRIA_UP')
+        btn_swap_up.collection_name = collection_name
+        btn_swap_up.floor_index_1 = floor_index - 1
+        btn_swap_up.floor_index_2 = floor_index
+
+    if floor_index != floor_len - 1:
+        btn_swap_down = row.operator("xp_ext.fac_swap_floors", text="", icon='TRIA_DOWN')
+        btn_swap_down.collection_name = collection_name
+        btn_swap_down.floor_index_1 = floor_index
+        btn_swap_down.floor_index_2 = floor_index + 1
+
+    btn_rem = row.operator("xp_ext.add_rem_fac", text="", icon='X')
+    btn_rem.collection_name = collection_name
+    btn_rem.floor_index = floor_index
+    btn_rem.level = "floor"
+    btn_rem.add = False
+
     if floor.is_ui_expanded:
         box.label(text=f"Floor")
         box.prop(floor, "name", text="Name")
@@ -197,21 +246,15 @@ def draw_fac_floor(layout, floor, collection_name, floor_index):
         box.label(text="Wall Rules:")
 
         for i, wall in enumerate(floor.walls):
-            draw_fac_wall(box, wall, collection_name, floor_index, i)
+            draw_fac_wall(box, wall, collection_name, floor_index, i, len(floor.walls))
 
         box.separator()
-        btn_add = box.operator("xp.add_rem_fac", text="Add Wall", icon='ADD')
+        btn_add = box.operator("xp_ext.add_rem_fac", text="Add Wall", icon='ADD')
         btn_add.collection_name = collection_name
         btn_add.floor_index = floor_index
         btn_add.wall_index = len(floor.walls)
         btn_add.level = "wall"
         btn_add.add = True
-
-    btn_rem = row.operator("xp.add_rem_fac", text="", icon='X')
-    btn_rem.collection_name = collection_name
-    btn_rem.floor_index = floor_index
-    btn_rem.level = "floor"
-    btn_rem.add = False
 
 class MENU_lin_exporter(bpy.types.Panel):
     bl_label = "X-Plane Line Exporter"
@@ -696,9 +739,9 @@ class MENU_facade(bpy.types.Panel):
                 for i, floor in enumerate(fac.floors):
                     if floor.name == "":
                         floor.name = f"Floor {i}"
-                    draw_fac_floor(spelling_box, floor, col.name, i)
+                    draw_fac_floor(spelling_box, floor, col.name, i, len(fac.floors))
                 
-                btn_add = spelling_box.operator("xp.add_rem_fac", text="Add Floor", icon='ADD')
+                btn_add = spelling_box.operator("xp_ext.add_rem_fac", text="Add Floor", icon='ADD')
                 btn_add.collection_name = col.name
                 btn_add.floor_index = len(fac.floors)
                 btn_add.level = "floor"

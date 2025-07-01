@@ -54,3 +54,87 @@ def get_roof_data(collection):
     #Return a tuple of the roof scale and the roof objects
     return (roof_scale_x, roof_scale_y, roof_objs, roof_heights)
 
+class FacSpelling:
+    def __init__(self):
+        self.is_ui_expanded = False
+        self.entries = []
+
+    def to_prop(self, prop: bpy.types.PropertyGroup):
+        prop.is_ui_expanded = self.is_ui_expanded
+        prop.entries.clear()
+        for entry in self.entries:
+            entry_prop = prop.entries.add()
+            entry_prop.collection = entry   #Collection is just a string
+
+    def from_prop(self, prop):
+        self.is_ui_expanded = prop.is_ui_expanded
+        self.entries = [entry.collection for entry in prop.entries]
+        return self
+
+
+class FacWall:
+    def __init__(self):
+        self.min_length = 0.0
+        self.max_length = 1000.0
+        self.min_heading = 0.0
+        self.max_heading = 360.0
+        self.name = ""
+        self.spellings = []
+        self.is_ui_expanded = False
+
+    def to_prop(self, prop):
+        prop.min_length = self.min_length
+        prop.max_length = self.max_length
+        prop.min_heading = self.min_heading
+        prop.max_heading = self.max_heading
+        prop.name = self.name
+        prop.is_ui_expanded = self.is_ui_expanded
+        prop.spellings.clear()
+        for spelling in self.spellings:
+            spelling_prop = prop.spellings.add()
+            spelling.to_prop(spelling_prop)
+
+    def from_prop(self, prop):
+        for spelling in prop.spellings:
+            spelling_obj = FacSpelling()
+            spelling_obj.from_prop(spelling)
+            self.spellings.append(spelling_obj)
+        
+        self.min_length = prop.min_length
+        self.max_length = prop.max_length
+        self.min_heading = prop.min_heading
+        self.max_heading = prop.max_heading
+        self.name = prop.name
+        self.is_ui_expanded = prop.is_ui_expanded
+
+class FacFloor:
+    def __init__(self):
+        self.name = ""
+        self.roof_collection = ""
+        self.walls = []
+        self.is_ui_expanded = False 
+        self.roof_collisions = False
+        self.roof_two_sided = False
+    
+    def to_prop(self, prop):
+        prop.name = self.name
+        prop.roof_collection = self.roof_collection
+        prop.is_ui_expanded = self.is_ui_expanded
+        prop.roof_collisions = self.roof_collisions
+        prop.roof_two_sided = self.roof_two_sided
+        prop.walls.clear()
+        for wall in self.walls:
+            wall_prop = prop.walls.add()
+            wall.to_prop(wall_prop)
+
+    def from_prop(self, prop):
+        self.name = prop.name
+        self.roof_collection = prop.roof_collection
+        self.is_ui_expanded = prop.is_ui_expanded
+        self.roof_collisions = prop.roof_collisions
+        self.roof_two_sided = prop.roof_two_sided
+        for wall in prop.walls:
+            wall_obj = FacWall()
+            wall_obj.from_prop(wall)
+            self.walls.append(wall_obj)
+        return self
