@@ -23262,6 +23262,431 @@ ATTR_LOD	0	250
 		ANIM_end
 	ANIM_end
 ATTR_LOD	250	2500
+
+	ATTR_shiny_rat	0.5
+	TRIS	5598 1359
+	ANIM_begin
+	ANIM_trans_begin	sam/jetway/rotate1
+	ANIM_trans_key	90	-0.050000001	0	-0
+	ANIM_trans_key	0	-0	0	0.050000001
+	ANIM_trans_key	-90	0.050000001	0	0
+	ANIM_trans_end
+	ANIM_rotate_begin	0	1	-0	sam/jetway/rotate1
+	ANIM_rotate_key	90	-67.500157
+	ANIM_rotate_key	0	22.500052
+	ANIM_rotate_key	-90	112.50026
+	ANIM_rotate_end
+	TRIS	6957 327
+		TRIS	8298 36
+		ANIM_begin
+		ANIM_trans	-0.69193	4.6496401	-2.01124	-0.69193	4.6496401	-2.01124
+		ANIM_rotate	0	1	0	-22.500053	-22.500053
+		ANIM_rotate_begin	0	1	-0	sam/jetway/rotate3
+		ANIM_rotate_key	-6	90.000207
+		ANIM_rotate_key	0	90.000207
+		ANIM_rotate_key	6	90.000207
+		ANIM_rotate_end
+		ANIM_rotate_begin	0	0	-1	sam/jetway/rotate3
+		ANIM_rotate_key	-6	6.5500537
+		ANIM_rotate_key	0	0.081932962
+		ANIM_rotate_key	6	-6.4016576
+		ANIM_rotate_end
+			ANIM_begin
+			ANIM_rotate	0	1	0	-90.00021	-90.00021
+			ANIM_rotate_begin	0	1	-0	sam/jetway/extent
+			ANIM_rotate_key	0	-0.37414143
+			ANIM_rotate_key	1.4545455	-0.44919892
+			ANIM_rotate_key	3.0707071	-0.53227782
+			ANIM_rotate_key	4.6868687	-0.61592965
+			ANIM_rotate_key	6.3030305	-0.69958149
+			ANIM_rotate_key	7.9191923	-0.78266033
+			ANIM_rotate_key	9.5353537	-0.86631217
+			ANIM_rotate_key	11.151515	-0.94939107
+			ANIM_rotate_key	12.767676	-1.033043
+			ANIM_rotate_key	14.383838	-1.1166947
+			ANIM_rotate_key	16	-1.1997736
+			ANIM_rotate_key	16.5	-1.1802931
+			ANIM_rotate_key	17	-1.155083
+			ANIM_rotate_end
+			ANIM_rotate_begin	0	0	-1	sam/jetway/extent
+			ANIM_rotate_key	0	1.140186
+			ANIM_rotate_key	1.4545455	1.0353347
+			ANIM_rotate_key	3.0707071	0.91902426
+			ANIM_rotate_key	4.6868687	0.80271387
+			ANIM_rotate_key	6.3030305	0.68640344
+			ANIM_rotate_key	7.9191923	0.570093
+			ANIM_rotate_key	9.5353537	0.45378256
+			ANIM_rotate_key	11.151515	0.33747215
+			ANIM_rotate_key	12.767676	0.22116171
+			ANIM_rotate_key	14.383838	0.10485127
+			ANIM_rotate_key	16	-0.011459156
+			ANIM_rotate_key	16.5	-0.1695955
+			ANIM_rotate_key	17	-0.32486706
+			ANIM_rotate_end
+			ANIM_rotate_begin	1	0	-0	sam/jetway/extent
+			ANIM_rotate_key	0	15.575285
+			ANIM_rotate_key	1.4545455	3.284194
+			ANIM_rotate_key	3.0707071	-4.8558171
+			ANIM_rotate_key	4.6868687	-11.335397
+			ANIM_rotate_key	6.3030305	-17.303325
+			ANIM_rotate_key	7.9191923	-23.001963
+			ANIM_rotate_key	9.5353537	-28.826653
+			ANIM_rotate_key	11.151515	-34.858752
+			ANIM_rotate_key	12.767676	-41.266138
+			ANIM_rotate_key	14.383838	-48.409205
+			ANIM_rotate_key	16	-56.807045
+			ANIM_rotate_key	16.5	-64.72303
+			ANIM_rotate_key	17	-71.96579
+			ANIM_rotate_end
+			TRIS	8826 6
+			ANIM_end
+			ANIM_begin
+			ANIM_trans	-1.54336	-4.6496301	1.4089299	-1.54336	-4.6496301	1.4089299
+			ANIM_rotate	0	1	0	-90.00021	-90.00021
+			ANIM_trans_begin	sam/jetway/extent
+			ANIM_trans_key	0	-1.3124999	4.9349994	-2.3705296
+			ANIM_trans_key	1.4545455	-1.3124999	4.9349994	-3.0978097
+			ANIM_trans_key	3.0707071	-1.3124999	4.9349994	-3.9058895
+			ANIM_trans_key	4.6868687	-1.3124999	4.9349994	-4.7139696
+			ANIM_trans_key	6.3030305	-1.3124999	4.9349994	-5.5220492
+			ANIM_trans_key	7.9191923	-1.3124999	4.9349994	-6.3301293
+			ANIM_trans_key	9.5353537	-1.3124999	4.9349994	-7.138209
+			ANIM_trans_key	11.151515	-1.3124999	4.9349994	-7.9462891
+			ANIM_trans_key	12.767676	-1.3124999	4.9349994	-8.7543687
+			ANIM_trans_key	14.383838	-1.3124999	4.9349994	-9.5624493
+			ANIM_trans_key	16	-1.3124999	4.9349994	-10.370529
+			ANIM_trans_key	16.5	-1.3124999	4.9349994	-10.973289
+			ANIM_trans_key	17	-1.3124999	4.9349994	-11.370529
+			ANIM_trans_end
+			ANIM_rotate_begin	0	1	-0	sam/jetway/extent
+			ANIM_rotate_key	0	179.0539
+			ANIM_rotate_key	1.4545455	179.03098
+			ANIM_rotate_key	3.0707071	179.00519
+			ANIM_rotate_key	4.6868687	178.97941
+			ANIM_rotate_key	6.3030305	178.95363
+			ANIM_rotate_key	7.9191923	178.92842
+			ANIM_rotate_key	9.5353537	178.90264
+			ANIM_rotate_key	11.151515	178.87685
+			ANIM_rotate_key	12.767676	178.85165
+			ANIM_rotate_key	14.383838	178.82585
+			ANIM_rotate_key	16	178.80008
+			ANIM_rotate_key	16.5	178.81898
+			ANIM_rotate_key	17	178.84248
+			ANIM_rotate_end
+			ANIM_rotate_begin	0	0	-1	sam/jetway/extent
+			ANIM_rotate_key	0	0.73796966
+			ANIM_rotate_key	1.4545455	0.66978767
+			ANIM_rotate_key	3.0707071	0.59415725
+			ANIM_rotate_key	4.6868687	0.51852683
+			ANIM_rotate_key	6.3030305	0.44289639
+			ANIM_rotate_key	7.9191923	0.36726594
+			ANIM_rotate_key	9.5353537	0.29106256
+			ANIM_rotate_key	11.151515	0.21543213
+			ANIM_rotate_key	12.767676	0.1398017
+			ANIM_rotate_key	14.383838	0.064171275
+			ANIM_rotate_key	16	-0.011459156
+			ANIM_rotate_key	16.5	-0.16730368
+			ANIM_rotate_key	17	-0.31627271
+			ANIM_rotate_end
+			ANIM_rotate_begin	1	0	-0	sam/jetway/extent
+			ANIM_rotate_key	0	-22.052
+			ANIM_rotate_key	1.4545455	-17.749087
+			ANIM_rotate_key	3.0707071	-18.822809
+			ANIM_rotate_key	4.6868687	-21.71109
+			ANIM_rotate_key	6.3030305	-25.477714
+			ANIM_rotate_key	7.9191923	-29.895793
+			ANIM_rotate_key	9.5353537	-34.6628
+			ANIM_rotate_key	11.151515	-39.964379
+			ANIM_rotate_key	12.767676	-45.824019
+			ANIM_rotate_key	14.383838	-52.517885
+			ANIM_rotate_key	16	-60.55419
+			ANIM_rotate_key	16.5	-68.18026
+			ANIM_rotate_key	17	-75.270037
+			ANIM_rotate_end
+			TRIS	8832 3
+			ANIM_end
+			ANIM_begin
+			ANIM_trans	-1.54336	-4.6496401	1.4089299	-1.54336	-4.6496401	1.4089299
+			ANIM_rotate	0	1	0	-90.00021	-90.00021
+			ANIM_trans_begin	sam/jetway/extent
+			ANIM_trans_key	0	-1.225	4.9499998	-2.25
+			ANIM_trans_key	1.4545455	-1.225	4.9499998	-2.9772699
+			ANIM_trans_key	3.0707071	-1.225	4.9499998	-3.7853601
+			ANIM_trans_key	4.6868687	-1.225	4.9499998	-4.5934401
+			ANIM_trans_key	6.3030305	-1.225	4.9499998	-5.4015198
+			ANIM_trans_key	7.9191923	-1.225	4.9499998	-6.2096
+			ANIM_trans_key	9.5353537	-1.225	4.9499998	-7.0176802
+			ANIM_trans_key	11.151515	-1.225	4.9499998	-7.8257599
+			ANIM_trans_key	12.767676	-1.225	4.9499998	-8.6338396
+			ANIM_trans_key	14.383838	-1.225	4.9499998	-9.4419203
+			ANIM_trans_key	16	-1.225	4.9499998	-10.25
+			ANIM_trans_key	16.5	-1.225	4.9499998	-10.85276
+			ANIM_trans_key	17	-1.225	4.9499998	-11.25
+			ANIM_trans_end
+			ANIM_rotate_begin	1	0	-0	sam/jetway/extent
+			ANIM_rotate_key	0	-8.8991807
+			ANIM_rotate_key	1.4545455	-11.292998
+			ANIM_rotate_key	3.0707071	-14.877994
+			ANIM_rotate_key	4.6868687	-19.136218
+			ANIM_rotate_key	6.3030305	-23.676335
+			ANIM_rotate_key	7.9191923	-28.540174
+			ANIM_rotate_key	9.5353537	-33.824562
+			ANIM_rotate_key	11.151515	-39.47278
+			ANIM_rotate_key	12.767676	-45.648695
+			ANIM_rotate_key	14.383838	-52.706388
+			ANIM_rotate_key	16	-61.251477
+			ANIM_rotate_key	16.5	-69.818918
+			ANIM_rotate_key	17	-78.72211
+			ANIM_rotate_end
+			TRIS	8835 9
+			ANIM_end
+			ANIM_begin
+			ANIM_trans	-1.54336	-4.6496401	1.4089299	-1.54336	-4.6496401	1.4089299
+			ANIM_rotate	0	1	0	-90.00021	-90.00021
+			ANIM_trans_begin	sam/jetway/extent
+			ANIM_trans_key	0	-1.3125	4.8499999	-3.25
+			ANIM_trans_key	1.4545455	-1.3125	4.8499999	-4.7045498
+			ANIM_trans_key	3.0707071	-1.3125	4.8499999	-6.3207102
+			ANIM_trans_key	4.6868687	-1.3125	4.8499999	-7.9368701
+			ANIM_trans_key	6.3030305	-1.3125	4.8499999	-9.55303
+			ANIM_trans_key	7.9191923	-1.3125	4.8499999	-11.16919
+			ANIM_trans_key	9.5353537	-1.3125	4.8499999	-12.78535
+			ANIM_trans_key	11.151515	-1.3125	4.8499999	-14.40152
+			ANIM_trans_key	12.767676	-1.3125	4.8499999	-16.017679
+			ANIM_trans_key	14.383838	-1.3125	4.8499999	-17.633841
+			ANIM_trans_key	16	-1.3125	4.8499999	-19.25
+			ANIM_trans_key	16.5	-1.3125	4.8499999	-20.455509
+			ANIM_trans_key	17	-1.3125	4.8499999	-21.25
+			ANIM_trans_end
+			ANIM_rotate_begin	0	1	-0	sam/jetway/extent
+			ANIM_rotate_key	0	-179.99985
+			ANIM_rotate_key	1.4545455	-179.99985
+			ANIM_rotate_key	3.0707071	-179.99985
+			ANIM_rotate_key	4.6868687	-179.99985
+			ANIM_rotate_key	6.3030305	-179.99985
+			ANIM_rotate_key	7.9191923	-179.99985
+			ANIM_rotate_key	9.5353537	-179.99985
+			ANIM_rotate_key	11.151515	-179.99985
+			ANIM_rotate_key	12.767676	-179.99985
+			ANIM_rotate_key	14.383838	-179.99985
+			ANIM_rotate_key	16	-179.99985
+			ANIM_rotate_key	16.5	-179.99985
+			ANIM_rotate_key	17	-179.99985
+			ANIM_rotate_end
+			ANIM_rotate_begin	1	0	-0	sam/jetway/extent
+			ANIM_rotate_key	0	1.0147083
+			ANIM_rotate_key	1.4545455	-4.8982164
+			ANIM_rotate_key	3.0707071	-10.552737
+			ANIM_rotate_key	4.6868687	-15.837699
+			ANIM_rotate_key	6.3030305	-21.122662
+			ANIM_rotate_key	7.9191923	-26.407625
+			ANIM_rotate_key	9.5353537	-31.87135
+			ANIM_rotate_key	11.151515	-37.785993
+			ANIM_rotate_key	12.767676	-44.142389
+			ANIM_rotate_key	14.383838	-51.331289
+			ANIM_rotate_key	16	-59.993267
+			ANIM_rotate_key	16.5	-68.605965
+			ANIM_rotate_key	17	-77.548117
+			ANIM_rotate_end
+			TRIS	8844 3
+			ANIM_end
+		ANIM_end
+		ANIM_begin
+		ANIM_trans	0.046190001	0	0.019130001	0.046190001	0	0.019130001
+		ANIM_rotate	0	1	0	-112.50026	-112.50026
+		ANIM_trans_begin	sam/jetway/rotate3
+		ANIM_trans_key	-6	-1.79407	5.99507	0.050000001
+		ANIM_trans_key	0	-1.69068	6.1777	0.050000001
+		ANIM_trans_key	6	-1.5687701	6.3485198	0.050000001
+		ANIM_trans_end
+		ANIM_rotate_begin	0	0	-1	sam/jetway/rotate3
+		ANIM_rotate_key	-6	-6.0000138
+		ANIM_rotate_key	0	0
+		ANIM_rotate_key	6	6.0000138
+		ANIM_rotate_end
+			ANIM_begin
+			ANIM_trans	1.64069	-6.1777	-0	1.64069	-6.1777	-0
+			ANIM_rotate	0	1	0	90.00021	90.00021
+			ANIM_trans_begin	sam/jetway/extent
+			ANIM_trans_key	0	-0	6.1777	-3.6406901
+			ANIM_trans_key	16	-0	6.1777	-19.64069
+			ANIM_trans_key	17	-0	6.1777	-21.64069
+			ANIM_trans_end
+				ANIM_begin
+				ANIM_trans	-0	1.625	-11.2	-0	1.625	-11.2
+				ANIM_rotate_begin	0	1	-0	sam/jetway/rotate2
+				ANIM_rotate_key	90	90.000207
+				ANIM_rotate_key	0	179.99985
+				ANIM_rotate_key	-90	270.00006
+				ANIM_rotate_end
+				TRIS	6 5163
+					LIGHT_PARAM	full_custom_halo_night -0.057246868 -1.571804 3.0999732 1 1 1 1 6 -0.00000009 0.00000016 1 0.17364822
+				ANIM_end
+				TRIS	5169 375
+				ANIM_begin
+				ANIM_trans	-0	1.625	-11.2	-0	1.625	-11.2
+				ANIM_rotate_begin	0	1	-0	sam/jetway/rotate2
+				ANIM_rotate_key	90	90.000207
+				ANIM_rotate_key	0	179.99985
+				ANIM_rotate_key	-90	270.00006
+				ANIM_rotate_end
+				TRIS	20733 18
+				ANIM_end
+			ANIM_end
+			TRIS	11637 1251
+				ANIM_begin
+				ANIM_trans	1.7	-6.1999998	-0.050000001	1.7	-6.1999998	-0.050000001
+				ANIM_trans_begin	sam/jetway/extent
+				ANIM_trans_key	0	-2.2	6.1999998	0.050000001
+				ANIM_trans_key	16	-10.2	6.1999998	0.050000001
+				ANIM_trans_key	17	-11.2	6.1999998	0.050000001
+				ANIM_trans_end
+				TRIS	12888 1383
+					ANIM_begin
+					ANIM_trans	10.2	-6.1999998	-0.050000001	10.2	-6.1999998	-0.050000001
+					ANIM_trans_begin	sam/jetway/extent
+					ANIM_trans_key	0	-11.2	6.1999998	0.050000001
+					ANIM_trans_key	16	-19.200001	6.1999998	0.050000001
+					ANIM_trans_key	17	-20.200001	6.1999998	0.050000001
+					ANIM_trans_end
+					TRIS	0 6
+					ANIM_end
+					ANIM_begin
+					ANIM_trans	10.2	-6.1999998	-0.050000001	10.2	-6.1999998	-0.050000001
+					ANIM_trans_begin	sam/jetway/extent
+					ANIM_trans_key	0	-11.2	6.1999998	0.050000001
+					ANIM_trans_key	16	-19.200001	6.1999998	0.050000001
+					ANIM_trans_key	17	-20.200001	6.1999998	0.050000001
+					ANIM_trans_end
+					ATTR_light_level	1	1	sim/graphics/animation/draw_light_level	1
+					TRIS	14271 5493
+						ANIM_begin
+						ANIM_trans	-3.675	-2.75	0.40000001	-3.675	-2.75	0.40000001
+						ANIM_rotate_begin	1	0	-0	xcd/kden/fan
+						ANIM_rotate_key	0	0
+						ANIM_rotate_key	0.050000001	-90.000207
+						ANIM_rotate_end
+						ATTR_light_level_reset
+						TRIS	5544 54
+						ANIM_end
+						ANIM_begin
+						ANIM_trans	-10.5971	-1.525	-3.15119	-10.5971	-1.525	-3.15119
+						ANIM_rotate	0	1	0	90.00021	90.00021
+						ANIM_rotate_begin	1	0	-0	sam/jetway/rotate3
+						ANIM_rotate_key	-6	15.568982
+						ANIM_rotate_key	0	30.883571
+						ANIM_rotate_key	6	52.656541
+						ANIM_rotate_end
+						ANIM_end
+						ANIM_begin
+						ANIM_trans	-10.59709	-1.525	-2.5011899	-10.59709	-1.525	-2.5011899
+						ANIM_rotate	0	1	0	90.00021	90.00021
+						ANIM_rotate	1	0	0	6.000014	6.000014
+						ANIM_rotate_begin	1	0	-0	sam/jetway/extent
+						ANIM_rotate_key	0	-0.46753355
+						ANIM_rotate_key	17	0
+						ANIM_rotate_end
+						ANIM_hide	-10	0	sam/jetway/rotate3
+						ANIM_show	0.001	0.5	sam/jetway/rotate3
+						ANIM_hide	0.50099999	10	sam/jetway/rotate3
+							ANIM_begin
+							ANIM_rotate_begin	1	0	-0	sam/jetway/rotate3
+							ANIM_rotate_key	-6	7.4753799
+							ANIM_rotate_key	0	24.528323
+							ANIM_rotate_key	6	50.13839
+							ANIM_rotate_end
+							TRIS	9861 888
+							ANIM_end
+						ANIM_end
+						ANIM_begin
+						ANIM_trans	-10.59709	-1.525	-2.5011899	-10.59709	-1.525	-2.5011899
+						ANIM_rotate	0	1	0	90.00021	90.00021
+						ANIM_rotate	1	0	0	6.000014	6.000014
+						ANIM_rotate_begin	1	0	-0	sam/jetway/extent
+						ANIM_rotate_key	0	-2.3325111
+						ANIM_rotate_key	17	0
+						ANIM_rotate_end
+						ANIM_hide	-10	0.5	sam/jetway/rotate3
+						ANIM_show	0.50099999	1	sam/jetway/rotate3
+						ANIM_hide	1.001	10	sam/jetway/rotate3
+							ANIM_begin
+							ANIM_rotate_begin	1	0	-0	sam/jetway/rotate3
+							ANIM_rotate_key	-6	7.4753799
+							ANIM_rotate_key	0	24.528323
+							ANIM_rotate_key	6	50.13839
+							ANIM_rotate_end
+							TRIS	10749 888
+							ANIM_end
+						ANIM_end
+						ANIM_begin
+						ANIM_trans	19.200001	-6.1999998	-0.049989998	19.200001	-6.1999998	-0.049989998
+						ANIM_trans_begin	sam/jetway/wheels
+						ANIM_trans_key	2	-28.19392	-0.67500001	-1.51789
+						ANIM_trans_key	0	-28.19392	1.325	-1.51789
+						ANIM_trans_key	-2	-28.19392	3.325	-1.51789
+						ANIM_trans_end
+						TRIS	20406 327
+							ANIM_begin
+							ANIM_trans	-0	-0.375	1.56788	-0	-0.375	1.56788
+							ANIM_rotate	0	1	0	90.00021	90.00021
+							ANIM_rotate_begin	1	0	-0	sam/jetway/rotate3
+							ANIM_rotate_key	-6	6.0000138
+							ANIM_rotate_key	0	0
+							ANIM_rotate_key	6	-6.0000138
+							ANIM_rotate_end
+								ANIM_begin
+								ANIM_rotate_begin	0	1	-0	sam/jetway/wheelrotatec
+								ANIM_rotate_key	-90	0
+								ANIM_rotate_key	0	90.000207
+								ANIM_rotate_key	90	179.99985
+								ANIM_rotate_end
+								TRIS	19764 642
+									ANIM_begin
+									ANIM_trans	-0.82499999	-0.44999999	-0	-0.82499999	-0.44999999	-0
+									ANIM_rotate	0	1	0	-90.00021	-90.00021
+									ANIM_rotate_begin	0	0	-1	sam/jetway/wheelrotatel
+									ANIM_rotate_key	0	90.000207
+									ANIM_rotate_key	90	-0
+									ANIM_rotate_key	180	-90.000207
+									ANIM_rotate_key	270	-179.99985
+									ANIM_rotate_key	360	-270.00006
+									ANIM_rotate_end
+									ANIM_rotate_begin	1	0	-0	sam/jetway/wheelrotatel
+									ANIM_rotate_key	0	-270.00006
+									ANIM_rotate_key	90	-270.00006
+									ANIM_rotate_key	180	-270.00006
+									ANIM_rotate_key	270	-270.00006
+									ANIM_rotate_key	360	-270.00006
+									ANIM_rotate_end
+									TRIS	8847 357
+									ANIM_end
+									ANIM_begin
+									ANIM_trans	0.82499999	-0.44999999	0	0.82499999	-0.44999999	0
+									ANIM_rotate	0	1	0	-90.00021	-90.00021
+									ANIM_rotate_begin	0	0	-1	sam/jetway/wheelrotater
+									ANIM_rotate_key	0	90.000207
+									ANIM_rotate_key	90	-0
+									ANIM_rotate_key	180	-90.000207
+									ANIM_rotate_key	270	-179.99985
+									ANIM_rotate_key	360	-270.00006
+									ANIM_rotate_end
+									ANIM_rotate_begin	1	0	-0	sam/jetway/wheelrotater
+									ANIM_rotate_key	0	-90.000207
+									ANIM_rotate_key	90	-90.000207
+									ANIM_rotate_key	180	-90.000207
+									ANIM_rotate_key	270	-90.000207
+									ANIM_rotate_key	360	-90.000207
+									ANIM_rotate_end
+									TRIS	9234 357
+									ANIM_end
+								ANIM_end
+							ANIM_end
+						ANIM_end
+					ANIM_end
+				ANIM_end
+		ANIM_end
+	ANIM_end
+
 		TRIS	9591 270
 	ANIM_begin
 	ANIM_trans_begin	sam/jetway/rotate1
