@@ -299,8 +299,6 @@ class line():
             log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
             return
 
-        self.layer = in_collection.xp_lin.layer_group
-        self.layer_offset = in_collection.xp_lin.layer_group_offset
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
@@ -308,6 +306,8 @@ class line():
         self.do_blend = True if mat.blend_mode == 'BLEND' else False
         self.blend_cutoff = mat.blend_cutoff
         self.surface = mat.surface_type
+        self.layer = mat.layer_group
+        self.layer_offset = mat.layer_group_offset
 
         for decal in mat.decals:
             self.decals.append(decal)
@@ -359,8 +359,8 @@ class line():
         mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'
         mat.xp_materials.blend_cutoff = self.blend_cutoff
         mat.xp_materials.surface_type = self.surface
-        new_collection.xp_lin.layer_group = self.layer.upper()
-        new_collection.xp_lin.layer_group_offset = int(self.layer_offset)
+        mat.xp_materials.layer_group = self.layer.upper()
+        mat.xp_materials.layer_group_offset = int(self.layer_offset)
         new_collection.xp_lin.exportable = True
         new_collection.xp_lin.mirror = self.mirror
         new_collection.xp_lin.segment_count = self.segment_count

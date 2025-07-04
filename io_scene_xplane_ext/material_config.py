@@ -87,10 +87,14 @@ def update_xplane_collection_settings(col):
                         col.xplane.layer.texture_draped = xp_props.alb_texture
                         col.xplane.layer.texture_draped_normal = xp_props.normal_texture
                         col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
+                        col.xplane.layer.layer_group = xp_props.layer_group.lower()
+                        col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
                     else:
                         col.xplane.layer.texture_draped = ""
                         col.xplane.layer.texture_draped_normal = ""
                         col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
+                        col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
+                        col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
                     updated = True
 
                     #Now we need to set the decal properties
@@ -125,6 +129,9 @@ def update_xplane_collection_settings(col):
                     col.xplane.layer.texture_draped_normal = xp_props.normal_texture
                     col.xplane.layer.normal_metalness = xp_props.normal_texture != ""
                     col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
+
+                    col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
+                    col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
 
                     col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
@@ -463,6 +470,10 @@ def update_nodes(material):
         image_decal_2_nml = None
 
         xp_material_props = material.xp_materials
+
+        #If we have no decals we need to update the material settings to populate this data
+        if len(xp_material_props.decals) == 0:
+            update_settings(material)
 
         #Resolve paths. They are relative to the blender file or relative to one folder back. We assume one folder back first. If the file is not found, we assume it is in the same folder as the blender file.
         str_image_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.alb_texture))

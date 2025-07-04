@@ -290,10 +290,6 @@ class polygon():
         self.runway_a = in_collection.xp_pol.runway_markings_a
         self.runway_marking_texture = in_collection.xp_pol.runway_markings_texture
 
-        #Set the layer group and offset
-        self.layer = in_collection.xp_pol.layer_group
-        self.layer_offset = in_collection.xp_pol.layer_group_offset
-
         #Get the material from the first mesh object in the collection
         mat = None
         for obj in in_collection.objects:
@@ -315,7 +311,6 @@ class polygon():
             log_utils.error(f"Collection {in_collection.name} has a material with separate textures. This is not supported for polygons.")
             return
 
-        
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
@@ -325,6 +320,8 @@ class polygon():
         for decal in mat.decals:
             self.decals.append(decal)
         self.surface = mat.surface_type
+        self.layer = mat.layer_group
+        self.layer_offset = mat.layer_group_offset
 
         #Iterate over the objects in this collection. We will use the dimensions of the biggest to set the scale
         max_x = 0
@@ -377,6 +374,8 @@ class polygon():
         mat.xp_materials.blend_mode = 'BlEND' if self.do_blend else 'CLIP'
         mat.xp_materials.blend_cutoff = self.blend_cutoff
         mat.xp_materials.surface_type = self.surface
+        mat.xp_materials.layer_group = self.layer.upper()
+        mat.xp_materials.layer_group_offset = int(self.layer_offset)
 
         decal_alb_index = 0
         decal_nml_index = 2
@@ -415,8 +414,6 @@ class polygon():
         new_collection.xp_pol.runway_markings_b = self.runway_b
         new_collection.xp_pol.runway_markings_a = self.runway_a
         new_collection.xp_pol.runway_markings_texture = self.runway_marking_texture
-        new_collection.xp_pol.layer_group = self.layer.upper()
-        new_collection.xp_pol.layer_group_offset = int(self.layer_offset)
 
         #Get rid of any subtextures that don't have 4 values. This is a safety check.
         self.subtextures = [subtexture for subtexture in self.subtextures if len(subtexture) == 4]

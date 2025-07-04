@@ -46,7 +46,13 @@ def test(test_dir):
 
         try:
             #Open the .blend file
-            bpy.ops.wm.open_mainfile(filepath=import_file)
+            try:
+                bpy.ops.wm.open_mainfile(filepath=import_file)
+            except Exception as e:
+                if "File written by newer" in str(e):
+                    pass
+                else:
+                    raise
 
             #Get the first collection. Then we'll get the path of the asset to import from the collection name
             if len(bpy.data.collections) < 1:

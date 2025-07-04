@@ -790,10 +790,10 @@ class facade:
         self.ring = fac.ring
         
         #Layer groups
-        self.export_wall_layer_group = fac.wall_layer_group
-        self.export_wall_layer_group_offset = fac.wall_layer_group_offset
-        self.export_roof_layer_group = fac.roof_layer_group
-        self.export_roof_layer_group_offset = fac.roof_layer_group_offset
+        self.export_wall_layer_group = self.wall_material.xp_materials.layer_group
+        self.export_wall_layer_group_offset = self.wall_material.xp_materials.layer_group_offset
+        self.export_roof_layer_group = self.roof_material.xp_materials.layer_group
+        self.export_roof_layer_group_offset = self.roof_material.xp_materials.layer_group_offset
 
         #Get the floors
         for f in in_collection.xp_fac.floors:
@@ -842,8 +842,8 @@ class facade:
             wall_material.xp_materials.blend_mode = 'BLEND' if self.import_wall_material.do_blend_alpha else 'NO_BLEND'
             wall_material.xp_materials.blend_cutoff = self.import_wall_material.alpha_cutoff
             wall_material.xp_materials.cast_shadow = self.import_wall_material.cast_shadow
-            facade_props.wall_layer_group = self.import_wall_material.layer_group.upper()
-            facade_props.wall_layer_group_offset = self.import_wall_material.layer_group_offset
+            wall_material.xp_materials.layer_group = self.import_wall_material.layer_group.upper()
+            wall_material.xp_materials.layer_group_offset = self.import_wall_material.layer_group_offset
             self.wall_material = wall_material
 
             decal_alb_index = 0
@@ -876,8 +876,8 @@ class facade:
             roof_material.xp_materials.blend_mode = 'BLEND' if self.import_roof_material.do_blend_alpha else 'NO_BLEND'
             roof_material.xp_materials.blend_cutoff = self.import_roof_material.alpha_cutoff
             roof_material.xp_materials.cast_shadow = self.import_roof_material.cast_shadow
-            facade_props.roof_layer_group = self.import_roof_material.layer_group.upper()
-            facade_props.roof_layer_group_offset = self.import_roof_material.layer_group_offset
+            roof_material.xp_materials.layer_group = self.import_roof_material.layer_group.upper()
+            roof_material.xp_materials.layer_group_offset = self.import_roof_material.layer_group_offset
             self.roof_material = roof_material
 
             decal_alb_index = 0

@@ -298,9 +298,6 @@ class MENU_lin_exporter(bpy.types.Panel):
                         box.prop(col.xp_lin, "name")
                         box.prop(col.xp_lin, "mirror")
                         box.prop(col.xp_lin, "segment_count")
-                        row = box.row()
-                        row.prop(col.xp_lin, "layer_group")
-                        row.prop(col.xp_lin, "layer_group_offset")
 
 
         #Draw a collapsable box where we can list all the collections, and whether they are exportable
@@ -405,9 +402,25 @@ class MENU_agp_obj(bpy.types.Panel):
                 layout.label(text="More Materials = more .objs = more draw calls = worse performance.")
                 layout.label(text="Use at your own risk!")
                 layout.separator()
-                layout.label(text="DISCLAIMER 2:")
-                layout.label(text="Parent-child hierarchies are not maintained.")
-                layout.label(text="For complex animations use a standalone object!")
+                layout.prop(agp_obj, "autosplit_obj_name")
+                layout.separator()
+                layout.prop(agp_obj, "autosplit_lod_count")
+                if  agp_obj.autosplit_lod_count > 0:
+                    row = layout.row()
+                    row.prop(agp_obj, "autosplit_lod_1_min")
+                    row.prop(agp_obj, "autosplit_lod_1_max")
+                if agp_obj.autosplit_lod_count > 1:
+                    row = layout.row()
+                    row.prop(agp_obj, "autosplit_lod_2_min")
+                    row.prop(agp_obj, "autosplit_lod_2_max")
+                if agp_obj.autosplit_lod_count > 2:
+                    row = layout.row()
+                    row.prop(agp_obj, "autosplit_lod_3_min")
+                    row.prop(agp_obj, "autosplit_lod_3_max")
+                if agp_obj.autosplit_lod_count > 3:
+                    row = layout.row()
+                    row.prop(agp_obj, "autosplit_lod_4_min")
+                    row.prop(agp_obj, "autosplit_lod_4_max")
             elif agp_obj.type == "FACADE":
                 layout.separator()
                 layout.prop(agp_obj, "facade_resource")
@@ -449,9 +462,6 @@ class MENU_agp_exporter(bpy.types.Panel):
             top_row.prop(agp, "exportable", text="Export Enabled")
             if agp.is_ui_expanded:
                 box.prop(agp, "name")
-                row = box.row()
-                row.prop(agp, "layer_group")
-                row.prop(agp, "layer_group_offset")
                 
                 box.separator()
 
@@ -553,11 +563,16 @@ class MENU_mats(bpy.types.Panel):
 
             box.separator()
 
+            row = box.row()
+            row.prop(xp_materials, "layer_group")
+            row.prop(xp_materials, "layer_group_offset")
+
+            box.separator()
+
             box.prop(xp_materials, "cast_shadow")
             box.prop(xp_materials, "draped")
             box.prop(xp_materials, "polygon_offset")
             
-
             box.separator()
 
             box.prop(xp_materials, "surface_type")
@@ -724,8 +739,6 @@ class MENU_facade(bpy.types.Panel):
                 wall_box.prop(fac, "render_wall")
                 if fac.render_wall:
                     wall_box.prop(fac, "wall_material")
-                    wall_box.prop(fac, "wall_layer_group")
-                    wall_box.prop(fac, "wall_layer_group_offset")
 
                 box.separator()
 
@@ -737,8 +750,6 @@ class MENU_facade(bpy.types.Panel):
                 roof_box.prop(fac, "render_roof")
                 if fac.render_roof:
                     roof_box.prop(fac, "roof_material")
-                    roof_box.prop(fac, "roof_layer_group")
-                    roof_box.prop(fac, "roof_layer_group_offset")
 
                 box.separator()
 
@@ -881,9 +892,6 @@ class MENU_pol_exporter(bpy.types.Panel):
             if col.xp_pol.is_ui_expanded:
                 box.prop(pol, "name")
                 box.prop(pol, "texture_is_nowrap")
-                row = box.row()
-                row.prop(col.xp_lin, "layer_group")
-                row.prop(col.xp_lin, "layer_group_offset")
                 box.separator()
                 box.prop(pol, "is_load_centered")
 

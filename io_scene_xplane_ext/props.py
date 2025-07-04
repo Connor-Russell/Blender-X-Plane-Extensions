@@ -293,6 +293,23 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
+    layer_group: bpy.props.EnumProperty(
+        name="Layer Group",
+        description="The layer group of the material",
+        items=layer_group_enum,
+        default='OBJECTS',
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    layer_group_offset: bpy.props.IntProperty(
+        name="Layer Group Offset",
+        description="The layer group offset of the material",
+        default=0,
+        min=-5,
+        max=5,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
     camera_collision_enabled: bpy.props.BoolProperty(
         name="Camera Collision",
         description="Does the material have hard camera collision?",
@@ -527,9 +544,6 @@ class PROP_lin_collection(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
-    layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
-    layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
-
 #Polygon properties
 
 class PROP_pol_collection(bpy.types.PropertyGroup):
@@ -559,14 +573,10 @@ class PROP_pol_collection(bpy.types.PropertyGroup):
     runway_markings_a: bpy.props.FloatProperty(name="Runway Markings Alpha", description="The alpha value for the runway markings", default=1.0) # type: ignore
     runway_markings_texture: bpy.props.StringProperty(name="Runway Markings Texture", description="The texture used for the runway markings", default="", subtype="FILE_PATH") # type: ignore
 
-    #Layer group property
-    layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
-    layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
-
 #Autogen Point Properties
 
 class PROP_agp_obj(bpy.types.PropertyGroup):
-    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
+    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=False) # type: ignore
     type: bpy.props.EnumProperty(
         name="Type",
         description="The of object this is in the autogen point",
@@ -628,6 +638,23 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         default=0
     ) # type: ignore
 
+    autosplit_obj_name: bpy.props.StringProperty(
+        name="Autosplit Object Name",
+        description="The name of the autosplit object. If present, this will be used in the name of the autosplit objects (_PT_<name>_<material name>)",
+        default=""
+    ) # type: ignore
+
+    #Autosplit lod settings
+    autosplit_lod_count: bpy.props.IntProperty(name="Autosplit LOD Count", description="The number of LODs to use for autosplit objects", default=0, min=0, max=4) # type: ignore
+    autosplit_lod_1_min: bpy.props.FloatProperty(name="Autosplit LOD 1 Min Distance", description="The minimum distance for the first LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
+    autosplit_lod_1_max: bpy.props.FloatProperty(name="Autosplit LOD 1 Max Distance", description="The maximum distance for the first LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
+    autosplit_lod_2_min: bpy.props.FloatProperty(name="Autosplit LOD 2 Min Distance", description="The minimum distance for the second LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
+    autosplit_lod_2_max: bpy.props.FloatProperty(name="Autosplit LOD 2 Max Distance", description="The maximum distance for the second LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
+    autosplit_lod_3_min: bpy.props.FloatProperty(name="Autosplit LOD 3 Min Distance", description="The minimum distance for the third LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
+    autosplit_lod_3_max: bpy.props.FloatProperty(name="Autosplit LOD 3 Max Distance", description="The maximum distance for the third LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
+    autosplit_lod_4_min: bpy.props.FloatProperty(name="Autosplit LOD 4 Min Distance", description="The minimum distance for the fourth LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
+    autosplit_lod_4_max: bpy.props.FloatProperty(name="Autosplit LOD 4 Max Distance", description="The maximum distance for the fourth LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
+
 class PROP_agp_collection(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", description="The name of the autogen point collection") # type: ignore
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the autogen point collection is exportable", default=False) # type: ignore
@@ -639,9 +666,6 @@ class PROP_agp_collection(bpy.types.PropertyGroup):
     texture_tiling_map_x_res: bpy.props.IntProperty(name="Texture Tiling Map X Resolution", description="The resolution of the texture tiling map in the x direction", default=4096) # type: ignore
     texture_tiling_map_y_res: bpy.props.IntProperty(name="Texture Tiling Map Y Resolution", description="The resolution of the texture tiling map in the y direction", default=4096) # type: ignore
     texture_tiling_map_texture: bpy.props.StringProperty(name="Texture Tiling Map Texture", description="The texture used for the texture tiling map", default="", subtype="FILE_PATH") # type: ignore
-
-    layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
-    layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
     vegetation_asset: bpy.props.StringProperty(name="Vegetation Asset", description="The asset to use for the vegetation in the autogen point collection", default="", update=update_ui) # type: ignore
 
@@ -693,14 +717,10 @@ class PROP_facade(bpy.types.PropertyGroup):
     #Wall properties
     render_wall: bpy.props.BoolProperty(name="Render Wall", description="Whether the wall is rendered", update=update_ui)# type: ignore
     wall_material: bpy.props.PointerProperty(type=bpy.types.Material, name="Wall Material", description="The material to use for the wall", update=update_ui)# type: ignore
-    wall_layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
-    wall_layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
     #Roof properties
     render_roof: bpy.props.BoolProperty(name="Render Roof", description="Whether the roof is rendered", update=update_ui)# type: ignore
     roof_material: bpy.props.PointerProperty(type=bpy.types.Material, name="Roof Material", description="The material to use for the roof", update=update_ui)# type: ignore
-    roof_layer_group: bpy.props.EnumProperty(name="Layer Group", description="Select the layer group", items=layer_group_enum, default='OBJECTS') # type: ignore
-    roof_layer_group_offset: bpy.props.IntProperty(name="Layer Group Offset", description="The layer group offset", default=0, min=-5, max=5) # type: ignore
 
     #Floors
     floors: bpy.props.CollectionProperty(type=PROP_fac_floor)# type: ignore

@@ -429,7 +429,6 @@ def recursively_split_objects(in_object:bpy.types.Object):
 
     # Recurse on children
     for child in in_object.children:
-        print(f"Recursively split child {child.name}")
         resulting_objects.extend(recursively_split_objects(child))
 
     return resulting_objects

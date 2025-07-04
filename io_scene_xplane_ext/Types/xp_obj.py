@@ -805,7 +805,7 @@ class draw_call:
         self.anim_state = "" #String that describes the animation state of this draw call. This is used to check if this draw call is identical to another draw call but in another lod bucket
         self.is_lod_duplicate = False  #True if this draw call is a duplicate of another draw call in a different LOD bucket. This DC will be skipped if this is True
 
-    def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection, in_parent=None):
+    def add_to_scene(self, all_verts, all_indicies, in_mats, in_collection, in_parent=None, obj_ref=None):
         """
         Adds the geometry represented by this draw call to the Blender scene as a new mesh object.
 
@@ -814,6 +814,8 @@ class draw_call:
             all_indicies (list): List of all indices for the parent X-Plane object.
             in_mats (list): List of Blender material(s) to assign to the created mesh. The first material is used.
             in_collection (bpy.types.Collection): The Blender collection to which the new mesh object will be linked.
+            in_parent (bpy.types.Object, optional): The parent object to which the new mesh object will be parented. Defaults to None.
+            obj_ref (bpy.types.Object, optional): Reference to the xp_obj.object (this contains the layer groupd data among other things)
 
         Returns:
             bpy.types.Object: The newly created Blender mesh object representing this draw call.
@@ -972,6 +974,12 @@ class draw_call:
             new_mat.xp_materials.cockpit_device_use_bus_5 = self.state.cockpit_device_use_bus_5
             new_mat.xp_materials.cockpit_device_use_bus_6 = self.state.cockpit_device_use_bus_6
             new_mat.xp_materials.cockpit_device_lighting_channel = self.state.cockpit_device_lighting_channel
+            if new_mat.xp_materials.draped:
+                new_mat.xp_materials.layer_group = obj_ref.layer_group_draped if obj_ref != None else "OBJECTS"
+                new_mat.xp_materials.layer_group_offset = obj_ref.layer_group_draped_offset if obj_ref != None else 0
+            else:
+                new_mat.xp_materials.layer_group = obj_ref.layer_group if obj_ref != None else "OBJECTS"
+                new_mat.xp_materials.layer_group_offset = obj_ref.layer_group_offset if obj_ref != None else 0
 
             matching_mat = new_mat
 
