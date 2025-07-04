@@ -375,3 +375,57 @@ def create_obj_from_perimeter(perimeter, extrude_height=0.0):
     bpy.context.collection.objects.unlink(new_obj)
 
     return new_obj
+
+def recursively_split_objects(in_object:bpy.types.Object):
+    """
+    Duplicates and splits the current object by material
+    Parent and animation data automatically copy to the new objects in the duplicate and split operators
+    If the object is not a mesh, it will be skipped but children will still be processed.
+    If the object is a light it will still be duplicated and put in the return list
+    Args:
+        in_object (bpy.types.Object): The object to split.
+    Returns:
+        list: A list of newly created objects that are split by material.
+    """
+
+    resulting_objects = []
+
+    #Split mesh objects by material
+    if in_object.type == 'MESH':
+        #Deselect all in obj mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+
+        #Select and duplicate the object
+        bpy.context.view_layer.objects.active = obj = in_object
+        in_object.select_set(True)
+        bpy.ops.object.duplicate(linked=False)
+        obj = bpy.context.active_object
+        in_object.select_set(False)
+        obj.select_set(True)
+
+        # If there are multiple materials, split the object
+        if len(obj.data.materials) > 1:
+            
+            # Enter edit mode, select all, split by material, return to obj mode
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.separate(type='MATERIAL')
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+            # Get the newly created objects
+            resulting_objects.extend(bpy.context.selected_objects)
+            
+            # Deselect all objects
+            bpy.ops.object.select_all(action='DESELECT')
+    elif in_object.type == 'LIGHT':
+        # If the object is a light, just duplicate it
+        bpy.context.active_object = in_object
+        bpy.ops.object.duplicate(linked=False)
+        resulting_objects.append(bpy.context.active_object)
+
+    # Recurse on children
+    for child in in_object.children:
+        resulting_objects.extend(recursively_split_objects(child))
+
+    return resulting_objects

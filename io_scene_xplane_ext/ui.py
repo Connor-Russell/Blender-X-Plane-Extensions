@@ -383,7 +383,7 @@ class MENU_agp_obj(bpy.types.Panel):
                 result = result and parent_collection.xp_agp.exportable
 
         # Only show the panel if the active object is an EMPTY
-        return result
+        return result and (context.object.type == 'EMPTY' or context.object.type == 'MESH')
 
     def draw(self, context):
 

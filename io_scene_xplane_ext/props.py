@@ -576,8 +576,8 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
             ('FACADE', "Facade", "A facade perimeter"),
             ('TREE', "Tree", "A tree object randomly picked from the set layer from the .agp's forest asset"),
             ('TREE_LINE', "Tree Line", "A tree line object randomly picked from the set layer from the .agp's forest asset"),
-            ('CROP_POLY', "Crop Polygon", "A polygon used to crop the shape of the parent tile")
-            #('AUTO_SPLIT_OBJ', "Auto Split Object", "An empty whose children will be automatically split by material, exported as separate objects, and attached here in the .agp"),
+            ('CROP_POLY', "Crop Polygon", "A polygon used to crop the shape of the parent tile"),
+            ('AUTO_SPLIT_OBJ', "Auto Split Object", "An empty whose children will be automatically split by material, exported as separate objects, and attached here in the .agp"),
         ],
         default='BASE_TILE'
     ) # type: ignore

@@ -514,125 +514,58 @@ class auto_split_obj:
         self.show_low = 0
         self.show_high = 0
 
-        #Get all the children of this object, recursively
-        def get_children_recursive(obj):
-            children = []
-            for child in obj.children:
-                children.append(child)
-                children.extend(get_children_recursive(child))
-            return children
         
-        children = get_children_recursive(obj)
-
-        #This function is slow, but it gets *all* data. In the future this should probably be optimized
-        def split_obj_by_material(obj):
-            #Deselect all in obj mode
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.object.select_all(action='DESELECT')
-
-            #Duplicate the object, clear it's parent, and move it so it remains in the same world space position/rotation
-            bpy.ops.object.duplicate(linked=False)
-            obj = bpy.context.active_object
-
-            #Clear the parent and restore the loc/rot/scale
-            mw = obj.matrix_world.copy()
-            obj.parent = None
-            obj.matrix_world = mw
-
-            if obj.type != 'MESH':
-                return [obj]
-            if len(obj.data.materials) == 1:
-                return [obj]
-            
-            # Select the object to split
-            obj.select_set(True)
-            bpy.context.view_layer.objects.active = obj
-            
-            # Enter edit mode, select all, split by material, return to obj mode
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.mesh.separate(type='MATERIAL')
-            bpy.ops.object.mode_set(mode='OBJECT')
-            
-            # Get the newly created objects
-            resulting_objects = bpy.context.selected_objects
-            
-            # Deselect all objects
-            bpy.ops.object.select_all(action='DESELECT')
-            
-            return resulting_objects
-
-        all_mats = []
-        mat_collections = []    #Aligned with all_mats
+        mat_name_to_collection = {}  # Maps material names to collections
         all_objs = []
 
-        for child in children:
-            if child.type == 'MESH':
-                split_objs = split_obj_by_material(child)
+        #Duplicate and split all the objects by material
+        for child in obj.children:
+            all_objs.extend(agp_utils.recursively_split_objects(child))
 
-                #Move all the split objects by the inverse of their parent's location
-                for split_obj in split_objs:
-                    split_obj.location.x -= self.x
-                    split_obj.location.y -= self.y
-                    split_obj.location.z -= self.z
-
-                all_objs.extend(split_objs)
-                all_mats.extend(child.data.materials)
-
-            else:
-                #Move the object by the inverse of the parent's location
-                child.location.x -= self.x
-                child.location.y -= self.y
-                child.location.z -= self.z
-
-                all_objs.append(child)
-        
-        #Create the collections for each material
-        all_mats = list(set(all_mats))  # Remove duplicates
+        #Get a list of all materials
+        all_mats = []
+        for split_obj in all_objs:
+            if split_obj.type != 'MESH':
+                #Non-mesh objects just get dumped into the first collection
+                continue
+            if len(split_obj.data.materials) > 0:
+                all_mats.append(split_obj.active_material.name)
+        all_mats = list(set(all_mats))  # Dedupe
+        all_mats.append("No Material")  # Add a collection for objects without materials (such as lights)
 
         self.resoures = []
         for mat in all_mats:
             #Create a new collection for this material
-            obj_name = agp_name + "_PT_" + obj.name + "_" + mat.name + ".obj"
+            obj_name = agp_name + "_PT_" + obj.name + "_" + mat + ".obj"
             mat_collection = bpy.data.collections.new(obj_name)
             mat_collection.xplane.layer.name = obj_name
             self.resources.append(obj_name)
             mat_collection.xplane.is_exportable_collection = True
             mat_collection.xplane.layer.export_type = 'scenery'
             bpy.context.scene.collection.children.link(mat_collection)
-            mat_collections.append(mat_collection)
+            mat_name_to_collection[mat] = mat_collection
 
-        #Add one more collection for objects that don't have a material
-        no_mat_collection = bpy.data.collections.new(agp_name + "_PT_" + obj.name + "_NO_MAT.obj")
-        no_mat_collection.xplane.layer.name = no_mat_collection.name
-        no_mat_collection.xplane.is_exportable_collection = True
-        no_mat_collection.xplane.layer.export_type = 'scenery'
-        bpy.context.scene.collection.children.link(no_mat_collection)
-        mat_collections.append(no_mat_collection)
-
-        #Now we need to move our new objetcs into the correct collections
-        for obj in all_objs:
-            if obj.type != 'MESH':
-                #Non-mesh objects just get dumped into the first collection
-                target_col = mat_collections[-1]  # The last collection is the "no material" collection
-                target_col.objects.link(obj)
+        #Now we need to move our new objects into the correct collections
+        for split_obj in all_objs:
+            if split_obj.type != 'MESH' or len(split_obj.data.materials) == 0:
+                #Non-mesh objects go into "No Material"
+                target_collection = mat_name_to_collection["No Material"]
+                target_collection.objects.link(split_obj)
                 continue
+
             #Find the material for this object
-            obj_material = obj.active_material
+            obj_material = split_obj.data.materials[0]
+
             if obj_material is not None:
                 #Find the collection for this material
-                mat_index = all_mats.index(obj_material.name)
-                if mat_index != -1:
-                    mat_collection = mat_collections[mat_index]
-                    #Move the object to the material collection
-                    mat_collection.objects.link(obj)
+                target_col = mat_name_to_collection[obj_material.name]
+                target_col.objects.link(split_obj)
 
         #Now we need to configure the settings for each collection
-        for col in mat_collections:
+        for col in mat_name_to_collection.values():
             material_config.update_xplane_collection_settings(col)
 
         #Now we need to disable export on all other objects, export ours, then reenable ours
-
         original_collection_export_states = {}
 
         for col in bpy.data.collections:
@@ -641,17 +574,33 @@ class auto_split_obj:
 
             col.xplane.is_exportable_collection = False
 
-        for col in mat_collections:
+        for col in mat_name_to_collection.values():
             col.xplane.is_exportable_collection = True
 
+        #Finally, we'll move the origin object to 0 0 0, with 0 heading, and export. Then we'll restore it's loc/rot
+        obj_original_location = obj.location.copy()
+        obj_original_rotation = obj.rotation_euler.copy()
+        obj.location = mathutils.Vector((0, 0, 0))
+        obj.rotation_euler = mathutils.Euler((0, 0, 0), 'XYZ')
+
         bpy.ops.scene.export_to_relative_dir()
+
+        obj.location = obj_original_location
+        obj.rotation_euler = obj_original_rotation
+
+        #Now we need to extract any errors for the XP2B log. So we will get the text file, iterate over every line, and log it as a warning. File is xplane2blender.log in text editor
+        xp2b_log = bpy.data.texts.get("xplane2blender.log")
+        if xp2b_log is not None:
+            for line in xp2b_log.lines:
+                if line.body.strip():
+                    log_utils.error(f"X-Plane2Blender Error exporting object {obj.name}: {line.body.strip()}")
 
         #Restore the original export states
         for col in bpy.data.collections:
             col.xplane.is_exportable_collection = original_collection_export_states[col.name]
-        
-        #We are now done with exporting, so we can remove the new objects and new colletcions
-        for col in mat_collections:
+
+        #We are now done with exporting, so we can remove the new objects and new collections
+        for col in mat_name_to_collection.values():
             for obj in col.objects:
                 bpy.data.objects.remove(obj, do_unlink=True)
             bpy.data.collections.remove(col, do_unlink=True)
