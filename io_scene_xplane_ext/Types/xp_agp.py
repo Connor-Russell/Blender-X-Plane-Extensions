@@ -514,13 +514,15 @@ class auto_split_obj:
         self.show_low = 0
         self.show_high = 0
 
-        
         mat_name_to_collection = {}  # Maps material names to collections
         all_objs = []
 
         #Duplicate and split all the objects by material
         for child in obj.children:
             all_objs.extend(agp_utils.recursively_split_objects(child))
+            print(child.name)
+
+        all_objs_have_mats = True
 
         #Get a list of all materials
         all_mats = []
@@ -530,8 +532,26 @@ class auto_split_obj:
                 continue
             if len(split_obj.data.materials) > 0:
                 all_mats.append(split_obj.active_material.name)
+            else:
+                all_objs_have_mats = False
+                log_utils.warning(f"Object {split_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
         all_mats = list(set(all_mats))  # Dedupe
         all_mats.append("No Material")  # Add a collection for objects without materials (such as lights)
+
+        #Now we need to check the parents for materials
+        #for root_obj in obj.children:
+        #    cur_obj = root_obj
+        #    while cur_obj != None:
+        #        if cur_obj.type != 'MESH':
+        #            continue
+        #        if len(cur_obj.data.materials) == 0:
+        #            log_utils.warning(f"Object {cur_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
+        #            all_objs_have_mats = False
+        #        cur_obj = cur_obj.parent
+        
+        if not all_objs_have_mats:
+            log_utils.warning(f"Some objects have no materials assigned. X-Plane2Blender would throw an error on export! Skipping export of autosplit object {obj.name}")
+            return
 
         self.resoures = []
         for mat in all_mats:

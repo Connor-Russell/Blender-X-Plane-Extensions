@@ -393,11 +393,12 @@ def recursively_split_objects(in_object:bpy.types.Object):
     #Split mesh objects by material
     if in_object.type == 'MESH':
         #Deselect all in obj mode
+        bpy.context.view_layer.objects.active = in_object
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
 
         #Select and duplicate the object
-        bpy.context.view_layer.objects.active = obj = in_object
+        bpy.context.view_layer.objects.active = in_object
         in_object.select_set(True)
         bpy.ops.object.duplicate(linked=False)
         obj = bpy.context.active_object
@@ -418,6 +419,8 @@ def recursively_split_objects(in_object:bpy.types.Object):
             
             # Deselect all objects
             bpy.ops.object.select_all(action='DESELECT')
+        else:
+            resulting_objects.append(obj)
     elif in_object.type == 'LIGHT':
         # If the object is a light, just duplicate it
         bpy.context.active_object = in_object
@@ -426,6 +429,7 @@ def recursively_split_objects(in_object:bpy.types.Object):
 
     # Recurse on children
     for child in in_object.children:
+        print(f"Recursively split child {child.name}")
         resulting_objects.extend(recursively_split_objects(child))
 
     return resulting_objects
