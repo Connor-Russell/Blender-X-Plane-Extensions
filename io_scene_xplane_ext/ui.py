@@ -404,6 +404,10 @@ class MENU_agp_obj(bpy.types.Panel):
                 layout.separator()
                 layout.prop(agp_obj, "autosplit_obj_name")
                 layout.separator()
+                layout.prop(agp_obj, "autosplit_do_fake_lods")
+                if agp_obj.autosplit_do_fake_lods:
+                    layout.prop(agp_obj, "autosplit_fake_lods_size")
+                layout.separator()
                 layout.prop(agp_obj, "autosplit_lod_count")
                 if  agp_obj.autosplit_lod_count > 0:
                     row = layout.row()

@@ -432,3 +432,30 @@ def recursively_split_objects(in_object:bpy.types.Object):
         resulting_objects.extend(recursively_split_objects(child))
 
     return resulting_objects
+
+def add_fake_lod_obj_to_collections(lods: int, size: int):
+    verts = [] #type: list[geometery_utils.xp_vertex]
+    v1 = geometery_utils.xp_vertex(-size, -size, -size, 0, 0, 1, 0, 0)
+    v2 = geometery_utils.xp_vertex(-size, size, -size, 0, 0, 1, 0, 0)
+    v3 = geometery_utils.xp_vertex(size, -size, -size, 0, 0, 1, 0, 0)
+    v4 = geometery_utils.xp_vertex(size, size, -size, 0, 0, 1, 0, 0)
+    verts.append(v1)
+    verts.append(v2)
+    verts.append(v3)
+    verts.append(v4)
+
+    indicies = [1, 2, 0, 1, 3, 2]
+
+    fake_lod_obj = geometery_utils.create_obj_from_draw_call(verts, indicies, "Fake LOD")
+
+    if lods > 0:
+        fake_lod_obj.xplane.override_lods = True
+        fake_lod_obj.xplane.lod[0] = True
+    if size > 1:
+        fake_lod_obj.xplane.lod[1] = True
+    if size > 2:
+        fake_lod_obj.xplane.lod[2] = True
+    if size > 3:
+        fake_lod_obj.xplane.lod[3] = True
+
+    return fake_lod_obj

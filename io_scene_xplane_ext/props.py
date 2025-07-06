@@ -644,6 +644,19 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         default=""
     ) # type: ignore
 
+    autosplit_do_fake_lods: bpy.props.BoolProperty(
+        name="Fake LODs",
+        description="Whether to add objects of a fixed size to all LODs of the autosplit object for consistent LOD behavior",
+        default=False
+    ) # type: ignore
+
+    autosplit_fake_lods_size: bpy.props.FloatProperty(
+        name="Fake LODs Size",
+        description="The size of the fake LODs for the autosplit object. This is the size of the bounding box of the fake LODs",
+        default=100.0,
+        min=1.0
+    ) # type: ignore
+
     #Autosplit lod settings
     autosplit_lod_count: bpy.props.IntProperty(name="Autosplit LOD Count", description="The number of LODs to use for autosplit objects", default=0, min=0, max=4) # type: ignore
     autosplit_lod_1_min: bpy.props.FloatProperty(name="Autosplit LOD 1 Min Distance", description="The minimum distance for the first LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
