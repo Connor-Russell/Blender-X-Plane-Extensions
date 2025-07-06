@@ -54,6 +54,7 @@ class BakeType(Enum):
     ROUGHNESS = 2
     METALNESS = 3
     LIT = 4
+    OPACITY = 5
 
 def get_source_materials():
     """
@@ -256,6 +257,23 @@ def config_source_materials(type, mats):
                 diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
                 mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
+        elif type == BakeType.OPACITY:
+            #This is literally just diffuse but we plug in the alpha of the texture instead. If there is no texture we use white (fully opaque. Why would there be no alb though???)
+            if mat.xp_materials.alb_texture != "":
+                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.alb_texture))
+                if str_resolve_path != "":
+                    image_node.image = file_utils.get_or_load_image(str_resolve_path)
+                    image_node.image.colorspace_settings.name = 'Non-Color'
+                    mat.node_tree.links.new(image_node.outputs[1], output_node.inputs[0])
+                else:
+                    #Set the diffuse color to black
+                    diffuse_node.inputs[0].default_value = (1, 1, 1, 1)
+                    mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+            else:
+                #Set the diffuse color to black
+                diffuse_node.inputs[0].default_value = (1, 1, 1, 1)
+                mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
+
 def config_bake_settings(type):
     """
     Configures the bake settings for the given type
@@ -268,7 +286,7 @@ def config_bake_settings(type):
     bpy.context.scene.render.engine = 'CYCLES'
 
     #Base lit roughness and metalness all just bake from diffuse channel to diffuse
-    if type == BakeType.BASE or type == BakeType.LIT or type == BakeType.ROUGHNESS or type == BakeType.METALNESS:
+    if type == BakeType.BASE or type == BakeType.LIT or type == BakeType.ROUGHNESS or type == BakeType.METALNESS or type == BakeType.OPACITY:
         bpy.context.scene.cycles.bake_type = 'EMIT'
         bpy.context.scene.render.bake.use_pass_direct = False
         bpy.context.scene.render.bake.use_pass_indirect = False
@@ -301,6 +319,8 @@ def config_target_bake_texture(target_obj, type, resolution):
         create_name = "BAKE_BUFFER_Metalness"
     elif type == BakeType.LIT:
         create_name = "BAKE_BUFFER_Lit"
+    elif type == BakeType.OPACITY:
+        create_name = "BAKE_BUFFER_Opacity"
 
     #If there is already a texture, use it (this allows us to sequentially bake textures for different textures that use the same sheet, without post bake merging)
     new_image = None
@@ -315,7 +335,7 @@ def config_target_bake_texture(target_obj, type, resolution):
         new_image = bpy.data.images.new(name=create_name, width=int(resolution), height=int(resolution), alpha=True)
 
     #Set color space settings
-    if type == BakeType.ROUGHNESS or type == BakeType.METALNESS:
+    if type == BakeType.ROUGHNESS or type == BakeType.METALNESS or type == BakeType.OPACITY:
         new_image.colorspace_settings.name = 'Non-Color'
     else:
         new_image.colorspace_settings.name = 'sRGB'
@@ -361,6 +381,7 @@ def save_baked_textures(target_obj):
     roughness_image = bpy.data.images.get("BAKE_BUFFER_Roughness")
     metalness_image = bpy.data.images.get("BAKE_BUFFER_Metalness")
     lit_image = bpy.data.images.get("BAKE_BUFFER_Lit")
+    opacity_image = bpy.data.images.get("BAKE_BUFFER_Opacity")
 
     #Resize all the images to their current size / bpy.context.scene.xp_ext.low_poly_bake_ss_factor
     base_image.scale(int(base_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(base_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
@@ -368,6 +389,7 @@ def save_baked_textures(target_obj):
     roughness_image.scale(int(roughness_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(roughness_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
     metalness_image.scale(int(metalness_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(metalness_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
     lit_image.scale(int(lit_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(lit_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
+    opacity_image.scale(int(opacity_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(opacity_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
 
     #Get the file path. This is the file path of the current blend file + the name of the collection of the target object + _low_poly_<type>.png
     file_path = bpy.data.filepath
@@ -390,9 +412,12 @@ def save_baked_textures(target_obj):
     nml_pixels = np.array(nml_image.pixels[:]).reshape((height, width, 4))
     metalness_pixels = np.array(metalness_image.pixels[:]).reshape((height, width, 4))
     roughness_pixels = np.array(roughness_image.pixels[:]).reshape((height, width, 4))
+    albedo_pixels = np.array(base_image.pixels[:]).reshape((height, width, 4))
+    opacity_pixels = np.array(opacity_image.pixels[:]).reshape((height, width, 4))
 
     # Create an empty array for the final pixels
     final_pixels = np.zeros((height, width, 4), dtype=np.float32)
+    final_albedo_pixels = np.zeros((height, width, 4), dtype=np.float32)
 
     # Assign the pixel values using array slicing
     final_pixels[:, :, 0] = nml_pixels[:, :, 0]  # Red channel from nml_image
@@ -400,11 +425,20 @@ def save_baked_textures(target_obj):
     final_pixels[:, :, 2] = metalness_pixels[:, :, 2]  # Blue channel from metalness_image
     final_pixels[:, :, 3] = roughness_pixels[:, :, 2]  # Alpha channel from roughness_image
 
+    #Merge the albedo and opacity pixels via array slicing
+    final_albedo_pixels[:, :, 0] = albedo_pixels[:, :, 0]
+    final_albedo_pixels[:, :, 1] = albedo_pixels[:, :, 1]
+    final_albedo_pixels[:, :, 2] = albedo_pixels[:, :, 2]
+    final_albedo_pixels[:, :, 3] = opacity_pixels[:, :, 0]  # Use the opacity channel for alpha
+
+
     # Flatten the final_pixels array to match the original shape
     final_pixels = final_pixels.flatten()
+    final_albedo_pixels = final_albedo_pixels.flatten()
 
     # Assign the final pixels back to the nml_image
     nml_image.pixels = final_pixels.tolist()
+    base_image.pixels = final_albedo_pixels.tolist()
 
     #Get our prefs for suffixes
     addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
@@ -433,11 +467,12 @@ def save_baked_textures(target_obj):
     lit_image.save()
 
     #Remove the temp images from Blender
-    bpy.data.images.remove(base_image)
-    bpy.data.images.remove(nml_image)
-    bpy.data.images.remove(lit_image)
-    bpy.data.images.remove(roughness_image)
-    bpy.data.images.remove(metalness_image)
+    #bpy.data.images.remove(base_image)
+    #bpy.data.images.remove(nml_image)
+    #bpy.data.images.remove(lit_image)
+    #bpy.data.images.remove(roughness_image)
+    #bpy.data.images.remove(metalness_image)
+    #bpy.data.images.remove(opacity_image)
 
 def reset_source_materials(mats):
     """

@@ -103,15 +103,20 @@ def test(test_dir):
         #Rename the test result images to _version.test_result.png so they are ignored by git
         blender_version = bpy.app.version_string.split(".")
         blender_version = blender_version[0] + blender_version[1]
-        test_albedo = test_albedo.replace(".png", "_" + blender_version + ".test_result.png")
-        test_normal = test_normal.replace(".png", "_" + blender_version + ".test_result.png")
-        test_lit = test_lit.replace(".png", "_" + blender_version + ".test_result.png")
-        if os.path.exists(test_albedo):
-            os.remove(test_albedo)
-        if os.path.exists(test_normal):
-            os.remove(test_normal)
-        if os.path.exists(test_lit):
-            os.remove(test_lit)
+        save_test_albedo = test_albedo.replace(".png", "_" + blender_version + ".test_result.png")
+        save_test_normal = test_normal.replace(".png", "_" + blender_version + ".test_result.png")
+        save_test_lit = test_lit.replace(".png", "_" + blender_version + ".test_result.png")
+        if os.path.exists(save_test_albedo):
+            os.remove(save_test_albedo)
+        if os.path.exists(save_test_normal):
+            os.remove(save_test_normal)
+        if os.path.exists(save_test_lit):
+            os.remove(save_test_lit)
+
+        #Rename the test result images
+        os.rename(test_albedo, save_test_albedo)
+        os.rename(test_normal, save_test_normal)
+        os.rename(test_lit, save_test_lit)
     except Exception as e:
         error_messages += "Image comparison failed: " + str(e) + "\n"
 

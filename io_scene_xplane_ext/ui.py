@@ -657,10 +657,10 @@ class MENU_operations(bpy.types.Panel):
         layout.operator("xp_ext.update_all_material_nodes", text="Update All Materials")
 
         layout.separator()
-        layout.label(text="Auto Low-Poly Baker")
+        layout.label(text="High Poly to Low Poly Bake")
         layout.prop(xp_ext, "low_poly_bake_resolution")
         layout.prop(xp_ext, "low_poly_bake_ss_factor")
-        layout.operator("xp_ext.bake_low_poly", text="Bake to Selected to Low Poly")
+        layout.operator("xp_ext.bake_low_poly", text="Bake Selected Objects to Active")
 
         layout.separator()
         layout.label(text="X-Plane Exporter Sync")
