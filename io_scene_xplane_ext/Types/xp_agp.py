@@ -516,6 +516,8 @@ class auto_split_obj:
 
         mat_name_to_collection = {}  # Maps material names to collections
         all_objs = []
+        fake_lod_objects = []
+        fake_lod_material = bpy.data.materials.new(name="Fake_LOD_Material")
 
         try:
             #Duplicate and split all the objects by material
@@ -536,6 +538,7 @@ class auto_split_obj:
                     all_objs_have_mats = False
                     log_utils.warning(f"Object {split_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
             all_mats = list(set(all_mats))  # Dedupe
+            
             #Go through all our objects and check if we have any lights. If so, we'll add a lights collection
             for split_obj in all_objs:
                 if split_obj.type != 'MESH':    #Technically this should only be lights. But to be safe we'll just say "not mesh"
@@ -589,6 +592,12 @@ class auto_split_obj:
                 mat_collection.xplane.layer.lod[2].far =    int(obj.xp_agp.autosplit_lod_3_max)
                 mat_collection.xplane.layer.lod[3].near =   int(obj.xp_agp.autosplit_lod_4_min)
                 mat_collection.xplane.layer.lod[3].far =    int(obj.xp_agp.autosplit_lod_4_max)
+
+                #Add our fake LODs if desired
+                if obj.xp_agp.autosplit_do_fake_lods:
+                    fake_lod_obj = agp_utils.add_fake_lod_obj_to_collections(obj.xp_agp.autosplit_lod_count, obj.xp_agp.autosplit_fake_lods_size)
+                    fake_lod_obj.data.materials.append(fake_lod_material)
+                    mat_collection.objects.link(fake_lod_obj)
 
             #Now we need to move our new objects into the correct collections
             for split_obj in all_objs:
@@ -660,6 +669,19 @@ class auto_split_obj:
                 bpy.data.objects.remove(split_obj, do_unlink=True)
         except Exception as e:
             log_utils.error(f"Error removing duplicate objects: {e}")
+
+        #Now we can remove the fake LOD objects
+        try:
+            for fake_lod_obj in fake_lod_objects:
+                bpy.data.objects.remove(fake_lod_obj, do_unlink=True)
+        except Exception as e:
+            log_utils.error(f"Error removing fake LOD objects: {e}")
+
+        try:
+            #Remove the fake LOD material
+            bpy.data.materials.remove(fake_lod_material, do_unlink=True)
+        except Exception as e:
+            log_utils.error(f"Error removing fake LOD material: {e}")
 
     def to_commands(self, obj_resource_list, transform: agp_utils.agp_transform):
         cmds = []
