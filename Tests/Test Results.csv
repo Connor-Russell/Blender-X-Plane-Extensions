@@ -1,4 +1,4 @@
-2025-07-04 12-14-41
+2025-07-06 11-27-19
 Test Name,Result,Percentage,Message
 2.9 Tests
 Export Tests:
@@ -25,4 +25,4 @@ TEST_world_space_transform,"PASS"
 Bake Tests:
 Bake Test Albedo:,PASS,100.00%,""
 Bake Test Normal:,PASS,100.00%,""
-Bake Test Lit:,PASS,99.96%,""
+Bake Test Lit:,PASS,100.00%,""
