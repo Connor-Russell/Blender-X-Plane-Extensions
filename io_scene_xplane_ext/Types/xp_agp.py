@@ -977,6 +977,7 @@ class agp:
         self.render_tiles = in_collection.xp_agp.render_tiles
         self.tile_lod = in_collection.xp_agp.tile_lod
         self.vegetation = in_collection.xp_agp.vegetation_asset
+        self.name = in_collection.xp_agp.name if in_collection.xp_agp.name != "" else in_collection.name
 
         #Get the material from the first mesh object in the collection
         mat = None
