@@ -391,7 +391,7 @@ def recursively_split_objects(in_object:bpy.types.Object):
     resulting_objects = []
 
     #Split mesh objects by material
-    if in_object.type == 'MESH':
+    if in_object.type == 'MESH' and not in_object.hide_get() and not in_object.hide_select:
         #Deselect all in obj mode
         bpy.context.view_layer.objects.active = in_object
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -420,12 +420,26 @@ def recursively_split_objects(in_object:bpy.types.Object):
             # Deselect all objects
             bpy.ops.object.select_all(action='DESELECT')
         else:
-            resulting_objects.append(obj)
-    elif in_object.type == 'LIGHT':
+            #Safety check to ensure we never add the original object, resulting in data loss
+            if obj != in_object:
+                resulting_objects.append(obj)
+    elif in_object.type == 'LIGHT' and not in_object.hide_get() and not in_object.hide_select:
         # If the object is a light, just duplicate it
-        bpy.context.active_object = in_object
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+
+        #Select and duplicate the object
+        bpy.context.view_layer.objects.active = in_object
+        in_object.select_set(True)
         bpy.ops.object.duplicate(linked=False)
-        resulting_objects.append(bpy.context.active_object)
+        obj = bpy.context.active_object
+        in_object.select_set(False)
+        obj.select_set(True)
+
+        # Add the duplicated light to the resulting objects
+        # Safety check to ensure we never add the original object, resulting in data loss
+        if obj != in_object:
+            resulting_objects.append(obj)
 
     # Recurse on children
     for child in in_object.children:
@@ -434,11 +448,12 @@ def recursively_split_objects(in_object:bpy.types.Object):
     return resulting_objects
 
 def add_fake_lod_obj_to_collections(lods: int, size: int):
+    size = size / 2
     verts = [] #type: list[geometery_utils.xp_vertex]
-    v1 = geometery_utils.xp_vertex(-size, -size, -size, 0, 0, 1, 0, 0)
-    v2 = geometery_utils.xp_vertex(-size, size, -size, 0, 0, 1, 0, 0)
-    v3 = geometery_utils.xp_vertex(size, -size, -size, 0, 0, 1, 0, 0)
-    v4 = geometery_utils.xp_vertex(size, size, -size, 0, 0, 1, 0, 0)
+    v1 = geometery_utils.xp_vertex(-size, -size, -size * 2, 0, 0, 1, 0, 0)
+    v2 = geometery_utils.xp_vertex(-size, size, -size * 2, 0, 0, 1, 0, 0)
+    v3 = geometery_utils.xp_vertex(size, -size, -size * 2, 0, 0, 1, 0, 0)
+    v4 = geometery_utils.xp_vertex(size, size, -size * 2, 0, 0, 1, 0, 0)
     verts.append(v1)
     verts.append(v2)
     verts.append(v3)

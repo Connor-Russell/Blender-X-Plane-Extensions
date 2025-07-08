@@ -54,6 +54,8 @@ class line():
         self.surface = "NONE"
 
     def write(self, output_path):
+        output_path = file_utils.sanitize_path(output_path)
+
         log_utils.new_section(f"Writing .lin {output_path}")
 
         output_folder = os.path.dirname(output_path)

@@ -8,7 +8,35 @@ import os
 import bpy
 from . import log_utils
 
-#Gets an absolute path out of a path that is relative to the blender file.
+def sanitize_path(path):
+    """
+    Sanitizes a file path by removing invalid characters and replacing them with dashes. Also normalizes slashes.
+
+    Args:
+        path (str): The file path to sanitize.
+    Returns:
+        str: The sanitized file path.
+    """
+    if not path:
+        return ""
+
+    path = path.replace("\\", os.sep)  # Normalize slashes    
+    path = path.replace("/", os.sep)  # Normalize slashes
+
+    # Replace invalid characters with dashes
+    invalid_chars = '<>:\"|?*\n\r\t'
+
+    last_char = ""
+    for char in path:
+        if char in invalid_chars:
+            char = "-"
+        last_char = char
+
+        if last_char == os.sep and char == os.sep:
+            continue
+
+    return path
+
 def rel_to_abs(in_path):
     """
     Gets an absolute path out of a path that is relative to the blender file.

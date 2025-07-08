@@ -568,15 +568,30 @@ class auto_split_obj:
             self.resoures = []
             for mat in all_mats:
                 #Create a new collection for this material
+
+                #Get the name for the object. This is made by combining the agp name, the relative folder from the specified name (if included), _PT_, the specified name (without the folder), the material, and .obj
+                #Then we need to get that path *relative* to the .agp so that the .agp can reference it properly
                 obj_name = ""
-                if obj.xp_agp.autosplit_obj_name != "":
-                    obj_name = agp_name + "_PT_" + obj.xp_agp.autosplit_obj_name + "_" + mat + ".obj"
-                else:
-                    obj_name = agp_name + "_PT_" + obj.name + "_" + mat + ".obj"
+                insert_name = obj.xp_agp.autosplit_obj_name if obj.xp_agp.autosplit_obj_name != "" else obj.name
+                insert_name = insert_name.replace("\\", "/")  # Normalize slashes
+                adjusted_mat_name = insert_name.replace("/", "-")  # Remove slashes from material name
+                adjusted_mat_name = insert_name.replace("\\", "-")  # Remove slashes from material name
+                #Separate the part of the name that specifies a relative dir, and the part that specifies the name. We'll just split at the last /
+                insert_name_folder = insert_name.rsplit("/", 1)[0] if "/" in insert_name else ""
+                insert_name_filename = insert_name.rsplit("/", 1)[-1] if "/" in insert_name else insert_name
+                if len(insert_name_folder) > 0:
+                    insert_name_folder += "/"
+
+                obj_name = file_utils.sanitize_path(agp_name + "_PT_" + insert_name + "_" + mat + ".obj")
                 obj_name = obj_name.replace(" ", "_")  # Replace spaces with underscores
+
+                agp_path = file_utils.rel_to_abs(agp_name)
+                obj_path = file_utils.rel_to_abs(obj_name)
+                rel_obj_path = os.path.relpath(obj_path, os.path.dirname(agp_path))
+
                 mat_collection = bpy.data.collections.new(obj_name)
                 mat_collection.xplane.layer.name = obj_name
-                self.resources.append(obj_name)
+                self.resources.append(rel_obj_path)
                 mat_collection.xplane.is_exportable_collection = True
                 mat_collection.xplane.layer.export_type = 'scenery'
                 bpy.context.scene.collection.children.link(mat_collection)
@@ -1073,6 +1088,8 @@ class agp:
             tile.to_obj(new_collection, mat)
 
     def write(self, output_path):
+        output_path = file_utils.sanitize_path(output_path)
+
         log_utils.new_section(f"Writing .agp {output_path}")
 
         output_folder = os.path.dirname(output_path)

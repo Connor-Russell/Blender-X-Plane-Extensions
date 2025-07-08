@@ -467,12 +467,12 @@ def save_baked_textures(target_obj):
     lit_image.save()
 
     #Remove the temp images from Blender
-    #bpy.data.images.remove(base_image)
-    #bpy.data.images.remove(nml_image)
-    #bpy.data.images.remove(lit_image)
-    #bpy.data.images.remove(roughness_image)
-    #bpy.data.images.remove(metalness_image)
-    #bpy.data.images.remove(opacity_image)
+    bpy.data.images.remove(base_image)
+    bpy.data.images.remove(nml_image)
+    bpy.data.images.remove(lit_image)
+    bpy.data.images.remove(roughness_image)
+    bpy.data.images.remove(metalness_image)
+    bpy.data.images.remove(opacity_image)
 
 def reset_source_materials(mats):
     """
@@ -482,6 +482,12 @@ def reset_source_materials(mats):
     """
     for mat in mats:
         material_config.update_nodes(mat)
+
+        #Get the alb image
+        alb_image = bpy.data.images.get(mat.xp_materials.alb_texture)
+        if alb_image:
+            #Set it's color mode to sRGB since we had it on non-color for opacity baking
+            alb_image.colorspace_settings.name = 'sRGB'
 
 def config_target_object_with_new_textures(target_obj):
     """

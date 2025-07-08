@@ -543,6 +543,7 @@ class facade:
             cur_floor.roof_objs.sort(key=lambda obj: obj.resource)
 
     def write(self, out_path):
+        out_path = file_utils.sanitize_path(out_path)
 
         log_utils.new_section(f"Writing .fac {out_path}")
 

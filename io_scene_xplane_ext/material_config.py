@@ -93,8 +93,8 @@ def update_xplane_collection_settings(col):
                         col.xplane.layer.texture_draped = ""
                         col.xplane.layer.texture_draped_normal = ""
                         col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-                        col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
-                        col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
+                        col.xplane.layer.layer_group = xp_props.layer_group.lower()
+                        col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
                     updated = True
 
                     #Now we need to set the decal properties
