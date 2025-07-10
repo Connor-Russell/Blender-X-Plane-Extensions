@@ -2700,7 +2700,6 @@ class object:
             dc.add_to_scene(self.verticies, self.indicies, all_mats, collection)
 
         #For basic lights just add them
-        self.lights = misc_utils.dedupe_list(self.lights)
         for lt in self.lights:
             lt.add_to_scene(collection)
 
