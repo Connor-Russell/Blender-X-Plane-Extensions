@@ -73,3 +73,32 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
         anim_obj.xplane.datarefs[-1].show_hide_v2 = end_value
         anim_obj.xplane.datarefs[-1].loop = loop_value
 
+def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval):
+    """
+    Automatically keyframe the given object for the specified dataref.
+
+    :param in_obj: The object to keyframe.
+    :param dataref: The dataref to use for the keyframe.
+    :param start_value: The starting value of the dataref.
+    :param end_value: The ending value of the dataref.
+    :param loop_value: The value to loop the animation at.
+    :param start_frame: The frame to start the keyframe on.
+    :param end_frame: The frame to end the keyframe on.
+    """
+
+    #Get the value increment
+    value_increment = (end_value - start_value) / ((end_frame - start_frame) // keyframe_interval)
+    
+    #Add the dataref track
+    in_obj.xplane.datarefs.add()
+    in_obj.xplane.datarefs[-1].path = dataref
+    in_obj.xplane.datarefs[-1].anim_type = 'transform'
+    in_obj.xplane.datarefs[-1].loop = loop_value
+
+    #Iterate through the frames and set the xp keyframes
+    for frame in range(start_frame, end_frame + 1, keyframe_interval):
+        value = start_value + (frame - start_frame) * value_increment
+        anim_utils.goto_frame(frame)
+        anim_utils.keyframe_xp_dataref(in_obj, dataref, value)
+
+    

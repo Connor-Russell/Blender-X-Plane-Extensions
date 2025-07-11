@@ -676,18 +676,18 @@ class MENU_operations(bpy.types.Panel):
         layout.operator("xp_ext.preview_lods_for_distance", text="Preview LODs for Distance")
 
         layout.separator()
-        layout.label(text="Flipbook Animations")
+        layout.label(text="Auto Animation Animations")
         row = layout.row()
-        row.prop(xp_ext, "flipbook_frame_start")
-        row.prop(xp_ext, "flipbook_frame_end")
-        layout.prop(xp_ext, "flipbook_keyframe_interval")
-        layout.prop(xp_ext, "flipbook_dataref")
-        layout.prop(xp_ext, "flipbook_loop_value")
+        row.prop(xp_ext, "autoanim_frame_start")
+        row.prop(xp_ext, "autoanim_frame_end")
+        layout.prop(xp_ext, "autoanim_keyframe_interval")
+        layout.prop(xp_ext, "autoanim_dataref")
+        layout.prop(xp_ext, "autoanim_loop_value")
         row = layout.row()
-        row.prop(xp_ext, "flipbook_start_value")
-        row.prop(xp_ext, "flipbook_end_value")
-        layout.operator("xp_ext.generate_flipbook_animation", text="Create Flipbook Animation")
-
+        row.prop(xp_ext, "autoanim_start_value")
+        row.prop(xp_ext, "autoanim_end_value")
+        layout.operator("xp_ext.generate_flipbook_animation")
+        layout.operator("xp_ext.auto_keyframe_animation")
 
         do_test_operators = False
         if do_test_operators:

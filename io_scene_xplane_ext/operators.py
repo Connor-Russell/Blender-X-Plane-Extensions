@@ -281,17 +281,44 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
 
     def execute(self, context):
         #Get our params
-        start_frame = bpy.context.scene.xp_ext.flipbook_frame_start
-        end_frame = bpy.context.scene.xp_ext.flipbook_frame_end
-        keyframe_interval = bpy.context.scene.xp_ext.flipbook_keyframe_interval
-        dataref = bpy.context.scene.xp_ext.flipbook_dataref
-        loop_value = bpy.context.scene.xp_ext.flipbook_loop_value
-        start_value = bpy.context.scene.xp_ext.flipbook_start_value
-        end_value = bpy.context.scene.xp_ext.flipbook_end_value
+        start_frame = bpy.context.scene.xp_ext.autoanim_frame_start
+        end_frame = bpy.context.scene.xp_ext.autoanim_frame_end
+        keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+        dataref = bpy.context.scene.xp_ext.autoanim_dataref
+        loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+        start_value = bpy.context.scene.xp_ext.autoanim_start_value
+        end_value = bpy.context.scene.xp_ext.autoanim_end_value
 
         #Iterate over selected objects
         for obj in bpy.context.selected_objects:
             anim_actions.create_flipbook_animation(obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval)
+
+        return {'FINISHED'}
+    
+class BTN_auto_keyframe_animation(bpy.types.Operator):
+    """Automatically keyframes the selected object to the current frame"""
+    bl_idname = "xp_ext.auto_keyframe_animation"
+    bl_label = "Auto Keyframe Animation"
+    bl_description = "Automatically add X-Plane keyframes"
+
+    def execute(self, context):
+        #Get the current frame
+        current_frame = bpy.context.scene.frame_current
+
+        #Iterate over selected objects
+        for obj in bpy.context.selected_objects:
+            #Get our params
+            start_frame = bpy.context.scene.xp_ext.autoanim_frame_start
+            end_frame = bpy.context.scene.xp_ext.autoanim_frame_end
+            keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+            dataref = bpy.context.scene.xp_ext.autoanim_dataref
+            loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+            start_value = bpy.context.scene.xp_ext.autoanim_start_value
+            end_value = bpy.context.scene.xp_ext.autoanim_end_value
+
+            #Iterate over selected objects
+            for obj in bpy.context.selected_objects:
+                anim_actions.auto_keyframe(obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval)
 
         return {'FINISHED'}
 
@@ -992,6 +1019,7 @@ def register():
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_mats_update_all_mat_nodes)
     bpy.utils.register_class(BTN_generate_flipbook_animation)
+    bpy.utils.register_class(BTN_auto_keyframe_animation)
     bpy.utils.register_class(BTN_bake_low_poly)
     bpy.utils.register_class(BTN_update_xp_export_settings)
     bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
@@ -1027,6 +1055,7 @@ def unregister():
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_mats_update_all_mat_nodes)
     bpy.utils.unregister_class(BTN_generate_flipbook_animation)
+    bpy.utils.unregister_class(BTN_auto_keyframe_animation)
     bpy.utils.unregister_class(BTN_bake_low_poly)
     bpy.utils.unregister_class(BTN_update_xp_export_settings)
     bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)
