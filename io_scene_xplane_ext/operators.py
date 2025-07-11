@@ -16,6 +16,7 @@ from .Helpers import decal_utils
 from .Helpers import misc_utils
 from .Helpers import log_utils
 from .Helpers import facade_utils
+from . import anim_actions
 from . import auto_baker
 import os
 
@@ -269,6 +270,28 @@ class BTN_mats_update_all_mat_nodes(bpy.types.Operator):
             if mat.xp_materials.alb_texture != "":
                 material_config.update_settings(mat)
                 material_config.update_nodes(mat)
+
+        return {'FINISHED'}
+
+class BTN_generate_flipbook_animation(bpy.types.Operator):
+    """Generates a flipbook animation for the selected object"""
+    bl_idname = "xp_ext.generate_flipbook_animation"
+    bl_label = "Generate Flipbook Animation"
+    bl_description = "Generates a flipbook animation for the selected object. The object must have a dataref set, and the dataref must be a flipbook dataref. The animation will be created in the same collection as the object."
+
+    def execute(self, context):
+        #Get our params
+        start_frame = bpy.context.scene.xp_ext.flipbook_frame_start
+        end_frame = bpy.context.scene.xp_ext.flipbook_frame_end
+        keyframe_interval = bpy.context.scene.xp_ext.flipbook_keyframe_interval
+        dataref = bpy.context.scene.xp_ext.flipbook_dataref
+        loop_value = bpy.context.scene.xp_ext.flipbook_loop_value
+        start_value = bpy.context.scene.xp_ext.flipbook_start_value
+        end_value = bpy.context.scene.xp_ext.flipbook_end_value
+
+        #Iterate over selected objects
+        for obj in bpy.context.selected_objects:
+            anim_actions.create_flipbook_animation(obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval)
 
         return {'FINISHED'}
 
@@ -968,6 +991,7 @@ def register():
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_mats_update_all_mat_nodes)
+    bpy.utils.register_class(BTN_generate_flipbook_animation)
     bpy.utils.register_class(BTN_bake_low_poly)
     bpy.utils.register_class(BTN_update_xp_export_settings)
     bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
@@ -1002,6 +1026,7 @@ def unregister():
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_mats_update_all_mat_nodes)
+    bpy.utils.unregister_class(BTN_generate_flipbook_animation)
     bpy.utils.unregister_class(BTN_bake_low_poly)
     bpy.utils.unregister_class(BTN_update_xp_export_settings)
     bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)

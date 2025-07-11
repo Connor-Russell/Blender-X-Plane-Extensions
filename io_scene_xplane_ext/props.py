@@ -150,6 +150,62 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         min=0.0
     ) # type: ignore
 
+    flipbook_frame_start: bpy.props.IntProperty(
+        name="Flipbook Frame Start",
+        description="The frame to start the flipbook animation on",
+        default=1,
+        min=0,
+        update=update_ui
+    ) # type: ignore
+
+    flipbook_frame_end: bpy.props.IntProperty(
+        name="Flipbook Frame End",
+        description="The frame to end the flipbook animation on",
+        default=250,
+        min=0,
+        update=update_ui
+    ) # type: ignore
+
+    flipbook_dataref: bpy.props.StringProperty(
+        name="Flipbook Dataref",
+        description="The dataref to use for the flipbook animation",
+        default="",
+        subtype='NONE',
+        update=update_ui
+    ) # type: ignore
+
+    flipbook_start_value: bpy.props.FloatProperty(
+        name="Flipbook Start Value",
+        description="The starting value of the dataref for flipbook animation",
+        default=0.0,
+        min=0.0,
+        update=update_ui
+    ) # type: ignore
+
+    flipbook_end_value: bpy.props.FloatProperty(
+        name="Flipbook End Value",
+        description="The ending value of the dataref for flipbook animation",
+        default=1.0,
+        min=0.0,
+        update=update_ui
+    ) # type: ignore
+
+    flipbook_loop_value: bpy.props.FloatProperty(
+        name="Flipbook Loop Value",
+        description="The value to loop the flipbook animation at",
+        default=0.0,
+        min=0.0,
+        update=update_ui
+    ) # type: ignore
+
+    flipbook_keyframe_interval: bpy.props.IntProperty(
+        name="Flipbook Keyframe Interval",
+        description="The interval between keyframes for the flipbook animation. In Blender Frames",
+        default=1,
+        min=1,
+        update=update_ui
+    ) # type: ignore
+
 #Material properties
 
 class PROP_decal(bpy.types.PropertyGroup):
