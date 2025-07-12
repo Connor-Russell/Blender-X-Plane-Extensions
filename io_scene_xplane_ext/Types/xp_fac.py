@@ -659,7 +659,7 @@ class facade:
 
             #Hard
             if mat.surface_type != "NONE":
-                output += "ROOF_HARD concrete\n"
+                output += "HARD_ROOF " + str(mat.surface_type) + "\n"
         elif not self.do_roof_mesh:
             output += "NO_ROOF_MESH\n"
         #Roof scale

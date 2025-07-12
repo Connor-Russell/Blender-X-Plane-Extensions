@@ -202,6 +202,7 @@ def update_settings(in_material):
     else:
         in_material.xplane.blend_v1000 = 'off'
         in_material.blend_method = 'CLIP'
+        in_material.alpha_threshold = xp_mat.blend_cutoff
 
     #Set XP hard mode based on the hard property ("none" or "concrete")
     in_material.xplane.surfaceType = xp_mat.surface_type.lower()
