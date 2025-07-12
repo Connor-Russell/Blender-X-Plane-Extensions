@@ -566,6 +566,9 @@ class facade:
 
         output += "\n"
 
+        #Define the roof surface. We save this so we can set the HARD_ROOF command later as it is on a per-floor basis not a facade wide basis
+        roof_surface = ""
+
         #Wall shader
         if self.wall_material is not None and self.do_wall_mesh:
             output += "SHADER_WALL\n"
@@ -659,7 +662,7 @@ class facade:
 
             #Hard
             if mat.surface_type != "NONE":
-                output += "HARD_ROOF " + str(mat.surface_type) + "\n"
+                roof_surface = mat.surface_type
         elif not self.do_roof_mesh:
             output += "NO_ROOF_MESH\n"
         #Roof scale
@@ -679,7 +682,11 @@ class facade:
         #Floors
         for cur_floor in self.floors:
             output += "FLOOR " + cur_floor.name + "\n"
-            
+
+            #Add the hard roof command if we have a roof surface
+            if roof_surface != "":
+                output += "HARD_ROOF " + str(roof_surface) + "\n"
+
             #First step is to add all the roof data
             if cur_floor.roof_two_sided:
                 output += "ROOF_TWO_SIDED\n"
