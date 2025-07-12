@@ -206,6 +206,27 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
+    menu_bake_expanded: bpy.props.BoolProperty(
+        name="Bake Menu Expanded",
+        description="Whether the bake menu is expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    menu_lod_preview_expanded: bpy.props.BoolProperty(
+        name="LOD Preview Menu Expanded",
+        description="Whether the LOD preview menu is expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    menu_autoanim_expanded: bpy.props.BoolProperty(
+        name="Auto Animation Menu Expanded",
+        description="Whether the auto animation menu is expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
 #Material properties
 
 class PROP_decal(bpy.types.PropertyGroup):

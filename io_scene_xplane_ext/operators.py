@@ -277,49 +277,107 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
     """Generates a flipbook animation for the selected object"""
     bl_idname = "xp_ext.generate_flipbook_animation"
     bl_label = "Generate Flipbook Animation"
-    bl_description = "Generates a flipbook animation for the selected object. The object must have a dataref set, and the dataref must be a flipbook dataref. The animation will be created in the same collection as the object."
+    bl_description = "Generates a flipbook animation for the selected objects with the given parameters. Useful for skinned animations."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    autoanim_frame_start: bpy.props.IntProperty(name="Start Frame", description="The start frame for the animation", default=1, min=1) # type: ignore
+    autoanim_frame_end: bpy.props.IntProperty(name="End Frame", description="The end frame for the animation", default=250, min=1) # type: ignore
+    autoanim_keyframe_interval: bpy.props.IntProperty(name="Keyframe Interval", description="The interval at which to add keyframes", default=1, min=1) # type: ignore
+    autoanim_dataref: bpy.props.StringProperty(name="Dataref", description="The dataref to animate", default="") # type: ignore
+    autoanim_loop_value: bpy.props.FloatProperty(name="Loop Value", description="The value to loop the animation", default=1.0) # type: ignore
+    autoanim_start_value: bpy.props.FloatProperty(name="Start Dref Value", description="The start value for the dataref", default=0.0) # type: ignore
+    autoanim_end_value: bpy.props.FloatProperty(name="End Dref Value", description="The end value for the dataref", default=1.0) # type: ignore
+
+    def invoke(self, context, event):
+        # Set operator properties from scene.xp_ext if available
+        xp_ext = getattr(context.scene, 'xp_ext', None)
+        if xp_ext:
+            if hasattr(xp_ext, 'autoanim_frame_start'):
+                self.autoanim_frame_start = xp_ext.autoanim_frame_start
+            if hasattr(xp_ext, 'autoanim_frame_end'):
+                self.autoanim_frame_end = xp_ext.autoanim_frame_end
+            if hasattr(xp_ext, 'autoanim_keyframe_interval'):
+                self.autoanim_keyframe_interval = xp_ext.autoanim_keyframe_interval
+            if hasattr(xp_ext, 'autoanim_dataref'):
+                self.autoanim_dataref = xp_ext.autoanim_dataref
+            if hasattr(xp_ext, 'autoanim_loop_value'):
+                self.autoanim_loop_value = xp_ext.autoanim_loop_value
+            if hasattr(xp_ext, 'autoanim_start_value'):
+                self.autoanim_start_value = xp_ext.autoanim_start_value
+            if hasattr(xp_ext, 'autoanim_end_value'):
+                self.autoanim_end_value = xp_ext.autoanim_end_value
+
+        #Run the operator directly. User already had an opportunity to set the properties in the UI so we don't need to bother them again
+        self.execute(context)
+
+        return {'FINISHED'}
 
     def execute(self, context):
-        #Get our params
-        start_frame = bpy.context.scene.xp_ext.autoanim_frame_start
-        end_frame = bpy.context.scene.xp_ext.autoanim_frame_end
-        keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
-        dataref = bpy.context.scene.xp_ext.autoanim_dataref
-        loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
-        start_value = bpy.context.scene.xp_ext.autoanim_start_value
-        end_value = bpy.context.scene.xp_ext.autoanim_end_value
-
-        #Iterate over selected objects
-        for obj in bpy.context.selected_objects:
-            anim_actions.create_flipbook_animation(obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval)
-
+        for obj in context.selected_objects:
+            anim_actions.create_flipbook_animation(
+                obj,
+                self.autoanim_dataref,
+                self.autoanim_start_value,
+                self.autoanim_end_value,
+                self.autoanim_loop_value,
+                self.autoanim_frame_start,
+                self.autoanim_frame_end,
+                self.autoanim_keyframe_interval
+            )
         return {'FINISHED'}
     
 class BTN_auto_keyframe_animation(bpy.types.Operator):
     """Automatically keyframes the selected object to the current frame"""
     bl_idname = "xp_ext.auto_keyframe_animation"
     bl_label = "Auto Keyframe Animation"
-    bl_description = "Automatically add X-Plane keyframes"
+    bl_description = "Automatically add X-Plane keyframes at the given interval for the given frame range for the selected objects."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    autoanim_frame_start: bpy.props.IntProperty(name="Start Frame", description="The start frame for the animation", default=1, min=1) # type: ignore
+    autoanim_frame_end: bpy.props.IntProperty(name="End Frame", description="The end frame for the animation", default=250, min=1) # type: ignore
+    autoanim_keyframe_interval: bpy.props.IntProperty(name="Keyframe Interval", description="The interval at which to add keyframes", default=1, min=1) # type: ignore
+    autoanim_dataref: bpy.props.StringProperty(name="Dataref", description="The dataref to animate", default="") # type: ignore
+    autoanim_loop_value: bpy.props.FloatProperty(name="Loop Value", description="The value to loop the animation", default=1.0) # type: ignore
+    autoanim_start_value: bpy.props.FloatProperty(name="Start Dref Value", description="The start value for the dataref", default=0.0) # type: ignore
+    autoanim_end_value: bpy.props.FloatProperty(name="End Dref Value", description="The end value for the dataref", default=1.0) # type: ignore
+
+    def invoke(self, context, event):
+        # Set operator properties from scene.xp_ext if available
+        xp_ext = getattr(context.scene, 'xp_ext', None)
+        if xp_ext:
+            if hasattr(xp_ext, 'autoanim_frame_start'):
+                self.autoanim_frame_start = xp_ext.autoanim_frame_start
+            if hasattr(xp_ext, 'autoanim_frame_end'):
+                self.autoanim_frame_end = xp_ext.autoanim_frame_end
+            if hasattr(xp_ext, 'autoanim_keyframe_interval'):
+                self.autoanim_keyframe_interval = xp_ext.autoanim_keyframe_interval
+            if hasattr(xp_ext, 'autoanim_dataref'):
+                self.autoanim_dataref = xp_ext.autoanim_dataref
+            if hasattr(xp_ext, 'autoanim_loop_value'):
+                self.autoanim_loop_value = xp_ext.autoanim_loop_value
+            if hasattr(xp_ext, 'autoanim_start_value'):
+                self.autoanim_start_value = xp_ext.autoanim_start_value
+            if hasattr(xp_ext, 'autoanim_end_value'):
+                self.autoanim_end_value = xp_ext.autoanim_end_value
+        
+        #Run the operator directly. User already had an opportunity to set the properties in the UI so we don't need to bother them again
+        self.execute(context)
+
+        return {'FINISHED'}
 
     def execute(self, context):
-        #Get the current frame
-        current_frame = bpy.context.scene.frame_current
-
-        #Iterate over selected objects
-        for obj in bpy.context.selected_objects:
-            #Get our params
-            start_frame = bpy.context.scene.xp_ext.autoanim_frame_start
-            end_frame = bpy.context.scene.xp_ext.autoanim_frame_end
-            keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
-            dataref = bpy.context.scene.xp_ext.autoanim_dataref
-            loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
-            start_value = bpy.context.scene.xp_ext.autoanim_start_value
-            end_value = bpy.context.scene.xp_ext.autoanim_end_value
-
-            #Iterate over selected objects
-            for obj in bpy.context.selected_objects:
-                anim_actions.auto_keyframe(obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval)
-
+        # Iterate over selected objects only once
+        for obj in context.selected_objects:
+            anim_actions.auto_keyframe(
+                obj,
+                self.autoanim_dataref,
+                self.autoanim_start_value,
+                self.autoanim_end_value,
+                self.autoanim_loop_value,
+                self.autoanim_frame_start,
+                self.autoanim_frame_end,
+                self.autoanim_keyframe_interval
+            )
         return {'FINISHED'}
 
 class BTN_update_xp_export_settings(bpy.types.Operator):

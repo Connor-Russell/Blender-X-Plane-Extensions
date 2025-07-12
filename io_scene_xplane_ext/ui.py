@@ -658,36 +658,48 @@ class MENU_operations(bpy.types.Panel):
 
         xp_ext = bpy.context.scene.xp_ext
 
-        layout.operator("xp_ext.update_all_material_nodes", text="Update All Materials")
-
-        layout.separator()
-        layout.label(text="High Poly to Low Poly Bake")
-        layout.prop(xp_ext, "low_poly_bake_resolution")
-        layout.prop(xp_ext, "low_poly_bake_ss_factor")
-        layout.operator("xp_ext.bake_low_poly", text="Bake Selected Objects to Active")
-
         layout.separator()
         layout.label(text="X-Plane Exporter Sync")
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
 
-        layout.separator()
-        layout.label(text="LOD Previews")
-        layout.prop(xp_ext, "lod_distance_preview")
-        layout.operator("xp_ext.preview_lods_for_distance", text="Preview LODs for Distance")
+        layout.operator("xp_ext.update_all_material_nodes", text="Update All Materials")
 
         layout.separator()
-        layout.label(text="Auto Animation Animations")
-        row = layout.row()
-        row.prop(xp_ext, "autoanim_frame_start")
-        row.prop(xp_ext, "autoanim_frame_end")
-        layout.prop(xp_ext, "autoanim_keyframe_interval")
-        layout.prop(xp_ext, "autoanim_dataref")
-        layout.prop(xp_ext, "autoanim_loop_value")
-        row = layout.row()
-        row.prop(xp_ext, "autoanim_start_value")
-        row.prop(xp_ext, "autoanim_end_value")
-        layout.operator("xp_ext.generate_flipbook_animation")
-        layout.operator("xp_ext.auto_keyframe_animation")
+        
+        box = layout.box()
+        box.prop(xp_ext, "menu_bake_expanded", text="High Poly to Low Poly Bake", icon='TRIA_DOWN' if xp_ext.menu_bake_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_bake_expanded:
+            box.prop(xp_ext, "low_poly_bake_resolution")
+            box.prop(xp_ext, "low_poly_bake_ss_factor")
+            box.operator("xp_ext.bake_low_poly", text="Bake Selected Objects to Active")
+
+        layout.separator()
+
+        box = layout.box()
+        box.prop(xp_ext, "menu_autoanim_expanded", text="Auto Animation", icon='TRIA_DOWN' if xp_ext.menu_autoanim_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_autoanim_expanded:
+            row = box.row()
+            row.prop(xp_ext, "autoanim_frame_start", text="Start Frame")
+            row.prop(xp_ext, "autoanim_frame_end", text="End Frame")
+            box.prop(xp_ext, "autoanim_keyframe_interval", text="Keyframe Interval")
+            box.separator()
+            box.prop(xp_ext, "autoanim_dataref")
+            
+            row = box.row()
+            row.prop(xp_ext, "autoanim_start_value", text="Start Dref Value")
+            row.prop(xp_ext, "autoanim_end_value", text="End Dref Value")
+            row.prop(xp_ext, "autoanim_loop_value", text="Loop Dref Value")
+            box.separator()
+            box.operator("xp_ext.generate_flipbook_animation")
+            box.operator("xp_ext.auto_keyframe_animation")
+
+        layout.separator()
+
+        box = layout.box()
+        box.prop(xp_ext, "menu_lod_preview_expanded", text="Level of Detail (LOD) Preview", icon='TRIA_DOWN' if xp_ext.menu_lod_preview_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_lod_preview_expanded:
+            box.prop(xp_ext, "lod_distance_preview")
+            box.operator("xp_ext.preview_lods_for_distance", text="Preview LODs for Distance")
 
         do_test_operators = False
         if do_test_operators:
