@@ -150,6 +150,83 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         min=0.0
     ) # type: ignore
 
+    autoanim_frame_start: bpy.props.IntProperty(
+        name="Auto Animation Frame Start",
+        description="The frame to start the auto animation on",
+        default=1,
+        min=0,
+        update=update_ui
+    ) # type: ignore
+
+    autoanim_frame_end: bpy.props.IntProperty(
+        name="Auto Animation Frame End",
+        description="The frame to end the auto animation on",
+        default=250,
+        min=0,
+        update=update_ui
+    ) # type: ignore
+
+    autoanim_dataref: bpy.props.StringProperty(
+        name="Auto Animation Dataref",
+        description="The dataref to use for the auto animation",
+        default="",
+        subtype='NONE',
+        update=update_ui
+    ) # type: ignore
+
+    autoanim_start_value: bpy.props.FloatProperty(
+        name="Auto Animation Start Value",
+        description="The starting value of the dataref for flipbook animation",
+        default=0.0,
+        min=0.0,
+        update=update_ui
+    ) # type: ignore
+
+    autoanim_end_value: bpy.props.FloatProperty(
+        name="Auto Animation End Value",
+        description="The ending value of the dataref for auto animation",
+        default=1.0,
+        min=0.0,
+        update=update_ui
+    ) # type: ignore
+
+    autoanim_loop_value: bpy.props.FloatProperty(
+        name="Auto Animation Loop Value",
+        description="The value to loop the auto animation at",
+        default=0.0,
+        min=0.0,
+        update=update_ui
+    ) # type: ignore
+
+    autoanim_keyframe_interval: bpy.props.IntProperty(
+        name="Auto Animation Keyframe Interval",
+        description="The interval between keyframes for the auto animation. In Blender Frames",
+        default=1,
+        min=1,
+        update=update_ui
+    ) # type: ignore
+
+    menu_bake_expanded: bpy.props.BoolProperty(
+        name="Bake Menu Expanded",
+        description="Whether the bake menu is expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    menu_lod_preview_expanded: bpy.props.BoolProperty(
+        name="LOD Preview Menu Expanded",
+        description="Whether the LOD preview menu is expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    menu_autoanim_expanded: bpy.props.BoolProperty(
+        name="Auto Animation Menu Expanded",
+        description="Whether the auto animation menu is expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
 #Material properties
 
 class PROP_decal(bpy.types.PropertyGroup):
