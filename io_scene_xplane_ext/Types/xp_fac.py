@@ -613,10 +613,10 @@ class facade:
 
             output += "\n"
         elif not self.do_wall_mesh:
-            output += "NO_WALL_MESH\n"
+            output += "NO_WALL_MESH\nNORMAL_METALNESS\n"
         #Roof shader
         if self.roof_material is not None and self.do_roof_mesh:
-            output += "SHADER_ROOF\n"
+            output += "SHADER_ROOF\nNORMAL_METALNESS\n"
 
             mat = self.roof_material.xp_materials
 
