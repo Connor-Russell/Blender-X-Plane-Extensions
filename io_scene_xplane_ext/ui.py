@@ -183,10 +183,12 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index, wall_l
 
     if wall.is_ui_expanded:
         box.prop(wall, "name", text="Name")
-        box.prop(wall, "min_length", text="Min Length")
-        box.prop(wall, "max_length", text="Max Length")
-        box.prop(wall, "min_heading", text="Min Heading")
-        box.prop(wall, "max_heading", text="Max Heading")
+        row = box.row()
+        row.prop(wall, "min_length", text="Min Length")
+        row.prop(wall, "max_length", text="Max Length")
+        row = box.row()
+        row.prop(wall, "min_heading", text="Min Heading")
+        row.prop(wall, "max_heading", text="Max Heading")
 
         box.label(text="Wall Spellings")
 
