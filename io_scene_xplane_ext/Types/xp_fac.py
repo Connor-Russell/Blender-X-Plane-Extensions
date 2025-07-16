@@ -798,10 +798,12 @@ class facade:
         self.ring = fac.ring
         
         #Layer groups
-        self.export_wall_layer_group = self.wall_material.xp_materials.layer_group
-        self.export_wall_layer_group_offset = self.wall_material.xp_materials.layer_group_offset
-        self.export_roof_layer_group = self.roof_material.xp_materials.layer_group
-        self.export_roof_layer_group_offset = self.roof_material.xp_materials.layer_group_offset
+        if self.wall_material != None:
+            self.export_wall_layer_group = self.wall_material.xp_materials.layer_group
+            self.export_wall_layer_group_offset = self.wall_material.xp_materials.layer_group_offset
+        if self.roof_material != None:
+            self.export_roof_layer_group = self.roof_material.xp_materials.layer_group
+            self.export_roof_layer_group_offset = self.roof_material.xp_materials.layer_group_offset
 
         #Get the floors
         for f in in_collection.xp_fac.floors:
