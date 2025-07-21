@@ -468,6 +468,7 @@ class facade:
 
             elif command == "VERTEX":
                 if current_mesh:
+                    #Weirdly, in X-Plane the facade X UVs are reversed. I think this is a bug? It differs from the way the .obj UVs work... so we'll just flip them here so it's wysiwyg in XP
                     vertex = geometery_utils.xp_vertex(
                         loc_x=float(tokens[1]),
                         loc_y=float(tokens[3]),
@@ -475,9 +476,10 @@ class facade:
                         normal_x=float(tokens[4]),
                         normal_y=float(tokens[6]),
                         normal_z=float(tokens[5]),
-                        uv_x=float(tokens[7]),
+                        uv_x=-float(tokens[7]),
                         uv_y=float(tokens[8])
                     )
+
                     current_mesh.vertices.append(vertex)
 
             elif command == "IDX":
@@ -703,7 +705,8 @@ class facade:
                 output = ""
                 output += "MESH " + str(target_mesh.group) + " " + str(target_mesh.far_lod) + " " + str(len(target_mesh.vertices)) + " " + str(len(target_mesh.indices)) + "\n"
                 for v in target_mesh.vertices:
-                    output += "VERTEX " + misc_utils.ftos(v.loc_x, 8) + " " + misc_utils.ftos(v.loc_z, 8) + " " + misc_utils.ftos(v.loc_y, 8) + " " + misc_utils.ftos(v.normal_x, 8) + " " + misc_utils.ftos(v.normal_z, 8) + " " + misc_utils.ftos(v.normal_y, 8) + " " + misc_utils.ftos(v.uv_x, 8) + " " + misc_utils.ftos(v.uv_y, 8) + "\n"
+                    #Weirdly, in X-Plane the facade X UVs are reversed. I think this is a bug? It differs from the way the .obj UVs work... so we'll just flip them here so it's wysiwyg in XP
+                    output += "VERTEX " + misc_utils.ftos(v.loc_x, 8) + " " + misc_utils.ftos(v.loc_z, 8) + " " + misc_utils.ftos(v.loc_y, 8) + " " + misc_utils.ftos(v.normal_x, 8) + " " + misc_utils.ftos(v.normal_z, 8) + " " + misc_utils.ftos(v.normal_y, 8) + " " + misc_utils.ftos(-v.uv_x, 8) + " " + misc_utils.ftos(v.uv_y, 8) + "\n"
                 cur_idx = 0
                 while cur_idx < len(target_mesh.indices):
                     if cur_idx % 10 == 0:

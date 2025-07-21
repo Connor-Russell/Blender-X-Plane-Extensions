@@ -124,6 +124,8 @@ def get_draw_call_from_obj(obj):
     Get the geometry from a Blender object and return it as a tuple of xp_vertexs and integer indices.
     Args:
         obj (bpy.types.Object): Blender object to extract geometry from.
+    Returns:
+        Tuple[List[xp_vertex], List[int]]:
     """
 
     # Ensure the object is a mesh
