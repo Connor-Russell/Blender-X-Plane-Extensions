@@ -205,13 +205,17 @@ class floor:
                 break
         
         if roof_col is None:
-            log_utils.error("Could not find roof collection: " + self.name + "_roof")
-        
-        #Get the roof params
-        self.roof_scale_x, self.roof_scale_y, self.roof_objs, self.roof_heights = facade_utils.get_roof_data(roof_col)
+            log_utils.warning("Could not find roof collection: " + self.name + "_roof")
+            self.roof_scale_x = 1
+            self.roof_scale_y = 1
+            self.roof_objs = []
+            self.roof_heights = [1.0]
+        else:
+            #Get the roof params
+            self.roof_scale_x, self.roof_scale_y, self.roof_objs, self.roof_heights = facade_utils.get_roof_data(roof_col)
 
-        #Sort the roof objects by their names
-        self.roof_objs.sort(key=lambda x: x.resource)
+            #Sort the roof objects by their names
+            self.roof_objs.sort(key=lambda x: x.resource)
 
     def append_obj_resources(self, target_list):
         for seg in self.all_segments:
