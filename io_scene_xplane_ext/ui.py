@@ -564,8 +564,13 @@ class MENU_mats(bpy.types.Panel):
             box.label(text="Surface Properties")
 
             box.prop(xp_materials, "blend_mode")
-            if (xp_materials.blend_mode == "CLIP" or xp_materials.blend_mode == "SHADOW"):
+            if xp_materials.blend_mode == "CLIP":
                 box.prop(xp_materials, "blend_cutoff")
+            elif xp_materials.blend_mode == "SHADOW":
+                box.prop(xp_materials, "blend_cutoff", text="Shadow Cutoff")
+
+            if xp_materials.blend_mode == "BLEND":
+                box.prop(xp_materials, "use_transparent_blending")
 
             box.separator()
 

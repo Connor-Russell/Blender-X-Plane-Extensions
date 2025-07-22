@@ -63,6 +63,7 @@ def update_xplane_collection_settings(col):
 
                 #If we haven't updated yet, update
                 if not updated:
+                    
                     if xp_props.lit_texture != "":
                         if xp_props.brightness > 0:
                             col.xplane.layer.luminance_override = True
@@ -87,15 +88,28 @@ def update_xplane_collection_settings(col):
                         col.xplane.layer.texture_draped = xp_props.alb_texture
                         col.xplane.layer.texture_draped_normal = xp_props.normal_texture
                         col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-                        col.xplane.layer.layer_group = xp_props.layer_group.lower()
-                        col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
+                        col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
+                        col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
                     else:
                         col.xplane.layer.texture_draped = ""
                         col.xplane.layer.texture_draped_normal = ""
                         col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-                        col.xplane.layer.layer_group = xp_props.layer_group.lower()
-                        col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
-                    updated = True
+                        if not xp_props.use_transparent_blending:
+                            col.xplane.layer.layer_group = xp_props.layer_group.lower()
+                            col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
+
+                    #Reset the ATTR_layer_group blended attribute if it exists
+                    for i in range(0, len(col.xplane.layer.customAttributes)):
+                        attr = col.xplane.layer.customAttributes[i]
+                        if attr.name == "ATTR_layer_group" and attr.value == "blended":
+                            col.xplane.layer.customAttributes.remove(i)
+
+                    if xp_props.use_transparent_blending:
+                        col.xplane.layer.layer_group = "none"
+                        col.xplane.layer.layer_group_offset = 0
+                        col.xplane.layer.customAttributes.add()
+                        col.xplane.layer.customAttributes[-1].name = "ATTR_layer_group"
+                        col.xplane.layer.customAttributes[-1].value = "blended"
 
                     #Now we need to set the decal properties
                     #Reset decal properties
@@ -119,6 +133,8 @@ def update_xplane_collection_settings(col):
                     decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
                     decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
                     decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
+
+                    updated = True
 
                 #If we have updated, but this one is draped, update with this one. Then we can skip the rest of the objects in this collection
                 if xp_props.draped:

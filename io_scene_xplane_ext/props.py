@@ -488,6 +488,13 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
+    use_transparent_blending: bpy.props.BoolProperty(
+        name="Use Transparent Blending",
+        description="Enables special X-Plane transparency blending mode. Applies to entire object. Requires XP 12.2.1+. Translates to ATTR_layer_group blended",
+        default=False,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
     cast_shadow: bpy.props.BoolProperty(
         name="Casts Shadows",
         description="Does the material cast shadows?",
