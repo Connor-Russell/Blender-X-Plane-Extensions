@@ -206,6 +206,18 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
+    autoanim_autodetect: bpy.props.BoolProperty(
+        name="Auto Detect",
+        description="Automatically detect the start and end frames",
+        default=False
+    ) # type: ignore
+
+    autoanim_autodetect_fps: bpy.props.FloatProperty(
+        name="Auto Detect FPS",
+        description="The Frame Rate used to pick values when autodectecting",
+        default=30.0
+    ) # type: ignore
+
     menu_bake_expanded: bpy.props.BoolProperty(
         name="Bake Menu Expanded",
         description="Whether the bake menu is expanded",

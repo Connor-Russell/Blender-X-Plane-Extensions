@@ -54,24 +54,26 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
         end_dref_value = (start_value + value_interval * (frame + 1)) + (value_interval * 0.1)
 
         #Add 3 to the dataref collection
-        anim_obj.xplane.datarefs.add()
-        anim_obj.xplane.datarefs[-1].path = dataref
-        anim_obj.xplane.datarefs[-1].anim_type = 'hide'
-        anim_obj.xplane.datarefs[-1].show_hide_v1 = start_value
-        anim_obj.xplane.datarefs[-1].show_hide_v2 = start_dref_value
-        anim_obj.xplane.datarefs[-1].loop = loop_value
+        if start_dref_value != start_value:
+            anim_obj.xplane.datarefs.add()
+            anim_obj.xplane.datarefs[-1].path = dataref
+            anim_obj.xplane.datarefs[-1].anim_type = 'hide'
+            anim_obj.xplane.datarefs[-1].show_hide_v1 = start_value
+            anim_obj.xplane.datarefs[-1].show_hide_v2 = start_dref_value
+            anim_obj.xplane.datarefs[-1].loop = loop_value
         anim_obj.xplane.datarefs.add()
         anim_obj.xplane.datarefs[-1].path = dataref
         anim_obj.xplane.datarefs[-1].anim_type = 'show'
         anim_obj.xplane.datarefs[-1].show_hide_v1 = start_dref_value
         anim_obj.xplane.datarefs[-1].show_hide_v2 = end_dref_value
         anim_obj.xplane.datarefs[-1].loop = loop_value
-        anim_obj.xplane.datarefs.add()
-        anim_obj.xplane.datarefs[-1].path = dataref
-        anim_obj.xplane.datarefs[-1].anim_type = 'hide'
-        anim_obj.xplane.datarefs[-1].show_hide_v1 = end_dref_value
-        anim_obj.xplane.datarefs[-1].show_hide_v2 = end_value
-        anim_obj.xplane.datarefs[-1].loop = loop_value
+        if end_dref_value != end_value + (value_interval * 0.1):
+            anim_obj.xplane.datarefs.add()
+            anim_obj.xplane.datarefs[-1].path = dataref
+            anim_obj.xplane.datarefs[-1].anim_type = 'hide'
+            anim_obj.xplane.datarefs[-1].show_hide_v1 = end_dref_value
+            anim_obj.xplane.datarefs[-1].show_hide_v2 = end_value + (value_interval * 0.1)
+            anim_obj.xplane.datarefs[-1].loop = loop_value
 
 def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval):
     """
@@ -101,4 +103,31 @@ def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_fra
         anim_utils.goto_frame(frame)
         anim_utils.keyframe_xp_dataref(in_obj, dataref, value)
 
-    
+def autodetect_frame_range(in_obj, fps=30.0):
+    """
+    Automatically detect the frame range for the given object or its armature.
+
+    :param in_obj: The object to detect the frame range for.
+    :param fps: The frames per second to use to calculate the end value.
+    :return: A tuple containing the start and end frames and start and end values
+    """
+    # Try to get the action from the object itself
+    action = in_obj.animation_data.action if in_obj.animation_data else None
+
+    # If no action, check for armature modifier and get action from armature
+    if not action:
+        for mod in in_obj.modifiers:
+            if mod.type == 'ARMATURE' and mod.object and mod.object.animation_data:
+                action = mod.object.animation_data.action
+                break
+
+    if not action:
+        return (0, 0, 0.0, 0.0)
+
+    start_frame = int(action.frame_range[0])
+    end_frame = int(action.frame_range[1])
+    frame_len = end_frame - start_frame + 1
+    start_value = 0.0
+    end_value = frame_len / fps
+
+    return (start_frame, end_frame, start_value, end_value)
