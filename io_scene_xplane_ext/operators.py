@@ -1046,11 +1046,11 @@ class BTN_preview_lods_for_distance(bpy.types.Operator):
             for range in lod_ranges:
                 if range[0] <= bpy.context.scene.xp_ext.lod_distance_preview <= range[1]:
                     #If the distance is within the range, show the object
-                    obj.hide_viewport = False
+                    obj.hide_set(False)
                     break
                 else:
                     #If the distance is not within the range, hide the object
-                    obj.hide_viewport = True
+                    obj.hide_set(True)
 
         return {'FINISHED'}
 
