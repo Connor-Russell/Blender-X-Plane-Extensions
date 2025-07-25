@@ -8,7 +8,7 @@ import bpy
 
 from .Helpers import anim_utils
 
-def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval):
+def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval, apply_parent_transform=False):
     """
     Create a flipbook animation for the given object.
 
@@ -48,6 +48,16 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
         #Apply the modifiers
         for modifier in anim_obj.modifiers:
             bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+        #If we apply the parent transform, clear the parent and apply the parent's transform
+        if apply_parent_transform:
+            if anim_obj.parent:
+                # Store the world matrix
+                world_matrix = anim_obj.matrix_world.copy()
+                # Clear parent
+                anim_obj.parent = None
+                # Restore world matrix
+                anim_obj.matrix_world = world_matrix
 
         #Now we need to setup the animation. So we need to get the start value, and the end value, then add the animations
         start_dref_value = start_value + value_interval * frame
@@ -89,7 +99,7 @@ def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_fra
     """
 
     #Get the value increment
-    value_increment = (end_value - start_value) / ((end_frame - start_frame) // keyframe_interval)
+    value_increment = (end_value - start_value) / ((end_frame - start_frame))
     
     #Add the dataref track
     in_obj.xplane.datarefs.add()

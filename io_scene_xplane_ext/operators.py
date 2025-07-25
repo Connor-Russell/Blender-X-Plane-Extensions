@@ -289,6 +289,7 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
     autoanim_end_value: bpy.props.FloatProperty(name="End Dref Value", description="The end value for the dataref", default=1.0) # type: ignore
     autoanim_autodetect: bpy.props.BoolProperty(name="Auto Detect", description="Automatically detect the start and end frames", default=False) # type: ignore
     autoanim_autodetect_fps: bpy.props.FloatProperty(name="Auto Detect FPS", description="The Frame Rate used to pick values when autodectecting", default=30.0) # type: ignore
+    autoanim_apply_parent_transform: bpy.props.BoolProperty(name="Apply Parent Transform", description="Apply the parent transform to the object for each frame that is generated for the flipbook animation", default=False) # type: ignore
 
     def invoke(self, context, event):
         # Set operator properties from scene.xp_ext if available
@@ -312,6 +313,8 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
                 self.autoanim_autodetect = xp_ext.autoanim_autodetect
             if hasattr(xp_ext, 'autoanim_autodetect_fps'):
                 self.autoanim_autodetect_fps = xp_ext.autoanim_autodetect_fps
+            if hasattr(xp_ext, 'autoanim_apply_parent_transform'):
+                self.autoanim_apply_parent_transform = xp_ext.autoanim_apply_parent_transform
 
         #Run the operator directly. User already had an opportunity to set the properties in the UI so we don't need to bother them again
         self.execute(context)
@@ -320,6 +323,9 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
 
     def execute(self, context):
         for obj in context.selected_objects:
+            #Check that the object has a deform modifier
+            if not any(mod.type == 'ARMATURE' for mod in obj.modifiers):
+                continue
             if self.autoanim_autodetect:
                 start_frame, end_frame, start_value, end_value = anim_actions.autodetect_frame_range(obj, self.autoanim_autodetect_fps)
                 anim_actions.create_flipbook_animation(
@@ -330,7 +336,8 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
                     end_value,
                     start_frame,
                     end_frame,
-                    self.autoanim_keyframe_interval
+                    self.autoanim_keyframe_interval,
+                    self.autoanim_apply_parent_transform
                 )
             else:
                 anim_actions.create_flipbook_animation(
@@ -341,7 +348,8 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
                     self.autoanim_loop_value,
                     self.autoanim_frame_start,
                     self.autoanim_frame_end,
-                    self.autoanim_keyframe_interval
+                    self.autoanim_keyframe_interval,
+                    self.autoanim_apply_parent_transform
                 )
         return {'FINISHED'}
     

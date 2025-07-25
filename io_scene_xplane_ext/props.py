@@ -218,6 +218,13 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         default=30.0
     ) # type: ignore
 
+    autoanim_apply_parent_transform: bpy.props.BoolProperty(
+        name="Apply Parent Transform",
+        description="Apply the parent transform to the object for each frame that is generated for the flipbook animation",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
     menu_bake_expanded: bpy.props.BoolProperty(
         name="Bake Menu Expanded",
         description="Whether the bake menu is expanded",

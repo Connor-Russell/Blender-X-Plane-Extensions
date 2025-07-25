@@ -705,6 +705,8 @@ class MENU_operations(bpy.types.Panel):
                 box.separator()
                 box.prop(xp_ext, "autoanim_dataref")
             box.separator()
+            box.prop(xp_ext, "autoanim_apply_parent_transform")
+            box.separator()
             box.operator("xp_ext.generate_flipbook_animation")
             box.operator("xp_ext.auto_keyframe_animation")
 
