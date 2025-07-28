@@ -691,7 +691,7 @@ class facade:
 
             #Add the hard roof command if we have a roof surface
             if roof_surface != "":
-                output += "HARD_ROOF " + str(roof_surface) + "\n"
+                output += "HARD_ROOF " + str(roof_surface).lower() + "\n"
 
             #First step is to add all the roof data
             if cur_floor.roof_two_sided:
