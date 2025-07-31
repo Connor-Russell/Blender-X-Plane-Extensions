@@ -36,9 +36,12 @@ class mesh:
         self.cuts = obj.xp_fac_mesh.cuts
 
     def to_obj(self, name):
+        #Since we scaled by -1 on the y to compensate for XP, we need to reverse the indicies
+        temp_indices = [i for i in reversed(self.indices)]  # Reverse the indices to fix face direction
+
         # Use the vertices and indices to generate the Blender object
-        obj = geometery_utils.create_obj_from_draw_call(self.vertices, self.indices, name)
-        
+        obj = geometery_utils.create_obj_from_draw_call(self.vertices, temp_indices, name)
+
         #Set the params of the object
         obj.xp_fac_mesh.far_lod = int(float(self.far_lod))
         obj.xp_fac_mesh.group = int(float(self.group))
@@ -472,13 +475,13 @@ class facade:
 
             elif command == "VERTEX":
                 if current_mesh:
-                    #Weirdly, in X-Plane the facade X UVs are reversed. I think this is a bug? It differs from the way the .obj UVs work... so we'll just flip them here so it's wysiwyg in XP
+                    #X-Plane facades are *very* weird. They scale the wall mesh by -1 on their z axis (our y). So we need to do the same here so XP appears the same as blender - 0y being the start of the wall
                     vertex = geometery_utils.xp_vertex(
                         loc_x=float(tokens[1]),
-                        loc_y=float(tokens[3]),
+                        loc_y=-float(tokens[3]),
                         loc_z=float(tokens[2]),
                         normal_x=float(tokens[4]),
-                        normal_y=float(tokens[6]),
+                        normal_y=-float(tokens[6]),
                         normal_z=float(tokens[5]),
                         uv_x=float(tokens[7]),
                         uv_y=float(tokens[8])
@@ -708,17 +711,23 @@ class facade:
             def write_mesh(target_mesh):
                 output = ""
                 output += "MESH " + str(target_mesh.group) + " " + str(target_mesh.far_lod) + " " + str(len(target_mesh.vertices)) + " " + str(len(target_mesh.indices)) + "\n"
+
+                #X-Plane facades are *very* weird. They scale the wall mesh by -1 on their z axis (our y). So we need to do the same here so XP appears the same as blender - 0y being the start of the wall
+
                 for v in target_mesh.vertices:
-                    #Weirdly, in X-Plane the facade X UVs are reversed. I think this is a bug? It differs from the way the .obj UVs work... so we'll just flip them here so it's wysiwyg in XP
-                    output += "VERTEX " + misc_utils.ftos(v.loc_x, 8) + " " + misc_utils.ftos(v.loc_z, 8) + " " + misc_utils.ftos(v.loc_y, 8) + " " + misc_utils.ftos(v.normal_x, 8) + " " + misc_utils.ftos(v.normal_z, 8) + " " + misc_utils.ftos(v.normal_y, 8) + " " + misc_utils.ftos(v.uv_x, 8) + " " + misc_utils.ftos(v.uv_y, 8) + "\n"
+                    output += "VERTEX " + misc_utils.ftos(v.loc_x, 8) + " " + misc_utils.ftos(v.loc_z, 8) + " " + misc_utils.ftos(-v.loc_y, 8) + " " + misc_utils.ftos(v.normal_x, 8) + " " + misc_utils.ftos(v.normal_z, 8) + " " + misc_utils.ftos(-v.normal_y, 8) + " " + misc_utils.ftos(v.uv_x, 8) + " " + misc_utils.ftos(v.uv_y, 8) + "\n"
                 cur_idx = 0
-                while cur_idx < len(target_mesh.indices):
+
+                #Since we had to scale by -1 for Y, we need to reverse the indicies to fix the face direction
+                temp_indicies = [i for i in reversed(target_mesh.indices)]  # Reverse the indices to fix face direction
+
+                while cur_idx < len(temp_indicies):
                     if cur_idx % 10 == 0:
                         output += "IDX "
-                    
-                    output += str(target_mesh.indices[cur_idx])
 
-                    if cur_idx % 10 == 9 or cur_idx == len(target_mesh.indices) - 1:
+                    output += str(temp_indicies[cur_idx])
+
+                    if cur_idx % 10 == 9 or cur_idx == len(temp_indicies) - 1:
                         output += "\n"
                     else:
                         output += " "
