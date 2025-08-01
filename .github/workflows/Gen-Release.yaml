@@ -94,4 +94,4 @@ jobs:
           prerelease: ${{ github.event.inputs.release_type != 'stable' }}
           files: Blender-X-Plane-Extensions.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CR_B_XP_EXT_RELEASE_PAT }}
