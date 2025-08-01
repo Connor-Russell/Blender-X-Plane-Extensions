@@ -1,4 +1,4 @@
-name: Gen-Release
+name: Release
 
 on:
   workflow_dispatch:
@@ -65,18 +65,23 @@ jobs:
           echo "Please see [wiki](https://github.com/Connor-Russell/Blender-X-Plane-Extensions/wiki) for documentation." >> release_notes.md
           echo "" >> release_notes.md
           echo "# Release Notes" >> release_notes.md
+
           echo "## New Features" >> release_notes.md
-          echo "${{ github.event.inputs.new_features }}" >> release_notes.md
+          echo "${{ github.event.inputs.new_features }}" | awk -F';' '{for(i=1;i<=NF;i++) if(length($i)>0) print "- " $i}' >> release_notes.md
           echo "" >> release_notes.md
+
           echo "## Changes" >> release_notes.md
-          echo "${{ github.event.inputs.changes }}" >> release_notes.md
+          echo "${{ github.event.inputs.changes }}" | awk -F';' '{for(i=1;i<=NF;i++) if(length($i)>0) print "- " $i}' >> release_notes.md
           echo "" >> release_notes.md
+
           echo "## Fixes" >> release_notes.md
-          echo "${{ github.event.inputs.fixes }}" >> release_notes.md
+          echo "${{ github.event.inputs.fixes }}" | awk -F';' '{for(i=1;i<=NF;i++) if(length($i)>0) print "- " $i}' >> release_notes.md
           echo "" >> release_notes.md
+
           echo "## Breaking Changes" >> release_notes.md
-          echo "${{ github.event.inputs.breaking_changes }}" >> release_notes.md
+          echo "${{ github.event.inputs.breaking_changes }}" | awk -F';' '{for(i=1;i<=NF;i++) if(length($i)>0) print "- " $i}' >> release_notes.md
           echo "" >> release_notes.md
+
           echo "## Additional Notes" >> release_notes.md
           echo "${{ github.event.inputs.additional_notes }}" >> release_notes.md
 
