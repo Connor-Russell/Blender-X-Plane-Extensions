@@ -450,11 +450,14 @@ class BTN_bake_low_poly(bpy.types.Operator):
 
     def execute(self, context):
 
+        if bpy.data.is_dirty:
+            self.report({'ERROR'}, "Please save your file before baking as baking can sometimes cause a crash in the Blender baking system, which we can't handle.")
+            return {'CANCELLED'}
+
         #For all the sleected objects, if it isn't a mesh, deselect it
         for obj in bpy.context.selected_objects:
             if obj.type != 'MESH':
                 obj.select_set(False)
-                print("Deselected non-mesh object " + obj.name)
 
         #Some initial checks: We are saved. Every selected object has a material. Check each individually, give appropriate error messages
         if not bpy.data.filepath:
@@ -462,9 +465,17 @@ class BTN_bake_low_poly(bpy.types.Operator):
             return {'CANCELLED'}
         
         for obj in bpy.context.selected_objects:
-            if not obj.data.materials:
+            if not obj.data.materials and bpy.context.active_object != obj:
                 self.report({'ERROR'}, "All selected objects must have a material")
                 return {'CANCELLED'}
+            #Make sure it is renderable
+            if not obj.visible_get() or obj.hide_render:
+                self.report({'ERROR'}, f"{obj.name} is not renderable. Please make sure it is visible in the viewport and render.")
+                return {'CANCELLED'}
+            for col in obj.users_collection:
+                if hasattr(col, "hide_render") and col.hide_render:
+                    self.report({'ERROR'}, f"{obj.name} is not renderable due to a parent collection {col.name}. Please make sure it is visible in the viewport and render.")
+                    return {'CANCELLED'}
 
 
         #Bake the object to low poly

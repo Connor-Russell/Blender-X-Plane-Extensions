@@ -143,6 +143,27 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
          max=4.0
      ) #type: ignore
     
+    low_poly_bake_extrusion_distance: bpy.props.FloatProperty(
+        name="Bake Extrusion Distance",
+        description="The extrusion distance of the low poly bake",
+        default=0.0,
+        min=0.0,
+    ) #type: ignore
+
+    low_poly_bake_max_ray_distance: bpy.props.FloatProperty(
+        name="Bake Max Ray Distance",
+        description="The maximum ray distance for the low poly bake",
+        default=0.0,
+        min=0.0,
+    ) #type: ignore
+
+    low_poly_bake_do_separate_normals: bpy.props.BoolProperty(
+        name="Separate Normals",
+        description="Whether to separate the normals from the material map, or use the combined format",
+        default=False,
+        update=update_ui
+    ) #type: ignore
+
     lod_distance_preview: bpy.props.FloatProperty(
         name="LOD Distance Preview",
         description="Show objects whose LODs would make them visible at this range",

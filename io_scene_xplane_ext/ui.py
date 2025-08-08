@@ -678,6 +678,11 @@ class MENU_operations(bpy.types.Panel):
         if xp_ext.menu_bake_expanded:
             box.prop(xp_ext, "low_poly_bake_resolution")
             box.prop(xp_ext, "low_poly_bake_ss_factor")
+            box.separator()
+            box.prop(xp_ext, "low_poly_bake_extrusion_distance")
+            box.prop(xp_ext, "low_poly_bake_max_ray_distance")
+            box.separator()
+            box.prop(xp_ext, "low_poly_bake_do_separate_normals")
             box.operator("xp_ext.bake_low_poly", text="Bake Selected Objects to Active")
 
         layout.separator()

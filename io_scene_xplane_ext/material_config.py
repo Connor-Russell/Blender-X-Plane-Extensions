@@ -80,8 +80,11 @@ def update_xplane_collection_settings(col):
 
                     col.xplane.layer.texture = xp_props.alb_texture
                     col.xplane.layer.texture_lit = xp_props.lit_texture
-                    col.xplane.layer.texture_normal = xp_props.normal_texture
-                    col.xplane.layer.texture_map_material_gloss = xp_props.material_texture
+                    if xp_props.do_separate_material_texture:
+                        col.xplane.layer.texture_map_normal = xp_props.normal_texture
+                        col.xplane.layer.texture_map_material_gloss = xp_props.material_texture
+                    else:
+                        col.xplane.layer.texture_normal = xp_props.normal_texture
                     col.xplane.layer.normal_metalness = xp_props.normal_texture != ""
 
                     if xp_props.draped:
@@ -518,22 +521,27 @@ def update_nodes(material):
         #Load the images that exist
         if str_image_alb != "":
             image_alb = file_utils.get_or_load_image(str_image_alb, True)
+            image_alb.colorspace_settings.name = 'sRGB' # Set colorspace to sRGB for albedo
         else:
             #Disable alb decals if we don't have an alb
             str_image_decal_1_alb = ""
             str_image_decal_2_alb = ""
         if str_image_nml != "":
             image_nml = file_utils.get_or_load_image(str_image_nml, True)
+            image_nml.colorspace_settings.name = 'sRGB' # Set colorspace to sRGB for normal
         else:
             #Disable nml decals if we don't have a nml
             str_image_decal_1_nml = ""
             str_image_decal_2_nml = ""
         if str_image_mat != "":
             image_mat = file_utils.get_or_load_image(str_image_mat, True)
+            image_mat.colorspace_settings.name = 'sRGB' # Set colorspace to sRGB
         if str_image_lit != "":
             image_lit = file_utils.get_or_load_image(str_image_lit, True)
+            image_lit.colorspace_settings.name = 'sRGB' # Set colorspace to sRGB
         if str_image_mod != "":
             image_mod = file_utils.get_or_load_image(str_image_mod, True)
+            image_mod.colorspace_settings.name = 'sRGB' # Set colorspace to sRGB for modulator
         if str_image_decal_1_alb != "":
             image_decal_1_alb = file_utils.get_or_load_image(str_image_decal_1_alb, True)
         if str_image_decal_1_nml != "":
