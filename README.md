@@ -1,15 +1,15 @@
 # X-Plane Blender Extensions
 This Blender Plugin provides additional functionality for X-Plane projects in Blender. It's primary features include:
 - WYSIWYG X-Plane Materials
+- One-click high poly to low poly baking for X-Plane materials
 - Facade Exporter
 - Facade Importer (basic)
 - Line Exporter
 - Line Importer
 - Object Importer
 - Autogen Point Exporter
-
-Planned:
 - Auto-splitting of objects with multiple materials in .agps
+- Various utilities such as auto keyframing for animations, a flipbook animation generator, LOD previews, and more.
 
 Releases can be found on the release page. To install, simply go to your Blender Settings, then addon, then choose install from file, and select "Blender X-Plane Extensions.zip".
 
