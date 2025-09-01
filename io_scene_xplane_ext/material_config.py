@@ -132,10 +132,19 @@ def update_xplane_collection_settings(col):
                     if xp_props.draped:
                         col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
+                    if len(xp_props.decals) == 4:
+                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
+                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
+                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
+                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
+                    else:
+                        #Set the correct number of decals
+                        while len(xp_props.decals) < 4:
+                            #Add a new decal
+                            xp_props.decals.add()
+                        while len(xp_props.decals) > 4:
+                            #Remove the last decal
+                            xp_props.decals.remove(xp_props.decals.count - 1)
 
                     updated = True
 
@@ -154,10 +163,19 @@ def update_xplane_collection_settings(col):
 
                     col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
 
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
-                    decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
+                    if len(xp_props.decals) == 4:
+                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
+                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
+                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
+                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
+                    else:
+                        #Set the correct number of decals
+                        while len(xp_props.decals) < 4:
+                            #Add a new decal
+                            xp_props.decals.add()
+                        while len(xp_props.decals) > 4:
+                            #Remove the last decal
+                            xp_props.decals.remove(xp_props.decals.count - 1)
 
 #Function to update settings when a property is updated:
 def update_settings(in_material):

@@ -18,6 +18,7 @@ import math
 import mathutils
 import bpy
 import bmesh
+import traceback
 
 class crop_polygon:
     """
@@ -669,6 +670,7 @@ class auto_split_obj:
                         log_utils.error(f"X-Plane2Blender Error exporting object {obj.name}: {line.body.strip()}")
         except Exception as e:
             log_utils.error(f"Error exporting auto-split object {obj.name}: {e}")
+            log_utils.error(traceback.format_exc())
             good = False
 
         #We are now done with exporting, so we can remove the new objects and new collections
@@ -677,6 +679,7 @@ class auto_split_obj:
                 bpy.data.collections.remove(col, do_unlink=True)
         except Exception as e:
             log_utils.error(f"Error removing auto-split collections: {e}")
+            log_utils.error(traceback.format_exc())
 
         #Now we can remove the duplicate objects
         try:
@@ -684,6 +687,7 @@ class auto_split_obj:
                 bpy.data.objects.remove(split_obj, do_unlink=True)
         except Exception as e:
             log_utils.error(f"Error removing duplicate objects: {e}")
+            log_utils.error(traceback.format_exc())
 
         #Now we can remove the fake LOD objects
         try:
@@ -691,12 +695,14 @@ class auto_split_obj:
                 bpy.data.objects.remove(fake_lod_obj, do_unlink=True)
         except Exception as e:
             log_utils.error(f"Error removing fake LOD objects: {e}")
+            log_utils.error(traceback.format_exc())
 
         try:
             #Remove the fake LOD material
             bpy.data.materials.remove(fake_lod_material, do_unlink=True)
         except Exception as e:
             log_utils.error(f"Error removing fake LOD material: {e}")
+            log_utils.error(traceback.format_exc())
 
     def to_commands(self, obj_resource_list, transform: agp_utils.agp_transform):
         cmds = []
