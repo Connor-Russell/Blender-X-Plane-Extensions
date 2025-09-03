@@ -38,6 +38,7 @@ class line():
         self.alb_texture = ""
         self.nml_texture = ""
         self.lit_texture = ""
+        self.mod_texture = ""
         self.weather_texture = ""
         self.layer = "MARKINGS"
         self.layer_offset = 0
@@ -86,6 +87,9 @@ class line():
         
         of += "\n"
 
+        #Write the modulator texture
+        if self.mod_texture != "":
+            of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(self.mod_texture), output_folder) + "\n"
         #Write the decals
         if len(self.decals) > 0:
             of += "#Decals\n"
@@ -163,6 +167,7 @@ class line():
                 'TEXTURE_NORMAL': 3,
                 'TEXTURE_LIT': 2,
                 'TEXTURE': 2,
+                'TEXTURE_MODULATOR': 2,
                 'WEATHER': 2,
                 'NO_BLEND': 2,
                 'TEX_WIDTH': 2,
@@ -190,6 +195,8 @@ class line():
                 self.lit_texture = tokens[1]
             elif cmd == "TEXTURE":
                 self.alb_texture = tokens[1]
+            elif cmd == "TEXTURE_MODULATOR":
+                self.mod_texture = tokens[1]
             elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT":
                 self.weather_texture = tokens[1]
             elif cmd == "SUPER_ROUGHNESS":
@@ -304,6 +311,7 @@ class line():
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
+        self.mod_texture = mat.decal_modulator
         self.weather_texture = mat.weather_texture
         self.do_blend = True if mat.blend_mode == 'BLEND' else False
         self.blend_cutoff = mat.blend_cutoff
@@ -358,6 +366,7 @@ class line():
         mat.xp_materials.lit_texture = self.lit_texture
         mat.xp_materials.normal_texture = self.nml_texture
         mat.xp_materials.weather_texture = self.weather_texture
+        mat.xp_materials.decal_modulator = self.mod_texture
         mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'
         mat.xp_materials.blend_cutoff = self.blend_cutoff
         mat.xp_materials.surface_type = self.surface

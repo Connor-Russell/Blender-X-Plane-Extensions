@@ -271,7 +271,10 @@ def compare_files(file1, file2):
     chr_total = 0
     similarity = 0.0
     line_count_diff = 0
-    
+
+    print("File1: ", file1)
+    print("File2: ", file2)
+
     with open(file1, 'r') as new, open(file2, 'r') as good:
         f_new = new.read()
         f_good = good.read()
@@ -285,13 +288,13 @@ def compare_files(file1, file2):
             good_line_len = len(good_lines[i])
 
             for j in range(min(new_line_len, good_line_len)):
-                chr_total += 1
                 if new_lines[i][j] == good_lines[i][j]:
                     chr_same += 1
-            
-            chr_total += abs(new_line_len - good_line_len)
-            
-    
+                else:
+                    print(f"Good char: {str(good_lines[i][j])} Bad char: {str(new_lines[i][j])}")
+
+            chr_total += max(new_line_len, good_line_len)
+
     similarity = chr_same / chr_total
     line_count_diff = abs(len(new_lines) - len(good_lines))
 

@@ -258,8 +258,10 @@ class floor:
 class facade_material:
     def __init__(self):
         self.alb_texture = ""
+        self.nml_tile_ratio = 1.0
         self.nml_texture = ""
         self.lit_texture = ""
+        self.mod_texture = ""
         self.do_blend_alpha = True
         self.alpha_cutoff = 0.5
         self.cast_shadow = True
@@ -396,16 +398,17 @@ class facade:
 
             elif command == "TEXTURE_NORMAL":
                 if current_material:
-                    current_material.normal_texture = tokens[1]
+                    current_material.nml_tile_ratio = float(tokens[1])
+                    current_material.nml_texture = tokens[2]
 
             elif command == "TEXTURE_MODULATOR":
                 if current_material:
-                    current_material.decal_modulator = tokens[1]
+                    current_material.mod_texture = tokens[1]
 
             elif command == "NO_BLEND":
                 if current_material:
-                    current_material.blend_mode = "CLIP"
-                    current_material.blend_cutoff = float(tokens[1])
+                    current_material.do_blend_alpha = False
+                    current_material.alpha_cutoff = float(tokens[1])
 
             elif command == "NO_SHADOW":
                 if current_material:
@@ -865,7 +868,8 @@ class facade:
             wall_material.xp_materials.alb_texture = self.import_wall_material.alb_texture
             wall_material.xp_materials.normal_texture = self.import_wall_material.nml_texture
             wall_material.xp_materials.lit_texture = self.import_wall_material.lit_texture
-            wall_material.xp_materials.blend_mode = 'BLEND' if self.import_wall_material.do_blend_alpha else 'NO_BLEND'
+            wall_material.xp_materials.decal_modulator = self.import_wall_material.mod_texture
+            wall_material.xp_materials.blend_mode = 'BLEND' if self.import_wall_material.do_blend_alpha else 'CLIP'
             wall_material.xp_materials.blend_cutoff = self.import_wall_material.alpha_cutoff
             wall_material.xp_materials.cast_shadow = self.import_wall_material.cast_shadow
             wall_material.xp_materials.layer_group = self.import_wall_material.layer_group.upper()
@@ -899,7 +903,8 @@ class facade:
             roof_material.xp_materials.alb_texture = self.import_roof_material.alb_texture
             roof_material.xp_materials.normal_texture = self.import_roof_material.nml_texture
             roof_material.xp_materials.lit_texture = self.import_roof_material.lit_texture
-            roof_material.xp_materials.blend_mode = 'BLEND' if self.import_roof_material.do_blend_alpha else 'NO_BLEND'
+            roof_material.xp_materials.decal_modulator = self.import_roof_material.mod_texture
+            roof_material.xp_materials.blend_mode = 'BLEND' if self.import_roof_material.do_blend_alpha else 'CLIP'
             roof_material.xp_materials.blend_cutoff = self.import_roof_material.alpha_cutoff
             roof_material.xp_materials.cast_shadow = self.import_roof_material.cast_shadow
             roof_material.xp_materials.layer_group = self.import_roof_material.layer_group.upper()

@@ -449,23 +449,13 @@ class BTN_bake_low_poly(bpy.types.Operator):
     bl_description = "Automatically bakes the selected objects to the active object. Handles base, normal, and lit textures in the X-Plane format, and saves them as <collection_name>_LOD01_<suffix>.png in the Blender folder. Be sure to set extrusion distance and max ray distance in the Blender bake settings"
 
     def execute(self, context):
-
-        if bpy.data.is_dirty:
+        #Some initial checks: We are saved. Every selected object has a material. Check each individually, give appropriate error messages
+        if bpy.data.is_dirty and bpy.context.window_manager is not None:
             self.report({'ERROR'}, "Please save your file before baking as baking can sometimes cause a crash in the Blender baking system, which we can't handle.")
             return {'CANCELLED'}
 
-        #For all the sleected objects, if it isn't a mesh, deselect it
         for obj in bpy.context.selected_objects:
-            if obj.type != 'MESH':
-                obj.select_set(False)
-
-        #Some initial checks: We are saved. Every selected object has a material. Check each individually, give appropriate error messages
-        if not bpy.data.filepath:
-            self.report({'ERROR'}, "You must save your file before baking")
-            return {'CANCELLED'}
-        
-        for obj in bpy.context.selected_objects:
-            if not obj.data.materials and bpy.context.active_object != obj:
+            if not obj.data.materials and bpy.context.active_object != obj and obj.type == 'MESH':
                 self.report({'ERROR'}, "All selected objects must have a material")
                 return {'CANCELLED'}
             #Make sure it is renderable
@@ -476,7 +466,11 @@ class BTN_bake_low_poly(bpy.types.Operator):
                 if hasattr(col, "hide_render") and col.hide_render:
                     self.report({'ERROR'}, f"{obj.name} is not renderable due to a parent collection {col.name}. Please make sure it is visible in the viewport and render.")
                     return {'CANCELLED'}
-
+                
+        #For all the sleected objects, if it isn't a mesh, deselect it
+        for obj in bpy.context.selected_objects:
+            if obj.type != 'MESH':
+                obj.select_set(False)
 
         #Bake the object to low poly
         auto_baker.auto_bake_current_to_active()

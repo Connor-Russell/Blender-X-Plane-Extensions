@@ -28,7 +28,7 @@ BlenderExe43 = r"D:\Blender Versions\4.32\blender.exe"
 BlenderExe44 = r"D:\Blender Versions\4.43\blender.exe"
 
 # Bools to control what versions are tested
-QuickTest = False
+QuickTest = True
 Test29 = True
 Test30 = True and not QuickTest
 Test31 = True and not QuickTest

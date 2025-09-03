@@ -22,6 +22,7 @@ class polygon():
         self.alb_texture = ""
         self.lit_texture = ""
         self.nml_texture = ""
+        self.mod_texture = ""
         self.weather_texture = ""
         self.layer = "MARKINGS"
         self.layer_offset = 0
@@ -92,6 +93,9 @@ class polygon():
                 of += "WEATHER " + os.path.relpath(file_utils.rel_to_abs(self.weather_texture), output_folder) + "\n"
             else:
                 of += "WEATHER_TRANSPARENT\n"
+        
+        if self.mod_texture != "":
+                of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(self.mod_texture), output_folder) + "\n"
         
         if self.super_rough:
             of += "SUPER_ROUGHNESS\n"
@@ -166,6 +170,7 @@ class polygon():
                 'TEXTURE_NOWRAP': 2,
                 'TEXTURE_LIT_NOWRAP': 2,
                 'TEXTURE_NORMAL': 3,
+                'TEXTURE_MODULATOR': 2,
                 'TEXTURE': 2,
                 'TEXTURE_LIT': 2,
                 'WEATHER': 2,
@@ -198,6 +203,8 @@ class polygon():
                 self.alb_texture = tokens[1]
             elif cmd == "TEXTURE_LIT":
                 self.lit_texture = tokens[1]
+            elif cmd == "TEXTURE_MODULATOR":
+                self.mod_texture = tokens[1]
             elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT":
                 self.weather_texture = tokens[1]
             elif cmd == "SUPER_ROUGHNESS":
@@ -317,6 +324,7 @@ class polygon():
         self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
         self.weather_texture = mat.weather_texture
+        self.mod_texture = mat.decal_modulator
         self.do_blend = mat.blend_mode == 'BLEND'
         self.blend_cutoff = mat.blend_cutoff
         for decal in mat.decals:
@@ -373,6 +381,7 @@ class polygon():
         mat.xp_materials.lit_texture = self.lit_texture
         mat.xp_materials.normal_texture = self.nml_texture
         mat.xp_materials.weather_texture = self.weather_texture
+        mat.xp_materials.decal_modulator = self.mod_texture
         mat.xp_materials.blend_mode = 'BlEND' if self.do_blend else 'CLIP'
         mat.xp_materials.blend_cutoff = self.blend_cutoff
         mat.xp_materials.surface_type = self.surface
