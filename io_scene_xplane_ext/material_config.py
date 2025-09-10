@@ -491,6 +491,7 @@ def update_nodes(material):
         
         #Define variables to hold the imagese
         image_alb = None
+        image_alb_linear = None
         image_nml = None
         image_mat = None
         image_lit = None
@@ -533,6 +534,8 @@ def update_nodes(material):
         if str_image_alb != "":
             image_alb = file_utils.get_or_load_image(str_image_alb, True)
             image_alb.colorspace_settings.name = 'sRGB' # Set colorspace to sRGB for albedo
+            image_alb_linear = file_utils.get_or_load_image(str_image_alb, True, "_non-color")
+            image_alb_linear.colorspace_settings.name = 'Non-Color' # Set colorspace to Non-Color for albedo linear
         else:
             #Disable alb decals if we don't have an alb
             str_image_decal_1_alb = ""
@@ -595,6 +598,7 @@ def update_nodes(material):
 
         #We need to define the alb/nml node in advance since it will later be used for decals
         node_alb = None
+        node_alb_linear = None
         node_nml_out = None
 
         #This is for the additive alpha between the alb and the lit, since both need it, it needs to be defined in advance
@@ -616,6 +620,12 @@ def update_nodes(material):
             node_alpha_add_lit.inputs[0].default_value = 0
             node_alpha_clamp.inputs[1].default_value = 0
             node_alpha_clamp.inputs[2].default_value = 1
+
+            #Add a linear version of the alb for decal keying purposes
+            node_alb_linear = material.node_tree.nodes.new(type="ShaderNodeTexImage")
+            node_alb_linear.label = "Albedo Texture Linear"
+            node_alb_linear.location = (-2600, 250)
+            node_alb_linear.image = image_alb_linear
 
             #Connect the nodes. Color to base color, alpha to add, add to principled alpha
             material.node_tree.links.new(node_alb.outputs[0], node_principled.inputs[0])    #Alb color to alb
@@ -793,35 +803,35 @@ def update_nodes(material):
 
         #Now we will add out keying nodes.
         if image_decal_1_alb != None:
-            output_key_1_alb_rgb = create_decal_key_nodes(material, -4000, 6000, output_mod_r, node_alb, \
+            output_key_1_alb_rgb = create_decal_key_nodes(material, -4000, 6000, output_mod_r, node_alb_linear, \
                 xp_material_props.decals[0].strength_key_red, xp_material_props.decals[0].strength_key_green, \
                 xp_material_props.decals[0].strength_key_blue, xp_material_props.decals[0].strength_key_alpha, \
                 xp_material_props.decals[0].strength_constant, xp_material_props.decals[0].strength_modulator)
             
-            output_key_1_alb_alpha = create_decal_key_nodes(material, -4000, 5000, output_mod_r, node_alb, \
+            output_key_1_alb_alpha = create_decal_key_nodes(material, -4000, 5000, output_mod_r, node_alb_linear, \
                 xp_material_props.decals[0].strength2_key_red, xp_material_props.decals[0].strength2_key_green, \
                 xp_material_props.decals[0].strength2_key_blue, xp_material_props.decals[0].strength2_key_alpha, \
                 xp_material_props.decals[0].strength2_constant, xp_material_props.decals[0].strength2_modulator)
 
         if image_decal_1_nml != None:
-            output_key_1_nml = create_decal_key_nodes(material, -4000, 4000, output_mod_r, node_alb, \
+            output_key_1_nml = create_decal_key_nodes(material, -4000, 4000, output_mod_r, node_alb_linear, \
                 xp_material_props.decals[2].strength_key_red, xp_material_props.decals[2].strength_key_green, \
                 xp_material_props.decals[2].strength_key_blue, xp_material_props.decals[2].strength_key_alpha, \
                 xp_material_props.decals[2].strength_constant, xp_material_props.decals[2].strength_modulator)
                 
         if image_decal_2_alb != None:
-            output_key_2_alb_rgb = create_decal_key_nodes(material, -4000, 3000, output_mod_g, node_alb, \
+            output_key_2_alb_rgb = create_decal_key_nodes(material, -4000, 3000, output_mod_g, node_alb_linear, \
                 xp_material_props.decals[1].strength_key_red, xp_material_props.decals[1].strength_key_green, \
                 xp_material_props.decals[1].strength_key_blue, xp_material_props.decals[1].strength_key_alpha, \
                 xp_material_props.decals[1].strength_constant, xp_material_props.decals[1].strength_modulator)
             
-            output_key_2_alb_alpha = create_decal_key_nodes(material, -4000, 2000, output_mod_g, node_alb, \
+            output_key_2_alb_alpha = create_decal_key_nodes(material, -4000, 2000, output_mod_g, node_alb_linear, \
                 xp_material_props.decals[1].strength2_key_red, xp_material_props.decals[1].strength2_key_green, \
                 xp_material_props.decals[1].strength2_key_blue, xp_material_props.decals[1].strength2_key_alpha, \
                 xp_material_props.decals[1].strength2_constant, xp_material_props.decals[1].strength2_modulator)
             
         if image_decal_2_nml != None:
-            output_key_2_nml = create_decal_key_nodes(material, -4000, 1000, output_mod_g, node_alb, \
+            output_key_2_nml = create_decal_key_nodes(material, -4000, 1000, output_mod_g, node_alb_linear, \
                 xp_material_props.decals[3].strength_key_red, xp_material_props.decals[3].strength_key_green, \
                 xp_material_props.decals[3].strength_key_blue, xp_material_props.decals[3].strength_key_alpha, \
                 xp_material_props.decals[3].strength_constant, xp_material_props.decals[3].strength_modulator)

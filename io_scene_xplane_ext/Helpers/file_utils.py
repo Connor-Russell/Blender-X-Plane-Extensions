@@ -113,36 +113,45 @@ def check_for_dds_or_png(image_path):
     
     return ""
         
-def get_or_load_image(image_path, do_reload=False):
+def get_or_load_image(image_path, do_reload=False, copy_append_name=""):
     """
     Get an existing image or load a new one if not already loaded.
     Args:
         image_path (str): The file path to the image.
         do_reload (bool): Whether to reload the image if it already exists.
+        copy_append_name (str): Use to specify a string to append if to identify this as a unique copy of this image
     Returns:
         bpy.types.Image: The loaded or existing image.
     """
     #Get our prefs to determine our reload behavior
     addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
 
+    #Get the image extension so that we can append it to the name if needed
+    image_extension = os.path.splitext(image_path)[1]
+    image_base_name = os.path.splitext(os.path.basename(image_path))[0]
+    image_appended_name = image_base_name + copy_append_name + image_extension
+    log_utils.info(f"Loading image {image_appended_name} from path {image_path}")
+
     #Iterate through the existing images, get their paths, turn them to absolute, and check if they match the given path
-    if not addon_prefs.always_fully_reload_images:
-        try:
-            for image in bpy.data.images:
-                if image.filepath == "":
-                    continue
-                abs_image_path = rel_to_abs(image.filepath)
-                if abs_image_path == image_path:
-                    # If the image is already loaded and we don't need to reload, return it
-                    if not do_reload:
+    if copy_append_name == "":
+        if not addon_prefs.always_fully_reload_images:
+            try:
+                for image in bpy.data.images:
+                    if image.filepath == "":
+                        continue
+                    abs_image_path = rel_to_abs(image.filepath)
+                    if abs_image_path == image_path and (copy_append_name == "" or image.name.startswith(image_appended_name)):
+                        # If the image is already loaded and we don't need to reload, return it
+                        if not do_reload:
+                            return image
+                        
+                        # If we do need to reload, reload the image
+                        image.reload()
                         return image
-                    
-                    # If we do need to reload, reload the image
-                    image.reload()
-                    return image
-        except Exception as e:
-            log_utils.warning(f"Error checking existing images when trying to find image {image_path}: {e}")
+            except Exception as e:
+                log_utils.warning(f"Error checking existing images when trying to find image {image_path}: {e}")
 
     # Load the image
     new_image = bpy.data.images.load(image_path)
+    new_image.name = image_appended_name
     return new_image                 
