@@ -29,6 +29,7 @@ layer_group_enum = [
     ('OBJECTS', "Objects", "Objects layer group"),
     ('LIGHT_OBJECTS', "Light Objects", "Light Objects layer group"),
     ('CARS', "Cars", "Cars layer group"),
+    ('BLENDED', "Blended", "Glass scenery objects (XP 12.2.1+ only)")
 ]
 
 #Enum for collision types
@@ -525,13 +526,6 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0.5,
         min=0,
         max=1,
-        update=material_config.operator_wrapped_update_settings
-    ) # type: ignore
-
-    use_transparent_blending: bpy.props.BoolProperty(
-        name="Use Transparent Blending",
-        description="Enables special X-Plane transparency blending mode. Applies to entire object. Requires XP 12.2.1+. Translates to ATTR_layer_group blended",
-        default=False,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 

@@ -21,7 +21,11 @@ def export_fac(in_col):
 
     export_path = ""
     if in_col.xp_fac.name != "":
-        export_path = file_utils.rel_to_abs(in_col.xp_fac.name + ".fac")
+        #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
+        if in_col.xp_fac.name.endswith(("/", "\\")):
+            export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_fac.name), in_col.name + ".fac")
+        else:
+            export_path = file_utils.rel_to_abs(in_col.xp_fac.name + ".fac")
     else:
         export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".fac")
 
@@ -40,7 +44,11 @@ def export_lin(in_col):
 
     export_path = ""
     if in_col.xp_lin.name != "":
-        export_path = file_utils.rel_to_abs(in_col.xp_lin.name + ".lin")
+        #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
+        if in_col.xp_lin.name.endswith(("/", "\\")):
+            export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_lin.name), in_col.name + ".lin")
+        else:
+            export_path = file_utils.rel_to_abs(in_col.xp_lin.name + ".lin")
     else:
         export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".lin")
 
@@ -59,7 +67,11 @@ def export_pol(in_col):
 
     export_path = ""
     if in_col.xp_pol.name != "":
-        export_path = file_utils.rel_to_abs(in_col.xp_pol.name + ".pol")
+        #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
+        if in_col.xp_pol.name.endswith(("/", "\\")):
+            export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_pol.name), in_col.name + ".pol")
+        else:
+            export_path = file_utils.rel_to_abs(in_col.xp_pol.name + ".pol")
     else:
         export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".pol")
 
@@ -78,7 +90,11 @@ def export_agp(in_col):
 
     export_path = ""
     if in_col.xp_agp.name != "":
-        export_path = file_utils.rel_to_abs(in_col.xp_agp.name + ".agp")
+        #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
+        if in_col.xp_agp.name.endswith(("/", "\\")):
+            export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_agp.name), in_col.name + ".agp")
+        else:
+            export_path = file_utils.rel_to_abs(in_col.xp_agp.name + ".agp")
     else:
         export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".agp")
 

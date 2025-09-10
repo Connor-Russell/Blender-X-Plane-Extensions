@@ -7,6 +7,7 @@
 import bpy # type: ignore
 from .Helpers import file_utils
 from .Helpers import decal_utils
+from .Helpers import log_utils
 
 def operator_wrapped_update_settings(self = None, context = None):
     if bpy.context.active_object == None:
@@ -91,28 +92,17 @@ def update_xplane_collection_settings(col):
                         col.xplane.layer.texture_draped = xp_props.alb_texture
                         col.xplane.layer.texture_draped_normal = xp_props.normal_texture
                         col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-                        col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
-                        col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
+                        try:
+                            col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
+                            col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
+                        except:
+                            if xp_props.layer_group == 'BLENDED':
+                                log_utils.warn("The 'Blended' layer group is only supported by custom XP2B exporters. There is a pending pull request, so tell your Local X-Plane Representative to merge it ;)")
+                            pass
                     else:
                         col.xplane.layer.texture_draped = ""
                         col.xplane.layer.texture_draped_normal = ""
                         col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-                        if not xp_props.use_transparent_blending:
-                            col.xplane.layer.layer_group = xp_props.layer_group.lower()
-                            col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
-
-                    #Reset the ATTR_layer_group blended attribute if it exists
-                    for i in range(0, len(col.xplane.layer.customAttributes)):
-                        attr = col.xplane.layer.customAttributes[i]
-                        if attr.name == "ATTR_layer_group" and attr.value == "blended":
-                            col.xplane.layer.customAttributes.remove(i)
-
-                    if xp_props.use_transparent_blending:
-                        col.xplane.layer.layer_group = "none"
-                        col.xplane.layer.layer_group_offset = 0
-                        col.xplane.layer.customAttributes.add()
-                        col.xplane.layer.customAttributes[-1].name = "ATTR_layer_group"
-                        col.xplane.layer.customAttributes[-1].value = "blended"
 
                     #Now we need to set the decal properties
                     #Reset decal properties
@@ -176,6 +166,8 @@ def update_xplane_collection_settings(col):
                         while len(xp_props.decals) > 4:
                             #Remove the last decal
                             xp_props.decals.remove(xp_props.decals.count - 1)
+    
+    log_utils.display_messages()
 
 #Function to update settings when a property is updated:
 def update_settings(in_material):
@@ -240,6 +232,7 @@ def update_settings(in_material):
         in_material.xplane.blend_v1000 = 'off'
         in_material.blend_method = 'CLIP'
         in_material.alpha_threshold = xp_mat.blend_cutoff
+        in_material.xplane.blendRatio = xp_mat.blend_cutoff
 
     #Set XP hard mode based on the hard property ("none" or "concrete")
     in_material.xplane.surfaceType = xp_mat.surface_type.lower()
