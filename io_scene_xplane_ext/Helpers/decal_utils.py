@@ -6,6 +6,7 @@
 import bpy # type: ignore
 import os
 from . import file_utils # type: ignore
+from . import log_utils # type: ignore
 
 def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
     """
@@ -173,7 +174,7 @@ def get_decal_from_command(in_command, out_decal_prop):
         out_decal_prop.strength2_key_alpha = float(cmd_parts[13])
         out_decal_prop.strength2_modulator = float(cmd_parts[14])
         out_decal_prop.strength2_constant = float(cmd_parts[15])
-        out_decal_prop.texture = file_utils.abs_to_rel(cmd_parts[16])
+        out_decal_prop.texture = cmd_parts[16]
 
     elif cmd_parts[0] == "DECAL_PARAMS":
         out_decal_prop.enabled = True
@@ -192,7 +193,7 @@ def get_decal_from_command(in_command, out_decal_prop):
         out_decal_prop.strength2_key_alpha = float(cmd_parts[12])
         out_decal_prop.strength2_modulator = float(cmd_parts[13])
         out_decal_prop.strength2_constant = float(cmd_parts[14])
-        out_decal_prop.texture = file_utils.abs_to_rel(cmd_parts[15])
+        out_decal_prop.texture = cmd_parts[15]
 
     elif cmd_parts[0] == "NORMAL_DECAL_PARAMS_PROJ":
         out_decal_prop.enabled = True
@@ -206,7 +207,7 @@ def get_decal_from_command(in_command, out_decal_prop):
         out_decal_prop.strength_key_alpha = float(cmd_parts[6])
         out_decal_prop.strength_modulator = float(cmd_parts[7])
         out_decal_prop.strength_constant = float(cmd_parts[8])
-        out_decal_prop.texture = file_utils.abs_to_rel(cmd_parts[9])
+        out_decal_prop.texture = cmd_parts[9]
 
     elif cmd_parts[0] == "NORMAL_DECAL_PARAMS":
         out_decal_prop.enabled = True
@@ -219,7 +220,9 @@ def get_decal_from_command(in_command, out_decal_prop):
         out_decal_prop.strength_key_alpha = float(cmd_parts[5])
         out_decal_prop.strength_modulator = float(cmd_parts[6])
         out_decal_prop.strength_constant = float(cmd_parts[7])
-        out_decal_prop.texture = file_utils.abs_to_rel(cmd_parts[8])
+        out_decal_prop.texture = cmd_parts[8]
+    elif cmd_parts[0] == "DECAL_LIB":
+        log_utils.warning("DECAL_LIB command found, which is not supported in this plugin.")
     else:
-        raise ValueError(f"Unknown decal command: {in_command}")
+        log_utils.warning(f"Unknown decal command: {cmd_parts[0]}")
     

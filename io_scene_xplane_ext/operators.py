@@ -970,7 +970,7 @@ class BTN_copy_decal(bpy.types.Operator):
             return {'CANCELLED'}
         decal = mat.xp_materials.decals[self.decal_index]
 
-        misc_utils.copy_to_clipboard(decal_utils.get_decal_command(decal, ""))
+        misc_utils.copy_to_clipboard(decal_utils.get_decal_command(decal))
 
         return {'FINISHED'}
 
