@@ -10,6 +10,11 @@ import mathutils #type: ignore
 import bpy #type: ignore
 import bmesh #type: ignore
 
+from mathutils import Matrix
+from mathutils import Vector
+from mathutils import Euler
+
+
 #Our modules
 from ..Helpers import geometery_utils
 from ..Helpers import misc_utils
@@ -38,82 +43,69 @@ class xp_attached_obj:
 
         self.valid = False
 
-    #Reads the data from an object
     def read_from_obj(self, obj):
-        #Check to make sure this is an empty
+        #Make sure this is an empty object, is exportable, and has a resource defined.
         if obj.type != "EMPTY":
             return
+        if not obj.xp_attached_obj.exportable or obj.xp_attached_obj.resource == "":
+            return
 
-        #Check if this object is exportable
-        if not obj.xp_attached_obj.exportable:
-            return
-            
-        #If the object has the 'FacadeObj' Property, get the value, otherwise return None
-        if obj.xp_attached_obj.resource == "":
-            return
         self.resource = obj.xp_attached_obj.resource
-
-        #Get the draped
         self.draped = obj.xp_attached_obj.draped
 
-        # Get the object's location and rotation
-        self.loc_x = obj.location.x
-        self.loc_y = obj.location.y
-        self.loc_z = obj.location.z
+        # Get local transform matrix
+        local_matrix = obj.matrix_local.copy()
 
-        self.rot_x = obj.rotation_euler.x
-        self.rot_y = obj.rotation_euler.y
-        self.rot_z = obj.rotation_euler.z
+        # Apply parent transform if exists
+        if obj.parent:
+            local_matrix = obj.parent.matrix_world @ local_matrix
 
-        #Check if there is a parent. If so, we'll get it's transforms and apply that to the loc/rot
-        if obj.parent != None:
-            parent_transform = obj.parent.matrix_world
+        # Apply reflection across Y axis
+        S = Matrix.Scale(-1, 4, Vector((0, 1, 0)))
+        reflected_matrix = S @ local_matrix @ S
 
-            # Get the local position as a vector
-            local_position = mathutils.Vector((self.loc_x, self.loc_y, self.loc_z))
+        # Extract location
+        loc = reflected_matrix.to_translation()
+        self.loc_x = loc.x
+        self.loc_y = loc.y  # Invert Y for X-Plane
+        self.loc_z = loc.z
 
-            # Apply the full transformation
-            transformed_position = parent_transform @ local_position
-
-            # Extract the rotation as Euler angles
-            rotation = parent_transform.to_euler()
-
-            # Set the new position and rotation
-            self.loc_x = transformed_position.x
-            self.loc_y = transformed_position.y
-            self.loc_z = transformed_position.z
-
-            self.rot_x = rotation.x
-            self.rot_y = rotation.y
-            self.rot_z = rotation.z
-
-        #Convert the rotation to degrees
-        self.rot_x = math.degrees(self.rot_x)
-        self.rot_y = math.degrees(self.rot_y)
-        self.rot_z = math.degrees(self.rot_z)
+        # Extract rotation
+        rot_euler = reflected_matrix.to_euler('XYZ')
+        self.rot_x = math.degrees(rot_euler.x)
+        self.rot_y = math.degrees(rot_euler.y)
+        self.rot_z = math.degrees(rot_euler.z) + 180  # Invert Y axis rotation for X-Plane
 
         self.valid = True
+
     
     def to_obj(self, name):
-        # Create a new empty object
         obj = bpy.data.objects.new(name, None)
-        #obj.type = 'EMPTY'
 
-        # Set the object's location and rotation
-        obj.location = (self.loc_x, self.loc_y, self.loc_z)
-        obj.rotation_euler = (
+        # Invert Y axis back
+        obj.location = (self.loc_x, -self.loc_y, self.loc_z)
+
+        # Step 1: Subtract the 180° correction
+        corrected_euler = Euler((
             math.radians(self.rot_x),
             math.radians(self.rot_y),
-            math.radians(self.rot_z)
-        )
+            math.radians(self.rot_z - 180)  # Assuming Z was the axis corrected
+        ), 'XYZ')
 
-        # Set the object's display type to plain axes
-        obj.empty_display_type = 'PLAIN_AXES'
+        # Step 2: Apply reflection matrix again to undo the conjugation
+        R = corrected_euler.to_matrix().to_3x3()
+        S = Matrix.Scale(-1, 3, Vector((0, 1, 0)))
+        R_unflipped = S @ R @ S
 
-        # Set custom properties for exportable and resource
+        # Step 3: Convert back to Euler
+        final_euler = R_unflipped.to_euler('XYZ')
+        obj.rotation_euler = final_euler
+
+        # Final setup
+        obj.empty_display_type = 'ARROWS'
         obj.xp_attached_obj.exportable = True
         obj.xp_attached_obj.resource = self.resource
         obj.xp_attached_obj.draped = self.draped
 
-        # Return the created object
         return obj
+

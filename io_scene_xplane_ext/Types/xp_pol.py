@@ -26,8 +26,8 @@ class polygon():
         self.weather_texture = ""
         self.layer = "MARKINGS"
         self.layer_offset = 0
-        self.scale_x = 0
-        self.scale_y = 0
+        self.scale_x = 0.0
+        self.scale_y = 0.0
         self.normal_scale = 1
         self.blend_cutoff = 0
         self.do_blend = False
@@ -118,7 +118,7 @@ class polygon():
 
         #Write the main polygon params
         of += "LAYER_GROUP " + self.layer.lower() + " " + str(self.layer_offset) + "\n"
-        of += "SCALE " + str(int(self.scale_x)) + " " + str(int(self.scale_y)) + "\n"
+        of += "SCALE " + str(float(self.scale_x)) + " " + str(float(self.scale_y)) + "\n"
         if self.surface != None:
             of += "SURFACE " + self.surface + "\n"
         if self.do_load_center:
@@ -223,8 +223,8 @@ class polygon():
                 if len(tokens) > 2:
                     self.layer_offset = tokens[2]
             elif cmd == "SCALE":
-                self.scale_x = int(tokens[1])
-                self.scale_y = int(tokens[2])
+                self.scale_x = float(tokens[1])
+                self.scale_y = float(tokens[2])
             elif cmd == "SURFACE":
                 self.surface = tokens[1]
                 self.surface = self.surface.upper()
