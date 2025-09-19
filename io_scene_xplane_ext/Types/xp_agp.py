@@ -68,7 +68,7 @@ class crop_polygon:
         cmd = f"CROP_POLY "
 
         for vert in transformed_perimeter:
-            cmd += f"{ftos(vert.x, 4)} {ftos(vert.y, 4)} "
+            cmd += f"{ftos(vert.x, 8)} {ftos(vert.y, 8)} "
 
         if len(transformed_perimeter) < 3:
             log_utils.warning("CROP_POLY must have at least 3 vertices.")
@@ -154,7 +154,7 @@ class facade:
         cmd = f"FAC {int(resource_index)} {ftos(self.height, 2)} "
 
         for vert in transformed_perimeter:
-            cmd += f"{ftos(vert.x, 4)} {ftos(vert.y, 4)} "
+            cmd += f"{ftos(vert.x, 8)} {ftos(vert.y, 8)} "
 
         return cmd
 
@@ -240,7 +240,7 @@ class tree_line:
             transformed_perimeter.append(mathutils.Vector((pixel_x, pixel_y, 0)))
 
         for i in range(0, len(transformed_perimeter) - 1):
-            cur_cmd = f"TREE_LINE {ftos(transformed_perimeter[i].x, 4)} {ftos(transformed_perimeter[i].y, 4)} {ftos(transformed_perimeter[i+1].x, 4)} {ftos(transformed_perimeter[i+1].y, 4)} {self.layer}"
+            cur_cmd = f"TREE_LINE {ftos(transformed_perimeter[i].x, 8)} {ftos(transformed_perimeter[i].y, 8)} {ftos(transformed_perimeter[i+1].x, 8)} {ftos(transformed_perimeter[i+1].y, 8)} {self.layer}"
             cmds.append(cur_cmd)
 
         return cmds
@@ -334,7 +334,7 @@ class tree:
 
         x_pixel, y_pixel = agp_utils.blender_to_px(self.x, self.y, transform)
 
-        cmd = f"TREE {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.height, 2)} {ftos(self.width, 2)} {self.layer}"
+        cmd = f"TREE {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.height, 2)} {ftos(self.width, 2)} {self.layer}"
 
         return cmd
 
@@ -399,6 +399,7 @@ class attached_obj:
         new_empty.xp_agp.exportable = True
         new_empty.xp_agp.type = 'ATTACHED_OBJ'
 
+        print(f"X: {self.x}, Y: {self.y}")
         new_empty.location.x = self.x
         new_empty.location.y = self.y
         new_empty.location.z = self.z
@@ -414,9 +415,9 @@ class attached_obj:
         obj_index = obj_resource_list.index(self.resource)
 
         if not self.draped:
-            cmd = f"OBJ_DELTA {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {ftos(self.z, 4)} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DELTA {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.heading, 8)} {ftos(self.z, 8)} {obj_index} {self.show_low} {self.show_high}"
         else:
-            cmd = f"OBJ_DRAPED {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DRAPED {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.heading, 8)} {obj_index} {self.show_low} {self.show_high}"
 
         return cmd
 
@@ -482,7 +483,9 @@ class attached_obj:
             return
 
         self.resource = obj_resource_list[obj_index]
+        print(f"X: {x_pixel}, Y: {y_pixel}")
         self.x, self.y = agp_utils.px_to_blender(x_pixel, y_pixel, transform)
+        print(f"Converted X/Y: {self.x}, {self.y}")
 
 class auto_split_obj:
     """
@@ -711,7 +714,7 @@ class auto_split_obj:
 
         for resource in self.resources:
             obj_index = obj_resource_list.index(resource)
-            cmd = f"OBJ_DELTA {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {ftos(self.z, 4)} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DELTA {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.heading, 8)} {ftos(self.z, 8)} {obj_index} {self.show_low} {self.show_high}"
             cmds.append(cmd)
 
         return cmds
@@ -740,6 +743,9 @@ class tile:
 
     def from_obj(self, in_obj, agp_name):
         self.left_uv, self.bottom_uv, self.right_uv, self.top_uv, self.transform = agp_utils.get_tile_bounds_and_transform(in_obj)
+
+        if self.transform is None:
+            return False
 
         #Count of CCW rotations
         cur_rot = misc_utils.resolve_heading(math.degrees(in_obj.rotation_euler.z))
@@ -787,6 +793,8 @@ class tile:
                 new_crop_poly = crop_polygon()
                 new_crop_poly.from_obj(obj)
                 self.crop_poly = new_crop_poly
+
+        return True
 
     def to_obj(self, target_collection, in_material):
         new_objs = []
@@ -851,8 +859,7 @@ class tile:
             if not tokens:
                 continue
             if tokens[0] == 'ANCHOR_PT':
-                self.transform.anchor_x = agp_utils.px_to_uv(float(tokens[1]), in_transfom)
-                self.transform.anchor_y = agp_utils.px_to_uv(float(tokens[2]), in_transfom)
+                self.transform.anchor_x, self.transform.anchor_y = agp_utils.px_to_uv(float(tokens[1]), float(tokens[2]), in_transfom)
 
         for cmd in commands:
             tokens = cmd.strip().split()
@@ -860,10 +867,8 @@ class tile:
                 continue
 
             if tokens[0] == 'TILE':
-                self.left_uv = agp_utils.px_to_uv(float(tokens[1]), in_transfom)
-                self.bottom_uv = agp_utils.px_to_uv(float(tokens[2]), in_transfom)
-                self.right_uv = agp_utils.px_to_uv(float(tokens[3]), in_transfom)
-                self.top_uv = agp_utils.px_to_uv(float(tokens[4]), in_transfom)
+                self.left_uv, self.bottom_uv = agp_utils.px_to_uv(float(tokens[1]), float(tokens[2]), in_transfom)
+                self.right_uv, self.top_uv = agp_utils.px_to_uv(float(tokens[3]), float(tokens[4]), in_transfom)
                 self.left_x, self.bottom_y = agp_utils.px_to_blender(float(tokens[1]), float(tokens[2]), in_transfom)
                 self.right_x, self.top_y = agp_utils.px_to_blender(float(tokens[3]), float(tokens[4]), in_transfom)
             elif tokens[0] == 'ROTATION':
@@ -907,13 +912,17 @@ class tile:
         
         cur_cmd = ""
 
-        cur_cmd = f"TILE {ftos(self.left_uv * 4096, 4)} {ftos(self.bottom_uv * 4096, 4)} {ftos(self.right_uv * 4096, 4)} {ftos(self.top_uv * 4096, 4)}"
+        left_px, bottom_px = agp_utils.uv_to_px(self.left_uv, self.bottom_uv, self.transform)
+        right_px, top_px = agp_utils.uv_to_px(self.right_uv, self.top_uv, self.transform)
+        anchor_x_px, anchor_y_px = agp_utils.uv_to_px(self.transform.anchor_x, self.transform.anchor_y, self.transform)
+
+        cur_cmd = f"TILE {ftos(left_px, 8)} {ftos(bottom_px, 8)} {ftos(right_px, 8)} {ftos(top_px, 8)}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"ANCHOR_PT {ftos(self.anchor_x_uv * 4096, 4)} {ftos(self.anchor_y_uv * 4096, 4)}"
+        cur_cmd = f"ANCHOR_PT {ftos(anchor_x_px, 8)} {ftos(anchor_y_px, 8)}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"GROUND_PT {ftos(self.anchor_x_uv * 4096, 4)} {ftos(self.anchor_y_uv * 4096, 4)}"
+        cur_cmd = f"GROUND_PT {ftos(anchor_x_px, 8)} {ftos(anchor_y_px, 8)}"
         commands.append(cur_cmd)
 
         cur_cmd = f"ROTATION {self.rotation_n}"
@@ -963,11 +972,6 @@ class agp:
         self.imported_decal_commands = []
         self.layer_group = "objects"
         self.layer_group_offset = 0
-
-        self.imported_texture_scale_w = 1.0
-        self.imported_texture_scale_h = -1.0
-        self.imported_texture_width = 4096
-        self.imported_texture_height = 4096
 
         self.surface = 'NONE'
 
@@ -1041,8 +1045,11 @@ class agp:
         for obj in in_collection.objects:
             if obj.parent == None and obj.xp_agp.type == 'BASE_TILE':
                 new_tile = tile()
-                new_tile.from_obj(obj, self.name)
+                if not new_tile.from_obj(obj, self.name):
+                    return False
                 self.tiles.append(new_tile)
+
+        return True
 
     def to_collection(self):
         log_utils.new_section(f"Creating .agp collection {self.name}")
@@ -1072,7 +1079,7 @@ class agp:
         mat.xp_materials.surface_type = self.surface
         mat.xp_materials.is_separate_material_texture = False  # X-Plane does not support separate material textures on lines/polygons/facades/agps
         mat.xp_materials.layer_group = self.layer_group.upper()
-        mat.xp_materials.layer_group_offset = self.layer_group_offset
+        mat.xp_materials.layer_group_offset = int(self.layer_group_offset)
 
         decal_alb_index = 0
         decal_nml_index = 2
@@ -1156,8 +1163,8 @@ class agp:
 
         of += "\n#Scale\n"
         of += f"TEXTURE_SCALE {self.transform.resolution_x} {self.transform.resolution_y}\n"
-        of += "TEXTURE_WIDTH " + ftos(1 / self.transform.x_ratio, 4) + "\n"
-        of += "TEXTURE_HEIGHT " + ftos(1 / self.transform.y_ratio, 4) + "\n"
+        of += "TEXTURE_WIDTH " + ftos(1 / self.transform.x_ratio, 8) + "\n"
+        of += "TEXTURE_HEIGHT " + ftos(1 / self.transform.y_ratio, 8) + "\n"
         of += "\n"
 
         #Tiles
@@ -1213,13 +1220,11 @@ class agp:
 
         cur_tile_commands = []
 
-        upscale_w = 1.0
-        upscale_h = 1.0
-
-        imported_width = -1.0
-        imported_height = -1.0
-        imported_texture_width_px = -1.0
-        imported_texture_height_px = -1.0
+        #Define dimension buffers
+        imported_width = -1
+        imported_height = -1
+        imported_texture_width_px = -1
+        imported_texture_height_px = -1
 
         # Now we need to parse the file
         for line in lines:
@@ -1272,17 +1277,17 @@ class agp:
                 if len(tokens) > 2:
                     self.layer_group_offset = tokens[2]
             elif cmd == "TEXTURE_WIDTH":
-                imported_texture_width_px = float(tokens[1])
-                if imported_texture_height_px == -1:
-                    imported_texture_height_px = imported_texture_width_px
+                imported_width = float(tokens[1])
+                if imported_height == -1:
+                    imported_height = imported_width
             elif cmd == "TEXTURE_HEIGHT":
-                imported_texture_height_px = int(float(tokens[1]))
+                imported_height = float(tokens[1])
             elif cmd == "TEXTURE_SCALE":
-                imported_width = int(float(tokens[1]))
+                imported_texture_width_px = int(float(tokens[1]))
                 if len(tokens) > 2:
-                    imported_height = int(float(tokens[2]))
+                    imported_texture_height_px = int(float(tokens[2]))
                 else:
-                    imported_height = self.imported_texture_width
+                    imported_texture_height_px = imported_texture_width_px
 
             elif cmd == "SURFACE":
                 self.surface = tokens[1]
@@ -1311,8 +1316,12 @@ class agp:
             elif cmd == "TILE":
                 if len(cur_tile_commands) > 0:
                     #Define our transform
-                    self.transform.x_ratio = imported_width / imported_texture_width_px
-                    self.transform.y_ratio = imported_height / imported_texture_height_px
+                    self.transform.x_ratio = 1 / imported_width
+                    self.transform.y_ratio = 1 / imported_height
+                    self.transform.resolution_x = imported_texture_width_px
+                    self.transform.resolution_y = imported_texture_height_px
+                    print(f"Transform: {self.transform.x_ratio}, {self.transform.y_ratio}")
+                    print(f"Imported: {imported_width}, {imported_height}, {imported_texture_width_px}, {imported_texture_height_px}")
                     
                     # We have a tile to process
                     new_tile = tile()
@@ -1326,8 +1335,12 @@ class agp:
 
         if len(cur_tile_commands) > 0:
             #Define our transform
-            self.transform.x_ratio = imported_width / imported_texture_width_px
-            self.transform.y_ratio = imported_height / imported_texture_height_px
+            self.transform.x_ratio = 1 / imported_width
+            self.transform.y_ratio = 1 / imported_height
+            self.transform.resolution_x = imported_texture_width_px
+            self.transform.resolution_y = imported_texture_height_px
+            print(f"Transform: {self.transform.x_ratio}, {self.transform.y_ratio}")
+            print(f"Imported: {imported_width}, {imported_height}, {imported_texture_width_px}, {imported_texture_height_px}")
             
             # We have a tile to process
             new_tile = tile()

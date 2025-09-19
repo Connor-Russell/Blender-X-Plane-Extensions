@@ -244,8 +244,9 @@ def px_to_blender(pixel_x, pixel_y, transform: agp_transform):
         tuple: A tuple containing the Blender X and Y coordinates.
     """
     # Calculate the Blender coordinates
-    blender_x = (pixel_x / transform.resolution_x - transform.anchor_x) / transform.x_ratio
-    blender_y = (pixel_y / transform.resolution_x - transform.anchor_y) / transform.y_ratio
+    uv_x, uv_y = px_to_uv(pixel_x, pixel_y, transform)
+    blender_x = (uv_x - transform.anchor_x) / transform.x_ratio
+    blender_y = (uv_y - transform.anchor_y) / transform.y_ratio
 
     return blender_x, blender_y
 
@@ -263,6 +264,21 @@ def px_to_uv(pixel_x, pixel_y, transform: agp_transform):
     uv_y = pixel_y / transform.resolution_y
 
     return uv_x, uv_y
+
+def uv_to_px(uv_x, uv_y, transform: agp_transform):
+    """
+    Converts UV coordinates (0.0-1.0) to pixel coordinates.
+    Args:
+        uv_x (float): The X coordinate in UV space.
+        uv_y (float): The Y coordinate in UV space.
+        transform (agp_transform): The transform object containing the ratios and anchors.
+    Returns:
+        tuple: A tuple containing the pixel X and Y coordinates.
+    """
+    pixel_x = uv_x * transform.resolution_x
+    pixel_y = uv_y * transform.resolution_y
+
+    return pixel_x, pixel_y
 
 def get_tile_bounds_and_transform(obj):
     """
@@ -299,7 +315,7 @@ def get_tile_bounds_and_transform(obj):
     uv_layer = obj.data.uv_layers.active.data
     if uv_layer is None:
         log_utils.error(f"No UV layer on BASE_TILE object! {obj.name}")
-        return None
+        return -1, -1, -1, -1, None
     
     left_u = uv_layer[left_vertex.index].uv.x
     right_u = uv_layer[right_vertex.index].uv.x
@@ -307,14 +323,14 @@ def get_tile_bounds_and_transform(obj):
     bottom_v = uv_layer[bottom_vertex.index].uv.y
 
     #Calculate the ratios. We always use 4096 as our pixel size
-    x_ratio = ((right_u - left_u) / (right_vertex_pos.x - left_vertex_pos.x)) * 4096
-    y_ratio = ((top_v - bottom_v) / (top_vertex_pos.y - bottom_vertex_pos.y)) * 4096
+    x_ratio = ((right_u - left_u) / (right_vertex_pos.x - left_vertex_pos.x))
+    y_ratio = ((top_v - bottom_v) / (top_vertex_pos.y - bottom_vertex_pos.y))
 
     #Now that we have the ratios, and the left/bottom coords, we can get the anchor
     # To do so, we will multiply the negative left position and negative bottom postion by the ratios,
     # then add them to the left and bottom UVs to get the anchor UVs
-    anchor_u = left_u + (-left_vertex_pos.x * x_ratio)
-    anchor_v = bottom_v + (-bottom_vertex_pos.y * y_ratio)
+    anchor_u = left_u + ((-left_vertex_pos.x) * x_ratio)
+    anchor_v = bottom_v + ((-bottom_vertex_pos.y) * y_ratio)
 
     transform = agp_transform()
     transform.x_ratio = x_ratio
@@ -323,6 +339,60 @@ def get_tile_bounds_and_transform(obj):
     transform.anchor_y = anchor_v
     transform.resolution_x = 4096.0
     transform.resolution_y = 4096.0
+
+    #Now we want to check if the geometry is resonably square. We will do this by checking that each vertex is only different from 2 other vertices in X and Y
+    bIsSquareish = True
+    all_xs = []
+    all_ys = []
+    for v in obj.data.vertices:
+        all_xs.append(v.co.x)
+        all_ys.append(v.co.y)
+
+    #This logic is a little janky but it works. We will iterate over each vertex. It can be different from up to 2 verticies. If it is different than 3 or more than we are non-square
+    for v in obj.data.vertices:
+        num_different_xs = 0
+        num_different_ys = 0
+        for v_compare in obj.data.vertices:
+            if v == v_compare:
+                continue
+            if abs(v.co.x - v_compare.co.x) > 0.1:
+                num_different_xs += 1
+            if abs(v.co.y - v_compare.co.y) > 0.1:
+                num_different_ys += 1
+        if num_different_xs > 2 or num_different_ys > 2:
+            bIsSquareish = False
+            break
+
+    if not bIsSquareish:
+        log_utils.error(f"BASE_TILE object {obj.name} appears to have non-square geometry! Export cancelled.")
+        return -1, -1, -1, -1, None
+    
+    #Now we do similar, but for the UVs, to make sure they are squareish
+    all_us = []
+    all_vs = []
+    for v in obj.data.vertices:
+        uv = uv_layer[v.index].uv
+        all_us.append(uv.x)
+        all_vs.append(uv.y)
+    
+    for v in obj.data.vertices:
+        num_different_us = 0
+        num_different_vs = 0
+        uv = uv_layer[v.index].uv
+        for v_compare in obj.data.vertices:
+            if v == v_compare:
+                continue
+            uv_compare = uv_layer[v_compare.index].uv
+            if abs(uv.x - uv_compare.x) > 0.01:
+                num_different_us += 1
+            if abs(uv.y - uv_compare.y) > 0.01:
+                num_different_vs += 1
+        if num_different_us > 2 or num_different_vs > 2:
+            bIsSquareish = False
+            break
+
+    if not bIsSquareish:
+        log_utils.warning(f"BASE_TILE object {obj.name} appears to have non-square UVs! Annotations should remain correct, however base tile UVs will likely be incorrect.")
 
     #Return the UV bounds
     return left_u, bottom_v, right_u, top_v, transform
@@ -334,8 +404,8 @@ def create_tile_obj(left: float, bottom: float, right: float, top: float, in_tra
     Returns the new Blender object.
     """
     
-    left_x, bottom_y = px_to_blender(left, bottom, in_transform)
-    right_x, top_y = px_to_blender(right, top, in_transform)
+    left_x, bottom_y = uv_to_blender(left, bottom, in_transform)
+    right_x, top_y = uv_to_blender(right, top, in_transform)
 
     # Define the 4 corners of the plane (Z=0 for flatness)
     verts = [
@@ -363,10 +433,10 @@ def create_tile_obj(left: float, bottom: float, right: float, top: float, in_tra
     # There is only one face, so 4 loops (one per corner)
     # Blender face loop order matches verts order in from_pydata for quads
     # Assign UVs: (left, bottom), (right, bottom), (right, top), (left, top)
-    uv_layer[0].uv = (left / in_transform.resolution_x, bottom / in_transform.resolution_y)
-    uv_layer[1].uv = (right / in_transform.resolution_x, bottom / in_transform.resolution_y)
-    uv_layer[2].uv = (right / in_transform.resolution_x, top / in_transform.resolution_y)
-    uv_layer[3].uv = (left / in_transform.resolution_x, top / in_transform.resolution_y)
+    uv_layer[0].uv = (left, bottom)
+    uv_layer[1].uv = (right, bottom)
+    uv_layer[2].uv = (right, top)
+    uv_layer[3].uv = (left, top)
 
     return obj
 

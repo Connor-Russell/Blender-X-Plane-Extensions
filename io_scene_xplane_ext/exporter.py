@@ -86,22 +86,23 @@ def export_pol(in_col):
 def export_agp(in_col):
     # Create an xp_agp, load it from the collection, and write it to a file
     output = xp_agp.agp()
-    output.from_collection(in_col)
 
-    export_path = ""
-    if in_col.xp_agp.name != "":
-        #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
-        if in_col.xp_agp.name.endswith(("/", "\\")):
-            export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_agp.name), in_col.name + ".agp")
+    #Attempt to get the collection data, if it fails we won't write anything
+    if output.from_collection(in_col):
+        export_path = ""
+        if in_col.xp_agp.name != "":
+            #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
+            if in_col.xp_agp.name.endswith(("/", "\\")):
+                export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_agp.name), in_col.name + ".agp")
+            else:
+                export_path = file_utils.rel_to_abs(in_col.xp_agp.name + ".agp")
         else:
-            export_path = file_utils.rel_to_abs(in_col.xp_agp.name + ".agp")
-    else:
-        export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".agp")
+            export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".agp")
 
-    if export_path.lower().endswith(".agp.agp"):
-        export_path = export_path[:-4]
+        if export_path.lower().endswith(".agp.agp"):
+            export_path = export_path[:-4]
 
-    # Write the file
-    output.write(export_path)
+        # Write the file
+        output.write(export_path)
 
     log_utils.display_messages()
