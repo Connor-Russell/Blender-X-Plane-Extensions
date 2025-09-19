@@ -751,18 +751,15 @@ class MENU_BT_fac_duplicate_floor(bpy.types.Operator):
         #Add a new floor, then we will iterate through all the floors *after* the current index, and move them *down* one.
         #This will leave the index directly after ours available for the new floor
         col.xp_fac.floors.add()  # Add a new floor at the end
-        for i in range(self.floor_index + 1, len(col.xp_fac.floors) - 1):
+        for i in reversed(range(self.floor_index + 1, len(col.xp_fac.floors) - 1)):
             floor_1 = col.xp_fac.floors[i]
             floor_2 = col.xp_fac.floors[i + 1]
 
             floor_1_temp = facade_utils.FacFloor()
-            floor_2_temp = facade_utils.FacFloor()
 
             floor_1_temp.from_prop(floor_1)
-            floor_2_temp.from_prop(floor_2)
 
             floor_1_temp.to_prop(floor_2)
-            floor_2_temp.to_prop(floor_1)
 
         #Now we can load our currently floor, and set index+1 floor to it
         floor_temp = facade_utils.FacFloor()
@@ -809,18 +806,15 @@ class MENU_BT_fac_duplicate_wall(bpy.types.Operator):
         #Add a new wall, then we will iterate through all the walls *after* the current index, and move them *down* one.
         #This will leave the index directly after ours available for the new wall
         floor.walls.add()  # Add a new wall at the end
-        for i in range(self.wall_index + 1, len(floor.walls) - 1):
+        for i in reversed(range(self.wall_index + 1, len(floor.walls) - 1)):
             wall_1 = floor.walls[i]
             wall_2 = floor.walls[i + 1]
 
             wall_1_temp = facade_utils.FacWall()
-            wall_2_temp = facade_utils.FacWall()
 
             wall_1_temp.from_prop(wall_1)
-            wall_2_temp.from_prop(wall_2)
 
             wall_1_temp.to_prop(wall_2)
-            wall_2_temp.to_prop(wall_1)
 
         #Now we can load our currently wall, and set index+1 wall to it
         wall_temp = facade_utils.FacWall()
@@ -868,18 +862,15 @@ class MENU_BT_fac_duplicate_spelling(bpy.types.Operator):
         #Add a new spelling, then we will iterate through all the spellings *after* the current index, and move them *down* one.
         #This will leave the index directly after ours available for the new spelling
         wall.spellings.add()  # Add a new spelling at the end
-        for i in range(self.spelling_index + 1, len(wall.spellings) - 1):
+        for i in reversed(range(self.spelling_index + 1, len(wall.spellings) - 1)):
             spelling_1 = wall.spellings[i]
             spelling_2 = wall.spellings[i + 1]
 
             spelling_1_temp = facade_utils.FacSpelling()
-            spelling_2_temp = facade_utils.FacSpelling()
 
             spelling_1_temp.from_prop(spelling_1)
-            spelling_2_temp.from_prop(spelling_2)
 
             spelling_1_temp.to_prop(spelling_2)
-            spelling_2_temp.to_prop(spelling_1)
 
         #Now we can load our currently spelling, and set index+1 spelling to it
         spelling_temp = facade_utils.FacSpelling()
