@@ -10,18 +10,45 @@ from . import geometery_utils
 from . import log_utils
 from . import misc_utils
 
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#
+# COORDINATE SPACES:
+#
+# px are pixel coordinates. They are relative to texture resolution (i.e. 0-4096 or 0-128 etc)
+# uv are UV coordinates. Basically normalized pixel coordinates (0.0-1.0)
+# Blender coordinates are in meters and are *offset* by the anchor, so the anchor is always at 0,0 in Blender space
+#
+# The orientation is positive X(px) = positive X (Blender), and positive Y(px) = positive Z(Blender)
+#
+# NEVER convert by hand, always used the functions for standardization.
+#
+#-------------------------------------------------------------------------------------------------------------------------------------------
+
 class agp_transform:
     """
     Contains the transform data for the agp tile
+    x_ratio: The UV ratio to 1 meter (multiply width by ratio for UVs. Divide UVs by ratio for width) 0.0-1.0
+    y_ratio: The UV ratio to 1 meter (multiply height by ratio for UVs. Divide UVs by ratio for height) 0.0-1.0
+    anchor_x: Anchor x, UV space
+    anchor_y: Anchor y, UV space
+    resolution_x: The X resolution of the texture (default 4096). This is applied only for import/export, not for calculations
+    resolution_y: The Y resolution of the texture (default 4096). This is applied only for import/export, not for calculations
     """
 
     def __init__(self):
+        #The UV ratio to 1 meter (multiply width by ratio for UVs. Divide UVs by ratio for width) 0.0-1.0
         self.x_ratio = 1.0
+        #The UV ratio to 1 meter (multiply height by ratio for UVs. Divide UVs by ratio for height) 0.0-1.0
         self.y_ratio = 1.0
+        #The X coordinate of the texture anchor point in ratio (0.0-1.0)
         self.anchor_x = 0.0
+        #The Y coordinate of the texture anchor point in ratio (0.0-1.0)
         self.anchor_y = 0.0
 
-        self.height_ratio = 1.0
+        #The X resolution of the texture (default 4096). This is applied only for import/export, not for calculations
+        self.resolution_x = 4096.0
+        #The Y resolution of the texture (default 4096). This is applied only for import/export, not for calculations
+        self.resolution_y = 4096.0
 
 def build_vertex_to_edge_map(obj):
     """
@@ -171,7 +198,7 @@ def get_perimeter_from_mesh(obj):
     #Return the coords
     return out_coords
 
-def to_pixel_coords(x, y, transform: agp_transform):
+def blender_to_px(x, y, transform: agp_transform):
     """
     Converts the Blender X/Y coordinates relative to a tile to pixel coordinate.
     This is more complex than simply multiplying by the ratio, because the pixel coords are relative to 0/0, but the Blender coords are relative to their parent (the tile, whose origin is the anchor pt)
@@ -184,15 +211,31 @@ def to_pixel_coords(x, y, transform: agp_transform):
     """
     #return x, y
     # Calculate the pixel coordinates
-    pixel_x = x * transform.x_ratio + transform.anchor_x
-    pixel_y = y * transform.y_ratio + transform.anchor_y
+    pixel_x = (x * transform.x_ratio + transform.anchor_x) * transform.resolution_x
+    pixel_y = (y * transform.y_ratio + transform.anchor_y) * transform.resolution_y
 
     return pixel_x, pixel_y
 
-def to_blender_coords(pixel_x, pixel_y, transform: agp_transform):
+def uv_to_blender(uv_x, uv_y, transform: agp_transform):
+    """
+    Converts UV coordinates (0.0-1.0) to Blender X/Y coordinates relative to a tile.
+    Args:
+        uv_x (float): The X coordinate in UV space.
+        uv_y (float): The Y coordinate in UV space.
+        transform (agp_transform): The transform object containing the ratios and anchors.
+    Returns:
+        tuple: A tuple containing the Blender X and Y coordinates.
+    """
+    # Calculate the Blender coordinates
+    blender_x = (uv_x - transform.anchor_x) / transform.x_ratio
+    blender_y = (uv_y - transform.anchor_y) / transform.y_ratio
+
+    return blender_x, blender_y
+
+def px_to_blender(pixel_x, pixel_y, transform: agp_transform):
     """
     Converts pixel coordinates to Blender X/Y coordinates relative to a tile.
-    This is the inverse of the to_pixel_coords function.
+    This is the inverse of the blender_to_px function.
     Args:
         pixel_x (float): The X coordinate in pixel space.
         pixel_y (float): The Y coordinate in pixel space.
@@ -201,10 +244,25 @@ def to_blender_coords(pixel_x, pixel_y, transform: agp_transform):
         tuple: A tuple containing the Blender X and Y coordinates.
     """
     # Calculate the Blender coordinates
-    blender_x = (pixel_x - transform.anchor_x) / transform.x_ratio
-    blender_y = (pixel_y - transform.anchor_y) / transform.y_ratio
+    blender_x = (pixel_x / transform.resolution_x - transform.anchor_x) / transform.x_ratio
+    blender_y = (pixel_y / transform.resolution_x - transform.anchor_y) / transform.y_ratio
 
     return blender_x, blender_y
+
+def px_to_uv(pixel_x, pixel_y, transform: agp_transform):
+    """
+    Converts pixel coordinates to UV coordinates (0.0-1.0).
+    Args:
+        pixel_x (float): The X coordinate in pixel space.
+        pixel_y (float): The Y coordinate in pixel space.
+        transform (agp_transform): The transform object containing the ratios and anchors.
+    Returns:
+        tuple: A tuple containing the UV X and Y coordinates.
+    """
+    uv_x = pixel_x / transform.resolution_x
+    uv_y = pixel_y / transform.resolution_y
+
+    return uv_x, uv_y
 
 def get_tile_bounds_and_transform(obj):
     """
@@ -263,22 +321,8 @@ def get_tile_bounds_and_transform(obj):
     transform.y_ratio = y_ratio
     transform.anchor_x = anchor_u
     transform.anchor_y = anchor_v
-
-    #Now we need to get the image
-    try:
-        alb_name = obj.data.materials[0].xp_materials.alb_texture
-        alb_image = bpy.data.images.get(alb_name)
-        
-        #Get the dimensions
-        if alb_image is not None:
-            alb_width = alb_image.size[0]
-            alb_height = alb_image.size[1]
-
-            #Save the ratio
-            transform.height_ratio = alb_height / alb_width
-    except Exception as e:
-        log_utils.warning(f"Error getting ALB texture for {obj.name}: {e}, assuming texture is square")
-        alb_image = None
+    transform.resolution_x = 4096.0
+    transform.resolution_y = 4096.0
 
     #Return the UV bounds
     return left_u, bottom_v, right_u, top_v, transform
@@ -289,21 +333,17 @@ def create_tile_obj(left: float, bottom: float, right: float, top: float, in_tra
     Sets the UVs to left/bottom/right/top.
     Returns the new Blender object.
     """
-    import bpy
-    import mathutils
+    
+    left_x, bottom_y = px_to_blender(left, bottom, in_transform)
+    right_x, top_y = px_to_blender(right, top, in_transform)
 
     # Define the 4 corners of the plane (Z=0 for flatness)
     verts = [
-        (left / in_transform.x_ratio, bottom / in_transform.y_ratio, 0.0),  # 0: Bottom Left
-        (right / in_transform.x_ratio, bottom / in_transform.y_ratio, 0.0), # 1: Bottom Right
-        (right / in_transform.x_ratio, top / in_transform.y_ratio, 0.0),    # 2: Top Right
-        (left / in_transform.x_ratio, top / in_transform.y_ratio, 0.0),     # 3: Top Left
+        (left_x, bottom_y, 0.0),  # 0: Bottom Left
+        (right_x, bottom_y, 0.0), # 1: Bottom Right
+        (right_x, top_y, 0.0),    # 2: Top Right
+        (left_x, top_y, 0.0),     # 3: Top Left
     ]
-
-    for i, v in enumerate(verts):
-        new_x = v[0] - in_transform.anchor_x / in_transform.x_ratio
-        new_y = v[1] - in_transform.anchor_y / in_transform.y_ratio
-        verts[i] = (new_x, new_y, 0)
 
     # Define the face using the 4 vertices
     faces = [ (0, 1, 2, 3) ]
@@ -323,10 +363,10 @@ def create_tile_obj(left: float, bottom: float, right: float, top: float, in_tra
     # There is only one face, so 4 loops (one per corner)
     # Blender face loop order matches verts order in from_pydata for quads
     # Assign UVs: (left, bottom), (right, bottom), (right, top), (left, top)
-    uv_layer[0].uv = (left / 4096, bottom / 4096)
-    uv_layer[1].uv = (right / 4096, bottom / 4096)
-    uv_layer[2].uv = (right / 4096, top / 4096)
-    uv_layer[3].uv = (left / 4096, top / 4096)
+    uv_layer[0].uv = (left / in_transform.resolution_x, bottom / in_transform.resolution_y)
+    uv_layer[1].uv = (right / in_transform.resolution_x, bottom / in_transform.resolution_y)
+    uv_layer[2].uv = (right / in_transform.resolution_x, top / in_transform.resolution_y)
+    uv_layer[3].uv = (left / in_transform.resolution_x, top / in_transform.resolution_y)
 
     return obj
 
