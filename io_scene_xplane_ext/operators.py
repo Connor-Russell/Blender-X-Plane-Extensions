@@ -220,22 +220,22 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         name = name.replace(".png", "")
         name = name.replace(".dds", "")
         
-        alb_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_albedo + ".png")
+        alb_check_path = file_utils.to_absolute(name + addon_prefs.suffix_albedo + ".png")
         
         #Define the paths for the NML, and LIT
-        nml_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_combined_normal + ".png")
-        lit_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_lit + ".png")
+        nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_combined_normal + ".png")
+        lit_check_path = file_utils.to_absolute(name + addon_prefs.suffix_lit + ".png")
         mat_check_path = ""
 
         if material.xp_materials.do_separate_material_texture:
-            nml_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_normal + ".png")
-            mat_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_material + ".png")
+            nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_normal + ".png")
+            mat_check_path = file_utils.to_absolute(name + addon_prefs.suffix_material + ".png")
 
         #Set properties if the paths exist
-        material.xp_materials.alb_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(alb_check_path))
-        material.xp_materials.normal_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(nml_check_path))
-        material.xp_materials.lit_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(lit_check_path))
-        material.xp_materials.material_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(mat_check_path))
+        material.xp_materials.alb_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(alb_check_path))
+        material.xp_materials.normal_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(nml_check_path))
+        material.xp_materials.lit_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(lit_check_path))
+        material.xp_materials.material_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(mat_check_path))
 
 
         #Return success

@@ -37,6 +37,8 @@ def info(message):
 
     msg = current_time + " [VERBOSE] " + message + "\n"
 
+    print(msg)  # Print to console for immediate feedback
+
     log.write(msg)
 
 def warning(message):
