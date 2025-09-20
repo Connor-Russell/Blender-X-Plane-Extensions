@@ -893,6 +893,8 @@ class facade:
                     decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
 
+            material_config.update_settings(wall_material)
+
             facade_props.wall_material = wall_material
             
         if self.import_roof_material:
@@ -927,6 +929,8 @@ class facade:
                         break
                     decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
+
+            material_config.update_settings(roof_material)
 
             facade_props.roof_material = roof_material
         # Add floors to the collection

@@ -393,6 +393,8 @@ class line():
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 
+        material_config.update_settings(mat)
+
         #Now we will iterate through every segment, and generate a plane for it
         for seg in self.segments:
             #Create the vertices

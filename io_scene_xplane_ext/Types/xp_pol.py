@@ -403,6 +403,9 @@ class polygon():
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 
+        #Final material update
+        material_config.update_settings(mat)
+
         # Set collection properties
         new_collection.xp_pol.exportable = True
         new_collection.xp_pol.texture_is_nowrap = self.nowrap

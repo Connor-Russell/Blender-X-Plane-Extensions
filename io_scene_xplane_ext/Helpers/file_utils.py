@@ -179,6 +179,8 @@ def resolve_file_export_path(in_path, col_name, extension):
     if _is_relative(export_path):
         export_path = os.path.join(os.path.dirname(bpy.data.filepath), export_path)
 
+    return os.path.normpath(export_path)
+
 def check_for_dds_or_png(image_path):
     """
     Checks if the given image path exists, or if a corresponding .dds or .png version exists.

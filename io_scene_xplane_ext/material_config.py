@@ -205,7 +205,6 @@ def update_settings(in_material):
         xp_mat.weather_texture = file_utils.to_relative(xp_mat.weather_texture, True)
     for decal in xp_mat.decals:
         if decal.texture != "":
-            xp_mat.was_programmatically_updated = True
             decal.texture = file_utils.to_relative(decal.texture, True)
 
     #Set backface culling to TRUE
@@ -308,6 +307,9 @@ def update_settings(in_material):
     xp_mat.decals[1].is_normal = False
     xp_mat.decals[2].is_normal = True
     xp_mat.decals[3].is_normal = True
+
+    #Finally
+    xp_mat.was_programmatically_updated = False
 
 #Internal function to create the node setup for the keying of a decal
 def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_g, key_b, key_a, key_base, key_mod):

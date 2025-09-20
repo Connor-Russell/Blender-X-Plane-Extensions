@@ -1089,6 +1089,8 @@ class agp:
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 
+        material_config.update_settings(mat)
+
         for tile in self.tiles:
             #Create the tile object and link it to the collection
             tile.to_obj(new_collection, mat)
