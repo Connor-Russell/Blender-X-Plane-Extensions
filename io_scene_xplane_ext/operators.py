@@ -119,7 +119,7 @@ class IMPORT_fac(bpy.types.Operator, ImportHelper):
 class IMPORT_obj(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_obj"
     bl_label = "Import X-Plane Object"
-    filename_ext = ".fac"
+    filename_ext = ".obj"
     filter_glob: bpy.props.StringProperty(default="*.obj", options={'HIDDEN'}) # type: ignore
     files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
 
@@ -149,50 +149,6 @@ class IMPORT_agp(bpy.types.Operator, ImportHelper):
         for cf in self.files:
             filepath = f"{directory}{os.sep}{cf.name}"
             importer.import_agp(filepath)
-
-        return {'FINISHED'}
-
-class TEST_IMPORT_obj(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_obj"
-    bl_label = "Test Import X-Plane Lines"
-    bl_description = "Test the import of X-Plane lines. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_obj(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_lin(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_lin"
-    bl_label = "Test Import X-Plane Lines"
-    bl_description = "Test the import of X-Plane lines. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_lin(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_pol(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_pol"
-    bl_label = "Test Import X-Plane Polygons"
-    bl_description = "Test the import of X-Plane polygons. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_pol(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_fac(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_fac"
-    bl_label = "Test Import X-Plane Facade"
-    bl_description = "Test the import of X-Plane facades. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_fac(self.import_path)
 
         return {'FINISHED'}
 
