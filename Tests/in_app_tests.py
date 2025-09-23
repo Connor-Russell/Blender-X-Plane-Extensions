@@ -1,4 +1,4 @@
-#Project: BlenderImportTests
+#Project: in-app_tests.py
 #Author: Connor Russell
 #Date: 9/22/2025
 #Purpose: Provide a standardized way to perform in-app tests
@@ -7,12 +7,16 @@ import bpy
 import os
 import sys
 
+
 # Add the directory containing this script to sys.path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
 
 import test_helpers
+import in_app_anim_tool_test
+
+test_dir = ""
 
 def run_inapp_test(test_name, filepath, test_func):
     """
@@ -26,7 +30,7 @@ def run_inapp_test(test_name, filepath, test_func):
 
         #Open the .blend file
         try:
-            bpy.ops.wm.open_mainfile(filepath=filepath)
+            bpy.ops.wm.open_mainfile(filepath=os.path.join(test_dir, filepath))
         except Exception as e:
             if "File written by newer" in str(e):
                 pass
@@ -69,10 +73,11 @@ def run_inapp_test(test_name, filepath, test_func):
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
 
-    test_dir = os.path.dirname(bpy.data.filepath)
+    test_dir = os.path.join(os.path.dirname(bpy.data.filepath), "In App Tests")
 
     tests = [
-        ["name", "file", func]
+        ["Auto Keyframe Test", "Autokeyframe.blend", in_app_anim_tool_test.inapp_autokeyframe_test],
+        ["Flipbook Test", "Flipbook.blend", in_app_anim_tool_test.inapp_flipbook_test]
     ]
 
     for test in tests:
