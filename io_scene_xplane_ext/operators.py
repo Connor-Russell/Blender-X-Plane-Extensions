@@ -324,7 +324,8 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
     def execute(self, context):
         for obj in context.selected_objects:
             #Check that the object has a deform modifier
-            if not any(mod.type == 'ARMATURE' for mod in obj.modifiers):
+            physics_types = {'ARMATURE', 'CLOTH', 'SOFT_BODY', 'FLUID', 'DYNAMIC_PAINT', 'COLLISION', 'SMOKE'}
+            if not any(mod.type in physics_types for mod in obj.modifiers):
                 continue
             if self.autoanim_autodetect:
                 start_frame, end_frame, start_value, end_value = anim_actions.autodetect_frame_range(obj, self.autoanim_autodetect_fps)
