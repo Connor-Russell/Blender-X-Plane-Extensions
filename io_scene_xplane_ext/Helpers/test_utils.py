@@ -383,7 +383,7 @@ def run_all_tests():
     result4 = result4.replace("\"", "\"\"")
     result5 = result5.replace("\"", "\"\"")
 
-    test_results_file = file_utils.rel_to_abs("../Test Results.csv")
+    test_results_file = file_utils.to_absolute("../Test Results.csv")
     with open(test_results_file, 'a') as output:
         output.write(f"TEST_get_all_collections_from_view_layer,\"{result1}\"\n")
         output.write(f"TEST_get_roof_data,\"{result2}\"\n")

@@ -101,7 +101,7 @@ def config_source_materials(type, mats):
         #What we do from here is dependant on the type
         if type == BakeType.BASE:
             if mat.xp_materials.alb_texture != "":
-                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.alb_texture))
+                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.alb_texture))
                 if str_resolve_path != "":
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
                     image_node.image.colorspace_settings.name = 'sRGB'
@@ -119,7 +119,7 @@ def config_source_materials(type, mats):
             #If there is a normal we do the node setup, otherwise we do nothing (cuz normal defaults to a sane value)
             if mat.xp_materials.normal_texture != "":
                 #Now we load the normal image into the image node
-                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.normal_texture))
+                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.normal_texture))
 
                 if (str_resolve_path != ""):
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -149,7 +149,7 @@ def config_source_materials(type, mats):
             if mat.xp_materials.do_separate_material_texture:
                 #If there is a normal we do the node setup, otherwise we use full white (aka full roughness)
                 if mat.xp_materials.material_texture != "":
-                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.material_texture))
+                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.material_texture))
 
                     if (str_resolve_path != ""):
                         image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -174,7 +174,7 @@ def config_source_materials(type, mats):
             else:
                 #If there is a normal we do the node setup, otherwise we use full black (aka full roughness. Remember, this is XP convention)
                 if mat.xp_materials.normal_texture != "":
-                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.normal_texture))
+                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.normal_texture))
 
                     if (str_resolve_path != ""):
                         image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -195,7 +195,7 @@ def config_source_materials(type, mats):
             if mat.xp_materials.do_separate_material_texture:
                 #If there is a normal we do the node setup, otherwise we do nothing
                 if mat.xp_materials.material_texture != "":
-                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.material_texture))
+                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.material_texture))
 
                     if (str_resolve_path != ""):
                         image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -218,7 +218,7 @@ def config_source_materials(type, mats):
             #Traditional combined normals/materials
             else:
                 if mat.xp_materials.normal_texture != "":
-                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.normal_texture))
+                    str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.normal_texture))
 
                     if (str_resolve_path != ""):
                         image_node.image = file_utils.get_or_load_image(str_resolve_path)
@@ -243,7 +243,7 @@ def config_source_materials(type, mats):
         elif type == BakeType.LIT:
             #This is literally just diffuse but we load the lit texture instead. IF there is no lit texture, we just do black diffuse
             if mat.xp_materials.lit_texture != "":
-                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.lit_texture))
+                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.lit_texture))
                 if str_resolve_path != "":
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
                     image_node.image.colorspace_settings.name = 'sRGB'
@@ -260,7 +260,7 @@ def config_source_materials(type, mats):
         elif type == BakeType.OPACITY:
             #This is literally just diffuse but we plug in the alpha of the texture instead. If there is no texture we use white (fully opaque. Why would there be no alb though???)
             if mat.xp_materials.alb_texture != "":
-                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(mat.xp_materials.alb_texture))
+                str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.alb_texture))
                 if str_resolve_path != "":
                     image_node.image = file_utils.get_or_load_image(str_resolve_path)
                     image_node.image.colorspace_settings.name = 'Non-Color'

@@ -27,29 +27,34 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
     #Get the value interval
     value_interval = (end_value - start_value) / num_frames
 
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+
     for frame in range(0, num_frames):
         #Get the frame
         frame_num = start_frame + (frame * keyframe_interval)
 
-        #Goto the correct frame
-        anim_utils.goto_frame(frame_num)
-        print(frame_num)
+        bpy.context.scene.frame_set(frame_num)
+        bpy.context.view_layer.update()
 
-        #Duplicate the object via operators
-        bpy.ops.object.mode_set(mode='OBJECT')
+        # Get the evaluated object with cloth deformation
+        eval_obj = in_obj.evaluated_get(depsgraph)
+
+        # Copy the mesh data from the evaluated object
+        mesh_copy = eval_obj.to_mesh().copy()  # Make a real datablock copy
+
+        #Duplicat the object via operators, then we will clear modifiers, and replace it's mesh data with mesh_copy
         bpy.ops.object.select_all(action='DESELECT')
         in_obj.select_set(True)
         bpy.context.view_layer.objects.active = in_obj
         bpy.ops.object.duplicate()
         anim_obj = bpy.context.active_object
         anim_obj.name = f"{in_obj.name}_anim_{frame_num}"
-        in_obj.select_set(False)
 
-        #Apply the modifiers
-        for modifier in anim_obj.modifiers:
-            bpy.ops.object.modifier_apply(modifier=modifier.name)
+        # Clear all modifiers
+        anim_obj.modifiers.clear()
 
-        #If we apply the parent transform, clear the parent and apply the parent's transform
+        anim_obj.data = mesh_copy
+
         if apply_parent_transform:
             if anim_obj.parent:
                 # Store the world matrix
@@ -58,6 +63,9 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
                 anim_obj.parent = None
                 # Restore world matrix
                 anim_obj.matrix_world = world_matrix
+
+        # Free the mesh when done (to avoid memory leaks)
+        eval_obj.to_mesh_clear()
 
         #Now we need to setup the animation. So we need to get the start value, and the end value, then add the animations
         start_dref_value = start_value + value_interval * frame

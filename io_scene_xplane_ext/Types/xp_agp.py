@@ -586,8 +586,8 @@ class auto_split_obj:
                 obj_name = file_utils.sanitize_path(agp_name + "_PT_" + insert_name + "_" + mat + ".obj")
                 obj_name = obj_name.replace(" ", "_")  # Replace spaces with underscores
 
-                agp_path = file_utils.rel_to_abs(agp_name)
-                obj_path = file_utils.rel_to_abs(obj_name)
+                agp_path = file_utils.to_absolute(agp_name)
+                obj_path = file_utils.to_absolute(obj_name)
                 rel_obj_path = os.path.relpath(obj_path, os.path.dirname(agp_path))
 
                 mat_collection = bpy.data.collections.new(obj_name)
@@ -1089,6 +1089,8 @@ class agp:
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 
+        material_config.update_settings(mat)
+
         for tile in self.tiles:
             #Create the tile object and link it to the collection
             tile.to_obj(new_collection, mat)
@@ -1111,13 +1113,13 @@ class agp:
         of += "#Materials\n"
 
         if self.alb_texture != "":
-            of += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(self.alb_texture), output_folder) + "\n"
+            of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
         if self.lit_texture != "":
-            of += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(self.lit_texture), output_folder) + "\n"
+            of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
         if self.nml_texture != "":
-            of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
+            of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
         if self.weather_texture != "":
-            of += "WEATHER " + os.path.relpath(file_utils.rel_to_abs(self.weather_texture), output_folder) + "\n"
+            of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
         else:
             of += "WEATHER_TRANSPARENT\n"
         
@@ -1142,7 +1144,7 @@ class agp:
         if self.surface != None:
             of += "SURFACE " + self.surface + "\n"
         if self.do_tiling:
-            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.rel_to_abs(self.tiling_map_texture), output_folder) + "\n"
+            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
         if not self.render_tiles:
             of += "HIDE_TILES\n"
         if self.tile_lod != 20000:
