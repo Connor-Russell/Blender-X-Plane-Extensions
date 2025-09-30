@@ -607,3 +607,26 @@ def add_test_category(test_category):
     #Open the CSV file in append mode and write the test name: in the next cell
     with open(txt_file_path, 'a') as txtfile:
         txtfile.write(test_category + ':\n')
+
+def differences_to_string(differences):
+    """
+    Convert a list of difference objects to a formatted string.
+    Args:
+        differences (list): List of difference objects.
+    Returns:
+        str: Formatted string of differences.
+    """
+    #Get a dictionary of catagories to their counts
+    categories = set(diff.category for diff in differences)
+    category_counts = {category: 0 for category in categories}
+
+    for diff in differences:
+        category_counts[diff.category] += 1
+
+    out = ""
+    for category, count in category_counts.items():
+        out += f"{category} Differences ({count}), "
+
+    #Now we print each difference
+    for diff in differences:
+        out += f"{diff.message}, "
