@@ -53,13 +53,14 @@ def export_pol(in_col):
 def export_agp(in_col):
     # Create an xp_agp, load it from the collection, and write it to a file
     output = xp_agp.agp()
-    output.from_collection(in_col)
 
-    export_path = ""
-    if in_col.xp_agp.name != "":
-        export_path = file_utils.resolve_file_export_path(in_col.xp_agp.name, in_col.name, ".agp")
+    #Attempt to get the collection data, if it fails we won't write anything
+    if output.from_collection(in_col):       
+      export_path = ""
+      if in_col.xp_agp.name != "":
+          export_path = file_utils.resolve_file_export_path(in_col.xp_agp.name, in_col.name, ".agp")
         
-        # Write the file
-        output.write(export_path)
+          # Write the file
+          output.write(export_path)
 
     log_utils.display_messages()
