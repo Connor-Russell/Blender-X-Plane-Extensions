@@ -317,8 +317,8 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
     bl_description = "Automatically add X-Plane keyframes at the given interval for the given frame range for the selected objects."
     bl_options = {'REGISTER', 'UNDO'}
 
-    autoanim_frame_start: bpy.props.IntProperty(name="Start Frame", description="The start frame for the animation", default=1, min=1) # type: ignore
-    autoanim_frame_end: bpy.props.IntProperty(name="End Frame", description="The end frame for the animation", default=250, min=1) # type: ignore
+    autoanim_frame_start: bpy.props.IntProperty(name="Start Frame", description="The start frame for the animation", default=1, min=0) # type: ignore
+    autoanim_frame_end: bpy.props.IntProperty(name="End Frame", description="The end frame for the animation", default=250, min=0) # type: ignore
     autoanim_keyframe_interval: bpy.props.IntProperty(name="Keyframe Interval", description="The interval at which to add keyframes", default=1, min=1) # type: ignore
     autoanim_dataref: bpy.props.StringProperty(name="Dataref", description="The dataref to animate", default="") # type: ignore
     autoanim_loop_value: bpy.props.FloatProperty(name="Loop Value", description="The value to loop the animation", default=1.0) # type: ignore
@@ -357,8 +357,9 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
 
     def execute(self, context):
         # Iterate over selected objects only once
-        for obj in context.selected_objects:
-            if self.autoanim_autodetect:
+        
+        if self.autoanim_autodetect:
+            for obj in context.selected_objects:
                 start_frame, end_frame, start_value, end_value = anim_actions.autodetect_frame_range(obj, self.autoanim_autodetect_fps)
                 anim_actions.auto_keyframe(
                     obj,
@@ -370,7 +371,8 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
                     end_frame,
                     self.autoanim_keyframe_interval
                 )
-            else:
+        else:
+            for obj in context.selected_objects:
                 anim_actions.auto_keyframe(
                     obj,
                     self.autoanim_dataref,

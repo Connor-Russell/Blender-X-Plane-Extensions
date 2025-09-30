@@ -319,9 +319,9 @@ def keyframe_xp_dataref(obj, name, value):
         value (float): Value to set and keyframe.
     """
     for dref in obj.xplane.datarefs:
-        if obj.xplane.datarefs[0].path == name:
-            obj.xplane.datarefs[0].value = value
-            obj.xplane.datarefs[0].keyframe_insert(data_path="value")
+        if dref.path == name:
+            dref.value = value
+            dref.keyframe_insert(data_path="value")
             break
 
 def get_xp_dataref(obj, name):

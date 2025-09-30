@@ -107,7 +107,7 @@ def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_fra
     """
 
     #Get the value increment
-    value_increment = (end_value - start_value) / ((end_frame - start_frame))
+    value_increment = (end_value - start_value) / (end_frame - start_frame)
     
     #Add the dataref track
     in_obj.xplane.datarefs.add()
