@@ -186,6 +186,26 @@ def update_settings(in_material):
     if xp_mat.was_programmatically_updated:
         xp_mat.was_programmatically_updated = False
         return
+    
+    #Sanitize all paths to be relative first
+    if xp_mat.alb_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.alb_texture = file_utils.to_relative(xp_mat.alb_texture, True)
+    if xp_mat.normal_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.normal_texture = file_utils.to_relative(xp_mat.normal_texture, True)
+    if xp_mat.lit_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.lit_texture = file_utils.to_relative(xp_mat.lit_texture, True)
+    if xp_mat.material_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.material_texture = file_utils.to_relative(xp_mat.material_texture, True)
+    if xp_mat.weather_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.weather_texture = file_utils.to_relative(xp_mat.weather_texture, True)
+    for decal in xp_mat.decals:
+        if decal.texture != "":
+            decal.texture = file_utils.to_relative(decal.texture, True)
 
     #Set backface culling to TRUE
     in_material.use_backface_culling = True
@@ -287,6 +307,9 @@ def update_settings(in_material):
     xp_mat.decals[1].is_normal = False
     xp_mat.decals[2].is_normal = True
     xp_mat.decals[3].is_normal = True
+
+    #Finally
+    xp_mat.was_programmatically_updated = False
 
 #Internal function to create the node setup for the keying of a decal
 def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_g, key_b, key_a, key_base, key_mod):
@@ -508,15 +531,15 @@ def update_nodes(material):
             update_settings(material)
 
         #Resolve paths. They are relative to the blender file or relative to one folder back. We assume one folder back first. If the file is not found, we assume it is in the same folder as the blender file.
-        str_image_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.alb_texture))
-        str_image_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.normal_texture))
-        str_image_mat = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.material_texture))
-        str_image_lit = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.lit_texture))
-        str_image_mod = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_modulator))
-        str_image_decal_1_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[0].texture))
-        str_image_decal_2_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[1].texture))
-        str_image_decal_1_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[2].texture))
-        str_image_decal_2_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[3].texture))
+        str_image_alb = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.alb_texture))
+        str_image_nml = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.normal_texture))
+        str_image_mat = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.material_texture))
+        str_image_lit = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.lit_texture))
+        str_image_mod = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decal_modulator))
+        str_image_decal_1_alb = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decals[0].texture))
+        str_image_decal_2_alb = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decals[1].texture))
+        str_image_decal_1_nml = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decals[2].texture))
+        str_image_decal_2_nml = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decals[3].texture))
 
         if not xp_material_props.decals[0].enabled:
             str_image_decal_1_alb = ""

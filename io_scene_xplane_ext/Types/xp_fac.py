@@ -555,8 +555,6 @@ class facade:
             cur_floor.roof_objs.sort(key=lambda obj: obj.resource)
 
     def write(self, out_path):
-        out_path = file_utils.sanitize_path(out_path)
-
         log_utils.new_section(f"Writing .fac {out_path}")
 
         output_folder = os.path.dirname(out_path)
@@ -593,13 +591,13 @@ class facade:
 
             #Textures
             if mat.alb_texture != "":
-                output += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(mat.alb_texture), output_folder) + "\n"
+                output += "TEXTURE " + os.path.relpath(file_utils.to_absolute(mat.alb_texture), output_folder) + "\n"
             if mat.lit_texture != "":
-                output += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(mat.lit_texture), output_folder) + "\n"
+                output += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(mat.lit_texture), output_folder) + "\n"
             if mat.normal_texture != "":
-                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.rel_to_abs(mat.normal_texture), output_folder)+ "\n"
+                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.to_absolute(mat.normal_texture), output_folder)+ "\n"
             if mat.decal_modulator != "":
-                output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
+                output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(mat.decal_modulator), output_folder) + "\n"
 
             #Write the decals
             if len(mat.decals) > 0:
@@ -638,13 +636,13 @@ class facade:
 
             #Textures
             if mat.alb_texture != "":
-                output += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(mat.alb_texture), output_folder) + "\n"
+                output += "TEXTURE " + os.path.relpath(file_utils.to_absolute(mat.alb_texture), output_folder) + "\n"
             if mat.lit_texture != "":
-                output += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(mat.lit_texture), output_folder) + "\n"
+                output += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(mat.lit_texture), output_folder) + "\n"
             if mat.normal_texture != "":
-                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.rel_to_abs(mat.normal_texture), output_folder)+ "\n"
+                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.to_absolute(mat.normal_texture), output_folder)+ "\n"
             if mat.decal_modulator != "":
-                output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(mat.decal_modulator), output_folder) + "\n"
+                output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(mat.decal_modulator), output_folder) + "\n"
 
             #Write the decals
             if len(mat.decals) > 0:
@@ -895,6 +893,8 @@ class facade:
                     decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
 
+            material_config.update_settings(wall_material)
+
             facade_props.wall_material = wall_material
             
         if self.import_roof_material:
@@ -929,6 +929,8 @@ class facade:
                         break
                     decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
+
+            material_config.update_settings(roof_material)
 
             facade_props.roof_material = roof_material
         # Add floors to the collection

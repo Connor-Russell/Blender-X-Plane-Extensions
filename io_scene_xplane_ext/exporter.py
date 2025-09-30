@@ -19,18 +19,7 @@ def export_fac(in_col):
     output = xp_fac.facade()
     output.from_collection(in_col)
 
-    export_path = ""
-    if in_col.xp_fac.name != "":
-        #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
-        if in_col.xp_fac.name.endswith(("/", "\\")):
-            export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_fac.name), in_col.name + ".fac")
-        else:
-            export_path = file_utils.rel_to_abs(in_col.xp_fac.name + ".fac")
-    else:
-        export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".fac")
-
-    if export_path.lower().endswith(".fac.fac"):
-        export_path = export_path[:-4]
+    export_path = file_utils.resolve_file_export_path(in_col.xp_fac.name, in_col.name, ".fac")
 
     #Write the file
     output.write(export_path)
@@ -42,18 +31,7 @@ def export_lin(in_col):
     output = xp_lin.line()
     output.from_collection(in_col)
 
-    export_path = ""
-    if in_col.xp_lin.name != "":
-        #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
-        if in_col.xp_lin.name.endswith(("/", "\\")):
-            export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_lin.name), in_col.name + ".lin")
-        else:
-            export_path = file_utils.rel_to_abs(in_col.xp_lin.name + ".lin")
-    else:
-        export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".lin")
-
-    if export_path.lower().endswith(".lin.lin"):
-        export_path = export_path[:-4]
+    export_path = file_utils.resolve_file_export_path(in_col.xp_lin.name, in_col.name, ".lin")
 
     #Write the file
     output.write(export_path)
@@ -65,18 +43,7 @@ def export_pol(in_col):
     output = xp_pol.polygon()
     output.from_collection(in_col)
 
-    export_path = ""
-    if in_col.xp_pol.name != "":
-        #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
-        if in_col.xp_pol.name.endswith(("/", "\\")):
-            export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_pol.name), in_col.name + ".pol")
-        else:
-            export_path = file_utils.rel_to_abs(in_col.xp_pol.name + ".pol")
-    else:
-        export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".pol")
-
-    if export_path.lower().endswith(".pol.pol"):
-        export_path = export_path[:-4]
+    export_path = file_utils.resolve_file_export_path(in_col.xp_pol.name, in_col.name, ".pol")
 
     # Write the file
     output.write(export_path)
@@ -88,21 +55,12 @@ def export_agp(in_col):
     output = xp_agp.agp()
 
     #Attempt to get the collection data, if it fails we won't write anything
-    if output.from_collection(in_col):
-        export_path = ""
-        if in_col.xp_agp.name != "":
-            #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
-            if in_col.xp_agp.name.endswith(("/", "\\")):
-                export_path = os.path.join(file_utils.rel_to_abs(in_col.xp_agp.name), in_col.name + ".agp")
-            else:
-                export_path = file_utils.rel_to_abs(in_col.xp_agp.name + ".agp")
-        else:
-            export_path = os.path.join(os.path.dirname(bpy.data.filepath), in_col.name + ".agp")
-
-        if export_path.lower().endswith(".agp.agp"):
-            export_path = export_path[:-4]
-
-        # Write the file
-        output.write(export_path)
+    if output.from_collection(in_col):       
+      export_path = ""
+      if in_col.xp_agp.name != "":
+          export_path = file_utils.resolve_file_export_path(in_col.xp_agp.name, in_col.name, ".agp")
+        
+          # Write the file
+          output.write(export_path)
 
     log_utils.display_messages()

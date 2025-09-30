@@ -47,6 +47,7 @@ TestExport =            True
 TestImport =            True
 InternalTest =          True
 TestBaker =             True
+TestInApp =             True
 
 def run_blender(blender_exe, blend_file, script):
     subprocess.run([
@@ -65,6 +66,8 @@ def test_all(blender_exe):
         run_blender(blender_exe, BlenderFileInternalTests, os.path.join(TestDir, "internal_tests.py"))
     if TestBaker:
         run_blender(blender_exe, BlenderFileBakeTest, os.path.join(TestDir, "bake_test.py"))
+    if TestInApp:
+        run_blender(blender_exe, BlenderFileImporter, os.path.join(TestDir, "in_app_tests.py"))
 
 #Run python build.py (same dir as this)
 subprocess.run(["python", "build.py"], cwd=cd)

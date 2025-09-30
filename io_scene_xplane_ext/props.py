@@ -6,7 +6,7 @@
 
 import bpy # type: ignore
 from . import material_config
-from .Helpers import facade_utils
+from .Helpers import file_utils
 from bpy.app.handlers import persistent # type: ignore
 
 #Enum for types. Can be START END or SEGMENT
@@ -62,6 +62,23 @@ def update_ui(self, context):
     if context != None:
         if context.area != None:
             context.area.tag_redraw()
+
+#Sanitizes and includes the // in all material texture paths. Why? Because when Blender goes to file browse again, it will actually go to the right spot thanks to the //
+def sanitize_mat_paths(self, context):
+    if self.alb_texture != "":
+        self.alb_texture = file_utils.to_relative(self.alb_texture)
+    if self.normal_texture != "":
+        self.normal_texture = file_utils.to_relative(self.normal_texture)
+    if self.lit_texture != "":
+        self.lit_texture = file_utils.to_relative(self.lit_texture)
+    if self.material_texture != "":
+        self.material_texture = file_utils.to_relative(self.material_texture)
+    if self.weather_texture != "":
+        self.weather_texture = file_utils.to_relative(self.weather_texture)
+    for decal in self.decals:
+        if decal.texture != "":
+            decal.texture = file_utils.to_relative(decal.texture)
+    update_ui(self, context)
 
 #General properties
 

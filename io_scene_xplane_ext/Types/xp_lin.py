@@ -55,8 +55,6 @@ class line():
         self.surface = "NONE"
 
     def write(self, output_path):
-        output_path = file_utils.sanitize_path(output_path)
-
         log_utils.new_section(f"Writing .lin {output_path}")
 
         output_folder = os.path.dirname(output_path)
@@ -70,13 +68,13 @@ class line():
         of += "#Materials\n"
 
         if self.alb_texture != "":
-            of += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(self.alb_texture), output_folder) + "\n"
+            of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
         if self.lit_texture != "":
-            of += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(self.lit_texture), output_folder) + "\n"
+            of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
         if self.nml_texture != "":
-            of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
+            of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
         if self.weather_texture != "":
-                of += "WEATHER " + os.path.relpath(file_utils.rel_to_abs(self.weather_texture), output_folder) + "\n"
+                of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
         else:
             of += "WEATHER_TRANSPARENT\n"
         if self.super_rough:
@@ -89,7 +87,7 @@ class line():
 
         #Write the modulator texture
         if self.mod_texture != "":
-            of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(self.mod_texture), output_folder) + "\n"
+            of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder) + "\n"
         #Write the decals
         if len(self.decals) > 0:
             of += "#Decals\n"
@@ -394,6 +392,8 @@ class line():
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
+
+        material_config.update_settings(mat)
 
         #Now we will iterate through every segment, and generate a plane for it
         for seg in self.segments:

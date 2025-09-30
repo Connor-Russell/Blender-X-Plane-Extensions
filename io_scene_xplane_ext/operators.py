@@ -119,7 +119,7 @@ class IMPORT_fac(bpy.types.Operator, ImportHelper):
 class IMPORT_obj(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_obj"
     bl_label = "Import X-Plane Object"
-    filename_ext = ".fac"
+    filename_ext = ".obj"
     filter_glob: bpy.props.StringProperty(default="*.obj", options={'HIDDEN'}) # type: ignore
     files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
 
@@ -152,50 +152,6 @@ class IMPORT_agp(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
 
-class TEST_IMPORT_obj(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_obj"
-    bl_label = "Test Import X-Plane Lines"
-    bl_description = "Test the import of X-Plane lines. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_obj(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_lin(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_lin"
-    bl_label = "Test Import X-Plane Lines"
-    bl_description = "Test the import of X-Plane lines. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_lin(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_pol(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_pol"
-    bl_label = "Test Import X-Plane Polygons"
-    bl_description = "Test the import of X-Plane polygons. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_pol(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_fac(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_fac"
-    bl_label = "Test Import X-Plane Facade"
-    bl_description = "Test the import of X-Plane facades. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_fac(self.import_path)
-
-        return {'FINISHED'}
-
 class BTN_mats_autoodetect_textures(bpy.types.Operator):
     """Autodetects the texture"""
     bl_idname = "xp_ext.autodetect_texture"
@@ -220,22 +176,22 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         name = name.replace(".png", "")
         name = name.replace(".dds", "")
         
-        alb_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_albedo + ".png")
+        alb_check_path = file_utils.to_absolute(name + addon_prefs.suffix_albedo + ".png")
         
         #Define the paths for the NML, and LIT
-        nml_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_combined_normal + ".png")
-        lit_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_lit + ".png")
+        nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_combined_normal + ".png")
+        lit_check_path = file_utils.to_absolute(name + addon_prefs.suffix_lit + ".png")
         mat_check_path = ""
 
         if material.xp_materials.do_separate_material_texture:
-            nml_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_normal + ".png")
-            mat_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_material + ".png")
+            nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_normal + ".png")
+            mat_check_path = file_utils.to_absolute(name + addon_prefs.suffix_material + ".png")
 
         #Set properties if the paths exist
-        material.xp_materials.alb_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(alb_check_path))
-        material.xp_materials.normal_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(nml_check_path))
-        material.xp_materials.lit_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(lit_check_path))
-        material.xp_materials.material_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(mat_check_path))
+        material.xp_materials.alb_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(alb_check_path))
+        material.xp_materials.normal_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(nml_check_path))
+        material.xp_materials.lit_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(lit_check_path))
+        material.xp_materials.material_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(mat_check_path))
 
 
         #Return success
@@ -324,7 +280,8 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
     def execute(self, context):
         for obj in context.selected_objects:
             #Check that the object has a deform modifier
-            if not any(mod.type == 'ARMATURE' for mod in obj.modifiers):
+            physics_types = {'ARMATURE', 'CLOTH', 'SOFT_BODY', 'FLUID', 'DYNAMIC_PAINT', 'COLLISION', 'SMOKE'}
+            if not any(mod.type in physics_types for mod in obj.modifiers):
                 continue
             if self.autoanim_autodetect:
                 start_frame, end_frame, start_value, end_value = anim_actions.autodetect_frame_range(obj, self.autoanim_autodetect_fps)

@@ -70,15 +70,70 @@ def test(test_dir):
                 raise FileNotFoundError(f"Asset file not found: {asset_import_path}")
 
             if asset_extension == '.fac':
-                bpy.ops.xp_ext.test_import_fac(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_fac(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    directory=directory,
+                    files=files
+                )
             elif asset_extension == '.obj':
-                bpy.ops.xp_ext.test_import_obj(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_obj(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    directory=directory,
+                    files=files
+                )
             elif asset_extension == '.pol':
-                bpy.ops.xp_ext.test_import_pol(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_pol(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    directory=directory,
+                    files=files
+                )
             elif asset_extension == '.lin':
-                bpy.ops.xp_ext.test_import_lin(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_lin(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    directory=directory,
+                    files=files
+                )
             elif asset_extension == '.agp':
-                bpy.ops.xp_ext.test_import_agp(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_agp(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    directory=directory,
+                    files=files
+                )
             
             #Now we will get the two collections
             col1 = None

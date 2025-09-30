@@ -1,12 +1,12 @@
-2025-09-02 19-41-37
+2025-09-19 20-29-28
 Test Name,Result,Percentage,Message
 2.9 Tests
 Export Tests:
-Asphalt_Striped_Dark:,PASS,100.00%,"Different line count 0"
+Asphalt_Striped_Dark:,PASS,98.21%,"Different line count 0"
 Enhanced_Center_B:,PASS,100.00%,"Different line count 0"
 LineExporter:,PASS,100.00%,"Different line count 0"
-PolygonExporter:,PASS,100.00%,"Different line count 0"
-TestFacade:,PASS,100.00%,"Different line count 0"
+PolygonExporter:,PASS,99.12%,"Different line count 0"
+TestFacade:,PASS,99.99%,"Different line count 0"
 Export Test Summary:,PASS,100.00%,"Total tests: 5, Failed: 0"
 Import Tests:
 Asphalt_Striped_Dark:,PASS,100.00%,"Differences: "
@@ -17,7 +17,7 @@ MyLine:,PASS,100.00%,"Differences: "
 XCD_Jetway:,PASS,100.00%,"Differences: "
 Import Test Summary:,PASS,100.00%,"Total tests: 6, Failed: 0"
 TEST_get_all_collections_from_view_layer,"PASS"
-TEST_get_roof_data,"PASS"
+TEST_get_roof_data,"FAIL,Expected roof object at (1, 2, 3), got (0.0, 0.0, 0.0)."
 TEST_keyframing,"PASS"
 TEST_get_draw_call_from_obj,"PASS"
 TEST_world_space_transform,"PASS"

@@ -61,8 +61,6 @@ class polygon():
         self.subtextures = [[]] #List of arrays of 4 values (translating to left, bottom, right, top, UVs)
 
     def write(self, output_path):
-        output_path = file_utils.sanitize_path(output_path)
-        
         log_utils.new_section(f"Writing .pol {output_path}")
 
         output_folder = os.path.dirname(output_path)
@@ -77,25 +75,25 @@ class polygon():
 
         if self.nowrap:
             if self.alb_texture != "":
-                of += "TEXTURE_NOWRAP " + os.path.relpath(file_utils.rel_to_abs(self.alb_texture), output_folder) + "\n"
+                of += "TEXTURE_NOWRAP " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
             if self.lit_texture != "":
-                of += "TEXTURE_LIT_NOWRAP " + os.path.relpath(file_utils.rel_to_abs(self.lit_texture), output_folder) + "\n"
+                of += "TEXTURE_LIT_NOWRAP " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
             if self.nml_texture != "":
-                of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
+                of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
         else:
             if self.alb_texture != "":
-                of += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(self.alb_texture), output_folder) + "\n"
+                of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
             if self.lit_texture != "":
-                of += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(self.lit_texture), output_folder) + "\n"
+                of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
             if self.nml_texture != "":
-                of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
+                of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
             if self.weather_texture != "":
-                of += "WEATHER " + os.path.relpath(file_utils.rel_to_abs(self.weather_texture), output_folder) + "\n"
+                of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
             else:
                 of += "WEATHER_TRANSPARENT\n"
         
         if self.mod_texture != "":
-                of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.rel_to_abs(self.mod_texture), output_folder) + "\n"
+                of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder) + "\n"
         
         if self.super_rough:
             of += "SUPER_ROUGHNESS\n"
@@ -124,9 +122,9 @@ class polygon():
         if self.do_load_center:
             of += "LOAD_CENTER " + misc_utils.ftos(self.load_center_lat, 8) + " " + misc_utils.ftos(self.load_center_lon, 8) + " " + str(int(self.load_center_size)) + " " + str(int(self.load_center_res)) + "\n"
         if self.do_tiling:
-            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.rel_to_abs(self.tiling_map_texture), output_folder) + "\n"
+            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
         if self.do_runway_markings:
-            of += "RUNWAY_MARKINGS " + misc_utils.ftos(self.runway_r, 4) + " " + misc_utils.ftos(self.runway_g, 4) + " " + misc_utils.ftos(self.runway_b, 4) + " " + misc_utils.ftos(self.runway_a, 4) + " " + os.path.relpath(file_utils.rel_to_abs(self.runway_marking_texture), output_folder) + "\n"
+            of += "RUNWAY_MARKINGS " + misc_utils.ftos(self.runway_r, 4) + " " + misc_utils.ftos(self.runway_g, 4) + " " + misc_utils.ftos(self.runway_b, 4) + " " + misc_utils.ftos(self.runway_a, 4) + " " + os.path.relpath(file_utils.to_absolute(self.runway_marking_texture), output_folder) + "\n"
         if self.do_runway_noise:
             of += "RUNWAY_NOISE\n"
 
@@ -404,6 +402,9 @@ class polygon():
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
+
+        #Final material update
+        material_config.update_settings(mat)
 
         # Set collection properties
         new_collection.xp_pol.exportable = True
