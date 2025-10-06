@@ -651,6 +651,14 @@ class MENU_mats(bpy.types.Panel):
 
                 box.prop(xp_materials, "cockpit_device_lighting_channel")
 
+            #---------------------------------Conversion Operators---------------------------------
+            layout.separator()
+            layout.label(text="Conversion Operators")
+            separate_op = layout.operator("xp_ext.convert_combined_xp_nml_to_separate", text="Separate combined normal map")
+            separate_op.material_name = material.name
+            combine_op = layout.operator("xp_ext.convert_separate_maps_to_combined_xp_nml", text="Combine separated material maps")
+            combine_op.material_name = material.name
+
 class MENU_operations(bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
     bl_label = "X-Plane Extensions"
@@ -676,8 +684,16 @@ class MENU_operations(bpy.types.Panel):
         box = layout.box()
         box.prop(xp_ext, "menu_bake_expanded", text="High Poly to Low Poly Bake", icon='TRIA_DOWN' if xp_ext.menu_bake_expanded else 'TRIA_RIGHT', emboss=False)
         if xp_ext.menu_bake_expanded:
+            box.prop(xp_ext, "low_poly_bake_do_alb")
+            box.prop(xp_ext, "low_poly_bake_do_opacity")
+            box.prop(xp_ext, "low_poly_bake_do_nrm")
+            if not xp_ext.low_poly_bake_do_separate_normals:
+                box.prop(xp_ext, "low_poly_bake_do_mat")
+            box.prop(xp_ext, "low_poly_bake_do_lit")
+            box.separator()
             box.prop(xp_ext, "low_poly_bake_resolution")
             box.prop(xp_ext, "low_poly_bake_ss_factor")
+            box.prop(xp_ext, "low_poly_bake_margin")
             box.separator()
             box.prop(xp_ext, "low_poly_bake_extrusion_distance")
             box.prop(xp_ext, "low_poly_bake_max_ray_distance")

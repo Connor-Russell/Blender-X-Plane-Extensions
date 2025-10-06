@@ -16,6 +16,7 @@ from .Helpers import decal_utils
 from .Helpers import misc_utils
 from .Helpers import log_utils
 from .Helpers import facade_utils
+from .Helpers import normal_conversion_utils
 from . import anim_actions
 from . import auto_baker
 import os
@@ -1055,6 +1056,148 @@ class BTN_preview_lods_for_distance(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_convert_combined_xp_nml_to_separate(bpy.types.Operator):
+    """Convert combined X-Plane normal map to separate normal and material maps"""
+    bl_idname = "xp_ext.convert_combined_xp_nml_to_separate"
+    bl_label = "Convert combined X-Plane normal map into separate normal and material maps"
+    bl_description = "Converts a combined X-Plane normal map into separate normal and material maps, and updates the material to use the new maps. The new maps are saved in the same directory as the original normal map with the suffixes specified in the addon preferences."
+
+    material_name: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        log_utils.new_section("Convert Combined X-Plane Normal Map")
+
+        #Get the target material
+        mat = bpy.data.materials.get(self.material_name)
+        if not mat:
+            log_utils.error(f"Material '{self.material_name}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Make sure we weren't already set to separate
+        if mat.xp_materials.do_separate_material_texture:
+            log_utils.error(f"Material '{self.material_name}' is already set to use separate normal and material maps.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+            
+        #Get the image paths from the material
+        nml_path = mat.xp_materials.normal_texture
+        if not nml_path:
+            log_utils.error(f"Material '{self.material_name}' does not have a normal map set.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Resolve it to a real path
+        nml_path = file_utils.to_absolute(nml_path)
+
+        if not os.path.isfile(nml_path):
+            log_utils.error(f"Normal map file '{nml_path}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Call the conversion function
+        new_nrm_path = ""
+        new_mat_path = ""
+        try:
+            new_nrm_path, new_mat_path = normal_conversion_utils.separate_xp_combined_nml(nml_path)
+        except Exception as e:
+            log_utils.error(f"Error converting normal map '{nml_path}': {e}")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Make sure we got valid paths back
+        if new_nrm_path == "" or new_mat_path == "":
+            log_utils.error(f"Error converting normal map '{nml_path}': conversion function returned empty paths. This should never happen - please contact the developer of X-PlaneBlenderExtensions!")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Set the material to use separate normal and material maps
+        mat.xp_materials.do_separate_material_texture = True
+
+        #Update the paths
+        mat.xp_materials.normal_texture = file_utils.to_relative(new_nrm_path)
+        mat.xp_materials.material_texture = file_utils.to_relative(new_mat_path)
+
+        #Update the nodes
+        material_config.update_nodes(mat)
+
+        return {'FINISHED'}
+
+class BTN_convert_separate_maps_to_combined_xp_nml(bpy.types.Operator):
+    """Convert separate normal and material maps to combined X-Plane normal map"""
+    bl_idname = "xp_ext.convert_separate_maps_to_combined_xp_nml"
+    bl_label = "Convert separate normal and material maps into combined X-Plane normal map"
+    bl_description = "Converts separate normal and material maps into a combined X-Plane normal map, and updates the material to use the new map. The new map is saved in the same directory as the original normal map with the suffix specified in the addon preferences."
+
+    material_name: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        log_utils.new_section("Convert Separate Normal and Material Maps to Combined X-Plane Normal Map")
+
+        #Get the target material
+        mat = bpy.data.materials.get(self.material_name)
+        if not mat:
+            log_utils.error(f"Material '{self.material_name}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Make sure we are set to separate
+        if not mat.xp_materials.do_separate_material_texture:
+            log_utils.error(f"Material '{self.material_name}' is already set to use a combined X-Plane normal map.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+            
+        #Get the image paths from the material
+        nml_path = mat.xp_materials.normal_texture
+        mat_path = mat.xp_materials.material_texture
+        if not nml_path:
+            log_utils.error(f"Material '{self.material_name}' does not have a normal map set.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        if not mat_path:
+            log_utils.error(f"Material '{self.material_name}' does not have a material map set.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Resolve them to real paths
+        nml_path = file_utils.to_absolute(nml_path)
+        mat_path = file_utils.to_absolute(mat_path)
+
+        if not os.path.isfile(nml_path):
+            log_utils.error(f"Normal map file '{nml_path}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        if not os.path.isfile(mat_path):
+            log_utils.error(f"Material map file '{mat_path}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Call the conversion function
+        new_nml_path = ""
+        try:
+            new_nml_path = normal_conversion_utils.combine_to_xp_normal_map(nml_path, mat_path)
+        except Exception as e:
+            log_utils.error(f"Error converting normal and material maps '{nml_path}' and '{mat_path}': {e}")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Make sure we got a valid path back
+        if new_nml_path == "":
+            log_utils.error(f"Error converting normal and material maps '{nml_path}' and '{mat_path}'. This should never happen - please contact the developer of X-PlaneBlenderExtensions!")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Set the material to use combined normal map
+        mat.xp_materials.do_separate_material_texture = False
+
+        #Update the path
+        mat.xp_materials.normal_texture = file_utils.to_relative(new_nml_path)
+        mat.xp_materials.material_texture = ""
+
+        #Update the nodes
+        material_config.update_nodes(mat)
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -1091,6 +1234,8 @@ def register():
     bpy.utils.register_class(BTN_copy_decal)
     bpy.utils.register_class(BTN_paste_decal)
     bpy.utils.register_class(BTN_preview_lods_for_distance)
+    bpy.utils.register_class(BTN_convert_combined_xp_nml_to_separate)
+    bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -1122,4 +1267,6 @@ def unregister():
     bpy.utils.unregister_class(BTN_copy_decal)
     bpy.utils.unregister_class(BTN_paste_decal)
     bpy.utils.unregister_class(BTN_preview_lods_for_distance)
+    bpy.utils.unregister_class(BTN_convert_combined_xp_nml_to_separate)
+    bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

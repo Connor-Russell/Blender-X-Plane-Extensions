@@ -78,6 +78,13 @@ class XP_EXT_prefs(bpy.types.AddonPreferences):
         default=False,
     ) #type: ignore
 
+    do_backup_on_overwrite: bpy.props.BoolProperty(
+        name="Backup Files on Overwrite",
+        description="When overwriting files (such as when baking or converting textures), create a backup of the existing file first. Backups will be of the form filename_YYYYMMDD_HHMMSS.ext",
+        default=True,
+    ) #type: ignore
+
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="X-Plane Extensions Preferences")

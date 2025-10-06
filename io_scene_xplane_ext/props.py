@@ -175,9 +175,51 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         min=0.0,
     ) #type: ignore
 
+    low_poly_bake_margin: bpy.props.IntProperty(
+        name="Bake Margin",
+        description="The margin of the low poly bake",
+        default=2,
+        min=0
+    ) #type: ignore
+
     low_poly_bake_do_separate_normals: bpy.props.BoolProperty(
         name="Separate Normals",
         description="Whether to separate the normals from the material map, or use the combined format",
+        default=False,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_alb: bpy.props.BoolProperty(
+        name="Bake Albedo",
+        description="Whether to bake the albedo map",
+        default=True,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_nrm: bpy.props.BoolProperty(
+        name="Bake Normal",
+        description="Whether to bake the normal map",
+        default=True,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_mat: bpy.props.BoolProperty(
+        name="Bake Material",
+        description="Whether to bake the material map",
+        default=True,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_lit: bpy.props.BoolProperty(
+        name="Bake Lit",
+        description="Whether to bake the lit map",
+        default=False,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_opacity: bpy.props.BoolProperty(
+        name="Bake Opacity",
+        description="Whether to bake the opacity map",
         default=False,
         update=update_ui
     ) #type: ignore
@@ -360,6 +402,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
+    #If calling this from code, always set was_programmatically_updated to True first!!!
     do_separate_material_texture: bpy.props.BoolProperty(
         name="Use separate Material Texture",
         description="Whether to use a separate material texture for the material",

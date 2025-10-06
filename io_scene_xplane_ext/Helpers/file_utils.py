@@ -8,6 +8,8 @@ import os
 import bpy
 import sys
 from . import log_utils
+import datetime
+import time
 
 def sanitize_path(path):
     """
@@ -254,3 +256,57 @@ def get_or_load_image(image_path, do_reload=False, copy_append_name=""):
     new_image = bpy.data.images.load(image_path)
     new_image.name = image_appended_name
     return new_image                 
+
+def backup_file(in_file_path):
+    """
+    Generates a backup file name by appending a timestamp to the original file name.
+
+    Args:
+        in_file_path (str): The original file path.
+
+    Returns:
+        str: The backup file path with a timestamp.
+    """
+
+    #If the file doesn't exist, we're done!
+    if os.path.isfile(in_file_path) == False:
+        return
+    
+    #We only backup if the preferences say to, so check that
+    if not bpy.context.preferences.addons['io_scene_xplane_ext'].preferences.do_backup_on_overwrite:
+        return
+
+    #Get the directory and base name
+    dir_name = os.path.dirname(in_file_path)
+    base_name = os.path.basename(in_file_path)
+    name, ext = os.path.splitext(base_name)
+
+    #Get the file modified time, then create a timestamp from it. If we fail to get modified time, just use the current time.
+    timestamp = ""
+    try:
+        mtime = os.path.getmtime(in_file_path)
+        timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime(mtime))
+    except:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    #Now we get to try to create the full name. HOWEVER, what if two files have the same modified time at the same sec and therefore had the same name? Ok yeah idk how that would happen other than someone manually named the file that but let's be safe
+    #If a file exists with this name, we'll append _iter to the name, incrementing iter until we find a name that doesn't exist
+
+    iter = 0
+    backup_file_name = ""
+    while True:
+        if iter == 0:
+            backup_file_name = f"{name}_backup_{timestamp}{ext}"
+        else:
+            backup_file_name = f"{name}_backup_{timestamp}_{iter}{ext}"
+        backup_file_path = os.path.join(dir_name, backup_file_name)
+        if not os.path.exists(backup_file_path):
+            break
+        iter += 1
+
+    #Try to rename the file
+    try:
+        os.rename(in_file_path, backup_file_path)
+        log_utils.info(f"Backed up file {in_file_path} to {backup_file_path}")
+    except Exception as e:
+        raise RuntimeError(f"Failed to back up file {in_file_path} to {backup_file_path}: {e}")
