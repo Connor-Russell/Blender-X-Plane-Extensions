@@ -73,7 +73,7 @@ def run_inapp_test(test_name, filepath, test_func):
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
 
-    test_dir = os.path.join(os.path.dirname(bpy.data.filepath), "In App Tests")
+    test_dir = os.getcwd()
 
     tests = [
         ["Auto Keyframe Test", "Autokeyframe.blend", in_app_anim_tool_test.inapp_autokeyframe_test],

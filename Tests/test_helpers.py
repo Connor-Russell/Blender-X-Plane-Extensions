@@ -11,6 +11,7 @@ import collections
 import mathutils
 import math
 import os
+import numpy as np
 
 class difference:
     def __init__(self, category="Unspecified", message="Unspecified"):
@@ -257,7 +258,40 @@ def get_draw_call_from_obj(obj):
 
         return (out_verts, out_inds)
 
-#Function that compares each byte of two files to check how similar the files are. Returns a value 0-1 for 0% to 100% similarity.
+def compare_images(img1, img2):
+    """
+    Compares two images and returns a similarity ratio (0-1).
+    """
+    try:
+        print("Loading images...")
+        img1 = bpy.data.images.load(file1)
+        img2 = bpy.data.images.load(file2)
+
+        # Check if the images are the same size
+        if img1.size[0] != img2.size[0] or img1.size[1] != img2.size[1]:
+            print("Images are not the same size.")
+            return 0
+
+        # Convert pixel data to NumPy arrays
+        pixels1 = np.array(img1.pixels[:])
+        pixels2 = np.array(img2.pixels[:])
+
+        # Calculate the absolute difference between the two images
+        #I... don't actually know why this works. But the results *appear* right and Github Copilot told me to soooo...
+        #If python wasn't SOOOOOOOOOOOOOOOO SLOW I'd do this with a simple nested for *cries in c++*
+        diff = np.abs(pixels1 - pixels2)
+
+        # Calculate the similarity ratio
+        total_pixels = len(pixels1)
+        similarity = 1 - (np.sum(diff) / total_pixels)
+
+        print("Images compared.")
+        return max(0, similarity)  # Ensure similarity is not negative
+
+    except Exception as e:
+        print(f"Error comparing images: {e}")
+        return 0
+
 def compare_files(file1, file2):
     """
     Compare two files byte by byte and return the line count difference and similarity ratio (0-1).
@@ -630,3 +664,20 @@ def differences_to_string(differences):
     #Now we print each difference
     for diff in differences:
         out += f"{diff.message}, "
+
+def to_absolute(in_path, base_path):
+    """
+    Convert a relative path to an absolute path based on the current Blender project directory.
+    Args:
+        in_path (str): Input path, can be relative or absolute.
+    Returns:
+        str: Absolute path.
+    """
+    if in_path.startswith("//"):
+        in_path = in_path[2:]
+
+    if os.path.isabs(in_path):
+        return in_path
+    
+    return os.path.abspath(os.path.join(base_path, in_path))
+    

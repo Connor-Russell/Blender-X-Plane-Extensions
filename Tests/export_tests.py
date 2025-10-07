@@ -128,6 +128,6 @@ def test(test_dir):
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
 
-    test_dir = os.path.dirname(bpy.data.filepath)
+    test_dir = os.getcwd()
 
     test(test_dir)
