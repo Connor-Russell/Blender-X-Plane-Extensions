@@ -373,7 +373,7 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
     """
     #Get the images and resized based on the low poly bake ss factor
     base_image = None
-    nml_image = None
+    nrm_image = None
     roughness_image = None
     metalness_image = None
     lit_image = None
@@ -387,8 +387,8 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
         opacity_image = bpy.data.images.get("BAKE_BUFFER_Opacity")
         opacity_image.scale(int(opacity_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(opacity_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
     if did_nrm:
-        nml_image = bpy.data.images.get("BAKE_BUFFER_Normal")
-        nml_image.scale(int(nml_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(nml_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
+        nrm_image = bpy.data.images.get("BAKE_BUFFER_Normal")
+        nrm_image.scale(int(nrm_image.size[0] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor), int(nrm_image.size[1] / bpy.context.scene.xp_ext.low_poly_bake_ss_factor))
     if did_mat:
         roughness_image = bpy.data.images.get("BAKE_BUFFER_Roughness")
         metalness_image = bpy.data.images.get("BAKE_BUFFER_Metalness")
@@ -434,13 +434,13 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
 
     if not do_separate_normals and did_nrm and did_mat:
         #Get the width and height of the nml
-        width = nml_image.size[0]
-        height = nml_image.size[1]
+        width = nrm_image.size[0]
+        height = nrm_image.size[1]
 
         #Iterate through every pixel in the normal image. Set it's blue to the metalness value, and it's alpha to roughness * -1 + 255
 
         # Convert Blender images to numpy arrays
-        nml_pixels = np.array(nml_image.pixels[:]).reshape((height, width, 4))
+        nml_pixels = np.array(nrm_image.pixels[:]).reshape((height, width, 4))
         metalness_pixels = np.array(metalness_image.pixels[:]).reshape((height, width, 4))
         roughness_pixels = np.array(roughness_image.pixels[:]).reshape((height, width, 4))
 
@@ -453,17 +453,17 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
         final_pixels_nml[:, :, 2] = metalness_pixels[:, :, 2]  # Blue channel from metalness_image
         final_pixels_nml[:, :, 3] = roughness_pixels[:, :, 2]  # Alpha channel from roughness_image
 
-        nml_image.pixels = final_pixels_nml.flatten().tolist()
+        nrm_image.pixels = final_pixels_nml.flatten().tolist()
     else:
         if did_nrm:
             #Get the width and height of the nml
-            width = nml_image.size[0]
-            height = nml_image.size[1]
+            width = nrm_image.size[0]
+            height = nrm_image.size[1]
 
             #Iterate through every pixel in the normal image. Set it's blue to the metalness value, and it's alpha to roughness * -1 + 255
 
             # Convert Blender images to numpy arrays
-            nml_pixels = np.array(nml_image.pixels[:]).reshape((height, width, 4))
+            nml_pixels = np.array(nrm_image.pixels[:]).reshape((height, width, 4))
 
             final_pixels_nrm = np.zeros((height, width, 4), dtype=np.float32)
 
@@ -494,6 +494,10 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
             final_pixels_mat[:, :, 2] = 0  # Blue channel is always 0
             final_pixels_mat[:, :, 3] = 1  # Alpha channel is always 1
 
+            #Create the new image to hold the mat texture and put the pixels into it
+            mat_image = bpy.data.images.new(name="BAKE_BUFFER_Material", width=width, height=height)
+            mat_image.pixels = final_pixels_mat.flatten().tolist()
+
     #Get our prefs for suffixes
     addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
     
@@ -518,15 +522,15 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
         base_image.save()
     if not do_separate_normals and did_nrm and did_mat:
         file_utils.backup_file(nml_output_path)
-        nml_image.filepath_raw = nml_output_path
-        nml_image.file_format = 'PNG'
-        nml_image.save()
-    if did_nrm:
+        nrm_image.filepath_raw = nml_output_path
+        nrm_image.file_format = 'PNG'
+        nrm_image.save()
+    if do_separate_normals and did_nrm:
         file_utils.backup_file(nrm_output_path)
         nrm_image.filepath_raw = nrm_output_path
         nrm_image.file_format = 'PNG'
         nrm_image.save()
-    if did_mat:
+    if do_separate_normals and did_mat:
         file_utils.backup_file(mat_output_path)
         mat_image.filepath_raw = mat_output_path
         mat_image.file_format = 'PNG'
@@ -540,8 +544,8 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
     #Remove all non-none images
     if base_image:
         bpy.data.images.remove(base_image)
-    if nml_image:
-        bpy.data.images.remove(nml_image)
+    if nrm_image:
+        bpy.data.images.remove(nrm_image)
     if roughness_image:
         bpy.data.images.remove(roughness_image)
     if metalness_image:
@@ -550,8 +554,6 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
         bpy.data.images.remove(lit_image)
     if opacity_image:
         bpy.data.images.remove(opacity_image)
-    if nrm_image:
-        bpy.data.images.remove(nrm_image)
     if mat_image:
         bpy.data.images.remove(mat_image)
 
