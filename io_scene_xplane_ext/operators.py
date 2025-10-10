@@ -1198,6 +1198,68 @@ class BTN_convert_separate_maps_to_combined_xp_nml(bpy.types.Operator):
         #Update the nodes
         material_config.update_nodes(mat)
 
+class BTN_find_textures(bpy.types.Operator):
+    """Search for missing material textures relative to a specified directory."""
+    bl_idname = "xp_ext.find_textures"
+    bl_label = "Find Missing Textures"
+    bl_description = "Search for missing material textures relative to a specified directory. This will only update textures that can be found relative to the specified directory."
+
+    filepath: bpy.props.StringProperty( # type: ignore
+        name="Base Path",
+        description="Base path to search for missing textures. If empty, the directory of the current .blend file will be used.",
+        default="",
+        subtype="FILE_PATH"
+    )
+
+    def invoke(self, context, event):
+        print("Invoking file selector for base path")
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        print(f"Finding missing textures with base path: '{self.filepath}'")
+        #Make sure base path is valid
+        if self.filepath == "":
+            return {'CANCELLED'}
+        
+        log_utils.new_section("Find Missing Textures")
+
+        #Define a small function for resolving paths
+        def resolve_path(path: str, base: str) -> str:
+
+            cleaned_path = file_utils.to_relative(path, False)  #We do this *just* in case it's an absolute. Plus it removes the blender //
+
+            if cleaned_path == "":
+                return path
+
+            resolved_path = os.path.join(os.path.dirname(base), cleaned_path)
+
+            if os.path.isfile(resolved_path):
+                log_utils.info(f"Resolved path '{path}' to '{resolved_path}'")
+                return file_utils.to_relative(resolved_path, True)
+            else:
+                log_utils.info(f"Could not resolve path '{path}' to '{resolved_path}'")
+                return path
+
+        #Get all materials in the project
+        mats = bpy.data.materials
+
+        #Iterate over all materials and check their texture paths
+        for mat in mats:
+            mat.xp_materials.alb_texture = resolve_path(mat.xp_materials.alb_texture, self.filepath)
+            mat.xp_materials.normal_texture = resolve_path(mat.xp_materials.normal_texture, self.filepath)
+            mat.xp_materials.material_texture = resolve_path(mat.xp_materials.material_texture, self.filepath)
+            mat.xp_materials.lit_texture = resolve_path(mat.xp_materials.lit_texture, self.filepath)
+            mat.xp_materials.weather_texture = resolve_path(mat.xp_materials.weather_texture, self.filepath)
+            mat.xp_materials.decal_modulator = resolve_path(mat.xp_materials.decal_modulator, self.filepath)
+
+            for decal in mat.xp_materials.decals:
+                decal.texture = resolve_path(decal.texture, self.filepath)
+
+        log_utils.display_messages()
+
+        return {'FINISHED'}
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -1236,6 +1298,7 @@ def register():
     bpy.utils.register_class(BTN_preview_lods_for_distance)
     bpy.utils.register_class(BTN_convert_combined_xp_nml_to_separate)
     bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
+    bpy.utils.register_class(BTN_find_textures)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -1269,4 +1332,5 @@ def unregister():
     bpy.utils.unregister_class(BTN_preview_lods_for_distance)
     bpy.utils.unregister_class(BTN_convert_combined_xp_nml_to_separate)
     bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
+    bpy.utils.unregister_class(BTN_find_textures)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

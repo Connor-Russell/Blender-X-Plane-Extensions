@@ -569,9 +569,6 @@ class MENU_mats(bpy.types.Panel):
             elif xp_materials.blend_mode == "SHADOW":
                 box.prop(xp_materials, "blend_cutoff", text="Shadow Cutoff")
 
-            if xp_materials.blend_mode == "BLEND":
-                box.prop(xp_materials, "use_transparent_blending")
-
             box.separator()
 
             row = box.row()
@@ -678,6 +675,8 @@ class MENU_operations(bpy.types.Panel):
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
 
         layout.operator("xp_ext.update_all_material_nodes", text="Update All Materials")
+
+        layout.operator("xp_ext.find_textures", text="Find Missing Textures")
 
         layout.separator()
         

@@ -597,7 +597,7 @@ class auto_split_obj:
                 mat_collection.xplane.layer.name = obj_name
                 self.resources.append(rel_obj_path)
                 mat_collection.xplane.is_exportable_collection = True
-                mat_collection.xplane.layer.export_type = 'scenery'
+                mat_collection.xplane.layer.export_type = 'instanced_scenery'
                 bpy.context.scene.collection.children.link(mat_collection)
                 mat_name_to_collection[mat] = mat_collection
 

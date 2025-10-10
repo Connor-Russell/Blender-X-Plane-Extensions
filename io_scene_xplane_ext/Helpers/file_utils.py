@@ -53,7 +53,7 @@ def sanitize_path(path):
 
     return ''.join(sanitized)
 
-def remote_blender_prefix(path):
+def remove_blender_prefix(path):
     """
     Removes the Blender relative path prefix (//) from a given path if it exists.
 
@@ -96,7 +96,7 @@ def to_absolute(in_path):
         return ""
 
     #We always sanitize the path first
-    in_path = remote_blender_prefix(in_path)
+    in_path = remove_blender_prefix(in_path)
     in_path = sanitize_path(in_path)
 
     if not _is_relative(in_path) or bpy.data.filepath == "":
@@ -122,7 +122,7 @@ def to_relative(in_path, include_blend_prefix=False):
         return ""
 
     #We always sanitize the path first
-    in_path = remote_blender_prefix(in_path)
+    in_path = remove_blender_prefix(in_path)
     in_path = sanitize_path(in_path)
 
     if _is_relative(in_path):
@@ -158,7 +158,7 @@ def resolve_file_export_path(in_path, col_name, extension):
     export_path = ""
 
     #First off, sanitize all paths
-    in_path = remote_blender_prefix(in_path)    #This is the only path that'd have a blender prefix
+    in_path = remove_blender_prefix(in_path)    #This is the only path that'd have a blender prefix
     in_path = sanitize_path(in_path)
     col_name = sanitize_path(col_name)
     extension = sanitize_path(extension)
