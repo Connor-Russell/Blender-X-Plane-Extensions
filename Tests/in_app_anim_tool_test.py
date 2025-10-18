@@ -1,7 +1,8 @@
 #Project: in-app_anim_tool_tests.py
 #Author: Connor Russell
 #Date: 9/22/2025
-#Purpose: Provide a standardized way to perform in-app tests
+#Module: in_app_anim_tool_test.py
+#Purpose: Define in app tests here, used in in_ap_anim_tests.py
 
 import bpy
 import os

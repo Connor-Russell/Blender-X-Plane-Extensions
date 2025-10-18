@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    XP_Pol
+#Module:    xp_pol.py
 #Purpose:   Provide a class that defines the X-Plane polygon type
 
 #Include decal params from our material plugin

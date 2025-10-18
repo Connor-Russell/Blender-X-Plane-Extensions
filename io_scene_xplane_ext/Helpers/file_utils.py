@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/26/2024
-#Module:    File Utils
-#Purpose:   Provide a single file containing functions for files
+#Module:    file_utils.py
+#Purpose:   Provide functions to aid in handling file paths, loading images, and backing up files.
 
 import os
 import bpy

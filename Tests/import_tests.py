@@ -1,7 +1,8 @@
 #Project: BlenderImportTests
 #Author: Connor Russell
 #Date: 11/9/2024
-#Purpose: Provide a test to import various assets and compare them to previously imported known good assets
+#Module: import_tests.py
+#Purpose: Provide automated test for importing assets for all blender files in the test directory and comparing the results to the known good results
 
 import bpy
 import os

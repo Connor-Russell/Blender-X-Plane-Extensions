@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Props
-#Purpose:   Provide a single file containing functions to configure materials for X-Plane in Blender
+#Module:    material_config.py
+#Purpose:   Provides the operation logic for updating material settings and nodes based on the entered properties
 
 import bpy # type: ignore
 from .Helpers import file_utils

@@ -1,7 +1,8 @@
-#Project: BlenderImportTests
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/9/2024
-#Purpose: Provide a test to import various assets and compare them to previously imported known good assets
+#Module: export_tests.py
+#Purpose: Provides automated tests for exporting files from all formats for all files in the test dir, then comparing them to known good files
 
 import bpy
 import os

@@ -1,8 +1,8 @@
-#Project: Blender X-Plane Extensions
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 4/23/2025
-#Module: test_utils
-#Purpose: Tests utility functions for the X-Plane Blender exporter
+#Module: test_utils.py
+#Purpose: Lightweight internal unit tests for helper functions. This will probably go away soon.
 
 import bpy
 from ..Helpers import collection_utils

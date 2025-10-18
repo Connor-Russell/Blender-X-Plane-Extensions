@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    UI
-#Purpose:   Provide a single file containing functions for drawing the UIs
+#Module:    ui.py
+#Purpose:   Provide UI classes for the plugin
 
 import bpy # type: ignore
 from . import props

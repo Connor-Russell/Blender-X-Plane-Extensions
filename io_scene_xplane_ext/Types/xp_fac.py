@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      4/18/2025
-#Module:    XP_Fac
+#Module:    xp_fac.py
 #Purpose:   Provide classes that abstracts the X-Plane facade format
 
 from ..Helpers import facade_utils # type: ignore

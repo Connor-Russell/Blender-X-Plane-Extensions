@@ -1,7 +1,8 @@
-#Project: normal_conversion_tests
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 10/6/2025
-#Purpose: Test the normal map separate/combine functions
+#Module: normal_conversion.py
+#Purpose: Tests the conversion of combined normal maps to separate normal maps and back.
 
 import bpy
 import os

@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      6/3/2025
-#Module:    Agp Utils
+#Module:    agp_utils.py
 #Purpose:   Provide functions to help with generating autogen points
 
 import bpy

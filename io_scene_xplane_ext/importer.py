@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/23/2025
-#Module:    Import
-#Purpose:   Provide a single file containing functions for importing
+#Module:    importer.py
+#Purpose:   Provide a simple function calls that encapsulate the reading and importing of various X-Plane formats
 
 import bpy #type: ignore
 

@@ -1,7 +1,8 @@
 #Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/9/2024
-#Purpose: Provide utility functions to work with geometry (things like rotating a point, etc)
+#Module: geometry_utils.py
+#Purpose: Provide utility functions for converting between Blender objects and X-Plane vert/idx/tris format.
 
 import collections
 import math

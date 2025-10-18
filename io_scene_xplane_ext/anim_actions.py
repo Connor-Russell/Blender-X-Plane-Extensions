@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      7/10/2025
-#Module:    Anim Actions
-#Purpose:   This file contains functions for performing actions in regards to animations for X-Plane in Blender
+#Module:    anim_actions.py
+#Purpose:   Provides logic for creating animations for X-Plane from Blender unique sources (i.e. mesh deformations)
 
 import bpy
 
