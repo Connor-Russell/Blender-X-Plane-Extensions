@@ -686,7 +686,7 @@ class MENU_operations(bpy.types.Panel):
             box.prop(xp_ext, "low_poly_bake_do_alb")
             box.prop(xp_ext, "low_poly_bake_do_opacity")
             box.prop(xp_ext, "low_poly_bake_do_nrm")
-            if not xp_ext.low_poly_bake_do_separate_normals:
+            if xp_ext.low_poly_bake_do_separate_normals:
                 box.prop(xp_ext, "low_poly_bake_do_mat")
             box.prop(xp_ext, "low_poly_bake_do_lit")
             box.separator()

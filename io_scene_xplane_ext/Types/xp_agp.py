@@ -521,7 +521,7 @@ class auto_split_obj:
         mat_name_to_collection = {}  # Maps material names to collections
         all_objs = []
         fake_lod_objects = []
-        fake_lod_material = bpy.data.materials.new(name="Fake_LOD_Material")
+        lights_fake_lod_material = bpy.data.materials.new("XP2B_Light_Fake_LOD_Material")
 
         try:
             #Duplicate and split all the objects by material
@@ -614,8 +614,13 @@ class auto_split_obj:
 
                 #Add our fake LODs if desired
                 if obj.xp_agp.autosplit_do_fake_lods:
+                    #Get this material by name
+                    mat_for_fake_lod = bpy.data.materials.get(mat)
+                    if mat_for_fake_lod is None:
+                        mat_for_fake_lod = lights_fake_lod_material
+
                     fake_lod_obj = agp_utils.add_fake_lod_obj_to_collections(obj.xp_agp.autosplit_lod_count, obj.xp_agp.autosplit_fake_lods_size)
-                    fake_lod_obj.data.materials.append(fake_lod_material)
+                    fake_lod_obj.data.materials.append(mat_for_fake_lod)
                     mat_collection.objects.link(fake_lod_obj)
 
             #Now we need to move our new objects into the correct collections
@@ -637,6 +642,7 @@ class auto_split_obj:
             #Now we need to configure the settings for each collection
             for col in mat_name_to_collection.values():
                 material_config.update_xplane_collection_settings(col)
+                col.xplane.layer.debug = False
 
             #Now we need to disable export on all other objects, export ours, then reenable ours
             original_collection_export_states = {}
@@ -676,36 +682,37 @@ class auto_split_obj:
             log_utils.error(traceback.format_exc())
             good = False
 
-        #We are now done with exporting, so we can remove the new objects and new collections
-        try:
-            for col in mat_name_to_collection.values():
-                bpy.data.collections.remove(col, do_unlink=True)
-        except Exception as e:
-            log_utils.error(f"Error removing auto-split collections: {e}")
-            log_utils.error(traceback.format_exc())
+        if "DEBUG" not in agp_name:
+            #We are now done with exporting, so we can remove the new objects and new collections
+            try:
+                for col in mat_name_to_collection.values():
+                    bpy.data.collections.remove(col, do_unlink=True)
+            except Exception as e:
+                log_utils.error(f"Error removing auto-split collections: {e}")
+                log_utils.error(traceback.format_exc())
 
-        #Now we can remove the duplicate objects
-        try:
-            for split_obj in all_objs:
-                bpy.data.objects.remove(split_obj, do_unlink=True)
-        except Exception as e:
-            log_utils.error(f"Error removing duplicate objects: {e}")
-            log_utils.error(traceback.format_exc())
+            #Now we can remove the duplicate objects
+            try:
+                for split_obj in all_objs:
+                    bpy.data.objects.remove(split_obj, do_unlink=True)
+            except Exception as e:
+                log_utils.error(f"Error removing duplicate objects: {e}")
+                log_utils.error(traceback.format_exc())
 
-        #Now we can remove the fake LOD objects
-        try:
-            for fake_lod_obj in fake_lod_objects:
-                bpy.data.objects.remove(fake_lod_obj, do_unlink=True)
-        except Exception as e:
-            log_utils.error(f"Error removing fake LOD objects: {e}")
-            log_utils.error(traceback.format_exc())
+            #Now we can remove the fake LOD objects
+            try:
+                for fake_lod_obj in fake_lod_objects:
+                    bpy.data.objects.remove(fake_lod_obj, do_unlink=True)
+            except Exception as e:
+                log_utils.error(f"Error removing fake LOD objects: {e}")
+                log_utils.error(traceback.format_exc())
 
-        try:
-            #Remove the fake LOD material
-            bpy.data.materials.remove(fake_lod_material, do_unlink=True)
-        except Exception as e:
-            log_utils.error(f"Error removing fake LOD material: {e}")
-            log_utils.error(traceback.format_exc())
+            #Now we can remove the fake lod material
+            try:
+                bpy.data.materials.remove(lights_fake_lod_material, do_unlink=True)
+            except Exception as e:
+                log_utils.error(f"Error removing fake LOD material: {e}")
+                log_utils.error(traceback.format_exc())
 
     def to_commands(self, obj_resource_list, transform: agp_utils.agp_transform):
         cmds = []
