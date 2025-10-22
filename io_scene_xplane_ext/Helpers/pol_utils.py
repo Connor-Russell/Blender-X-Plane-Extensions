@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      5/8/2025
-#Module:    Pol Utils
+#Module:    pol_utils.py
 #Purpose:   Provide utility functions for working with polygons in Blender
 
 import bpy

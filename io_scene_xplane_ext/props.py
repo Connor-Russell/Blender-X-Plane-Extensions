@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Props
-#Purpose:   Provide a single file containing all properties for an X-Plane Line Object
+#Module:    props.py
+#Purpose:   Provide definitions for all property groups for the plugin
 
 import bpy # type: ignore
 from . import material_config

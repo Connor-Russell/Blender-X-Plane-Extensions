@@ -1,7 +1,8 @@
 #Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/20/2024
-#Purpose: Provide a class that contains all the data for a decal
+#Module: decal_utils.py
+#Purpose: Provide helper functions for decal management in X-Plane materials.
 
 import bpy # type: ignore
 import os

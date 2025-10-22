@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Operators
-#Purpose:   Provide a single file containing all operators for the X-Plane Line Exporter
+#Module:    operators.py
+#Purpose:   Provides the operator definitions for the plugin (most of the complex logic is in other files, this is largely for just for wrappers)
 
 import bpy  # type: ignore
 from bpy_extras.io_utils import ImportHelper # type: ignore

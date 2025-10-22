@@ -1,7 +1,9 @@
 #Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/9/2024
-#Purpose: Provide utility functions to help in extracting the geometry and attached objects from the individual objects in a layer.
+#Module: xp_attached_obj.py
+#Purpose: Provide a class to hold data for X-Plane Facade attached objects.
+#TODO: This is a little messy and probably unnecessary, we may be able to get rid of this entirely and embed it directly in the .fac code
 
 #Blender modules
 import collections

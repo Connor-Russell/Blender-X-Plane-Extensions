@@ -1,7 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Purpose:   Provides additional functionality to Blender for X-Plane, including import/export for .lins, .pols, .facs, import of .objs, and WYSIWYG materials
+#Module:    init.py
+#Purpose:   Provides plugin setup, registration, and preferences for the X-Plane Extensions Blender addon.
 
 #Import modules
 from . import props

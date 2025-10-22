@@ -1,8 +1,9 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/24/2025
-#Module:    Anim Utils
+#Module:    anim_utils.py
 #Purpose:   Provide functions to help with animations
+#Notes:     This file has become bloated with math-adjacent functions, eventually these will be split to another file.
 
 import bpy
 import math

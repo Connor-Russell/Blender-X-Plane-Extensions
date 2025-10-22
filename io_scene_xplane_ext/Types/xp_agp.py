@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      6/5/2025
-#Module:    XP_AGP
+#Module:    xp_agp.py
 #Purpose:   Provide classes that abstracts the X-Plane AGP format
 
 from ..Helpers import agp_utils

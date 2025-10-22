@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/23/2025
-#Module:    Line Utils
+#Module:    line_utils.py
 #Purpose:   Provides functions for working with X-Plane Lines
 
 import bpy # type: ignore

@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    XP_Lin
+#Module:    xp_lin.py
 #Purpose:   Provide a class that defines the X-Plane line type
 
 #Include decal params from our material plugin

@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/24/2025
-#Module:    Bake Utils
-#Purpose:   Provide functions used in the auto-baking of X-Plane textures
+#Module:    bake_utils.py
+#Purpose:   Provide helper functions for baking high poly models to low poly models
 
 import bpy
 import os

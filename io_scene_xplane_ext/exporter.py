@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Export
-#Purpose:   Provide a single file containing functions for exporting
+#Module:    exporter.py
+#Purpose:   Provide a simple function calls encapsulating the export of each file type
 
 import bpy #type: ignore
 import os

@@ -1,7 +1,8 @@
 #Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/14/2024
-#Purpose: Contains the properties for the whole facade in Blender. There can only be one facade per file.
+#Module: facade_utils.py
+#Purpose: Defines data structures for facades and utility functions for working with them.
 
 import bpy  # type: ignore
 import os
@@ -70,7 +71,6 @@ class FacSpelling:
         self.is_ui_expanded = prop.is_ui_expanded
         self.entries = [entry.collection for entry in prop.entries]
         return self
-
 
 class FacWall:
     def __init__(self):

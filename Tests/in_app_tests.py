@@ -1,7 +1,9 @@
 #Project: in-app_tests.py
 #Author: Connor Russell
 #Date: 9/22/2025
+#Module: in_app_tests.py
 #Purpose: Provide a standardized way to perform in-app tests
+#Usage: In app tests are added to tests list. Provide a test name a .blend file path (relative to the test dir), and a function to call. Your function will be called with these params and can do it's testing how it likes
 
 import bpy
 import os

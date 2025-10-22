@@ -2,6 +2,7 @@
 #Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 10/6/2025
+#Module: normal_conversion_utils.py
 #Purpose: Provide simple utility functions to convert X-Plane normals/material maps from one form to another
 
 import os
