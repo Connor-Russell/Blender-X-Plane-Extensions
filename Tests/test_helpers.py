@@ -344,6 +344,9 @@ def compare_property_groups(pg1, pg2, path=""):
         val2 = getattr(pg2, name, None)
         prop_path = f"{path}.{name}" if path else name
 
+        if val1 is None or val2 is None:
+            diffs.append(difference("Property", f"One or both properties for {name} are None"))
+
         #Check if name contains _ui_, something we don't care about
         if "_ui_" in name:
             continue
@@ -518,9 +521,13 @@ def compare_collections(col1, col2):
         for i in range(min(len(objs1), len(objs2))):
             obj1 = objs1[i]
             obj2 = objs2[i]
-            obj_diffs = compare_objects(obj1, obj2)
-            if obj_diffs:
-                differences.extend(obj_diffs)
+            if (obj1 is None or obj2 is None):
+                differences.append(difference("Collection", f"{col1.name}, {col2.name}, object slot {i} is empty"))
+                continue
+            else:
+                obj_diffs = compare_objects(obj1, obj2)
+                if obj_diffs:
+                    differences.extend(obj_diffs)
     except Exception as e:
         differences.append(difference("Error", f"Error comparing objects: {str(e)}"))
 
@@ -664,6 +671,8 @@ def differences_to_string(differences):
     #Now we print each difference
     for diff in differences:
         out += f"{diff.message}, "
+
+    return out
 
 def to_absolute(in_path, base_path):
     """

@@ -28,7 +28,7 @@ def run_inapp_test(test_name, filepath, test_func):
     """
     try:
         #Open the test
-        test_helpers.add_test_name("test_name:")
+        test_helpers.add_test_name("test_name: " + test_name)
 
         #Open the .blend file
         try:
@@ -65,9 +65,10 @@ def run_inapp_test(test_name, filepath, test_func):
             test_helpers.append_test_results(False, 0, test_helpers.differences_to_string(differences))
 
     except Exception as e:
-        test_helpers.append_test_fail(str(e))
+        import traceback
+        tb_text = traceback.format_exc()
+        test_helpers.append_test_fail(str(e) + "\n" + tb_text)
         return
-
     finally:
         #Close the file
         bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -79,12 +80,14 @@ if __name__ == "__main__":
     print("In-app test dir: " + test_dir)
 
     tests = [
-        ["Auto Keyframe Test", "Autokeyframe.blend", in_app_anim_tool_test.inapp_autokeyframe_test],
-        ["Flipbook Test", "Flipbook.blend", in_app_anim_tool_test.inapp_flipbook_test]
+        ["Auto Keyframe Test", "AutokeyframeTest.blend", in_app_anim_tool_test.inapp_autokeyframe_test],
+        ["Flipbook Test", "FlipbookTest.blend", in_app_anim_tool_test.inapp_flipbook_test]
     ]
 
     for test in tests:
         try:
             run_inapp_test(test[0], test[1], test[2])
         except Exception as e:
-            print("Fatal error in inapp test: " + str(e))
+            import traceback
+            tb_text = traceback.format_exc()
+            print("Fatal error in inapp test: " + str(e) + "\n" + tb_text)

@@ -250,28 +250,17 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
 
     def invoke(self, context, event):
         # Set operator properties from scene.xp_ext if available
-        xp_ext = getattr(context.scene, 'xp_ext', None)
-        if xp_ext:
-            if hasattr(xp_ext, 'autoanim_frame_start'):
-                self.autoanim_frame_start = xp_ext.autoanim_frame_start
-            if hasattr(xp_ext, 'autoanim_frame_end'):
-                self.autoanim_frame_end = xp_ext.autoanim_frame_end
-            if hasattr(xp_ext, 'autoanim_keyframe_interval'):
-                self.autoanim_keyframe_interval = xp_ext.autoanim_keyframe_interval
-            if hasattr(xp_ext, 'autoanim_dataref'):
-                self.autoanim_dataref = xp_ext.autoanim_dataref
-            if hasattr(xp_ext, 'autoanim_loop_value'):
-                self.autoanim_loop_value = xp_ext.autoanim_loop_value
-            if hasattr(xp_ext, 'autoanim_start_value'):
-                self.autoanim_start_value = xp_ext.autoanim_start_value
-            if hasattr(xp_ext, 'autoanim_end_value'):
-                self.autoanim_end_value = xp_ext.autoanim_end_value
-            if hasattr(xp_ext, 'autoanim_autodetect'):
-                self.autoanim_autodetect = xp_ext.autoanim_autodetect
-            if hasattr(xp_ext, 'autoanim_autodetect_fps'):
-                self.autoanim_autodetect_fps = xp_ext.autoanim_autodetect_fps
-            if hasattr(xp_ext, 'autoanim_apply_parent_transform'):
-                self.autoanim_apply_parent_transform = xp_ext.autoanim_apply_parent_transform
+        print("Invoking generate flipbook animation operator")
+        self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
+        self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
+        self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+        self.autoanim_dataref = bpy.context.scene.xp_ext.autoanim_dataref
+        self.autoanim_loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+        self.autoanim_start_value = bpy.context.scene.xp_ext.autoanim_start_value
+        self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
+        self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
+        self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+        self.autoanim_apply_parent_transform = bpy.context.scene.xp_ext.autoanim_apply_parent_transform
 
         #Run the operator directly. User already had an opportunity to set the properties in the UI so we don't need to bother them again
         self.execute(context)
@@ -279,6 +268,20 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+        #If we're in the background we need to set these properties manually. Why doesn't blender call invoke even without a UI??????
+        if bpy.app.background:
+            self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
+            self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
+            self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+            self.autoanim_dataref = bpy.context.scene.xp_ext.autoanim_dataref
+            self.autoanim_loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+            self.autoanim_start_value = bpy.context.scene.xp_ext.autoanim_start_value
+            self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
+            self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
+            self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+            self.autoanim_apply_parent_transform = bpy.context.scene.xp_ext.autoanim_apply_parent_transform
+
+
         for obj in context.selected_objects:
             #Check that the object has a deform modifier
             physics_types = {'ARMATURE', 'CLOTH', 'SOFT_BODY', 'FLUID', 'DYNAMIC_PAINT', 'COLLISION', 'SMOKE'}
@@ -330,26 +333,16 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
 
     def invoke(self, context, event):
         # Set operator properties from scene.xp_ext if available
-        xp_ext = getattr(context.scene, 'xp_ext', None)
-        if xp_ext:
-            if hasattr(xp_ext, 'autoanim_frame_start'):
-                self.autoanim_frame_start = xp_ext.autoanim_frame_start
-            if hasattr(xp_ext, 'autoanim_frame_end'):
-                self.autoanim_frame_end = xp_ext.autoanim_frame_end
-            if hasattr(xp_ext, 'autoanim_keyframe_interval'):
-                self.autoanim_keyframe_interval = xp_ext.autoanim_keyframe_interval
-            if hasattr(xp_ext, 'autoanim_dataref'):
-                self.autoanim_dataref = xp_ext.autoanim_dataref
-            if hasattr(xp_ext, 'autoanim_loop_value'):
-                self.autoanim_loop_value = xp_ext.autoanim_loop_value
-            if hasattr(xp_ext, 'autoanim_start_value'):
-                self.autoanim_start_value = xp_ext.autoanim_start_value
-            if hasattr(xp_ext, 'autoanim_end_value'):
-                self.autoanim_end_value = xp_ext.autoanim_end_value
-            if hasattr(xp_ext, 'autoanim_autodetect'):
-                self.autoanim_autodetect = xp_ext.autoanim_autodetect
-            if hasattr(xp_ext, 'autoanim_autodetect_fps'):
-                self.autoanim_autodetect_fps = xp_ext.autoanim_autodetect_fps
+        print("Invoking auto keyframe animation operator")
+        self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
+        self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
+        self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+        self.autoanim_dataref = bpy.context.scene.xp_ext.autoanim_dataref
+        self.autoanim_loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+        self.autoanim_start_value = bpy.context.scene.xp_ext.autoanim_start_value
+        self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
+        self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
+        self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
         
         #Run the operator directly. User already had an opportunity to set the properties in the UI so we don't need to bother them again
         self.execute(context)
@@ -357,6 +350,18 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+        #If we're in the background we need to set these properties manually. Why doesn't blender call invoke even without a UI??????
+        if bpy.app.background:
+            self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
+            self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
+            self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+            self.autoanim_dataref = bpy.context.scene.xp_ext.autoanim_dataref
+            self.autoanim_loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+            self.autoanim_start_value = bpy.context.scene.xp_ext.autoanim_start_value
+            self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
+            self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
+            self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+
         # Iterate over selected objects only once
         
         if self.autoanim_autodetect:

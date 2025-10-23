@@ -15,8 +15,8 @@ TestExport =            False
 TestImport =            False
 InternalTest =          False
 TestBaker =             False
-TestInApp =             False
-TestNormalConversion =  True
+TestInApp =             True    #This test needs to stay disabled for now because it is inexplicably broken.
+TestNormalConversion =  False
 
 def run_blender(blender_exe, script):
     subprocess.run([
