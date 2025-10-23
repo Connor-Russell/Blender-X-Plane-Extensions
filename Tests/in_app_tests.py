@@ -69,9 +69,6 @@ def run_inapp_test(test_name, filepath, test_func):
         tb_text = traceback.format_exc()
         test_helpers.append_test_fail(str(e) + "\n" + tb_text)
         return
-    finally:
-        #Close the file
-        bpy.ops.wm.read_factory_settings(use_empty=True)
 
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
@@ -80,8 +77,8 @@ if __name__ == "__main__":
     print("In-app test dir: " + test_dir)
 
     tests = [
-        ["Auto Keyframe Test", "AutokeyframeTest.blend", in_app_anim_tool_test.inapp_autokeyframe_test],
-        ["Flipbook Test", "FlipbookTest.blend", in_app_anim_tool_test.inapp_flipbook_test]
+        ["Flipbook Test", "FlipbookTest.blend", in_app_anim_tool_test.inapp_flipbook_test],
+        ["Auto Keyframe Test", "AutokeyframeTest.blend", in_app_anim_tool_test.inapp_autokeyframe_test]
     ]
 
     for test in tests:

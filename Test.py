@@ -11,12 +11,12 @@ DateAndTime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 #If quick test, only the first version will be used
 QuickTest = True
 
-TestExport =            False
-TestImport =            False
-InternalTest =          False
-TestBaker =             False
-TestInApp =             True    #This test needs to stay disabled for now because it is inexplicably broken.
-TestNormalConversion =  False
+TestExport =            True
+TestImport =            True
+InternalTest =          False #This is EOL, and this stuff is inherently testedin the import/export tests
+TestBaker =             True
+TestInApp =             True
+TestNormalConversion =  True
 
 def run_blender(blender_exe, script):
     subprocess.run([
