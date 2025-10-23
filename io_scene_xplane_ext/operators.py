@@ -1219,12 +1219,10 @@ class BTN_find_textures(bpy.types.Operator):
     )
 
     def invoke(self, context, event):
-        print("Invoking file selector for base path")
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
-        print(f"Finding missing textures with base path: '{self.filepath}'")
         #Make sure base path is valid
         if self.filepath == "":
             return {'CANCELLED'}
@@ -1267,6 +1265,43 @@ class BTN_find_textures(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_set_all_export_dirs(bpy.types.Operator):
+    """Sets the export path to the given directory for all exportable X-Plane formats"""
+    bl_idname = "xp_ext.set_export_paths"
+    bl_label = "Set Export Directory"
+    bl_description = "Set the export directory for all X-Plane export formats."
+
+    def execute(self, context):
+        log_utils.new_section("Set Export Directory")
+        if bpy.context.scene.xp_ext.export_path == "":
+            log_utils.warning("Export path is empty. Please set a valid export path in the addon preferences.")
+            log_utils.display_messages()
+
+        rel_path = file_utils.to_relative(bpy.context.scene.xp_ext.export_path)
+
+        def get_export_path(in_existing_path: str, in_col_name: str) -> str:
+            #If there is an existing path, extract the file *name*, and remove the extension
+            existing_name = os.path.splitext(os.path.basename(in_existing_path))[0] if in_existing_path != "" else in_col_name
+
+            return os.path.join(rel_path, existing_name)
+
+        #Iterate over every collection in the scene
+        for col in bpy.data.collections:
+            if col.xplane.is_exportable_collection:
+                col.xplane.layer.name = get_export_path(col.xplane.layer.name, col.name)
+            if col.xp_fac.exportable:
+                col.xp_fac.name = get_export_path(col.xp_fac.name, col.name)
+            if col.xp_pol.exportable:
+                col.xp_pol.name = get_export_path(col.xp_pol.name, col.name)
+            if col.xp_lin.exportable:
+                col.xp_lin.name = get_export_path(col.xp_lin.name, col.name)
+            if col.xp_agp.exportable:
+                col.xp_agp.name = get_export_path(col.xp_agp.name, col.name)
+
+        log_utils.display_messages()
+
+        return {'FINISHED'}
+  
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -1306,6 +1341,7 @@ def register():
     bpy.utils.register_class(BTN_convert_combined_xp_nml_to_separate)
     bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.register_class(BTN_find_textures)
+    bpy.utils.register_class(BTN_set_all_export_dirs)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -1340,4 +1376,5 @@ def unregister():
     bpy.utils.unregister_class(BTN_convert_combined_xp_nml_to_separate)
     bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.unregister_class(BTN_find_textures)
+    bpy.utils.unregister_class(BTN_set_all_export_dirs)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

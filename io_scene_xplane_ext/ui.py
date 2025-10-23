@@ -679,6 +679,14 @@ class MENU_operations(bpy.types.Panel):
         layout.operator("xp_ext.find_textures", text="Find Missing Textures")
 
         layout.separator()
+
+        box = layout.box()
+        box.prop(xp_ext, "menu_export_path_expanded", text="Export Path", icon='TRIA_DOWN' if xp_ext.menu_export_path_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_export_path_expanded:
+            box.prop(xp_ext, "export_path")
+            box.operator("xp_ext.set_export_paths", text="Set All Export Paths")
+
+        layout.separator()
         
         box = layout.box()
         box.prop(xp_ext, "menu_bake_expanded", text="High Poly to Low Poly Bake", icon='TRIA_DOWN' if xp_ext.menu_bake_expanded else 'TRIA_RIGHT', emboss=False)

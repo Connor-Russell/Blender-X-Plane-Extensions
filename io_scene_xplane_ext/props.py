@@ -145,6 +145,20 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
+    menu_export_path_expanded: bpy.props.BoolProperty(
+        name="Export Path Menu Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    export_path: bpy.props.StringProperty(
+        name="Export Path",
+        description="The path to export X-Plane files to",
+        default="",
+        subtype='DIR_PATH',
+        update=update_ui
+    ) # type: ignore
+
     low_poly_bake_resolution: bpy.props.FloatProperty(
         name="Bake Resolution",
         description="The resolution of the low poly bake",
