@@ -1176,7 +1176,7 @@ class BTN_convert_separate_maps_to_combined_xp_nml(bpy.types.Operator):
         #Call the conversion function
         new_nml_path = ""
         try:
-            new_nml_path = normal_conversion_utils.combine_to_xp_normal_map(nml_path, mat_path)
+            new_nml_path = normal_conversion_utils.combine_xp_separate_maps(nml_path, mat_path)
         except Exception as e:
             log_utils.error(f"Error converting normal and material maps '{nml_path}' and '{mat_path}': {e}")
             log_utils.display_messages()
@@ -1197,6 +1197,8 @@ class BTN_convert_separate_maps_to_combined_xp_nml(bpy.types.Operator):
 
         #Update the nodes
         material_config.update_nodes(mat)
+
+        return {'FINISHED'}
 
 class BTN_find_textures(bpy.types.Operator):
     """Search for missing material textures relative to a specified directory."""

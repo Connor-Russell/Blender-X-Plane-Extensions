@@ -11,10 +11,10 @@ DateAndTime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 #If quick test, only the first version will be used
 QuickTest = True
 
-TestExport =            True
-TestImport =            True
-InternalTest =          True
-TestBaker =             True
+TestExport =            False
+TestImport =            False
+InternalTest =          False
+TestBaker =             False
 TestInApp =             False
 TestNormalConversion =  True
 

@@ -33,7 +33,7 @@ def separate_xp_combined_nml(xp_combined_nml_path):
 
     try:
         img_xp_combined_nml = bpy.data.images.load(xp_combined_nml_path)
-        img_xp_combined_nml.colorspace_settings.name = 'Non-Color'  # Ensure it's treated as non-color data
+        img_xp_combined_nml.colorspace_settings.name = 'sRGB'  # Ensure it's treated as sRGB data
         img_xp_combined_nml.name = "CONVERT_BUFFER_XP_Combined_NML_Map"
 
         width = img_xp_combined_nml.size[0]
@@ -129,12 +129,12 @@ def combine_xp_separate_maps(xp_normal_map_path, xp_material_map_path):
         #Attempt to load
         if os.path.isfile(xp_normal_map_path):
             img_xp_normal = bpy.data.images.load(xp_normal_map_path)
-            img_xp_normal.colorspace_settings.name = 'Non-Color'
+            img_xp_normal.colorspace_settings.name = 'sRGB'
             img_xp_normal.name = "CONVERT_BUFFER_XP_Normal_Map"
 
         if os.path.isfile(xp_material_map_path):
             img_xp_material = bpy.data.images.load(xp_material_map_path)
-            img_xp_material.colorspace_settings.name = 'Non-Color'
+            img_xp_material.colorspace_settings.name = 'sRGB'
             img_xp_material.name = "CONVERT_BUFFER_XP_Material_Map"
 
         #Get the dimensions. If there is a mismatch (and we have both images), resize the smallest to match the largest.
@@ -187,7 +187,7 @@ def combine_xp_separate_maps(xp_normal_map_path, xp_material_map_path):
         file_utils.backup_file(xp_combined_nml_map_path)
 
         # Create new Blender image for the combined map, assign pixel data, and save
-        img_xp_combined_nml = bpy.data.images.new(name="CONVERT_BUFFER_XP_Combined_NML_Map", width=width, height=height)
+        img_xp_combined_nml = bpy.data.images.new(name="CONVERT_BUFFER_XP_Combined_NML_Map", width=width, height=height, alpha=True)
         img_xp_combined_nml.pixels = combined_map.flatten()
         img_xp_combined_nml.filepath_raw = xp_combined_nml_map_path
         img_xp_combined_nml.file_format = 'PNG'

@@ -93,6 +93,7 @@ class XP_EXT_prefs(bpy.types.AddonPreferences):
         #General Settings
         layout.prop(self, "show_only_relevant_settings")
         layout.prop(self, "always_fully_reload_images")
+        layout.prop(self, "do_backup_on_overwrite")
 
         layout.separator()
 

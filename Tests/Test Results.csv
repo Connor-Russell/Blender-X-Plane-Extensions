@@ -1,25 +1,4 @@
-2025-10-23 14-20-14
+2025-10-23 15-21-28
 Test Name,Result,Percentage,Message
 2.93 Tests
-Export Tests:
-Asphalt_Striped_Dark:,PASS,98.21%,"Different line count 0"
-Enhanced_Center_B:,PASS,100.00%,"Different line count 0"
-LineExporter:,PASS,100.00%,"Different line count 0"
-PolygonExporter:,PASS,99.12%,"Different line count 0"
-TestFacade:,PASS,99.99%,"Different line count 0"
-Export Test Summary:,PASS,100.00%,"Total tests: 5, Failed: 0"
-Import Tests:
-Asphalt_Striped_Dark:,PASS,100.00%,"Differences: "
-Enhanced_Center_B:,PASS,100.00%,"Differences: "
-MIRL_End_PCL:,PASS,100.00%,"Differences: "
-MyConcrete:,PASS,100.00%,"Differences: "
-MyLine:,PASS,100.00%,"Differences: "
-XCD_Jetway:,PASS,100.00%,"Differences: "
-Import Test Summary:,PASS,100.00%,"Total tests: 6, Failed: 0"
-Bake Tests:
-Bake Test Albedo:,PASS,100.00%,""
-Bake Test Combined Normal:,PASS,100.00%,""
-Bake Test Lit:,PASS,100.00%,""
-Bake Test Normal:,FAIL,74.85%,""
-Bake Test Material:,PASS,100.00%,""
-Normal Map Conversion Test:,FAIL,0.00%,""
+Normal Map Conversion Test:,PASS,100.00%,""
