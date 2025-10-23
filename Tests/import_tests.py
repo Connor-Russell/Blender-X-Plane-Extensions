@@ -80,7 +80,6 @@ def test(test_dir):
                 bpy.ops.import_scene.xp_fac(
                     'EXEC_DEFAULT',
                     filepath=filepath,
-                    directory=directory,
                     files=files
                 )
             elif asset_extension == '.obj':
@@ -93,7 +92,6 @@ def test(test_dir):
                 bpy.ops.import_scene.xp_obj(
                     'EXEC_DEFAULT',
                     filepath=filepath,
-                    directory=directory,
                     files=files
                 )
             elif asset_extension == '.pol':
@@ -106,7 +104,6 @@ def test(test_dir):
                 bpy.ops.import_scene.xp_pol(
                     'EXEC_DEFAULT',
                     filepath=filepath,
-                    directory=directory,
                     files=files
                 )
             elif asset_extension == '.lin':
@@ -119,7 +116,6 @@ def test(test_dir):
                 bpy.ops.import_scene.xp_lin(
                     'EXEC_DEFAULT',
                     filepath=filepath,
-                    directory=directory,
                     files=files
                 )
             elif asset_extension == '.agp':
@@ -132,7 +128,6 @@ def test(test_dir):
                 bpy.ops.import_scene.xp_agp(
                     'EXEC_DEFAULT',
                     filepath=filepath,
-                    directory=directory,
                     files=files
                 )
             
@@ -197,7 +192,8 @@ def test(test_dir):
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
 
-    test_dir = os.getcwd()
+    test_dir = os.getcwd() + os.sep + "Content"
+    print("Import Tests Directory: " + test_dir)
 
     try:
         test(test_dir)

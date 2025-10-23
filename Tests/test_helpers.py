@@ -264,8 +264,8 @@ def compare_images(img1, img2):
     """
     try:
         print("Loading images...")
-        img1 = bpy.data.images.load(file1)
-        img2 = bpy.data.images.load(file2)
+        img1 = bpy.data.images.load(img1)
+        img2 = bpy.data.images.load(img2)
 
         # Check if the images are the same size
         if img1.size[0] != img2.size[0] or img1.size[1] != img2.size[1]:

@@ -55,7 +55,7 @@ def auto_bake_current_to_active():
             do_bake_opacity = bpy.context.scene.xp_ext.low_poly_bake_do_opacity
         if mat.xp_materials.normal_texture != "":
             do_bake_nrm = bpy.context.scene.xp_ext.low_poly_bake_do_nrm
-        if mat.xp_materials.material_texture != "":
+        if mat.xp_materials.material_texture != "" or (not mat.xp_materials.do_separate_material_texture and mat.xp_materials.normal_texture != ""):
             do_bake_mat = bpy.context.scene.xp_ext.low_poly_bake_do_mat
         if mat.xp_materials.lit_texture != "":
             do_bake_lit = bpy.context.scene.xp_ext.low_poly_bake_do_lit

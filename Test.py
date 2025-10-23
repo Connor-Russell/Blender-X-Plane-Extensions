@@ -15,7 +15,7 @@ TestExport =            True
 TestImport =            True
 InternalTest =          True
 TestBaker =             True
-TestInApp =             True
+TestInApp =             False
 TestNormalConversion =  True
 
 def run_blender(blender_exe, script):

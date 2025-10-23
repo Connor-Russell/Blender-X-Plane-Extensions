@@ -25,17 +25,17 @@ def test_combined(test_dir):
 
     test_helpers.add_test_category("Bake Tests")
 
-    bpy.context.scene.xp_ext.low_poly_bake_do_alb = False
-    bpy.context.scene.xp_ext.low_poly_bake_do_opacity = False
-    bpy.context.scene.xp_ext.low_poly_bake_do_nrm = True
-    bpy.context.scene.xp_ext.low_poly_bake_do_mat = True
-    bpy.context.scene.xp_ext.low_poly_bake_do_lit = False
     bpy.context.scene.xp_ext.low_poly_bake_margin = 2
     bpy.context.scene.xp_ext.low_poly_bake_extrusion_distance = 0.1
     bpy.context.scene.xp_ext.low_poly_bake_resolution = 256
     bpy.context.scene.xp_ext.low_poly_bake_ss_factor = 2
     bpy.context.scene.xp_ext.low_poly_bake_max_ray_distance = 0.0
-    bpy.context.scene.xp_ext.low_poly_bake_do_separate_normals = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_alb = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_opacity = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_nrm = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_mat = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_lit = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_separate_normals = False
 
     #Bake
     try:
@@ -62,7 +62,7 @@ def test_combined(test_dir):
             os.remove(test_normal)
         if os.path.exists(test_lit):
             os.remove(test_lit)
-    
+
         bpy.ops.xp_ext.bake_low_poly()
     except Exception as e:
         error_messages += "Bake failed: " + str(e) + "\n"
@@ -121,16 +121,16 @@ def test_separate(test_dir):
     normal_similarity = 0
     material_similarity = 0
 
-    bpy.context.scene.xp_ext.low_poly_bake_do_alb = False
-    bpy.context.scene.xp_ext.low_poly_bake_do_opacity = False
-    bpy.context.scene.xp_ext.low_poly_bake_do_nrm = False
-    bpy.context.scene.xp_ext.low_poly_bake_do_mat = False
-    bpy.context.scene.xp_ext.low_poly_bake_do_lit = False
     bpy.context.scene.xp_ext.low_poly_bake_margin = 2
     bpy.context.scene.xp_ext.low_poly_bake_extrusion_distance = 0.1
     bpy.context.scene.xp_ext.low_poly_bake_resolution = 256
     bpy.context.scene.xp_ext.low_poly_bake_ss_factor = 2
     bpy.context.scene.xp_ext.low_poly_bake_max_ray_distance = 0.0
+    bpy.context.scene.xp_ext.low_poly_bake_do_alb = False
+    bpy.context.scene.xp_ext.low_poly_bake_do_opacity = False
+    bpy.context.scene.xp_ext.low_poly_bake_do_nrm = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_mat = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_lit = False
     bpy.context.scene.xp_ext.low_poly_bake_do_separate_normals = True
 
     #Bake
@@ -141,9 +141,9 @@ def test_separate(test_dir):
         for col in bpy.data.collections:
             if col.name.startswith("BakeTest."):
                 col.name = "BakeTest"
-
+        
         #File Paths
-        known_good_normal = test_dir + "/BakeTest_LOD_NML.good.png"
+        known_good_normal = test_dir + "/BakeTest_LOD_NRM.good.png"
         known_good_material = test_dir + "/BakeTest_LOD_MAT.good.png"
 
         test_normal = test_dir + "/BakeTest_LOD_NRM.png"
@@ -199,9 +199,23 @@ def test_separate(test_dir):
 if __name__ == "__main__":
 
     #The test dir is the parent of the blender file path. THis is just so we don't have to deal with passing in an extra argument, or hard coding the path in every test tilf
-    test_dir = os.getcwd()
+    test_dir = os.getcwd() + os.sep + "Content"
+    print("Bake Test Dir: " + test_dir)
 
-    test(test_dir)
+    #Open the bake file
+    bake_file = test_dir + os.sep + "BakeTest.blend"
+    try:
+        bpy.ops.wm.open_mainfile(filepath=bake_file)
+    except Exception as e:
+        #Check if this is the "newer Blender" error - if so, ignore it, it's expected
+        if "newer Blender" in str(e):
+            pass
+        else:
+            test_helpers.add_test_category("Bake Tests")
+            test_helpers.append_test_fail("Failed to open bake test file: " + str(e))
+
+    test_combined(test_dir)
+    test_separate(test_dir)
     
 
 

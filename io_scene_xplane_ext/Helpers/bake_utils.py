@@ -531,6 +531,7 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
         nrm_image.file_format = 'PNG'
         nrm_image.save()
     if do_separate_normals and did_mat:
+        print("Saving mat texture to " + mat_output_path)
         file_utils.backup_file(mat_output_path)
         mat_image.filepath_raw = mat_output_path
         mat_image.file_format = 'PNG'

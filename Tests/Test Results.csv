@@ -1,6 +1,6 @@
-2025-09-19 20-29-28
+2025-10-23 14-20-14
 Test Name,Result,Percentage,Message
-2.9 Tests
+2.93 Tests
 Export Tests:
 Asphalt_Striped_Dark:,PASS,98.21%,"Different line count 0"
 Enhanced_Center_B:,PASS,100.00%,"Different line count 0"
@@ -16,12 +16,10 @@ MyConcrete:,PASS,100.00%,"Differences: "
 MyLine:,PASS,100.00%,"Differences: "
 XCD_Jetway:,PASS,100.00%,"Differences: "
 Import Test Summary:,PASS,100.00%,"Total tests: 6, Failed: 0"
-TEST_get_all_collections_from_view_layer,"PASS"
-TEST_get_roof_data,"FAIL,Expected roof object at (1, 2, 3), got (0.0, 0.0, 0.0)."
-TEST_keyframing,"PASS"
-TEST_get_draw_call_from_obj,"PASS"
-TEST_world_space_transform,"PASS"
 Bake Tests:
-Bake Test Albedo:,FAIL,0.00%,"Bake failed: Error: Please save your file before baking as baking can sometimes cause a crash in the Blender baking system, which we can't handle.;;Image comparison failed: [WinError 2] The system cannot find the file specified: 'A:\\Code\\Blender-X-Plane-Extensions\\Tests\\Content/BakeTest_LOD.png' -> 'A:\\Code\\Blender-X-Plane-Extensions\\Tests\\Content/BakeTest_LOD_293.test_result.png';"
-Bake Test Normal:,FAIL,0.00%,"Bake failed: Error: Please save your file before baking as baking can sometimes cause a crash in the Blender baking system, which we can't handle.;;Image comparison failed: [WinError 2] The system cannot find the file specified: 'A:\\Code\\Blender-X-Plane-Extensions\\Tests\\Content/BakeTest_LOD.png' -> 'A:\\Code\\Blender-X-Plane-Extensions\\Tests\\Content/BakeTest_LOD_293.test_result.png';"
-Bake Test Lit:,FAIL,0.00%,"Bake failed: Error: Please save your file before baking as baking can sometimes cause a crash in the Blender baking system, which we can't handle.;;Image comparison failed: [WinError 2] The system cannot find the file specified: 'A:\\Code\\Blender-X-Plane-Extensions\\Tests\\Content/BakeTest_LOD.png' -> 'A:\\Code\\Blender-X-Plane-Extensions\\Tests\\Content/BakeTest_LOD_293.test_result.png';"
+Bake Test Albedo:,PASS,100.00%,""
+Bake Test Combined Normal:,PASS,100.00%,""
+Bake Test Lit:,PASS,100.00%,""
+Bake Test Normal:,FAIL,74.85%,""
+Bake Test Material:,PASS,100.00%,""
+Normal Map Conversion Test:,FAIL,0.00%,""

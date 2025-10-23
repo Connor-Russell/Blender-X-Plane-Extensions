@@ -410,7 +410,7 @@ class BTN_bake_low_poly(bpy.types.Operator):
 
     def execute(self, context):
         #Some initial checks: We are saved. Every selected object has a material. Check each individually, give appropriate error messages
-        if bpy.data.is_dirty and bpy.context.window_manager is not None:
+        if bpy.data.is_dirty and bpy.context.window_manager is not None and not bpy.app.background:
             self.report({'ERROR'}, "Please save your file before baking as baking can sometimes cause a crash in the Blender baking system, which we can't handle.")
             return {'CANCELLED'}
 
