@@ -1,12 +1,12 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Props
-#Purpose:   Provide a single file containing all properties for an X-Plane Line Object
+#Module:    props.py
+#Purpose:   Provide definitions for all property groups for the plugin
 
 import bpy # type: ignore
 from . import material_config
-from .Helpers import facade_utils
+from .Helpers import file_utils
 from bpy.app.handlers import persistent # type: ignore
 
 #Enum for types. Can be START END or SEGMENT
@@ -62,6 +62,23 @@ def update_ui(self, context):
     if context != None:
         if context.area != None:
             context.area.tag_redraw()
+
+#Sanitizes and includes the // in all material texture paths. Why? Because when Blender goes to file browse again, it will actually go to the right spot thanks to the //
+def sanitize_mat_paths(self, context):
+    if self.alb_texture != "":
+        self.alb_texture = file_utils.to_relative(self.alb_texture)
+    if self.normal_texture != "":
+        self.normal_texture = file_utils.to_relative(self.normal_texture)
+    if self.lit_texture != "":
+        self.lit_texture = file_utils.to_relative(self.lit_texture)
+    if self.material_texture != "":
+        self.material_texture = file_utils.to_relative(self.material_texture)
+    if self.weather_texture != "":
+        self.weather_texture = file_utils.to_relative(self.weather_texture)
+    for decal in self.decals:
+        if decal.texture != "":
+            decal.texture = file_utils.to_relative(decal.texture)
+    update_ui(self, context)
 
 #General properties
 
@@ -128,6 +145,20 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
+    menu_export_path_expanded: bpy.props.BoolProperty(
+        name="Export Path Menu Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    export_path: bpy.props.StringProperty(
+        name="Export Path",
+        description="The path to export X-Plane files to",
+        default="",
+        subtype='DIR_PATH',
+        update=update_ui
+    ) # type: ignore
+
     low_poly_bake_resolution: bpy.props.FloatProperty(
         name="Bake Resolution",
         description="The resolution of the low poly bake",
@@ -158,9 +189,51 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         min=0.0,
     ) #type: ignore
 
+    low_poly_bake_margin: bpy.props.IntProperty(
+        name="Bake Margin",
+        description="The margin of the low poly bake",
+        default=2,
+        min=0
+    ) #type: ignore
+
     low_poly_bake_do_separate_normals: bpy.props.BoolProperty(
         name="Separate Normals",
         description="Whether to separate the normals from the material map, or use the combined format",
+        default=False,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_alb: bpy.props.BoolProperty(
+        name="Bake Albedo",
+        description="Whether to bake the albedo map",
+        default=True,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_nrm: bpy.props.BoolProperty(
+        name="Bake Normal",
+        description="Whether to bake the normal map",
+        default=True,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_mat: bpy.props.BoolProperty(
+        name="Bake Material",
+        description="Whether to bake the material map",
+        default=True,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_lit: bpy.props.BoolProperty(
+        name="Bake Lit",
+        description="Whether to bake the lit map",
+        default=False,
+        update=update_ui
+    ) #type: ignore
+
+    low_poly_bake_do_opacity: bpy.props.BoolProperty(
+        name="Bake Opacity",
+        description="Whether to bake the opacity map",
         default=False,
         update=update_ui
     ) #type: ignore
@@ -225,6 +298,13 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         description="The interval between keyframes for the auto animation. In Blender Frames",
         default=1,
         min=1,
+        update=update_ui
+    ) # type: ignore
+    
+    autoanim_add_intermediate_keyframes: bpy.props.BoolProperty(
+        name="Add Intermediate Keyframes",
+        description="Add keyframes for frames between the main keyframes, maintaining interpolation curves.",
+        default=False,
         update=update_ui
     ) # type: ignore
 
@@ -343,6 +423,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
+    #If calling this from code, always set was_programmatically_updated to True first!!!
     do_separate_material_texture: bpy.props.BoolProperty(
         name="Use separate Material Texture",
         description="Whether to use a separate material texture for the material",

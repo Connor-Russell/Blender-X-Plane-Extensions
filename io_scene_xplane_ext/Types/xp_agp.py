@@ -1,7 +1,7 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      6/5/2025
-#Module:    XP_AGP
+#Module:    xp_agp.py
 #Purpose:   Provide classes that abstracts the X-Plane AGP format
 
 from ..Helpers import agp_utils
@@ -58,7 +58,7 @@ class crop_polygon:
         transformed_perimeter = []
         for vert in self.perimeter:
             #Transform the vertex using the agp_transform
-            pixel_x, pixel_y = agp_utils.to_pixel_coords(vert.x, vert.y, transform)
+            pixel_x, pixel_y = agp_utils.blender_to_px(vert.x, vert.y, transform)
             transformed_perimeter.append(mathutils.Vector((pixel_x, pixel_y, 0)))
 
         #If the last point is the same as the first, remove it
@@ -68,7 +68,7 @@ class crop_polygon:
         cmd = f"CROP_POLY "
 
         for vert in transformed_perimeter:
-            cmd += f"{ftos(vert.x, 4)} {ftos(vert.y, 4)} "
+            cmd += f"{ftos(vert.x, 8)} {ftos(vert.y, 8)} "
 
         if len(transformed_perimeter) < 3:
             log_utils.warning("CROP_POLY must have at least 3 vertices.")
@@ -77,7 +77,7 @@ class crop_polygon:
         
         return cmd
 
-    def from_command(self, in_command, transform: agp_utils.agp_transform, in_x_mult=1.0, in_y_mult=1.0):
+    def from_command(self, in_command, transform: agp_utils.agp_transform):
         tokens = in_command.strip().split()
 
         # The rest are perimeter coordinates (x, y pairs)
@@ -89,9 +89,9 @@ class crop_polygon:
 
         self.perimeter = []
         for i in range(0, len(coords), 2):
-            pixel_x = float(coords[i]) * in_x_mult
-            pixel_y = float(coords[i+1]) * in_y_mult
-            blender_x, blender_y = agp_utils.to_blender_coords(pixel_x, pixel_y, transform)
+            pixel_x = float(coords[i])
+            pixel_y = float(coords[i+1])
+            blender_x, blender_y = agp_utils.px_to_blender(pixel_x, pixel_y, transform)
             self.perimeter.append(mathutils.Vector((blender_x, blender_y, 0)))
 
         #Re add the last point to close the polygon
@@ -148,17 +148,17 @@ class facade:
         transformed_perimeter = []
         for vert in self.perimeter:
             #Transform the vertex using the agp_transform
-            pixel_x, pixel_y = agp_utils.to_pixel_coords(vert.x, vert.y, transform)
+            pixel_x, pixel_y = agp_utils.blender_to_px(vert.x, vert.y, transform)
             transformed_perimeter.append(mathutils.Vector((pixel_x, pixel_y, 0)))
 
         cmd = f"FAC {int(resource_index)} {ftos(self.height, 2)} "
 
         for vert in transformed_perimeter:
-            cmd += f"{ftos(vert.x, 4)} {ftos(vert.y, 4)} "
+            cmd += f"{ftos(vert.x, 8)} {ftos(vert.y, 8)} "
 
         return cmd
 
-    def from_command(self, in_command, fac_resource_list, transform: agp_utils.agp_transform, in_x_mult=1.0, in_y_mult=1.0):
+    def from_command(self, in_command, fac_resource_list, transform: agp_utils.agp_transform):
         """
         Parse a FAC command and set the facade's properties accordingly.
         Args:
@@ -185,9 +185,9 @@ class facade:
 
         self.perimeter = []
         for i in range(0, len(coords), 2):
-            pixel_x = float(coords[i]) * in_x_mult
-            pixel_y = float(coords[i+1]) * in_y_mult
-            blender_x, blender_y = agp_utils.to_blender_coords(pixel_x, pixel_y, transform)
+            pixel_x = float(coords[i])
+            pixel_y = float(coords[i+1])
+            blender_x, blender_y = agp_utils.px_to_blender(pixel_x, pixel_y, transform)
             self.perimeter.append(mathutils.Vector((blender_x, blender_y, 0)))
 
 class tree_line:
@@ -236,16 +236,16 @@ class tree_line:
         transformed_perimeter = []
         for vert in self.perimeter:
             #Transform the vertex using the agp_transform
-            pixel_x, pixel_y = agp_utils.to_pixel_coords(vert.x, vert.y, transform)
+            pixel_x, pixel_y = agp_utils.blender_to_px(vert.x, vert.y, transform)
             transformed_perimeter.append(mathutils.Vector((pixel_x, pixel_y, 0)))
 
         for i in range(0, len(transformed_perimeter) - 1):
-            cur_cmd = f"TREE_LINE {ftos(transformed_perimeter[i].x, 4)} {ftos(transformed_perimeter[i].y, 4)} {ftos(transformed_perimeter[i+1].x, 4)} {ftos(transformed_perimeter[i+1].y, 4)} {self.layer}"
+            cur_cmd = f"TREE_LINE {ftos(transformed_perimeter[i].x, 8)} {ftos(transformed_perimeter[i].y, 8)} {ftos(transformed_perimeter[i+1].x, 8)} {ftos(transformed_perimeter[i+1].y, 8)} {self.layer}"
             cmds.append(cur_cmd)
 
         return cmds
 
-    def from_command(self, in_command, transform: agp_utils.agp_transform, in_x_mult=1.0, in_y_mult=1.0):
+    def from_command(self, in_command, transform: agp_utils.agp_transform):
         """
         Parse a TREE_LINE command and set the tree line's properties accordingly.
         Args:
@@ -259,10 +259,10 @@ class tree_line:
             self.valid = False
             return
 
-        start_x = float(tokens[1]) * in_x_mult
-        start_y = float(tokens[2]) * in_y_mult
-        end_x = float(tokens[3]) * in_x_mult
-        end_y = float(tokens[4]) * in_y_mult
+        start_x = float(tokens[1])
+        start_y = float(tokens[2])
+        end_x = float(tokens[3])
+        end_y = float(tokens[4])
         self.layer = int(tokens[5])
 
         temp_perimeter = []
@@ -271,7 +271,7 @@ class tree_line:
 
         self.perimeter = []
         for vert in temp_perimeter:
-            blender_x, blender_y = agp_utils.to_blender_coords(vert.x, vert.y, transform)
+            blender_x, blender_y = agp_utils.px_to_blender(vert.x, vert.y, transform)
             self.perimeter.append(mathutils.Vector((blender_x, blender_y, 0)))
 
 class tree:
@@ -332,23 +332,23 @@ class tree:
 
         cmd = ""
 
-        x_pixel, y_pixel = agp_utils.to_pixel_coords(self.x, self.y, transform)
+        x_pixel, y_pixel = agp_utils.blender_to_px(self.x, self.y, transform)
 
-        cmd = f"TREE {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.height, 2)} {ftos(self.width, 2)} {self.layer}"
+        cmd = f"TREE {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.height, 2)} {ftos(self.width, 2)} {self.layer}"
 
         return cmd
 
-    def from_command(self, in_command, transform: agp_utils.agp_transform, in_x_mult=1.0, in_y_mult=1.0):
+    def from_command(self, in_command, transform: agp_utils.agp_transform):
         tokens = in_command.split()
 
-        x_pixel = float(tokens[1]) * in_x_mult
-        y_pixel = float(tokens[2]) * in_y_mult
+        x_pixel = float(tokens[1])
+        y_pixel = float(tokens[2])
         self.height = float(tokens[3])
         self.width = float(tokens[4])
         self.layer = int(tokens[5])
 
         #Convert the pixel coords to Blender coords
-        self.x, self.y = agp_utils.to_blender_coords(x_pixel, y_pixel, transform)
+        self.x, self.y = agp_utils.px_to_blender(x_pixel, y_pixel, transform)
 
 class attached_obj:
     """
@@ -399,6 +399,7 @@ class attached_obj:
         new_empty.xp_agp.exportable = True
         new_empty.xp_agp.type = 'ATTACHED_OBJ'
 
+        print(f"X: {self.x}, Y: {self.y}")
         new_empty.location.x = self.x
         new_empty.location.y = self.y
         new_empty.location.z = self.z
@@ -409,18 +410,18 @@ class attached_obj:
     def to_command(self, obj_resource_list, transform: agp_utils.agp_transform):
         cmd = ""
 
-        x_pixel, y_pixel = agp_utils.to_pixel_coords(self.x, self.y, transform)
+        x_pixel, y_pixel = agp_utils.blender_to_px(self.x, self.y, transform)
 
         obj_index = obj_resource_list.index(self.resource)
 
         if not self.draped:
-            cmd = f"OBJ_DELTA {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {ftos(self.z, 4)} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DELTA {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.heading, 8)} {ftos(self.z, 8)} {obj_index} {self.show_low} {self.show_high}"
         else:
-            cmd = f"OBJ_DRAPED {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DRAPED {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.heading, 8)} {obj_index} {self.show_low} {self.show_high}"
 
         return cmd
 
-    def from_command(self, in_command, obj_resource_list, transform: agp_utils.agp_transform, in_x_mult=1.0, in_y_mult=1.0):
+    def from_command(self, in_command, obj_resource_list, transform: agp_utils.agp_transform):
         """
         Parse an OBJ_DELTA or OBJ_DRAPED command and set the attached_obj's properties accordingly.
         Args:
@@ -439,8 +440,8 @@ class attached_obj:
                 log_utils.warning(f"Invalid OBJ_DELTA command: {in_command}")
                 self.valid = False
                 return
-            x_pixel = float(tokens[1]) * in_x_mult
-            y_pixel = float(tokens[2]) * in_y_mult
+            x_pixel = float(tokens[1])
+            y_pixel = float(tokens[2])
             self.heading = float(tokens[3])
             self.z = float(tokens[4])
             obj_index = int(tokens[5])
@@ -453,8 +454,8 @@ class attached_obj:
                 log_utils.warning(f"Invalid OBJ_DRAPED command: {in_command}")
                 self.valid = False
                 return
-            x_pixel = float(tokens[1]) * in_x_mult
-            y_pixel = float(tokens[2]) * in_y_mult
+            x_pixel = float(tokens[1])
+            y_pixel = float(tokens[2])
             self.heading = float(tokens[3])
             obj_index = int(tokens[4])
             if len(tokens) >= 7:
@@ -467,8 +468,8 @@ class attached_obj:
                 log_utils.warning(f"Invalid OBJ_GRADED command: {in_command}")
                 self.valid = False
                 return
-            x_pixel = float(tokens[1]) * in_x_mult
-            y_pixel = float(tokens[2]) * in_y_mult
+            x_pixel = float(tokens[1])
+            y_pixel = float(tokens[2])
             self.heading = float(tokens[3])
             obj_index = int(tokens[4])
             if len(tokens) >= 7:
@@ -482,7 +483,9 @@ class attached_obj:
             return
 
         self.resource = obj_resource_list[obj_index]
-        self.x, self.y = agp_utils.to_blender_coords(x_pixel, y_pixel, transform)
+        print(f"X: {x_pixel}, Y: {y_pixel}")
+        self.x, self.y = agp_utils.px_to_blender(x_pixel, y_pixel, transform)
+        print(f"Converted X/Y: {self.x}, {self.y}")
 
 class auto_split_obj:
     """
@@ -518,7 +521,7 @@ class auto_split_obj:
         mat_name_to_collection = {}  # Maps material names to collections
         all_objs = []
         fake_lod_objects = []
-        fake_lod_material = bpy.data.materials.new(name="Fake_LOD_Material")
+        lights_fake_lod_material = bpy.data.materials.new("XP2B_Light_Fake_LOD_Material")
 
         try:
             #Duplicate and split all the objects by material
@@ -586,15 +589,15 @@ class auto_split_obj:
                 obj_name = file_utils.sanitize_path(agp_name + "_PT_" + insert_name + "_" + mat + ".obj")
                 obj_name = obj_name.replace(" ", "_")  # Replace spaces with underscores
 
-                agp_path = file_utils.rel_to_abs(agp_name)
-                obj_path = file_utils.rel_to_abs(obj_name)
+                agp_path = file_utils.to_absolute(agp_name)
+                obj_path = file_utils.to_absolute(obj_name)
                 rel_obj_path = os.path.relpath(obj_path, os.path.dirname(agp_path))
 
                 mat_collection = bpy.data.collections.new(obj_name)
                 mat_collection.xplane.layer.name = obj_name
                 self.resources.append(rel_obj_path)
                 mat_collection.xplane.is_exportable_collection = True
-                mat_collection.xplane.layer.export_type = 'scenery'
+                mat_collection.xplane.layer.export_type = 'instanced_scenery'
                 bpy.context.scene.collection.children.link(mat_collection)
                 mat_name_to_collection[mat] = mat_collection
 
@@ -611,8 +614,13 @@ class auto_split_obj:
 
                 #Add our fake LODs if desired
                 if obj.xp_agp.autosplit_do_fake_lods:
+                    #Get this material by name
+                    mat_for_fake_lod = bpy.data.materials.get(mat)
+                    if mat_for_fake_lod is None:
+                        mat_for_fake_lod = lights_fake_lod_material
+
                     fake_lod_obj = agp_utils.add_fake_lod_obj_to_collections(obj.xp_agp.autosplit_lod_count, obj.xp_agp.autosplit_fake_lods_size)
-                    fake_lod_obj.data.materials.append(fake_lod_material)
+                    fake_lod_obj.data.materials.append(mat_for_fake_lod)
                     mat_collection.objects.link(fake_lod_obj)
 
             #Now we need to move our new objects into the correct collections
@@ -634,6 +642,7 @@ class auto_split_obj:
             #Now we need to configure the settings for each collection
             for col in mat_name_to_collection.values():
                 material_config.update_xplane_collection_settings(col)
+                col.xplane.layer.debug = False
 
             #Now we need to disable export on all other objects, export ours, then reenable ours
             original_collection_export_states = {}
@@ -673,57 +682,60 @@ class auto_split_obj:
             log_utils.error(traceback.format_exc())
             good = False
 
-        #We are now done with exporting, so we can remove the new objects and new collections
-        try:
-            for col in mat_name_to_collection.values():
-                bpy.data.collections.remove(col, do_unlink=True)
-        except Exception as e:
-            log_utils.error(f"Error removing auto-split collections: {e}")
-            log_utils.error(traceback.format_exc())
+        if "DEBUG" not in agp_name:
+            #We are now done with exporting, so we can remove the new objects and new collections
+            try:
+                for col in mat_name_to_collection.values():
+                    bpy.data.collections.remove(col, do_unlink=True)
+            except Exception as e:
+                log_utils.error(f"Error removing auto-split collections: {e}")
+                log_utils.error(traceback.format_exc())
 
-        #Now we can remove the duplicate objects
-        try:
-            for split_obj in all_objs:
-                bpy.data.objects.remove(split_obj, do_unlink=True)
-        except Exception as e:
-            log_utils.error(f"Error removing duplicate objects: {e}")
-            log_utils.error(traceback.format_exc())
+            #Now we can remove the duplicate objects
+            try:
+                for split_obj in all_objs:
+                    bpy.data.objects.remove(split_obj, do_unlink=True)
+            except Exception as e:
+                log_utils.error(f"Error removing duplicate objects: {e}")
+                log_utils.error(traceback.format_exc())
 
-        #Now we can remove the fake LOD objects
-        try:
-            for fake_lod_obj in fake_lod_objects:
-                bpy.data.objects.remove(fake_lod_obj, do_unlink=True)
-        except Exception as e:
-            log_utils.error(f"Error removing fake LOD objects: {e}")
-            log_utils.error(traceback.format_exc())
+            #Now we can remove the fake LOD objects
+            try:
+                for fake_lod_obj in fake_lod_objects:
+                    bpy.data.objects.remove(fake_lod_obj, do_unlink=True)
+            except Exception as e:
+                log_utils.error(f"Error removing fake LOD objects: {e}")
+                log_utils.error(traceback.format_exc())
 
-        try:
-            #Remove the fake LOD material
-            bpy.data.materials.remove(fake_lod_material, do_unlink=True)
-        except Exception as e:
-            log_utils.error(f"Error removing fake LOD material: {e}")
-            log_utils.error(traceback.format_exc())
+            #Now we can remove the fake lod material
+            try:
+                bpy.data.materials.remove(lights_fake_lod_material, do_unlink=True)
+            except Exception as e:
+                log_utils.error(f"Error removing fake LOD material: {e}")
+                log_utils.error(traceback.format_exc())
 
     def to_commands(self, obj_resource_list, transform: agp_utils.agp_transform):
         cmds = []
 
-        x_pixel, y_pixel = agp_utils.to_pixel_coords(self.x, self.y, transform)
+        x_pixel, y_pixel = agp_utils.blender_to_px(self.x, self.y, transform)
 
         for resource in self.resources:
             obj_index = obj_resource_list.index(resource)
-            cmd = f"OBJ_DELTA {ftos(x_pixel, 4)} {ftos(y_pixel, 4)} {ftos(self.heading, 4)} {ftos(self.z, 4)} {obj_index} {self.show_low} {self.show_high}"
+            cmd = f"OBJ_DELTA {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.heading, 8)} {ftos(self.z, 8)} {obj_index} {self.show_low} {self.show_high}"
             cmds.append(cmd)
 
         return cmds
 
 class tile:
     def __init__(self):
-        self.left_uv = 0.0
-        self.right_uv = 1.0
-        self.top_uv = 0.0
-        self.bottom_uv = 1.0
-        self.anchor_x_uv = 0.5
-        self.anchor_y_uv = 0.5
+        self.left_x = 0.0   #Left X coordinate in Blender coords
+        self.right_x = 0.0  #Right X coordinate in Blender coords
+        self.top_y = 0.0    #Top Y coordinate in Blender coords
+        self.bottom_y = 0.0 #Bottom Y coordinate in Blender coords
+        self.left_uv = 0.0  #Left U coordinate in UV space (0.0 to 1.0)
+        self.right_uv = 1.0 #Right U coordinate in UV space (0.0 to 1.0)
+        self.top_uv = 0.0   #Top V coordinate in UV space (0.0 to 1.0)
+        self.bottom_uv = 1.0    #Bottom V coordinate in UV space (0.0 to 1.0)
         self.transform = agp_utils.agp_transform()
         self.rotation_n = 0
         self.material = None
@@ -738,6 +750,9 @@ class tile:
 
     def from_obj(self, in_obj, agp_name):
         self.left_uv, self.bottom_uv, self.right_uv, self.top_uv, self.transform = agp_utils.get_tile_bounds_and_transform(in_obj)
+
+        if self.transform is None:
+            return False
 
         #Count of CCW rotations
         cur_rot = misc_utils.resolve_heading(math.degrees(in_obj.rotation_euler.z))
@@ -785,6 +800,8 @@ class tile:
                 new_crop_poly = crop_polygon()
                 new_crop_poly.from_obj(obj)
                 self.crop_poly = new_crop_poly
+
+        return True
 
     def to_obj(self, target_collection, in_material):
         new_objs = []
@@ -839,7 +856,7 @@ class tile:
         else:
             new_tile_obj.rotation_euler.z = 0.0
 
-    def from_commands(self, commands, in_transfom, in_x_mult, in_y_mult, fac_resource_list, obj_resource_list):
+    def from_commands(self, commands, in_transfom, fac_resource_list, obj_resource_list):
         #Tiles have *many* commands, their TILE, their ANCHOR_PT, and all annotations.
         #So to handle all these we'll just loop through and set properties as we encounter them
 
@@ -849,8 +866,7 @@ class tile:
             if not tokens:
                 continue
             if tokens[0] == 'ANCHOR_PT':
-                self.transform.anchor_x = float(tokens[1]) * in_x_mult
-                self.transform.anchor_y = float(tokens[2]) * in_y_mult
+                self.transform.anchor_x, self.transform.anchor_y = agp_utils.px_to_uv(float(tokens[1]), float(tokens[2]), in_transfom)
 
         for cmd in commands:
             tokens = cmd.strip().split()
@@ -858,27 +874,27 @@ class tile:
                 continue
 
             if tokens[0] == 'TILE':
-                self.left_uv = float(tokens[1]) * in_x_mult
-                self.bottom_uv = float(tokens[2]) * in_y_mult
-                self.right_uv = float(tokens[3]) * in_x_mult
-                self.top_uv = float(tokens[4]) * in_y_mult
+                self.left_uv, self.bottom_uv = agp_utils.px_to_uv(float(tokens[1]), float(tokens[2]), in_transfom)
+                self.right_uv, self.top_uv = agp_utils.px_to_uv(float(tokens[3]), float(tokens[4]), in_transfom)
+                self.left_x, self.bottom_y = agp_utils.px_to_blender(float(tokens[1]), float(tokens[2]), in_transfom)
+                self.right_x, self.top_y = agp_utils.px_to_blender(float(tokens[3]), float(tokens[4]), in_transfom)
             elif tokens[0] == 'ROTATION':
                 self.rotation_n = int(float(tokens[1]))
             elif tokens[0] == 'CROP_POLY':
                 self.crop_poly = crop_polygon()
-                self.crop_poly.from_command(cmd, in_transfom, in_x_mult, in_y_mult)
+                self.crop_poly.from_command(cmd, in_transfom)
             elif tokens[0] == 'FAC':
                 self.facades.append(facade())
-                self.facades[-1].from_command(cmd, fac_resource_list, in_transfom, in_x_mult, in_y_mult)
+                self.facades[-1].from_command(cmd, fac_resource_list, in_transfom)
             elif tokens[0] == 'OBJ_DELTA' or tokens[0] == 'OBJ_DRAPED' or tokens[0] == 'OBJ_GRADED' or tokens[0] == 'OBJ_SCRAPER':
                 self.attached_objs.append(attached_obj())
-                self.attached_objs[-1].from_command(cmd, obj_resource_list, in_transfom, in_x_mult, in_y_mult)
+                self.attached_objs[-1].from_command(cmd, obj_resource_list, in_transfom)
             elif tokens[0] == 'TREE':
                 self.trees.append(tree())
-                self.trees[-1].from_command(cmd, in_transfom, in_x_mult, in_y_mult)
+                self.trees[-1].from_command(cmd, in_transfom)
             elif tokens[0] == 'TREE_LINE':
                 self.tree_lines.append(tree_line())
-                self.tree_lines[-1].from_command(cmd, in_transfom, in_x_mult, in_y_mult)
+                self.tree_lines[-1].from_command(cmd, in_transfom)
 
     def get_resources(self):
         """
@@ -903,13 +919,17 @@ class tile:
         
         cur_cmd = ""
 
-        cur_cmd = f"TILE {ftos(self.left_uv * 4096, 4)} {ftos(self.bottom_uv * 4096, 4)} {ftos(self.right_uv * 4096, 4)} {ftos(self.top_uv * 4096, 4)}"
+        left_px, bottom_px = agp_utils.uv_to_px(self.left_uv, self.bottom_uv, self.transform)
+        right_px, top_px = agp_utils.uv_to_px(self.right_uv, self.top_uv, self.transform)
+        anchor_x_px, anchor_y_px = agp_utils.uv_to_px(self.transform.anchor_x, self.transform.anchor_y, self.transform)
+
+        cur_cmd = f"TILE {ftos(left_px, 8)} {ftos(bottom_px, 8)} {ftos(right_px, 8)} {ftos(top_px, 8)}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"ANCHOR_PT {ftos(self.anchor_x_uv * 4096, 4)} {ftos(self.anchor_y_uv * 4096, 4)}"
+        cur_cmd = f"ANCHOR_PT {ftos(anchor_x_px, 8)} {ftos(anchor_y_px, 8)}"
         commands.append(cur_cmd)
 
-        cur_cmd = f"GROUND_PT {ftos(self.anchor_x_uv * 4096, 4)} {ftos(self.anchor_y_uv * 4096, 4)}"
+        cur_cmd = f"GROUND_PT {ftos(anchor_x_px, 8)} {ftos(anchor_y_px, 8)}"
         commands.append(cur_cmd)
 
         cur_cmd = f"ROTATION {self.rotation_n}"
@@ -959,11 +979,6 @@ class agp:
         self.imported_decal_commands = []
         self.layer_group = "objects"
         self.layer_group_offset = 0
-
-        self.imported_texture_scale_w = 1.0
-        self.imported_texture_scale_h = -1.0
-        self.imported_texture_width = 4096
-        self.imported_texture_height = 4096
 
         self.surface = 'NONE'
 
@@ -1037,8 +1052,11 @@ class agp:
         for obj in in_collection.objects:
             if obj.parent == None and obj.xp_agp.type == 'BASE_TILE':
                 new_tile = tile()
-                new_tile.from_obj(obj, self.name)
+                if not new_tile.from_obj(obj, self.name):
+                    return False
                 self.tiles.append(new_tile)
+
+        return True
 
     def to_collection(self):
         log_utils.new_section(f"Creating .agp collection {self.name}")
@@ -1068,7 +1086,7 @@ class agp:
         mat.xp_materials.surface_type = self.surface
         mat.xp_materials.is_separate_material_texture = False  # X-Plane does not support separate material textures on lines/polygons/facades/agps
         mat.xp_materials.layer_group = self.layer_group.upper()
-        mat.xp_materials.layer_group_offset = self.layer_group_offset
+        mat.xp_materials.layer_group_offset = int(self.layer_group_offset)
 
         decal_alb_index = 0
         decal_nml_index = 2
@@ -1088,6 +1106,8 @@ class agp:
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
+
+        material_config.update_settings(mat)
 
         for tile in self.tiles:
             #Create the tile object and link it to the collection
@@ -1111,13 +1131,13 @@ class agp:
         of += "#Materials\n"
 
         if self.alb_texture != "":
-            of += "TEXTURE " + os.path.relpath(file_utils.rel_to_abs(self.alb_texture), output_folder) + "\n"
+            of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
         if self.lit_texture != "":
-            of += "TEXTURE_LIT " + os.path.relpath(file_utils.rel_to_abs(self.lit_texture), output_folder) + "\n"
+            of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
         if self.nml_texture != "":
-            of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + os.path.relpath(file_utils.rel_to_abs(self.nml_texture), output_folder) + "\n"
+            of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
         if self.weather_texture != "":
-            of += "WEATHER " + os.path.relpath(file_utils.rel_to_abs(self.weather_texture), output_folder) + "\n"
+            of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
         else:
             of += "WEATHER_TRANSPARENT\n"
         
@@ -1142,7 +1162,7 @@ class agp:
         if self.surface != None:
             of += "SURFACE " + self.surface + "\n"
         if self.do_tiling:
-            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.rel_to_abs(self.tiling_map_texture), output_folder) + "\n"
+            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
         if not self.render_tiles:
             of += "HIDE_TILES\n"
         if self.tile_lod != 20000:
@@ -1151,9 +1171,9 @@ class agp:
         self.transform = self.tiles[0].transform
 
         of += "\n#Scale\n"
-        of += "TEXTURE_SCALE 4096 4096\n"
-        of += "TEXTURE_WIDTH " + ftos(1 / (self.transform.x_ratio / 4096), 4) + "\n"
-        of += "TEXTURE_HEIGHT " + ftos(1 / (self.transform.x_ratio / 4096) * self.transform.height_ratio, 4) + "\n"
+        of += f"TEXTURE_SCALE {self.transform.resolution_x} {self.transform.resolution_y}\n"
+        of += "TEXTURE_WIDTH " + ftos(1 / self.transform.x_ratio, 8) + "\n"
+        of += "TEXTURE_HEIGHT " + ftos(1 / self.transform.y_ratio, 8) + "\n"
         of += "\n"
 
         #Tiles
@@ -1186,8 +1206,6 @@ class agp:
         for t in self.tiles:
             cmds = t.to_commands(fac_resource_list, obj_resource_list)
 
-            print(cmds)
-
             for c in cmds:
                 of += c + "\n"
 
@@ -1211,8 +1229,11 @@ class agp:
 
         cur_tile_commands = []
 
-        upscale_w = 1.0
-        upscale_h = 1.0
+        #Define dimension buffers
+        imported_width = -1
+        imported_height = -1
+        imported_texture_width_px = -1
+        imported_texture_height_px = -1
 
         # Now we need to parse the file
         for line in lines:
@@ -1265,23 +1286,17 @@ class agp:
                 if len(tokens) > 2:
                     self.layer_group_offset = tokens[2]
             elif cmd == "TEXTURE_WIDTH":
-                self.imported_texture_scale_w = int(float(tokens[1]))
-                if self.imported_texture_scale_h == -1:
-                    self.imported_texture_scale_h = self.imported_texture_scale_w
+                imported_width = float(tokens[1])
+                if imported_height == -1:
+                    imported_height = imported_width
             elif cmd == "TEXTURE_HEIGHT":
-                self.imported_texture_scale_h = int(float(tokens[1]))
+                imported_height = float(tokens[1])
             elif cmd == "TEXTURE_SCALE":
-                self.imported_texture_width = int(float(tokens[1]))
+                imported_texture_width_px = int(float(tokens[1]))
                 if len(tokens) > 2:
-                    self.imported_texture_height = int(float(tokens[2]))
+                    imported_texture_height_px = int(float(tokens[2]))
                 else:
-                    self.imported_texture_height = self.imported_texture_width
-                
-                upscale_w = 4096.0 / self.imported_texture_width
-                upscale_h = 4096.0 / self.imported_texture_height
-
-                self.imported_texture_width *= upscale_w
-                self.imported_texture_height *= upscale_h
+                    imported_texture_height_px = imported_texture_width_px
 
             elif cmd == "SURFACE":
                 self.surface = tokens[1]
@@ -1310,18 +1325,17 @@ class agp:
             elif cmd == "TILE":
                 if len(cur_tile_commands) > 0:
                     #Define our transform
-                    #First scale up our texture dimensions to 4096x4096 and scale down our texture scale so positions remain the same
-                    self.transform.x_ratio = self.imported_texture_width / self.imported_texture_scale_w
-                    self.transform.y_ratio = self.imported_texture_height / self.imported_texture_scale_h
-
-                    print("Transforms")
-                    print(self.transform.x_ratio)
-                    print(self.transform.y_ratio)
+                    self.transform.x_ratio = 1 / imported_width
+                    self.transform.y_ratio = 1 / imported_height
+                    self.transform.resolution_x = imported_texture_width_px
+                    self.transform.resolution_y = imported_texture_height_px
+                    print(f"Transform: {self.transform.x_ratio}, {self.transform.y_ratio}")
+                    print(f"Imported: {imported_width}, {imported_height}, {imported_texture_width_px}, {imported_texture_height_px}")
                     
                     # We have a tile to process
                     new_tile = tile()
                     new_tile.transform = self.transform
-                    new_tile.from_commands(cur_tile_commands, self.transform, upscale_w, upscale_h, fac_resource_list, obj_resource_list)
+                    new_tile.from_commands(cur_tile_commands, self.transform, fac_resource_list, obj_resource_list)
                     self.tiles.append(new_tile)
                     cur_tile_commands = []
                 
@@ -1330,12 +1344,15 @@ class agp:
 
         if len(cur_tile_commands) > 0:
             #Define our transform
-            #First scale up our texture dimensions to 4096x4096 and scale down our texture scale so positions remain the same
-            self.transform.x_ratio = self.imported_texture_width / self.imported_texture_scale_w
-            self.transform.y_ratio = self.imported_texture_height / self.imported_texture_scale_h
+            self.transform.x_ratio = 1 / imported_width
+            self.transform.y_ratio = 1 / imported_height
+            self.transform.resolution_x = imported_texture_width_px
+            self.transform.resolution_y = imported_texture_height_px
+            print(f"Transform: {self.transform.x_ratio}, {self.transform.y_ratio}")
+            print(f"Imported: {imported_width}, {imported_height}, {imported_texture_width_px}, {imported_texture_height_px}")
             
             # We have a tile to process
             new_tile = tile()
             new_tile.transform = self.transform
-            new_tile.from_commands(cur_tile_commands, self.transform, upscale_w, upscale_h, fac_resource_list, obj_resource_list)
+            new_tile.from_commands(cur_tile_commands, self.transform, fac_resource_list, obj_resource_list)
             self.tiles.append(new_tile)

@@ -15,42 +15,7 @@ if script_dir not in sys.path:
 
 import test_helpers
 
-#Function that compares each byte of two files to check how similar the files are. Returns a value 0-1 for 0% to 100% similarity.
-def compare_images(file1, file2):
-    """
-    Compares two images and returns a similarity ratio (0-1).
-    """
-    try:
-        print("Loading images...")
-        img1 = bpy.data.images.load(file1)
-        img2 = bpy.data.images.load(file2)
-
-        # Check if the images are the same size
-        if img1.size[0] != img2.size[0] or img1.size[1] != img2.size[1]:
-            print("Images are not the same size.")
-            return 0
-
-        # Convert pixel data to NumPy arrays
-        pixels1 = np.array(img1.pixels[:])
-        pixels2 = np.array(img2.pixels[:])
-
-        # Calculate the absolute difference between the two images
-        #I... don't actually know why this works. But the results *appear* right and Github Copilot told me to soooo...
-        #If python wasn't SOOOOOOOOOOOOOOOO SLOW I'd do this with a simple nested for *cries in c++*
-        diff = np.abs(pixels1 - pixels2)
-
-        # Calculate the similarity ratio
-        total_pixels = len(pixels1)
-        similarity = 1 - (np.sum(diff) / total_pixels)
-
-        print("Images compared.")
-        return max(0, similarity)  # Ensure similarity is not negative
-
-    except Exception as e:
-        print(f"Error comparing images: {e}")
-        return 0
-
-def test(test_dir):
+def test_combined(test_dir):
 
     error_messages = ""
 
@@ -60,6 +25,18 @@ def test(test_dir):
 
     test_helpers.add_test_category("Bake Tests")
 
+    bpy.context.scene.xp_ext.low_poly_bake_margin = 2
+    bpy.context.scene.xp_ext.low_poly_bake_extrusion_distance = 0.1
+    bpy.context.scene.xp_ext.low_poly_bake_resolution = 256
+    bpy.context.scene.xp_ext.low_poly_bake_ss_factor = 2
+    bpy.context.scene.xp_ext.low_poly_bake_max_ray_distance = 0.0
+    bpy.context.scene.xp_ext.low_poly_bake_do_alb = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_opacity = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_nrm = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_mat = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_lit = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_separate_normals = False
+
     #Bake
     try:
 
@@ -68,10 +45,6 @@ def test(test_dir):
         for col in bpy.data.collections:
             if col.name.startswith("BakeTest."):
                 col.name = "BakeTest"
-
-        #Set params
-        bpy.context.scene.xp_ext.low_poly_bake_resolution = 256
-        bpy.context.scene.xp_ext.low_poly_bake_ss_factor = 2
 
         #File Paths
         known_good_albedo = test_dir + "/BakeTest_LOD.good.png"
@@ -89,16 +62,16 @@ def test(test_dir):
             os.remove(test_normal)
         if os.path.exists(test_lit):
             os.remove(test_lit)
-    
+
         bpy.ops.xp_ext.bake_low_poly()
     except Exception as e:
         error_messages += "Bake failed: " + str(e) + "\n"
 
     #Compare the images
     try:
-        albedo_similarity = compare_images(test_albedo, known_good_albedo)
-        normal_similarity = compare_images(test_normal, known_good_normal)
-        lit_similarity = compare_images(test_lit, known_good_lit)
+        albedo_similarity = test_helpers.compare_images(test_albedo, known_good_albedo)
+        normal_similarity = test_helpers.compare_images(test_normal, known_good_normal)
+        lit_similarity = test_helpers.compare_images(test_lit, known_good_lit)
 
         #Rename the test result images to _version.test_result.png so they are ignored by git
         blender_version = bpy.app.version_string.split(".")
@@ -127,7 +100,7 @@ def test(test_dir):
         error_messages
     )
 
-    test_helpers.add_test_name("Bake Test Normal")
+    test_helpers.add_test_name("Bake Test Combined Normal")
     test_helpers.append_test_results(
         normal_similarity > 0.98,
         normal_similarity * 100,
@@ -141,13 +114,108 @@ def test(test_dir):
         error_messages
     )
 
+def test_separate(test_dir):
+
+    error_messages = ""
+
+    normal_similarity = 0
+    material_similarity = 0
+
+    bpy.context.scene.xp_ext.low_poly_bake_margin = 2
+    bpy.context.scene.xp_ext.low_poly_bake_extrusion_distance = 0.1
+    bpy.context.scene.xp_ext.low_poly_bake_resolution = 256
+    bpy.context.scene.xp_ext.low_poly_bake_ss_factor = 2
+    bpy.context.scene.xp_ext.low_poly_bake_max_ray_distance = 0.0
+    bpy.context.scene.xp_ext.low_poly_bake_do_alb = False
+    bpy.context.scene.xp_ext.low_poly_bake_do_opacity = False
+    bpy.context.scene.xp_ext.low_poly_bake_do_nrm = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_mat = True
+    bpy.context.scene.xp_ext.low_poly_bake_do_lit = False
+    bpy.context.scene.xp_ext.low_poly_bake_do_separate_normals = True
+
+    #Bake
+    try:
+
+        # Sometimes Blender tries to change the name to .000 (or similar). This *seems* to be a bug in their unique name code since there's no actual conflict
+        # But that's not super important to the core plugin so we have this bandaid
+        for col in bpy.data.collections:
+            if col.name.startswith("BakeTest."):
+                col.name = "BakeTest"
+        
+        #File Paths
+        known_good_normal = test_dir + "/BakeTest_LOD_NRM.good.png"
+        known_good_material = test_dir + "/BakeTest_LOD_MAT.good.png"
+
+        test_normal = test_dir + "/BakeTest_LOD_NRM.png"
+        test_material = test_dir + "/BakeTest_LOD_MAT.png"
+
+        #Delete existing images
+        if os.path.exists(test_normal):
+            os.remove(test_normal)
+        if os.path.exists(test_material):
+            os.remove(test_material)
+    
+        bpy.ops.xp_ext.bake_low_poly()
+    except Exception as e:
+        error_messages += "Bake failed: " + str(e) + "\n"
+
+    #Compare the images
+    try:
+        normal_similarity = test_helpers.compare_images(test_normal, known_good_normal)
+        material_similarity = test_helpers.compare_images(test_material, known_good_material)
+
+        #Rename the test result images to _version.test_result.png so they are ignored by git
+        blender_version = bpy.app.version_string.split(".")
+        blender_version = blender_version[0] + blender_version[1]
+        save_test_normal = test_normal.replace(".png", "_" + blender_version + ".test_result.png")
+        save_test_material = test_material.replace(".png", "_" + blender_version + ".test_result.png")
+        if os.path.exists(save_test_normal):
+            os.remove(save_test_normal)
+        if os.path.exists(save_test_material):
+            os.remove(save_test_material)
+
+        #Rename the test result images
+        os.rename(test_normal, save_test_normal)
+        os.rename(test_material, save_test_material)
+    except Exception as e:
+        error_messages += "Image comparison failed: " + str(e) + "\n"
+
+
+    test_helpers.add_test_name("Bake Test Normal")
+    test_helpers.append_test_results(
+        normal_similarity > 0.98,
+        normal_similarity * 100,
+        error_messages
+    )
+
+    test_helpers.add_test_name("Bake Test Material")
+    test_helpers.append_test_results(
+        material_similarity > 0.98,
+        material_similarity * 100,
+        error_messages
+    )
+
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
 
     #The test dir is the parent of the blender file path. THis is just so we don't have to deal with passing in an extra argument, or hard coding the path in every test tilf
-    test_dir = bpy.data.filepath.rsplit("\\", 1)[0]
+    test_dir = os.getcwd() + os.sep + "Content"
+    print("Bake Test Dir: " + test_dir)
 
-    test(test_dir)
+    #Open the bake file
+    bake_file = test_dir + os.sep + "BakeTest.blend"
+    try:
+        bpy.ops.wm.open_mainfile(filepath=bake_file)
+    except Exception as e:
+        #Check if this is the "newer Blender" error - if so, ignore it, it's expected
+        if "newer Blender" in str(e):
+            pass
+        else:
+            test_helpers.add_test_category("Bake Tests")
+            test_helpers.append_test_fail("Failed to open bake test file: " + str(e))
+
+    test_combined(test_dir)
+    test_separate(test_dir)
     
 
 

@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Props
-#Purpose:   Provide a single file containing functions to configure materials for X-Plane in Blender
+#Module:    material_config.py
+#Purpose:   Provides the operation logic for updating material settings and nodes based on the entered properties
 
 import bpy # type: ignore
 from .Helpers import file_utils
@@ -49,8 +49,28 @@ def operator_wrapped_update_nodes(self = None, context = None):
 
 #Function to update the X-Plane Collection material settings:
 def update_xplane_collection_settings(col):
-    #Define flag
-    updated = False
+    #Reset some default settings
+    col.xplane.layer.luminance_override = False
+    col.xplane.layer.luminance = 1000
+    col.xplane.layer.texture_map_normal = ""
+    col.xplane.layer.texture_map_material_gloss = ""
+    col.xplane.layer.texture_normal = ""
+    col.xplane.layer.normal_metalness = False
+    col.xplane.layer.texture_draped = ""
+    col.xplane.layer.texture_draped_normal = ""
+    col.xplane.layer.normal_metalness_draped = False
+    col.xplane.layer.file_decal1 = ""
+    col.xplane.layer.file_decal2 = ""
+    col.xplane.layer.file_draped_decal1 = ""
+    col.xplane.layer.file_draped_decal2 = ""
+    col.xplane.layer.file_normal_decal1 = ""
+    col.xplane.layer.file_normal_decal2 = ""
+    col.xplane.layer.file_draped_normal_decal1 = ""
+    col.xplane.layer.file_draped_normal_decal2 = ""
+    col.xplane.layer.texture_modulator = ""
+    col.xplane.layer.texture_draped_modulator = ""
+
+
 
     #Get all the objects in the collection
     for obj in col.objects:
@@ -59,114 +79,76 @@ def update_xplane_collection_settings(col):
         if mat != None:
             xp_props = mat.xp_materials
 
-            #Check for textures
+            #If we have a lit texture, and a brightness override, set the brightness override
+            if xp_props.lit_texture != "":
+                if xp_props.brightness > 0:
+                    col.xplane.layer.luminance_override = True
+                    col.xplane.layer.luminance = int(xp_props.brightness)
+
+                col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
+
+            #Set the textures
             if xp_props.alb_texture != "":
+                col.xplane.layer.texture = xp_props.alb_texture
+            if xp_props.lit_texture != "":
+                col.xplane.layer.texture_lit = xp_props.lit_texture
+            if xp_props.do_separate_material_texture:
+                col.xplane.layer.texture_map_normal = xp_props.normal_texture
+                col.xplane.layer.texture_map_material_gloss = xp_props.material_texture
+            else:
+                col.xplane.layer.texture_normal = xp_props.normal_texture
 
-                #If we haven't updated yet, update
-                if not updated:
-                    
-                    if xp_props.lit_texture != "":
-                        if xp_props.brightness > 0:
-                            col.xplane.layer.luminance_override = True
-                            col.xplane.layer.luminance = int(xp_props.brightness)
-                        else:
-                            col.xplane.layer.luminance_override = False
-                            col.xplane.layer.luminance = 1000
+            #If we have a normal map, set normal metalness to true
+            if xp_props.normal_texture != "":
+                col.xplane.layer.normal_metalness = True
 
-                        if xp_props.normal_texture != "":
-                            col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-                    else:
-                        col.xplane.layer.luminance_override = False
-                        col.xplane.layer.luminance = 1000
+            #If we are draped, set the draped textures to our main textures
+            if xp_props.draped:
+                col.xplane.layer.texture_draped = xp_props.alb_texture
+                col.xplane.layer.texture_draped_normal = xp_props.normal_texture
+                
+                #If we have a normal map, set normal metalness to true
+                if xp_props.normal_texture != "":
+                    col.xplane.layer.normal_metalness_draped = True
 
-                    col.xplane.layer.texture = xp_props.alb_texture
-                    col.xplane.layer.texture_lit = xp_props.lit_texture
-                    if xp_props.do_separate_material_texture:
-                        col.xplane.layer.texture_map_normal = xp_props.normal_texture
-                        col.xplane.layer.texture_map_material_gloss = xp_props.material_texture
-                    else:
-                        col.xplane.layer.texture_normal = xp_props.normal_texture
-                    col.xplane.layer.normal_metalness = xp_props.normal_texture != ""
-
-                    if xp_props.draped:
-                        col.xplane.layer.texture_draped = xp_props.alb_texture
-                        col.xplane.layer.texture_draped_normal = xp_props.normal_texture
-                        col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-                        try:
-                            col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
-                            col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
-                        except:
-                            if xp_props.layer_group == 'BLENDED':
-                                log_utils.warn("The 'Blended' layer group is only supported by custom XP2B exporters. There is a pending pull request, so tell your Local X-Plane Representative to merge it ;)")
-                            pass
-                    else:
-                        col.xplane.layer.texture_draped = ""
-                        col.xplane.layer.texture_draped_normal = ""
-                        col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-
-                    #Now we need to set the decal properties
-                    #Reset decal properties
-                    col.xplane.layer.file_decal1 = ""
-                    col.xplane.layer.file_decal2 = ""
-                    col.xplane.layer.file_draped_decal1 = ""
-                    col.xplane.layer.file_draped_decal2 = ""
-                    col.xplane.layer.file_normal_decal1 = ""
-                    col.xplane.layer.file_normal_decal2 = ""
-                    col.xplane.layer.file_draped_normal_decal1 = ""
-                    col.xplane.layer.file_draped_normal_decal2 = ""
-                    col.xplane.layer.texture_modulator = ""
-                    col.xplane.layer.texture_draped_modulator = ""
-
-                    col.xplane.layer.texture_modulator = xp_props.decal_modulator
-
-                    if xp_props.draped:
-                        col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
-
-                    if len(xp_props.decals) == 4:
-                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
-                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
-                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
-                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
-                    else:
-                        #Set the correct number of decals
-                        while len(xp_props.decals) < 4:
-                            #Add a new decal
-                            xp_props.decals.add()
-                        while len(xp_props.decals) > 4:
-                            #Remove the last decal
-                            xp_props.decals.remove(xp_props.decals.count - 1)
-
-                    updated = True
-
-                #If we have updated, but this one is draped, update with this one. Then we can skip the rest of the objects in this collection
-                if xp_props.draped:
-                    col.xplane.layer.texture = xp_props.alb_texture
-                    col.xplane.layer.texture_lit = xp_props.lit_texture
-                    col.xplane.layer.texture_normal = xp_props.normal_texture
-                    col.xplane.layer.texture_draped = xp_props.alb_texture
-                    col.xplane.layer.texture_draped_normal = xp_props.normal_texture
-                    col.xplane.layer.normal_metalness = xp_props.normal_texture != ""
-                    col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
-
+                #Try to set the layer group. We wrap this in a try because if they are not on the custom branch of XP2B with the new blended layer group, this will fail if they use "blended" as a layer group
+                try:
                     col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
                     col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
+                except:
+                    if xp_props.layer_group == 'BLENDED':
+                        log_utils.warning("The 'Blended' layer group is only supported by custom XP2B exporters. There is a pending pull request, so tell your Local X-Plane Representative to merge it ;)")
+                    pass
+            #If we're not draped, we set our normal layer group
+            else:
+                #Try to set the layer group. We wrap this in a try because if they are not on the custom branch of XP2B with the new blended layer group, this will fail if they use "blended" as a layer group
+                try:
+                    col.xplane.layer.layer_group = xp_props.layer_group.lower()
+                    col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
+                except:
+                    if xp_props.layer_group == 'BLENDED':
+                        log_utils.warning("The 'Blended' layer group is only supported by custom XP2B exporters. There is a pending pull request, so tell your Local X-Plane Representative to merge it ;)")
+                    pass
 
-                    col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
+            #Set the modulator and decals
+            if xp_props.decal_modulator != "":
+                col.xplane.layer.texture_modulator = xp_props.decal_modulator
 
-                    if len(xp_props.decals) == 4:
-                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
-                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
-                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
-                        decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
-                    else:
-                        #Set the correct number of decals
-                        while len(xp_props.decals) < 4:
-                            #Add a new decal
-                            xp_props.decals.add()
-                        while len(xp_props.decals) > 4:
-                            #Remove the last decal
-                            xp_props.decals.remove(xp_props.decals.count - 1)
-    
+            if xp_props.draped and xp_props.decal_modulator != "":
+                col.xplane.layer.texture_draped_modulator = xp_props.decal_modulator
+
+            #Ensure we have the right number of decals
+            if len(xp_props.decals) != 4:
+                while len(xp_props.decals) < 4:
+                    xp_props.decals.add()
+                while len(xp_props.decals) > 4:
+                    xp_props.decals.remove(xp_props.decals.count - 1)
+
+            decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[0], 1)
+            decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
+            decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
+            decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
+
     log_utils.display_messages()
 
 #Function to update settings when a property is updated:
@@ -186,6 +168,26 @@ def update_settings(in_material):
     if xp_mat.was_programmatically_updated:
         xp_mat.was_programmatically_updated = False
         return
+    
+    #Sanitize all paths to be relative first
+    if xp_mat.alb_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.alb_texture = file_utils.to_relative(xp_mat.alb_texture, True)
+    if xp_mat.normal_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.normal_texture = file_utils.to_relative(xp_mat.normal_texture, True)
+    if xp_mat.lit_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.lit_texture = file_utils.to_relative(xp_mat.lit_texture, True)
+    if xp_mat.material_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.material_texture = file_utils.to_relative(xp_mat.material_texture, True)
+    if xp_mat.weather_texture != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.weather_texture = file_utils.to_relative(xp_mat.weather_texture, True)
+    for decal in xp_mat.decals:
+        if decal.texture != "":
+            decal.texture = file_utils.to_relative(decal.texture, True)
 
     #Set backface culling to TRUE
     in_material.use_backface_culling = True
@@ -287,6 +289,9 @@ def update_settings(in_material):
     xp_mat.decals[1].is_normal = False
     xp_mat.decals[2].is_normal = True
     xp_mat.decals[3].is_normal = True
+
+    #Finally
+    xp_mat.was_programmatically_updated = False
 
 #Internal function to create the node setup for the keying of a decal
 def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_g, key_b, key_a, key_base, key_mod):
@@ -508,15 +513,15 @@ def update_nodes(material):
             update_settings(material)
 
         #Resolve paths. They are relative to the blender file or relative to one folder back. We assume one folder back first. If the file is not found, we assume it is in the same folder as the blender file.
-        str_image_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.alb_texture))
-        str_image_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.normal_texture))
-        str_image_mat = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.material_texture))
-        str_image_lit = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.lit_texture))
-        str_image_mod = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decal_modulator))
-        str_image_decal_1_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[0].texture))
-        str_image_decal_2_alb = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[1].texture))
-        str_image_decal_1_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[2].texture))
-        str_image_decal_2_nml = file_utils.check_for_dds_or_png(file_utils.rel_to_abs(xp_material_props.decals[3].texture))
+        str_image_alb = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.alb_texture))
+        str_image_nml = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.normal_texture))
+        str_image_mat = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.material_texture))
+        str_image_lit = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.lit_texture))
+        str_image_mod = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decal_modulator))
+        str_image_decal_1_alb = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decals[0].texture))
+        str_image_decal_2_alb = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decals[1].texture))
+        str_image_decal_1_nml = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decals[2].texture))
+        str_image_decal_2_nml = file_utils.check_for_dds_or_png(file_utils.to_absolute(xp_material_props.decals[3].texture))
 
         if not xp_material_props.decals[0].enabled:
             str_image_decal_1_alb = ""

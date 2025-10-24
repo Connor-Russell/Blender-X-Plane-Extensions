@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      6/3/2025
-#Module:    Log Utils
-#Purpose:   Provide easy to use function calls for different levels of warnings
+#Module:    log_utils.py
+#Purpose:   Provide easy to use function calls for different levels of warnings. Use .info, .warning, .error. Start a new section with .new_section. Report messages with .display_messages.
 
 import bpy
 from datetime import datetime
@@ -36,6 +36,8 @@ def info(message):
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
     msg = current_time + " [VERBOSE] " + message + "\n"
+
+    print(msg)  # Print to console for immediate feedback
 
     log.write(msg)
 

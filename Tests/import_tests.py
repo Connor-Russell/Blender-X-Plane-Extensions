@@ -1,7 +1,8 @@
 #Project: BlenderImportTests
 #Author: Connor Russell
 #Date: 11/9/2024
-#Purpose: Provide a test to import various assets and compare them to previously imported known good assets
+#Module: import_tests.py
+#Purpose: Provide automated test for importing assets for all blender files in the test directory and comparing the results to the known good results
 
 import bpy
 import os
@@ -70,15 +71,65 @@ def test(test_dir):
                 raise FileNotFoundError(f"Asset file not found: {asset_import_path}")
 
             if asset_extension == '.fac':
-                bpy.ops.xp_ext.test_import_fac(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_fac(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    files=files
+                )
             elif asset_extension == '.obj':
-                bpy.ops.xp_ext.test_import_obj(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_obj(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    files=files
+                )
             elif asset_extension == '.pol':
-                bpy.ops.xp_ext.test_import_pol(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_pol(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    files=files
+                )
             elif asset_extension == '.lin':
-                bpy.ops.xp_ext.test_import_lin(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_lin(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    files=files
+                )
             elif asset_extension == '.agp':
-                bpy.ops.xp_ext.test_import_agp(import_path=asset_import_path)
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_agp(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    files=files
+                )
             
             #Now we will get the two collections
             col1 = None
@@ -141,7 +192,8 @@ def test(test_dir):
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
 
-    test_dir = os.path.dirname(bpy.data.filepath)
+    test_dir = os.getcwd() + os.sep + "Content"
+    print("Import Tests Directory: " + test_dir)
 
     try:
         test(test_dir)

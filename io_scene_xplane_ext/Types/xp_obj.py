@@ -981,6 +981,8 @@ class draw_call:
                 new_mat.xp_materials.layer_group = obj_ref.layer_group if obj_ref != None else "OBJECTS"
                 new_mat.xp_materials.layer_group_offset = obj_ref.layer_group_offset if obj_ref != None else 0
 
+            material_config.update_settings(new_mat)
+
             matching_mat = new_mat
 
             in_mats.append(new_mat)
@@ -2479,6 +2481,8 @@ class object:
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
 
+        material_config.update_settings(mat)
+
         all_mats.append(mat)
 
         #Create the draped material if it exists
@@ -2513,6 +2517,8 @@ class object:
                         break
                     decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
+
+            material_config.update_settings(mat)
 
             all_mats.append(draped_mat)
 

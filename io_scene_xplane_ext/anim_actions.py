@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      7/10/2025
-#Module:    Anim Actions
-#Purpose:   This file contains functions for performing actions in regards to animations for X-Plane in Blender
+#Module:    anim_actions.py
+#Purpose:   Provides logic for creating animations for X-Plane from Blender unique sources (i.e. mesh deformations)
 
 import bpy
 
@@ -27,29 +27,34 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
     #Get the value interval
     value_interval = (end_value - start_value) / num_frames
 
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+
     for frame in range(0, num_frames):
         #Get the frame
         frame_num = start_frame + (frame * keyframe_interval)
 
-        #Goto the correct frame
-        anim_utils.goto_frame(frame_num)
-        print(frame_num)
+        bpy.context.scene.frame_set(frame_num)
+        bpy.context.view_layer.update()
 
-        #Duplicate the object via operators
-        bpy.ops.object.mode_set(mode='OBJECT')
+        # Get the evaluated object with cloth deformation
+        eval_obj = in_obj.evaluated_get(depsgraph)
+
+        # Copy the mesh data from the evaluated object
+        mesh_copy = eval_obj.to_mesh().copy()  # Make a real datablock copy
+
+        #Duplicat the object via operators, then we will clear modifiers, and replace it's mesh data with mesh_copy
         bpy.ops.object.select_all(action='DESELECT')
         in_obj.select_set(True)
         bpy.context.view_layer.objects.active = in_obj
         bpy.ops.object.duplicate()
         anim_obj = bpy.context.active_object
         anim_obj.name = f"{in_obj.name}_anim_{frame_num}"
-        in_obj.select_set(False)
 
-        #Apply the modifiers
-        for modifier in anim_obj.modifiers:
-            bpy.ops.object.modifier_apply(modifier=modifier.name)
+        # Clear all modifiers
+        anim_obj.modifiers.clear()
 
-        #If we apply the parent transform, clear the parent and apply the parent's transform
+        anim_obj.data = mesh_copy
+
         if apply_parent_transform:
             if anim_obj.parent:
                 # Store the world matrix
@@ -58,6 +63,9 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
                 anim_obj.parent = None
                 # Restore world matrix
                 anim_obj.matrix_world = world_matrix
+
+        # Free the mesh when done (to avoid memory leaks)
+        eval_obj.to_mesh_clear()
 
         #Now we need to setup the animation. So we need to get the start value, and the end value, then add the animations
         start_dref_value = start_value + value_interval * frame
@@ -85,7 +93,7 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
             anim_obj.xplane.datarefs[-1].show_hide_v2 = end_value + (value_interval * 0.1)
             anim_obj.xplane.datarefs[-1].loop = loop_value
 
-def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval):
+def auto_keyframe(in_obj: bpy.types.Object, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval, add_intermediate_keyframes):
     """
     Automatically keyframe the given object for the specified dataref.
 
@@ -99,7 +107,7 @@ def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_fra
     """
 
     #Get the value increment
-    value_increment = (end_value - start_value) / ((end_frame - start_frame))
+    value_increment = (end_value - start_value) / (end_frame - start_frame)
     
     #Add the dataref track
     in_obj.xplane.datarefs.add()
@@ -108,10 +116,23 @@ def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_fra
     in_obj.xplane.datarefs[-1].loop = loop_value
 
     #Iterate through the frames and set the xp keyframes
-    for frame in range(start_frame, end_frame + 1, keyframe_interval):
-        value = start_value + (frame - start_frame) * value_increment
-        anim_utils.goto_frame(frame)
-        anim_utils.keyframe_xp_dataref(in_obj, dataref, value)
+    if add_intermediate_keyframes:
+        for frame in range(start_frame, end_frame + 1, keyframe_interval):
+            value = start_value + (frame - start_frame) * value_increment
+            anim_utils.goto_frame(frame)
+            anim_utils.keyframe_xp_dataref(in_obj, dataref, value)
+    else:
+        #Iterate over every frame that has a keyframe
+        if in_obj.animation_data and in_obj.animation_data.action:
+            for fcurve in in_obj.animation_data.action.fcurves:
+                #Check if this fcurve is for either loc or rot (the only things we can animate)
+                if fcurve.data_path in {'location', 'rotation_euler', 'rotation_quaternion'}:
+                    for keyframe_point in fcurve.keyframe_points:
+                        frame = int(keyframe_point.co.x)
+                        if frame >= start_frame and frame <= end_frame:
+                            value = start_value + (frame - start_frame) * value_increment
+                            anim_utils.goto_frame(frame)
+                            anim_utils.keyframe_xp_dataref(in_obj, dataref, value)
 
 def autodetect_frame_range(in_obj, fps=30.0):
     """

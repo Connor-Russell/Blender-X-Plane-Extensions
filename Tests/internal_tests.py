@@ -1,7 +1,8 @@
-#Project: BlenderFacadeExporter
+#Project: Blender X-Plane Extensions
 #Author: Connor Russell
 #Date: 11/9/2024
-#Purpose: Provide simple single function call to open a blender file, call the export function, and compare it with a known good file
+#Module: internal_tests.py
+#Purpose: Provide a call to the internal test operators. This will likely be phased out for in_app_test.py
 
 import bpy
 import sys

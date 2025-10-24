@@ -1,0 +1,13 @@
+2.93,D:\Blender Versions\2.93\blender.exe
+3.01,D:\Blender Versions\3.01\blender.exe
+3.12,D:\Blender Versions\3.12\blender.exe
+3.22,D:\Blender Versions\3.22\blender.exe
+3.39,D:\Blender Versions\3.39\blender.exe
+3.41,D:\Blender Versions\3.41\blender.exe
+3.51,D:\Blender Versions\3.51\blender.exe
+3.69,D:\Blender Versions\3.69\blender.exe
+4.02,D:\Blender Versions\4.02\blender.exe
+4.11,D:\Blender Versions\4.11\blender.exe
+4.23,D:\Blender Versions\4.23\blender.exe
+4.32,D:\Blender Versions\4.32\blender.exe
+4.43,D:\Blender Versions\4.43\blender.exe

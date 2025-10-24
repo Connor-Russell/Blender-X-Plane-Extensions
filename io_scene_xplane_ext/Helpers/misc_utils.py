@@ -1,6 +1,7 @@
 #Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/9/2024
+#Module: misc_utils.py
 #Purpose: Provide simple utility functions (like linear_search) to help with various tasks.
 
 import mathutils
@@ -50,6 +51,7 @@ def resolve_heading(heading):
 
     return heading
 
+#TODO: What is this for? Why not just use set()?
 def dedupe_list(in_list):
     """
     Removes duplicate entries from a list while preserving the order of the first occurrences.

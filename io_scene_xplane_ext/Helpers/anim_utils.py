@@ -1,8 +1,9 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/24/2025
-#Module:    Anim Utils
+#Module:    anim_utils.py
 #Purpose:   Provide functions to help with animations
+#Notes:     This file has become bloated with math-adjacent functions, eventually these will be split to another file.
 
 import bpy
 import math
@@ -319,9 +320,9 @@ def keyframe_xp_dataref(obj, name, value):
         value (float): Value to set and keyframe.
     """
     for dref in obj.xplane.datarefs:
-        if obj.xplane.datarefs[0].path == name:
-            obj.xplane.datarefs[0].value = value
-            obj.xplane.datarefs[0].keyframe_insert(data_path="value")
+        if dref.path == name:
+            dref.value = value
+            dref.keyframe_insert(data_path="value")
             break
 
 def get_xp_dataref(obj, name):

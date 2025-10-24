@@ -1,7 +1,8 @@
-#Project: BlenderImportTests
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/9/2024
-#Purpose: Provide a test to import various assets and compare them to previously imported known good assets
+#Module: export_tests.py
+#Purpose: Provides automated tests for exporting files from all formats for all files in the test dir, then comparing them to known good files
 
 import bpy
 import os
@@ -78,6 +79,10 @@ def test(test_dir):
             output_path_name = os.path.basename(output_path)
             print(output_path_name)
 
+            #Remove the output file if it exists
+            if os.path.exists(output_path):
+                os.remove(output_path)
+
             #Set the export path
             col.xp_fac.name = output_path_name
             col.xp_pol.name = output_path_name
@@ -128,6 +133,7 @@ def test(test_dir):
 #Program entry point. Here we get the test directory, and call the test function
 if __name__ == "__main__":
 
-    test_dir = os.path.dirname(bpy.data.filepath)
+    test_dir = os.getcwd() + os.sep + "Content"
+    print("Export Test Dir: " + test_dir)
 
     test(test_dir)

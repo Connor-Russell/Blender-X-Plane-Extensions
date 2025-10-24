@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    Operators
-#Purpose:   Provide a single file containing all operators for the X-Plane Line Exporter
+#Module:    operators.py
+#Purpose:   Provides the operator definitions for the plugin (most of the complex logic is in other files, this is largely for just for wrappers)
 
 import bpy  # type: ignore
 from bpy_extras.io_utils import ImportHelper # type: ignore
@@ -16,6 +16,7 @@ from .Helpers import decal_utils
 from .Helpers import misc_utils
 from .Helpers import log_utils
 from .Helpers import facade_utils
+from .Helpers import normal_conversion_utils
 from . import anim_actions
 from . import auto_baker
 import os
@@ -119,7 +120,7 @@ class IMPORT_fac(bpy.types.Operator, ImportHelper):
 class IMPORT_obj(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_obj"
     bl_label = "Import X-Plane Object"
-    filename_ext = ".fac"
+    filename_ext = ".obj"
     filter_glob: bpy.props.StringProperty(default="*.obj", options={'HIDDEN'}) # type: ignore
     files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
 
@@ -152,50 +153,6 @@ class IMPORT_agp(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
 
-class TEST_IMPORT_obj(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_obj"
-    bl_label = "Test Import X-Plane Lines"
-    bl_description = "Test the import of X-Plane lines. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_obj(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_lin(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_lin"
-    bl_label = "Test Import X-Plane Lines"
-    bl_description = "Test the import of X-Plane lines. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_lin(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_pol(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_pol"
-    bl_label = "Test Import X-Plane Polygons"
-    bl_description = "Test the import of X-Plane polygons. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_pol(self.import_path)
-
-        return {'FINISHED'}
-    
-class TEST_import_fac(bpy.types.Operator):
-    bl_idname = "xp_ext.test_import_fac"
-    bl_label = "Test Import X-Plane Facade"
-    bl_description = "Test the import of X-Plane facades. This is a development tool and should not be used in production."
-    import_path: bpy.props.StringProperty() # type: ignore
-
-    def execute(self, context):
-        importer.import_fac(self.import_path)
-
-        return {'FINISHED'}
-
 class BTN_mats_autoodetect_textures(bpy.types.Operator):
     """Autodetects the texture"""
     bl_idname = "xp_ext.autodetect_texture"
@@ -220,22 +177,22 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         name = name.replace(".png", "")
         name = name.replace(".dds", "")
         
-        alb_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_albedo + ".png")
+        alb_check_path = file_utils.to_absolute(name + addon_prefs.suffix_albedo + ".png")
         
         #Define the paths for the NML, and LIT
-        nml_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_combined_normal + ".png")
-        lit_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_lit + ".png")
+        nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_combined_normal + ".png")
+        lit_check_path = file_utils.to_absolute(name + addon_prefs.suffix_lit + ".png")
         mat_check_path = ""
 
         if material.xp_materials.do_separate_material_texture:
-            nml_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_normal + ".png")
-            mat_check_path = file_utils.rel_to_abs(name + addon_prefs.suffix_material + ".png")
+            nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_normal + ".png")
+            mat_check_path = file_utils.to_absolute(name + addon_prefs.suffix_material + ".png")
 
         #Set properties if the paths exist
-        material.xp_materials.alb_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(alb_check_path))
-        material.xp_materials.normal_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(nml_check_path))
-        material.xp_materials.lit_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(lit_check_path))
-        material.xp_materials.material_texture = file_utils.abs_to_rel(file_utils.check_for_dds_or_png(mat_check_path))
+        material.xp_materials.alb_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(alb_check_path))
+        material.xp_materials.normal_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(nml_check_path))
+        material.xp_materials.lit_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(lit_check_path))
+        material.xp_materials.material_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(mat_check_path))
 
 
         #Return success
@@ -293,28 +250,17 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
 
     def invoke(self, context, event):
         # Set operator properties from scene.xp_ext if available
-        xp_ext = getattr(context.scene, 'xp_ext', None)
-        if xp_ext:
-            if hasattr(xp_ext, 'autoanim_frame_start'):
-                self.autoanim_frame_start = xp_ext.autoanim_frame_start
-            if hasattr(xp_ext, 'autoanim_frame_end'):
-                self.autoanim_frame_end = xp_ext.autoanim_frame_end
-            if hasattr(xp_ext, 'autoanim_keyframe_interval'):
-                self.autoanim_keyframe_interval = xp_ext.autoanim_keyframe_interval
-            if hasattr(xp_ext, 'autoanim_dataref'):
-                self.autoanim_dataref = xp_ext.autoanim_dataref
-            if hasattr(xp_ext, 'autoanim_loop_value'):
-                self.autoanim_loop_value = xp_ext.autoanim_loop_value
-            if hasattr(xp_ext, 'autoanim_start_value'):
-                self.autoanim_start_value = xp_ext.autoanim_start_value
-            if hasattr(xp_ext, 'autoanim_end_value'):
-                self.autoanim_end_value = xp_ext.autoanim_end_value
-            if hasattr(xp_ext, 'autoanim_autodetect'):
-                self.autoanim_autodetect = xp_ext.autoanim_autodetect
-            if hasattr(xp_ext, 'autoanim_autodetect_fps'):
-                self.autoanim_autodetect_fps = xp_ext.autoanim_autodetect_fps
-            if hasattr(xp_ext, 'autoanim_apply_parent_transform'):
-                self.autoanim_apply_parent_transform = xp_ext.autoanim_apply_parent_transform
+        print("Invoking generate flipbook animation operator")
+        self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
+        self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
+        self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+        self.autoanim_dataref = bpy.context.scene.xp_ext.autoanim_dataref
+        self.autoanim_loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+        self.autoanim_start_value = bpy.context.scene.xp_ext.autoanim_start_value
+        self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
+        self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
+        self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+        self.autoanim_apply_parent_transform = bpy.context.scene.xp_ext.autoanim_apply_parent_transform
 
         #Run the operator directly. User already had an opportunity to set the properties in the UI so we don't need to bother them again
         self.execute(context)
@@ -322,9 +268,24 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+        #If we're in the background we need to set these properties manually. Why doesn't blender call invoke even without a UI??????
+        if bpy.app.background:
+            self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
+            self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
+            self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+            self.autoanim_dataref = bpy.context.scene.xp_ext.autoanim_dataref
+            self.autoanim_loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+            self.autoanim_start_value = bpy.context.scene.xp_ext.autoanim_start_value
+            self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
+            self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
+            self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+            self.autoanim_apply_parent_transform = bpy.context.scene.xp_ext.autoanim_apply_parent_transform
+
+
         for obj in context.selected_objects:
             #Check that the object has a deform modifier
-            if not any(mod.type == 'ARMATURE' for mod in obj.modifiers):
+            physics_types = {'ARMATURE', 'CLOTH', 'SOFT_BODY', 'FLUID', 'DYNAMIC_PAINT', 'COLLISION', 'SMOKE'}
+            if not any(mod.type in physics_types for mod in obj.modifiers):
                 continue
             if self.autoanim_autodetect:
                 start_frame, end_frame, start_value, end_value = anim_actions.autodetect_frame_range(obj, self.autoanim_autodetect_fps)
@@ -360,8 +321,8 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
     bl_description = "Automatically add X-Plane keyframes at the given interval for the given frame range for the selected objects."
     bl_options = {'REGISTER', 'UNDO'}
 
-    autoanim_frame_start: bpy.props.IntProperty(name="Start Frame", description="The start frame for the animation", default=1, min=1) # type: ignore
-    autoanim_frame_end: bpy.props.IntProperty(name="End Frame", description="The end frame for the animation", default=250, min=1) # type: ignore
+    autoanim_frame_start: bpy.props.IntProperty(name="Start Frame", description="The start frame for the animation", default=1, min=0) # type: ignore
+    autoanim_frame_end: bpy.props.IntProperty(name="End Frame", description="The end frame for the animation", default=250, min=0) # type: ignore
     autoanim_keyframe_interval: bpy.props.IntProperty(name="Keyframe Interval", description="The interval at which to add keyframes", default=1, min=1) # type: ignore
     autoanim_dataref: bpy.props.StringProperty(name="Dataref", description="The dataref to animate", default="") # type: ignore
     autoanim_loop_value: bpy.props.FloatProperty(name="Loop Value", description="The value to loop the animation", default=1.0) # type: ignore
@@ -369,29 +330,21 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
     autoanim_end_value: bpy.props.FloatProperty(name="End Dref Value", description="The end value for the dataref", default=1.0) # type: ignore
     autoanim_autodetect: bpy.props.BoolProperty(name="Auto Detect", description="Automatically detect the start and end frames", default=False) # type: ignore
     autoanim_autodetect_fps: bpy.props.FloatProperty(name="Auto Detect FPS", description="The Frame Rate used to pick values when autodectecting", default=30.0) # type: ignore
+    autoanim_add_intermediate_keyframes: bpy.props.BoolProperty(name="Add Intermediate Keyframes", description="Add keyframes for frames between the main keyframes, maintaining interpolation curves.", default=False) # type: ignore
 
     def invoke(self, context, event):
         # Set operator properties from scene.xp_ext if available
-        xp_ext = getattr(context.scene, 'xp_ext', None)
-        if xp_ext:
-            if hasattr(xp_ext, 'autoanim_frame_start'):
-                self.autoanim_frame_start = xp_ext.autoanim_frame_start
-            if hasattr(xp_ext, 'autoanim_frame_end'):
-                self.autoanim_frame_end = xp_ext.autoanim_frame_end
-            if hasattr(xp_ext, 'autoanim_keyframe_interval'):
-                self.autoanim_keyframe_interval = xp_ext.autoanim_keyframe_interval
-            if hasattr(xp_ext, 'autoanim_dataref'):
-                self.autoanim_dataref = xp_ext.autoanim_dataref
-            if hasattr(xp_ext, 'autoanim_loop_value'):
-                self.autoanim_loop_value = xp_ext.autoanim_loop_value
-            if hasattr(xp_ext, 'autoanim_start_value'):
-                self.autoanim_start_value = xp_ext.autoanim_start_value
-            if hasattr(xp_ext, 'autoanim_end_value'):
-                self.autoanim_end_value = xp_ext.autoanim_end_value
-            if hasattr(xp_ext, 'autoanim_autodetect'):
-                self.autoanim_autodetect = xp_ext.autoanim_autodetect
-            if hasattr(xp_ext, 'autoanim_autodetect_fps'):
-                self.autoanim_autodetect_fps = xp_ext.autoanim_autodetect_fps
+        print("Invoking auto keyframe animation operator")
+        self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
+        self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
+        self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+        self.autoanim_dataref = bpy.context.scene.xp_ext.autoanim_dataref
+        self.autoanim_loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+        self.autoanim_start_value = bpy.context.scene.xp_ext.autoanim_start_value
+        self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
+        self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
+        self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+        self.autoanim_add_intermediate_keyframes = bpy.context.scene.xp_ext.autoanim_add_intermediate_keyframes
         
         #Run the operator directly. User already had an opportunity to set the properties in the UI so we don't need to bother them again
         self.execute(context)
@@ -399,9 +352,23 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+        #If we're in the background we need to set these properties manually. Why doesn't blender call invoke even without a UI??????
+        if bpy.app.background:
+            self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
+            self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
+            self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
+            self.autoanim_dataref = bpy.context.scene.xp_ext.autoanim_dataref
+            self.autoanim_loop_value = bpy.context.scene.xp_ext.autoanim_loop_value
+            self.autoanim_start_value = bpy.context.scene.xp_ext.autoanim_start_value
+            self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
+            self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
+            self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+            self.autoanim_add_intermediate_keyframes = bpy.context.scene.xp_ext.autoanim_add_intermediate_keyframes
+
         # Iterate over selected objects only once
-        for obj in context.selected_objects:
-            if self.autoanim_autodetect:
+        
+        if self.autoanim_autodetect:
+            for obj in context.selected_objects:
                 start_frame, end_frame, start_value, end_value = anim_actions.autodetect_frame_range(obj, self.autoanim_autodetect_fps)
                 anim_actions.auto_keyframe(
                     obj,
@@ -411,9 +378,11 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
                     end_value,
                     start_frame,
                     end_frame,
-                    self.autoanim_keyframe_interval
+                    self.autoanim_keyframe_interval,
+                    self.autoanim_add_intermediate_keyframes
                 )
-            else:
+        else:
+            for obj in context.selected_objects:
                 anim_actions.auto_keyframe(
                     obj,
                     self.autoanim_dataref,
@@ -422,7 +391,8 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
                     self.autoanim_loop_value,
                     self.autoanim_frame_start,
                     self.autoanim_frame_end,
-                    self.autoanim_keyframe_interval
+                    self.autoanim_keyframe_interval,
+                    self.autoanim_add_intermediate_keyframes
                 )
         return {'FINISHED'}
 
@@ -450,7 +420,7 @@ class BTN_bake_low_poly(bpy.types.Operator):
 
     def execute(self, context):
         #Some initial checks: We are saved. Every selected object has a material. Check each individually, give appropriate error messages
-        if bpy.data.is_dirty and bpy.context.window_manager is not None:
+        if bpy.data.is_dirty and bpy.context.window_manager is not None and not bpy.app.background:
             self.report({'ERROR'}, "Please save your file before baking as baking can sometimes cause a crash in the Blender baking system, which we can't handle.")
             return {'CANCELLED'}
 
@@ -1096,6 +1066,247 @@ class BTN_preview_lods_for_distance(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_convert_combined_xp_nml_to_separate(bpy.types.Operator):
+    """Convert combined X-Plane normal map to separate normal and material maps"""
+    bl_idname = "xp_ext.convert_combined_xp_nml_to_separate"
+    bl_label = "Convert combined X-Plane normal map into separate normal and material maps"
+    bl_description = "Converts a combined X-Plane normal map into separate normal and material maps, and updates the material to use the new maps. The new maps are saved in the same directory as the original normal map with the suffixes specified in the addon preferences."
+
+    material_name: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        log_utils.new_section("Convert Combined X-Plane Normal Map")
+
+        #Get the target material
+        mat = bpy.data.materials.get(self.material_name)
+        if not mat:
+            log_utils.error(f"Material '{self.material_name}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Make sure we weren't already set to separate
+        if mat.xp_materials.do_separate_material_texture:
+            log_utils.error(f"Material '{self.material_name}' is already set to use separate normal and material maps.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+            
+        #Get the image paths from the material
+        nml_path = mat.xp_materials.normal_texture
+        if not nml_path:
+            log_utils.error(f"Material '{self.material_name}' does not have a normal map set.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Resolve it to a real path
+        nml_path = file_utils.to_absolute(nml_path)
+
+        if not os.path.isfile(nml_path):
+            log_utils.error(f"Normal map file '{nml_path}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Call the conversion function
+        new_nrm_path = ""
+        new_mat_path = ""
+        try:
+            new_nrm_path, new_mat_path = normal_conversion_utils.separate_xp_combined_nml(nml_path)
+        except Exception as e:
+            log_utils.error(f"Error converting normal map '{nml_path}': {e}")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Make sure we got valid paths back
+        if new_nrm_path == "" or new_mat_path == "":
+            log_utils.error(f"Error converting normal map '{nml_path}': conversion function returned empty paths. This should never happen - please contact the developer of X-PlaneBlenderExtensions!")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Set the material to use separate normal and material maps
+        mat.xp_materials.do_separate_material_texture = True
+
+        #Update the paths
+        mat.xp_materials.normal_texture = file_utils.to_relative(new_nrm_path)
+        mat.xp_materials.material_texture = file_utils.to_relative(new_mat_path)
+
+        #Update the nodes
+        material_config.update_nodes(mat)
+
+        return {'FINISHED'}
+
+class BTN_convert_separate_maps_to_combined_xp_nml(bpy.types.Operator):
+    """Convert separate normal and material maps to combined X-Plane normal map"""
+    bl_idname = "xp_ext.convert_separate_maps_to_combined_xp_nml"
+    bl_label = "Convert separate normal and material maps into combined X-Plane normal map"
+    bl_description = "Converts separate normal and material maps into a combined X-Plane normal map, and updates the material to use the new map. The new map is saved in the same directory as the original normal map with the suffix specified in the addon preferences."
+
+    material_name: bpy.props.StringProperty() # type: ignore
+
+    def execute(self, context):
+        log_utils.new_section("Convert Separate Normal and Material Maps to Combined X-Plane Normal Map")
+
+        #Get the target material
+        mat = bpy.data.materials.get(self.material_name)
+        if not mat:
+            log_utils.error(f"Material '{self.material_name}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Make sure we are set to separate
+        if not mat.xp_materials.do_separate_material_texture:
+            log_utils.error(f"Material '{self.material_name}' is already set to use a combined X-Plane normal map.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+            
+        #Get the image paths from the material
+        nml_path = mat.xp_materials.normal_texture
+        mat_path = mat.xp_materials.material_texture
+        if not nml_path:
+            log_utils.error(f"Material '{self.material_name}' does not have a normal map set.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        if not mat_path:
+            log_utils.error(f"Material '{self.material_name}' does not have a material map set.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Resolve them to real paths
+        nml_path = file_utils.to_absolute(nml_path)
+        mat_path = file_utils.to_absolute(mat_path)
+
+        if not os.path.isfile(nml_path):
+            log_utils.error(f"Normal map file '{nml_path}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        if not os.path.isfile(mat_path):
+            log_utils.error(f"Material map file '{mat_path}' not found.")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Call the conversion function
+        new_nml_path = ""
+        try:
+            new_nml_path = normal_conversion_utils.combine_xp_separate_maps(nml_path, mat_path)
+        except Exception as e:
+            log_utils.error(f"Error converting normal and material maps '{nml_path}' and '{mat_path}': {e}")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Make sure we got a valid path back
+        if new_nml_path == "":
+            log_utils.error(f"Error converting normal and material maps '{nml_path}' and '{mat_path}'. This should never happen - please contact the developer of X-PlaneBlenderExtensions!")
+            log_utils.display_messages()
+            return {'CANCELLED'}
+        
+        #Set the material to use combined normal map
+        mat.xp_materials.do_separate_material_texture = False
+
+        #Update the path
+        mat.xp_materials.normal_texture = file_utils.to_relative(new_nml_path)
+        mat.xp_materials.material_texture = ""
+
+        #Update the nodes
+        material_config.update_nodes(mat)
+
+        return {'FINISHED'}
+
+class BTN_find_textures(bpy.types.Operator):
+    """Search for missing material textures relative to a specified directory."""
+    bl_idname = "xp_ext.find_textures"
+    bl_label = "Find Missing Textures"
+    bl_description = "Search for missing material textures relative to a specified directory. This will only update textures that can be found relative to the specified directory."
+
+    filepath: bpy.props.StringProperty( # type: ignore
+        name="Base Path",
+        description="Base path to search for missing textures. If empty, the directory of the current .blend file will be used.",
+        default="",
+        subtype="FILE_PATH"
+    )
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        #Make sure base path is valid
+        if self.filepath == "":
+            return {'CANCELLED'}
+        
+        log_utils.new_section("Find Missing Textures")
+
+        #Define a small function for resolving paths
+        def resolve_path(path: str, base: str) -> str:
+
+            cleaned_path = file_utils.to_relative(path, False)  #We do this *just* in case it's an absolute. Plus it removes the blender //
+
+            if cleaned_path == "":
+                return path
+
+            resolved_path = os.path.join(os.path.dirname(base), cleaned_path)
+
+            if os.path.isfile(resolved_path):
+                log_utils.info(f"Resolved path '{path}' to '{resolved_path}'")
+                return file_utils.to_relative(resolved_path, True)
+            else:
+                log_utils.info(f"Could not resolve path '{path}' to '{resolved_path}'")
+                return path
+
+        #Get all materials in the project
+        mats = bpy.data.materials
+
+        #Iterate over all materials and check their texture paths
+        for mat in mats:
+            mat.xp_materials.alb_texture = resolve_path(mat.xp_materials.alb_texture, self.filepath)
+            mat.xp_materials.normal_texture = resolve_path(mat.xp_materials.normal_texture, self.filepath)
+            mat.xp_materials.material_texture = resolve_path(mat.xp_materials.material_texture, self.filepath)
+            mat.xp_materials.lit_texture = resolve_path(mat.xp_materials.lit_texture, self.filepath)
+            mat.xp_materials.weather_texture = resolve_path(mat.xp_materials.weather_texture, self.filepath)
+            mat.xp_materials.decal_modulator = resolve_path(mat.xp_materials.decal_modulator, self.filepath)
+
+            for decal in mat.xp_materials.decals:
+                decal.texture = resolve_path(decal.texture, self.filepath)
+
+        log_utils.display_messages()
+
+        return {'FINISHED'}
+
+class BTN_set_all_export_dirs(bpy.types.Operator):
+    """Sets the export path to the given directory for all exportable X-Plane formats"""
+    bl_idname = "xp_ext.set_export_paths"
+    bl_label = "Set Export Directory"
+    bl_description = "Set the export directory for all X-Plane export formats."
+
+    def execute(self, context):
+        log_utils.new_section("Set Export Directory")
+        if bpy.context.scene.xp_ext.export_path == "":
+            log_utils.warning("Export path is empty. Please set a valid export path in the addon preferences.")
+            log_utils.display_messages()
+
+        rel_path = file_utils.to_relative(bpy.context.scene.xp_ext.export_path)
+
+        def get_export_path(in_existing_path: str, in_col_name: str) -> str:
+            #If there is an existing path, extract the file *name*, and remove the extension
+            existing_name = os.path.splitext(os.path.basename(in_existing_path))[0] if in_existing_path != "" else in_col_name
+
+            return os.path.join(rel_path, existing_name)
+
+        #Iterate over every collection in the scene
+        for col in bpy.data.collections:
+            if col.xplane.is_exportable_collection:
+                col.xplane.layer.name = get_export_path(col.xplane.layer.name, col.name)
+            if col.xp_fac.exportable:
+                col.xp_fac.name = get_export_path(col.xp_fac.name, col.name)
+            if col.xp_pol.exportable:
+                col.xp_pol.name = get_export_path(col.xp_pol.name, col.name)
+            if col.xp_lin.exportable:
+                col.xp_lin.name = get_export_path(col.xp_lin.name, col.name)
+            if col.xp_agp.exportable:
+                col.xp_agp.name = get_export_path(col.xp_agp.name, col.name)
+
+        log_utils.display_messages()
+
+        return {'FINISHED'}
+  
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -1111,10 +1322,6 @@ def register():
     bpy.utils.register_class(IMPORT_fac)
     bpy.utils.register_class(IMPORT_obj)
     bpy.utils.register_class(IMPORT_agp)
-    bpy.utils.register_class(TEST_IMPORT_obj)
-    bpy.utils.register_class(TEST_import_lin)
-    bpy.utils.register_class(TEST_import_pol)
-    bpy.utils.register_class(TEST_import_fac)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_mats_update_all_mat_nodes)
@@ -1136,6 +1343,10 @@ def register():
     bpy.utils.register_class(BTN_copy_decal)
     bpy.utils.register_class(BTN_paste_decal)
     bpy.utils.register_class(BTN_preview_lods_for_distance)
+    bpy.utils.register_class(BTN_convert_combined_xp_nml_to_separate)
+    bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
+    bpy.utils.register_class(BTN_find_textures)
+    bpy.utils.register_class(BTN_set_all_export_dirs)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -1147,10 +1358,6 @@ def unregister():
     bpy.utils.unregister_class(IMPORT_fac)
     bpy.utils.unregister_class(IMPORT_obj)
     bpy.utils.unregister_class(IMPORT_agp)
-    bpy.utils.unregister_class(TEST_IMPORT_obj)
-    bpy.utils.unregister_class(TEST_import_lin)
-    bpy.utils.unregister_class(TEST_import_pol)
-    bpy.utils.unregister_class(TEST_import_fac)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_mats_update_all_mat_nodes)
@@ -1171,4 +1378,8 @@ def unregister():
     bpy.utils.unregister_class(BTN_copy_decal)
     bpy.utils.unregister_class(BTN_paste_decal)
     bpy.utils.unregister_class(BTN_preview_lods_for_distance)
+    bpy.utils.unregister_class(BTN_convert_combined_xp_nml_to_separate)
+    bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
+    bpy.utils.unregister_class(BTN_find_textures)
+    bpy.utils.unregister_class(BTN_set_all_export_dirs)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

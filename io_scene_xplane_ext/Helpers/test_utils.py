@@ -1,8 +1,8 @@
-#Project: Blender X-Plane Extensions
+#Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 4/23/2025
-#Module: test_utils
-#Purpose: Tests utility functions for the X-Plane Blender exporter
+#Module: test_utils.py
+#Purpose: Lightweight internal unit tests for helper functions. This will probably go away soon.
 
 import bpy
 from ..Helpers import collection_utils
@@ -383,7 +383,7 @@ def run_all_tests():
     result4 = result4.replace("\"", "\"\"")
     result5 = result5.replace("\"", "\"\"")
 
-    test_results_file = file_utils.rel_to_abs("../Test Results.csv")
+    test_results_file = file_utils.to_absolute("../Test Results.csv")
     with open(test_results_file, 'a') as output:
         output.write(f"TEST_get_all_collections_from_view_layer,\"{result1}\"\n")
         output.write(f"TEST_get_roof_data,\"{result2}\"\n")

@@ -1,7 +1,8 @@
 #Project: Blender-X-Plane-Extensions
 #Author: Connor Russell
 #Date: 11/20/2024
-#Purpose: Provide a class that contains all the data for a decal
+#Module: decal_utils.py
+#Purpose: Provide helper functions for decal management in X-Plane materials.
 
 import bpy # type: ignore
 import os
@@ -123,7 +124,7 @@ def get_decal_command(in_decal, in_output_folder):
     texture_path = in_decal.texture
 
     if in_output_folder != "":
-        texture_path = os.path.relpath(file_utils.rel_to_abs(in_decal.texture), in_output_folder)
+        texture_path = os.path.relpath(file_utils.to_absolute(in_decal.texture), in_output_folder)
 
     if not in_decal.is_normal:
         if in_decal.projected:

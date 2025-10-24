@@ -1,8 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Module:    UI
-#Purpose:   Provide a single file containing functions for drawing the UIs
+#Module:    ui.py
+#Purpose:   Provide UI classes for the plugin
 
 import bpy # type: ignore
 from . import props
@@ -569,9 +569,6 @@ class MENU_mats(bpy.types.Panel):
             elif xp_materials.blend_mode == "SHADOW":
                 box.prop(xp_materials, "blend_cutoff", text="Shadow Cutoff")
 
-            if xp_materials.blend_mode == "BLEND":
-                box.prop(xp_materials, "use_transparent_blending")
-
             box.separator()
 
             row = box.row()
@@ -651,6 +648,14 @@ class MENU_mats(bpy.types.Panel):
 
                 box.prop(xp_materials, "cockpit_device_lighting_channel")
 
+            #---------------------------------Conversion Operators---------------------------------
+            layout.separator()
+            layout.label(text="Conversion Operators")
+            separate_op = layout.operator("xp_ext.convert_combined_xp_nml_to_separate", text="Separate combined normal map")
+            separate_op.material_name = material.name
+            combine_op = layout.operator("xp_ext.convert_separate_maps_to_combined_xp_nml", text="Combine separated material maps")
+            combine_op.material_name = material.name
+
 class MENU_operations(bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
     bl_label = "X-Plane Extensions"
@@ -671,13 +676,31 @@ class MENU_operations(bpy.types.Panel):
 
         layout.operator("xp_ext.update_all_material_nodes", text="Update All Materials")
 
+        layout.operator("xp_ext.find_textures", text="Find Missing Textures")
+
+        layout.separator()
+
+        box = layout.box()
+        box.prop(xp_ext, "menu_export_path_expanded", text="Export Path", icon='TRIA_DOWN' if xp_ext.menu_export_path_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_export_path_expanded:
+            box.prop(xp_ext, "export_path")
+            box.operator("xp_ext.set_export_paths", text="Set All Export Paths")
+
         layout.separator()
         
         box = layout.box()
         box.prop(xp_ext, "menu_bake_expanded", text="High Poly to Low Poly Bake", icon='TRIA_DOWN' if xp_ext.menu_bake_expanded else 'TRIA_RIGHT', emboss=False)
         if xp_ext.menu_bake_expanded:
+            box.prop(xp_ext, "low_poly_bake_do_alb")
+            box.prop(xp_ext, "low_poly_bake_do_opacity")
+            box.prop(xp_ext, "low_poly_bake_do_nrm")
+            if xp_ext.low_poly_bake_do_separate_normals:
+                box.prop(xp_ext, "low_poly_bake_do_mat")
+            box.prop(xp_ext, "low_poly_bake_do_lit")
+            box.separator()
             box.prop(xp_ext, "low_poly_bake_resolution")
             box.prop(xp_ext, "low_poly_bake_ss_factor")
+            box.prop(xp_ext, "low_poly_bake_margin")
             box.separator()
             box.prop(xp_ext, "low_poly_bake_extrusion_distance")
             box.prop(xp_ext, "low_poly_bake_max_ray_distance")
@@ -703,7 +726,7 @@ class MENU_operations(bpy.types.Panel):
                 row = box.row()
                 row.prop(xp_ext, "autoanim_start_value")
                 row.prop(xp_ext, "autoanim_end_value")
-                row.prop(xp_ext, "autoanim_loop_value")
+                box.prop(xp_ext, "autoanim_loop_value")
             else:
                 box.prop(xp_ext, "autoanim_autodetect_fps")
                 box.prop(xp_ext, "autoanim_keyframe_interval")
@@ -711,6 +734,7 @@ class MENU_operations(bpy.types.Panel):
                 box.prop(xp_ext, "autoanim_dataref")
             box.separator()
             box.prop(xp_ext, "autoanim_apply_parent_transform")
+            box.prop(xp_ext, "autoanim_add_intermediate_keyframes")
             box.separator()
             box.operator("xp_ext.generate_flipbook_animation")
             box.operator("xp_ext.auto_keyframe_animation")

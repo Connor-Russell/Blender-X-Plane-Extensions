@@ -1,7 +1,8 @@
 #Project:   Blender-X-Plane-Extensions
 #Author:    Connor Russell
 #Date:      2/17/2025
-#Purpose:   Provides additional functionality to Blender for X-Plane, including import/export for .lins, .pols, .facs, import of .objs, and WYSIWYG materials
+#Module:    init.py
+#Purpose:   Provides plugin setup, registration, and preferences for the X-Plane Extensions Blender addon.
 
 #Import modules
 from . import props
@@ -78,6 +79,13 @@ class XP_EXT_prefs(bpy.types.AddonPreferences):
         default=False,
     ) #type: ignore
 
+    do_backup_on_overwrite: bpy.props.BoolProperty(
+        name="Backup Files on Overwrite",
+        description="When overwriting files (such as when baking or converting textures), create a backup of the existing file first. Backups will be of the form filename_YYYYMMDD_HHMMSS.ext",
+        default=True,
+    ) #type: ignore
+
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="X-Plane Extensions Preferences")
@@ -85,6 +93,7 @@ class XP_EXT_prefs(bpy.types.AddonPreferences):
         #General Settings
         layout.prop(self, "show_only_relevant_settings")
         layout.prop(self, "always_fully_reload_images")
+        layout.prop(self, "do_backup_on_overwrite")
 
         layout.separator()
 
