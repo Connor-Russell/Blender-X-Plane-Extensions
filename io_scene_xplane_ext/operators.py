@@ -330,6 +330,7 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
     autoanim_end_value: bpy.props.FloatProperty(name="End Dref Value", description="The end value for the dataref", default=1.0) # type: ignore
     autoanim_autodetect: bpy.props.BoolProperty(name="Auto Detect", description="Automatically detect the start and end frames", default=False) # type: ignore
     autoanim_autodetect_fps: bpy.props.FloatProperty(name="Auto Detect FPS", description="The Frame Rate used to pick values when autodectecting", default=30.0) # type: ignore
+    autoanim_add_intermediate_keyframes: bpy.props.BoolProperty(name="Add Intermediate Keyframes", description="Add keyframes for frames between the main keyframes, maintaining interpolation curves.", default=False) # type: ignore
 
     def invoke(self, context, event):
         # Set operator properties from scene.xp_ext if available
@@ -343,6 +344,7 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
         self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
         self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
         self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+        self.autoanim_add_intermediate_keyframes = bpy.context.scene.xp_ext.autoanim_add_intermediate_keyframes
         
         #Run the operator directly. User already had an opportunity to set the properties in the UI so we don't need to bother them again
         self.execute(context)
@@ -361,6 +363,7 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
             self.autoanim_end_value = bpy.context.scene.xp_ext.autoanim_end_value
             self.autoanim_autodetect = bpy.context.scene.xp_ext.autoanim_autodetect
             self.autoanim_autodetect_fps = bpy.context.scene.xp_ext.autoanim_autodetect_fps
+            self.autoanim_add_intermediate_keyframes = bpy.context.scene.xp_ext.autoanim_add_intermediate_keyframes
 
         # Iterate over selected objects only once
         
@@ -375,7 +378,8 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
                     end_value,
                     start_frame,
                     end_frame,
-                    self.autoanim_keyframe_interval
+                    self.autoanim_keyframe_interval,
+                    self.autoanim_add_intermediate_keyframes
                 )
         else:
             for obj in context.selected_objects:
@@ -387,7 +391,8 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
                     self.autoanim_loop_value,
                     self.autoanim_frame_start,
                     self.autoanim_frame_end,
-                    self.autoanim_keyframe_interval
+                    self.autoanim_keyframe_interval,
+                    self.autoanim_add_intermediate_keyframes
                 )
         return {'FINISHED'}
 

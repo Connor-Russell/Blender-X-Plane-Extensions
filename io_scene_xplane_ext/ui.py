@@ -726,7 +726,7 @@ class MENU_operations(bpy.types.Panel):
                 row = box.row()
                 row.prop(xp_ext, "autoanim_start_value")
                 row.prop(xp_ext, "autoanim_end_value")
-                row.prop(xp_ext, "autoanim_loop_value")
+                box.prop(xp_ext, "autoanim_loop_value")
             else:
                 box.prop(xp_ext, "autoanim_autodetect_fps")
                 box.prop(xp_ext, "autoanim_keyframe_interval")
@@ -734,6 +734,7 @@ class MENU_operations(bpy.types.Panel):
                 box.prop(xp_ext, "autoanim_dataref")
             box.separator()
             box.prop(xp_ext, "autoanim_apply_parent_transform")
+            box.prop(xp_ext, "autoanim_add_intermediate_keyframes")
             box.separator()
             box.operator("xp_ext.generate_flipbook_animation")
             box.operator("xp_ext.auto_keyframe_animation")

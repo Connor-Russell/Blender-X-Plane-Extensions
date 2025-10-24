@@ -300,6 +300,13 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         min=1,
         update=update_ui
     ) # type: ignore
+    
+    autoanim_add_intermediate_keyframes: bpy.props.BoolProperty(
+        name="Add Intermediate Keyframes",
+        description="Add keyframes for frames between the main keyframes, maintaining interpolation curves.",
+        default=False,
+        update=update_ui
+    ) # type: ignore
 
     autoanim_autodetect: bpy.props.BoolProperty(
         name="Auto Detect",

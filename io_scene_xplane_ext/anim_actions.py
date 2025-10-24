@@ -93,7 +93,7 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
             anim_obj.xplane.datarefs[-1].show_hide_v2 = end_value + (value_interval * 0.1)
             anim_obj.xplane.datarefs[-1].loop = loop_value
 
-def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval):
+def auto_keyframe(in_obj: bpy.types.Object, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval, add_intermediate_keyframes):
     """
     Automatically keyframe the given object for the specified dataref.
 
@@ -116,10 +116,23 @@ def auto_keyframe(in_obj, dataref, start_value, end_value, loop_value, start_fra
     in_obj.xplane.datarefs[-1].loop = loop_value
 
     #Iterate through the frames and set the xp keyframes
-    for frame in range(start_frame, end_frame + 1, keyframe_interval):
-        value = start_value + (frame - start_frame) * value_increment
-        anim_utils.goto_frame(frame)
-        anim_utils.keyframe_xp_dataref(in_obj, dataref, value)
+    if add_intermediate_keyframes:
+        for frame in range(start_frame, end_frame + 1, keyframe_interval):
+            value = start_value + (frame - start_frame) * value_increment
+            anim_utils.goto_frame(frame)
+            anim_utils.keyframe_xp_dataref(in_obj, dataref, value)
+    else:
+        #Iterate over every frame that has a keyframe
+        if in_obj.animation_data and in_obj.animation_data.action:
+            for fcurve in in_obj.animation_data.action.fcurves:
+                #Check if this fcurve is for either loc or rot (the only things we can animate)
+                if fcurve.data_path in {'location', 'rotation_euler', 'rotation_quaternion'}:
+                    for keyframe_point in fcurve.keyframe_points:
+                        frame = int(keyframe_point.co.x)
+                        if frame >= start_frame and frame <= end_frame:
+                            value = start_value + (frame - start_frame) * value_increment
+                            anim_utils.goto_frame(frame)
+                            anim_utils.keyframe_xp_dataref(in_obj, dataref, value)
 
 def autodetect_frame_range(in_obj, fps=30.0):
     """
