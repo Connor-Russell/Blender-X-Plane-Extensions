@@ -9,7 +9,40 @@ import bpy
 import math
 import mathutils
 
-import mathutils
+
+import bpy
+from mathutils import Euler
+
+def decompose_euler_xyz(euler_xyz_rad):
+    """
+    Decomposes an XYZ Euler rotation into three separate Euler rotations
+    for use in a parent-child hierarchy in Blender.
+
+    Parameters:
+        euler_xyz_rad: tuple of (x, y, z) in radians
+
+    Returns:
+        A tuple of three Euler objects:
+            - rot_x: Euler(x, 0, 0)
+            - rot_y: Euler(0, y, 0)
+            - rot_z: Euler(0, 0, z)
+    """
+    x, y, z = euler_xyz_rad
+
+    rot_x = Euler((x, 0, 0), 'XYZ')
+    rot_y = Euler((0, y, 0), 'XYZ')
+    rot_z = Euler((0, 0, z), 'XYZ')
+
+    # Compose them in intrinsic order: Z(Y(X))
+    composed = rot_z.to_matrix() @ rot_y.to_matrix() @ rot_x.to_matrix()
+
+    # Compare with original
+    original = Euler((x, y, z), 'XYZ').to_matrix()
+
+    if not all((a - b).length < 1e-6 for a, b in zip(composed.col, original.col)):
+        raise ValueError("Decomposition failed: composed rotation doesn't match original")
+
+    return rot_x, rot_y, rot_z
 
 def move_along_axis(position, axis, distance):
     """
@@ -340,3 +373,19 @@ def get_xp_dataref(obj, name):
         if obj.xplane.datarefs[0].path == name:
             return obj.xplane.datarefs[0].value
     return 0
+
+def is_keyframed(obj, prop_path, index):
+    if obj.animation_data and obj.animation_data.action:
+        for fcurve in obj.animation_data.action.fcurves:
+            if fcurve.data_path == prop_path and fcurve.array_index == index:
+                return True
+    return False
+
+def has_keyframe_at(obj, data_path, array_index, frame):
+    if obj.animation_data and obj.animation_data.action:
+        for fcurve in obj.animation_data.action.fcurves:
+            if fcurve.data_path == data_path and fcurve.array_index == array_index:
+                for keyframe in fcurve.keyframe_points:
+                    if keyframe.co.x == frame:
+                        return True
+    return False
