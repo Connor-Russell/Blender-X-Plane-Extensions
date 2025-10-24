@@ -1051,6 +1051,10 @@ class agp:
         #Now that we have the material setup, we need to load all the individual tiles and their children
         for obj in in_collection.objects:
             if obj.parent == None and obj.xp_agp.type == 'BASE_TILE':
+                #Make sure the scale is 1,1,1
+                if misc_utils.vectors_close(obj.scale, mathutils.Vector((1, 1, 1))) == False:
+                    log_utils.error(f"Error: Tile object {obj.name} has a scale other than 1,1,1. Please apply the scale then reexport!")
+                    return False
                 new_tile = tile()
                 if not new_tile.from_obj(obj, self.name):
                     return False
