@@ -122,11 +122,15 @@ class polygon():
         if self.do_load_center:
             of += "LOAD_CENTER " + misc_utils.ftos(self.load_center_lat, 8) + " " + misc_utils.ftos(self.load_center_lon, 8) + " " + str(int(self.load_center_size)) + " " + str(int(self.load_center_res)) + "\n"
         if self.do_tiling:
-            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
+            if self.do_runway_markings:
+                of += "RUNWAY_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
+            else:
+                of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
         if self.do_runway_markings:
             of += "RUNWAY_MARKINGS " + misc_utils.ftos(self.runway_r, 4) + " " + misc_utils.ftos(self.runway_g, 4) + " " + misc_utils.ftos(self.runway_b, 4) + " " + misc_utils.ftos(self.runway_a, 4) + " " + os.path.relpath(file_utils.to_absolute(self.runway_marking_texture), output_folder) + "\n"
         if self.do_runway_noise:
-            of += "RUNWAY_NOISE\n"
+            #of += "RUNWAY_NOISE\n"
+            pass
 
         of += "\n"
 
