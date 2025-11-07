@@ -84,13 +84,13 @@ class line():
             of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
         
         of += "\n"
-
-        #Write the modulator texture
-        if self.mod_texture != "":
-            of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder) + "\n"
+        
         #Write the decals
         if len(self.decals) > 0:
             of += "#Decals\n"
+            #Write the modulator texture
+            if self.mod_texture != "":
+                of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder) + "\n"
             for decal in self.decals:
                 #Get the decal command
                 decal_command = decal_utils.get_decal_command(decal, output_folder)
@@ -294,6 +294,10 @@ class line():
         self.scale_y = scale_y
         self.segment_count = in_collection.xp_lin.segment_count
         self.mirror = in_collection.xp_lin.mirror
+
+        if self.mirror and self.segment_count > 0:
+            log_utils.warning("Warning: Mirror is enabled on a line with a set segment count. Segment count will be ignored as these are mutually exclusive settings.")
+            self.segment_count = 0
 
         #Ensure we have a material. Then we will extract material data from it
         if len(exportable_objects[0].data.materials) == 0:
