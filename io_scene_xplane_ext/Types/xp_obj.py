@@ -1352,23 +1352,23 @@ class anim_level:
                 if len(self.draw_calls) > 0:
                     name += f" TRIS {self.draw_calls[0].start_index} {self.draw_calls[0].length}"
                 name += f" Pt {i}"
-                if action.type == 'rot_table_vector_transform':
+                if isinstance(action, anim_rot_table_vector_transform):
                     name += " Rotation Transform"
-                elif action.type == 'rot_keyframe':
+                elif isinstance(action, anim_rot_keyframe):
                     name += " Static Rotation"
                     cur_static_offsets.actions.append((action.rot_vector, action.rot))
                     cur_static_offsets.action_types.append('rotate')
                     continue  #Static rotations are not animated, so we don't create a new empty for them
-                elif action.type == 'loc_keyframe':
+                elif isinstance(action, anim_loc_keyframe):
                     name += " Static Translation"
                     cur_static_offsets.actions.append(action.loc)
                     cur_static_offsets.action_types.append('translate')
                     continue  #Static translations are not animated, so we don't create a new empty for them
-                elif action.type == 'loc_table':
+                elif isinstance(action, anim_loc_table):
                     name += " Keyframed Translation"
-                elif action.type == 'rot_table':
+                elif isinstance(action, anim_rot_table):
                     name += " Keyframed Rotation"
-                elif action.type == 'show_hide_series':
+                elif isinstance(action, anim_show_hide_series):
                     name += " Show/Hide Series"
                     for cmd in action.commands:
                         cur_show_hide_commands.append(cmd.copy())
@@ -1399,14 +1399,14 @@ class anim_level:
                 cur_parent = anim_empty
             
                 #If it is a rotation we need to align it to the rotation vector
-                if action.type == 'rot_table_vector_transform':
+                if isinstance(action, anim_rot_table_vector_transform):
                     eular = anim_utils.euler_to_align_z_with_vector(action.rot_vector)  #We align rotations to their rotation vector so they can be rotated into static place, or their child keyframe controller can be rotated along it's local Z (which is this vector)
                     anim_utils.set_obj_rotation_world(anim_empty, eular)
-                elif action.type == "rot_table":
+                elif isinstance(action, anim_rot_table):
                     #Rotation tables are always aligned with their parent. Their parent is transformed so it points in the vector of the rotation vector.
                     #By having no rotation, our Z rotates along the rotation vector
                     anim_empty.rotation_euler = mathutils.Vector((0, 0, 0)).xyz
-                elif action.type == 'loc_keyframe' or action.type == 'loc_table' or action.type == "show_hide_series":
+                elif isinstance(action, anim_loc_keyframe) or isinstance(action, anim_loc_table) or isinstance(action, anim_show_hide_series):
                     #Most actions should have no rotation in world space
                     eular = mathutils.Vector((0, 0, 0))
                     anim_utils.set_obj_rotation_world(anim_empty, eular)
@@ -1562,10 +1562,12 @@ class object:
         self.obj_mode = "aircraft"  #aircraft, scenery, or cockpit
 
         #Base material
+        self.do_separate_mat_textures = False
         self.alb_texture = ""
         self.nml_texture = ""
         self.lit_texture = ""
         self.mat_texture = ""
+        self.mod_texture = ""
         self.blend_mode = "BLEND"
         self.blend_cutoff = 0.5
         self.cast_shadow = True
@@ -2346,7 +2348,86 @@ class object:
                 new_wiper.width = float(tokens[4])
 
                 self.wiper_params.append(new_wiper)
+
+    def write(self, in_obj_path):
+        log_utils.new_section(f"Writing .obj file for {self.name}")
+
+        trans_matrix = [1, -1, 1]
+
+        #Create a buffer to hold the .obj data
+        obj = []
+
+        #Write the header
+        obj.append(f"I")
+        obj.append(f"800")
+        obj.append(f"OBJ")
+        obj.append(f"")
+
+        #Try to write textures, if they exist
+        if self.alb_texture != "":
+            obj.append(f"TEXTURE {self.alb_texture}")
+        if not self.do_separate_mat_textures:
+            if self.nml_texture != "":
+                obj.append(f"TEXTURE_NORMAL {self.nml_texture}")
+        else:
+            if self.nml_texture != "":
+                obj.append(f"TEXTURE_MAP normal {self.nml_texture}")
+            if self.mat_texture != "":
+                obj.append(f"TEXTURE_MAP material_gloss {self.mat_texture}")
+        if self.lit_texture != "":
+            obj.append(f"TEXTURE_LIT {self.lit_texture}")
+        if self.mod_texture != "":
+            obj.append(f"TEXTURE_MODULATOR {self.mod_texture}")
+        
+        if self.draped_alb_texture != "":
+            obj.append(f"TEXTURE_DRAPED {self.draped_alb_texture}")
+        if self.draped_nml_texture != "":
+            obj.append(f"TEXTURE_DRAPED_NORMAL {self.draped_nml_tile_rat} {self.draped_nml_texture}")
+
+        #Material mode
+        obj.append(f"NORMAL_METALNESS")
+        obj.append(f"GLOBAL_specular 1.0")
+        obj.append(f"BLEND_GLASS {1 if self.blend_glass else 0}")
+        obj.append(f"GLOBAL_luminance {self.brightness if self.brightness > 0 else 0}")
+        if self.blend_mode == "CLIP":
+            obj.append(f"GLOBAL_no_blend {self.blend_cutoff}")
+        if not self.cast_shadow:
+            obj.append(f"GLOBAL_no_shadow")
+        obj.append(f"ATTR_layer_group {self.layer_group} {self.layer_group_offset}")
+        for decal_cmd in self.imported_decal_commands:
+            obj.append(decal_cmd)
+
+        #Verticies
+        obj.append(f"")
+        obj.append(f"POINT_COUNTS {len(self.indicies) / 3} 0 0 {len(self.indicies)}")
+        obj.append(f"")
+
+        for v in self.verts:
+            obj.append(f"VT {v.loc_x * trans_matrix[0]} {v.loc_y * trans_matrix[2]} {v.loc_z * trans_matrix[1]} {v.norm_x * trans_matrix[0]} {v.norm_y * trans_matrix[2]} {v.norm_z * trans_matrix[1]} {v.uv_x} {v.uv_y}")
+
+        cur_idx_offset = 0
+        while cur_idx_offset + 10 < len(self.indicies):
+            obj.append(f"IDX10 {' '.join([str(i) for i in self.indicies[cur_idx_offset:cur_idx_offset + 10]])}")
+            cur_idx_offset += 10
+        
+        while cur_idx_offset < len(self.indicies):
+            obj.append(f"IDX {self.indicies[cur_idx_offset]}")
+            cur_idx_offset += 1
             
+        cur_dc_state = draw_call_state()
+
+        for dc in self.draw_calls:
+            #TODO: Add commands to set the draw call state appropriately
+            obj.append(f"TRIS {dc.start_idx} {dc.num_idx}")
+
+        #TODO: Write lights
+
+        #TODO: Write anims
+
+        #Write the obj file
+        with open(in_obj_path, 'w') as obj_file:
+            obj_file.write('\n'.join(obj))
+
     def to_scene(self):
         log_utils.new_section(f"Creating .obj collection {self.name}")
 
