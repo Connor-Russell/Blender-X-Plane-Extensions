@@ -273,7 +273,7 @@ class line():
             return
         
         #Now we want to sort them based on their Z position. While not *necessary*, it makes the output nicer
-        exportable_objects.sort(key=lambda x: x.location.z)
+        exportable_objects.sort(key=lambda x: line_utils.get_layer_z(x))
 
         #Now we need to get the scale. We will get this from the bottom object. It is expected that all objects share the same scale
         scale_x, scale_y = 0, 0
@@ -324,36 +324,57 @@ class line():
         for decal in mat.decals:
             self.decals.append(decal)
 
-        # Next we need to get segment commands. We treat the Z position as layer, so things are layered intuitively. But Z position can be *anything*.
-        # So we need to sort the Z positions, then get the *index* of that Z position, so we have a 0-top continuous range of layers.
-        all_layers = []
+        # Line layers are a bit weird. All segments need to be consecutive layers from 0+. However, layers *cannot* be duplicated (i.e. 2 segments on layer 0).
+        # Additionally, caps are *children* of segments, a start and end cap need to be on the same layer as their closest segment. Yet, you cannot have two caps of the same type on the same layer!
+        # So, the way we will do this is:
+        # 1. All segments are sorted by their Z, so just add them and define their groups by incrementing a counter. Store these as a tuple of (Z position, layer index, used start cap flag, used end cap flag)
+        # 2. For caps, from a list of tuples we defined during segments, find the nearest segment, and if it is not used for this given type, use it. If it is used, log the warning and skip it.
+        segment_layers = []
+        current_segment_layer = 0
+
+        # Segments first
         for obj in exportable_objects:
             if obj.xp_lin.type == "SEGMENT":
-                all_layers.append(line_utils.get_layer_z(obj))
-        all_layers.sort()
-
-        for obj in exportable_objects:
-            #Get it's type
-            type = obj.xp_lin.type
-
-            #Get the closest layer. Why? Because caps are children of segments, so they need to connect to be in whatever layer their *closest* segment is in, rather than getting stuck in their own individual layer
-            closest_idx = 0
-            closest_dist = 9999
-            for i, layer in enumerate(all_layers):
-                dist = abs(line_utils.get_layer_z(obj) - layer)
-                if dist < closest_dist:
-                    closest_dist = dist
-                    closest_idx = i
-
-            #Get the segment
-            if type == "SEGMENT":
-                seg = line_utils.get_layer_from_segment_object(obj, closest_idx, type)
+                seg = line_utils.get_layer_from_segment_object(obj, current_segment_layer, "SEGMENT")
                 self.segments.append(seg)
-            else:
-                cap = line_utils.get_layer_from_segment_object(obj, closest_idx, type)
-                self.caps.append(cap)
+                segment_layers.append( (line_utils.get_layer_z(obj), current_segment_layer, False, False) ) #False, False for start and end cap used flags
+                current_segment_layer += 1
         
-        #That is it! We got the material data, scale, and layer commands. Now the caller just needs to call write() to write the file.
+        # Now handle caps
+        for obj in exportable_objects:
+            if obj.xp_lin.type != "SEGMENT":
+                #Find the closest segment layer
+                obj_layer_z = line_utils.get_layer_z(obj)
+                closest_idx = -1
+                closest_dist = 9999
+                for i, (layer_z, layer_idx, start_used, end_used) in enumerate(segment_layers):
+                    dist = abs(obj_layer_z - layer_z)
+                    if dist < closest_dist:
+                        closest_dist = dist
+                        closest_idx = i
+                
+                if closest_idx == -1:
+                    log_utils.warning(f"Error: Could not find a parent segment for cap object {obj.name}! Perhaps you have no segments? Skipping this cap.")
+                    continue
+                
+                seg_layer_z, seg_layer_idx, start_used, end_used = segment_layers[closest_idx]
+
+                if obj.xp_lin.type == "START":
+                    if start_used:
+                        log_utils.warning(f"Warning: Multiple start caps found for segment layer at Z {seg_layer_z}. Skipping cap object {obj.name}!")
+                        continue
+                    cap = line_utils.get_layer_from_segment_object(obj, seg_layer_idx, obj.xp_lin.type)
+                    self.caps.append(cap)
+                    #Mark start cap as used
+                    segment_layers[closest_idx] = (seg_layer_z, seg_layer_idx, True, end_used)
+                elif obj.xp_lin.type == "END":
+                    if end_used:
+                        log_utils.warning(f"Warning: Multiple end caps found for segment layer at Z {seg_layer_z}. Skipping cap object {obj.name}!")
+                        continue
+                    cap = line_utils.get_layer_from_segment_object(obj, seg_layer_idx, obj.xp_lin.type)
+                    self.caps.append(cap)
+                    #Mark end cap as used
+                    segment_layers[closest_idx] = (seg_layer_z, seg_layer_idx, start_used, True)
 
     def to_collection(self, in_name):
         log_utils.new_section(f"Creating .lin collection {in_name}")
