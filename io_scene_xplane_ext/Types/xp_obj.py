@@ -2416,14 +2416,63 @@ class object:
             
         cur_dc_state = draw_call_state()
 
-        for dc in self.draw_calls:
-            #TODO: Add commands to set the draw call state appropriately
+        def write_drawcall(dc: draw_call):
             obj.append(f"TRIS {dc.start_idx} {dc.num_idx}")
 
-        #TODO: Write lights
+        def write_light(light: light):
+            pass
 
-        #TODO: Write anims
+        for dc in self.draw_calls:
+            write_drawcall(dc)
 
+        for lt in self.lights:
+            write_light(lt)
+
+        def write_anim_level(level):
+            cur_anim_rot_vector = (0, 0, 0)
+            for act in level.actions:
+                if isinstance(act, draw_call):
+                    obj.append(f"TRIS {act.start_idx} {act.num_idx}")
+                elif isinstance(act, light):
+                    write_light(act)
+                elif isinstance(act, anim_level):
+                    obj.append(f"ANIM_begin")
+                    write_anim_level(act)
+                    obj.append(f"ANIM_end")
+                elif isinstance(act, anim_loc_table):
+                    obj.append(f"ANIM_trans_begin {act.dataref}")
+
+                    for kf in act.keyframes:
+                        obj.append(f"ANIM_trans_key {kf.time} {kf.loc[0] * trans_matrix[0]} {kf.loc[2] * trans_matrix[2]} {kf.loc[1] * trans_matrix[1]}")
+
+                    if act.loop > 0:
+                        obj.append(f"ANIM_keyframe_loop {act.loop}")
+                elif isinstance(act, anim_rot_table_vector_transform):
+                    cur_anim_rot_vector = (act.rot_vector[0], act.rot_vector[2], act.rot_vector[1])
+                elif isinstance(act, anim_rot_table):
+                    obj.append(f"ANIM_rotate_begin {cur_anim_rot_vector[0] * trans_matrix[0]} {cur_anim_rot_vector[1] * trans_matrix[2]} {cur_anim_rot_vector[2] * trans_matrix[1]} {act.dataref}")
+
+                    for kf in act.keyframes:
+                        obj.append(f"ANIM_rotate_key {kf.time} {kf.rot}")
+
+                    if act.loop > 0:
+                        obj.append(f"ANIM_keyframe_loop {act.loop}")
+                elif isinstance(act, anim_loc_keyframe):
+                    obj.append(f"ANIM_trans {act.loc[0] * trans_matrix[0]} {act.loc[2] * trans_matrix[2]} {act.loc[1] * trans_matrix[1]} {act.loc[0] * trans_matrix[0]} {act.loc[2] * trans_matrix[2]} {act.loc[1] * trans_matrix[1]} 0 0")
+                elif isinstance(act, anim_rot_keyframe):
+                    obj.append(f"ANIM_rotate {act.rot_vector[0] * trans_matrix[0]} {act.rot_vector[2] * trans_matrix[2]} {act.rot_vector[1] * trans_matrix[1]} {act.rot} {act.rot} 0 0")
+                elif isinstance(act, anim_show_hide_series):
+                    for cmd in act.commands:
+                        if cmd.hide:
+                            obj.append(f"ANIM_hide {cmd.start_value} {cmd.end_value} {cmd.dataref}")
+                        else:
+                            obj.append(f"ANIM_show {cmd.start_value} {cmd.end_value} {cmd.dataref}")
+
+        for anim in self.animation_trees:
+            obj.append(f"ANIM_begin")
+            write_anim_level(anim)
+            obj.append(f"ANIM_end")
+            
         #Write the obj file
         with open(in_obj_path, 'w') as obj_file:
             obj_file.write('\n'.join(obj))
