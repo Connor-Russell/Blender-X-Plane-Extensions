@@ -423,9 +423,15 @@ class BTN_bake_low_poly(bpy.types.Operator):
         if bpy.data.is_dirty and bpy.context.window_manager is not None and not bpy.app.background:
             self.report({'ERROR'}, "Please save your file before baking as baking can sometimes cause a crash in the Blender baking system, which we can't handle.")
             return {'CANCELLED'}
+        
+        #For all the sleected objects, if it isn't a mesh, deselect it
+        #We have to do this first as empties have no data to check for mats, and will therefor throw
+        for obj in bpy.context.selected_objects:
+            if obj.type != 'MESH':
+                obj.select_set(False)
 
         for obj in bpy.context.selected_objects:
-            if not obj.data.materials and bpy.context.active_object != obj and obj.type == 'MESH':
+            if obj.type == 'MESH' and bpy.context.active_object != obj and not obj.data.materials:
                 self.report({'ERROR'}, "All selected objects must have a material")
                 return {'CANCELLED'}
             #Make sure it is renderable
@@ -436,11 +442,6 @@ class BTN_bake_low_poly(bpy.types.Operator):
                 if hasattr(col, "hide_render") and col.hide_render:
                     self.report({'ERROR'}, f"{obj.name} is not renderable due to a parent collection {col.name}. Please make sure it is visible in the viewport and render.")
                     return {'CANCELLED'}
-                
-        #For all the sleected objects, if it isn't a mesh, deselect it
-        for obj in bpy.context.selected_objects:
-            if obj.type != 'MESH':
-                obj.select_set(False)
 
         #Bake the object to low poly
         auto_baker.auto_bake_current_to_active()
@@ -1035,6 +1036,20 @@ class BTN_preview_lods_for_distance(bpy.types.Operator):
         # Get the object's LOD bucket, and thereby whether it's visible or not
         # Then show or hide the object
         for obj in bpy.data.objects:
+            #First we need to check if we're in an autosplit obj, and need to use those ranges. Otherwise we use the parent collection
+            all_parents = []
+            cur_parent = obj.parent
+            while cur_parent is not None:
+                all_parents.append(cur_parent)
+                cur_parent = cur_parent.parent
+            
+            is_autosplit_child = False
+            autosplit_parent = None
+            for parent in all_parents:
+                if parent.xp_agp.type == 'AUTO_SPLIT_OBJ' and parent.xp_agp.exportable:
+                    is_autosplit_child = True
+                    autosplit_parent = parent
+
             #Get the parent collection
             parent_col = obj.users_collection[0] if obj.users_collection else None
 
@@ -1043,17 +1058,34 @@ class BTN_preview_lods_for_distance(bpy.types.Operator):
             
             lod_ranges = []
 
-            if obj.xplane.lod[0]:
-                lod_ranges.append([parent_col.xplane.layer.lod[0].near, parent_col.xplane.layer.lod[0].far])
+            #If autosplit child, use those ranges
+            if is_autosplit_child and autosplit_parent is not None:
+                if obj.xplane.lod[0]:
+                    lod_ranges.append([autosplit_parent.xp_agp.autosplit_lod_1_min, autosplit_parent.xp_agp.autosplit_lod_1_max])
+                if obj.xplane.lod[1]:
+                    lod_ranges.append([autosplit_parent.xp_agp.autosplit_lod_2_min, autosplit_parent.xp_agp.autosplit_lod_2_max])
+                if obj.xplane.lod[2]:
+                    lod_ranges.append([autosplit_parent.xp_agp.autosplit_lod_3_min, autosplit_parent.xp_agp.autosplit_lod_3_max])
+                if obj.xplane.lod[3]:
+                    lod_ranges.append([autosplit_parent.xp_agp.autosplit_lod_4_min, autosplit_parent.xp_agp.autosplit_lod_4_max])
+
+            #Use the collection LOD if not autosplit child
+            else:
+                if obj.xplane.lod[0]:
+                    if len(parent_col.xplane.layer.lod) > 0:
+                        lod_ranges.append([parent_col.xplane.layer.lod[0].near, parent_col.xplane.layer.lod[0].far])
             
-            if obj.xplane.lod[1]:
-                lod_ranges.append([parent_col.xplane.layer.lod[1].near, parent_col.xplane.layer.lod[1].far])
+                if obj.xplane.lod[1]:
+                    if len(parent_col.xplane.layer.lod) > 1:
+                        lod_ranges.append([parent_col.xplane.layer.lod[1].near, parent_col.xplane.layer.lod[1].far])
 
-            if obj.xplane.lod[2]:
-                lod_ranges.append([parent_col.xplane.layer.lod[2].near, parent_col.xplane.layer.lod[2].far])
+                if obj.xplane.lod[2]:
+                    if len(parent_col.xplane.layer.lod) > 2:
+                        lod_ranges.append([parent_col.xplane.layer.lod[2].near, parent_col.xplane.layer.lod[2].far])
 
-            if obj.xplane.lod[3]:
-                lod_ranges.append([parent_col.xplane.layer.lod[3].near, parent_col.xplane.layer.lod[3].far])
+                if obj.xplane.lod[3]:
+                    if len(parent_col.xplane.layer.lod) > 3:
+                        lod_ranges.append([parent_col.xplane.layer.lod[3].near, parent_col.xplane.layer.lod[3].far])
 
             for range in lod_ranges:
                 if range[0] <= bpy.context.scene.xp_ext.lod_distance_preview <= range[1]:

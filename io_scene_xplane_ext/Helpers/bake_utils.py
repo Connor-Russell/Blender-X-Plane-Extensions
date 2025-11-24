@@ -70,7 +70,7 @@ def get_source_materials():
     #For object, get materials, add to list
     for obj in selected_objects:
         for slot in obj.material_slots:
-            if slot.material not in mats:
+            if slot.material not in mats and slot.material is not None:
                 mats.append(slot.material)
 
     return mats
