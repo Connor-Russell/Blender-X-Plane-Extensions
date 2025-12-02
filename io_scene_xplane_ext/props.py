@@ -889,7 +889,7 @@ class PROP_agp_collection(bpy.types.PropertyGroup):
 class PROP_fac_mesh(bpy.types.PropertyGroup):
     far_lod: bpy.props.IntProperty(name="Far LOD", description="The far LOD for the object", default=1000)  # type: ignore
     group: bpy.props.IntProperty(name="Group", description="The group for the object. Use for layering transparency") # type: ignore
-    cuts: bpy.props.IntProperty(name="Segments", description="The number of segments in the mesh (used for curves. If it is a flat plane with 3 subdivisions, you have 4 segments)")   # type: ignore
+    cuts: bpy.props.IntProperty(name="Segments", description="The number of segments in the mesh (used for curves. If it is a flat plane with 3 subdivisions, you have 4 segments)", default=1, min=1)   # type: ignore
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
 
 class PROP_fac_filtered_spelling_choices(bpy.types.PropertyGroup):
