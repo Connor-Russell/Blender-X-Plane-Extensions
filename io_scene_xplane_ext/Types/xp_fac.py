@@ -346,7 +346,7 @@ class facade:
                 'ROOF_OBJ_HEADING': 7,
                 'SEGMENT': 2,
                 'SEGMENT_CURVED': 2,
-                'MESH': 5,
+                'MESH': 6,
                 'VERTEX': 9,
                 'IDX': 2,
                 'WALL': 6,
@@ -355,9 +355,12 @@ class facade:
                 'ATTACH_GRADED': 6,
             }
             if command in min_tokens and len(tokens) < min_tokens[command]:
-                
-                log_utils.warning(f"Not enough tokens for command '{command}'! Expected at least {min_tokens[command]}, got {len(tokens)}. Line: '{line}'")
-                continue
+                #In the past we accidentally wrote MESH commands with too few parameters, so if the MESH command has only 4 commands we'll still accept that
+                if command == "MESH" and len(tokens) == 4:
+                    pass
+                else:
+                    log_utils.warning(f"Not enough tokens for command '{command}'! Expected at least {min_tokens[command]}, got {len(tokens)}. Line: '{line}'")
+                    continue
 
             if command == "I":
                 # Header line, skip
@@ -474,7 +477,9 @@ class facade:
                     current_mesh = mesh()
                     current_mesh.group = float(tokens[1])
                     current_mesh.far_lod = float(tokens[2])
-                    current_mesh.cuts = int(float(tokens[3]))
+                    #In the past we accidentally skipped the cut param in MESH exports, so this allows us to still import those files.
+                    if len(tokens) > 5:
+                        current_mesh.cuts = int(float(tokens[3]))
                     current_segment.meshes.append(current_mesh)
 
             elif command == "VERTEX":
