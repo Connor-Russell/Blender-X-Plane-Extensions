@@ -346,7 +346,7 @@ class facade:
                 'ROOF_OBJ_HEADING': 7,
                 'SEGMENT': 2,
                 'SEGMENT_CURVED': 2,
-                'MESH': 4,
+                'MESH': 5,
                 'VERTEX': 9,
                 'IDX': 2,
                 'WALL': 6,
@@ -474,6 +474,7 @@ class facade:
                     current_mesh = mesh()
                     current_mesh.group = float(tokens[1])
                     current_mesh.far_lod = float(tokens[2])
+                    current_mesh.cuts = int(float(tokens[3]))
                     current_segment.meshes.append(current_mesh)
 
             elif command == "VERTEX":
@@ -711,7 +712,7 @@ class facade:
             #Now we need to add all the segment definitions
             def write_mesh(target_mesh):
                 output = ""
-                output += "MESH " + str(target_mesh.group) + " " + str(target_mesh.far_lod) + " " + str(len(target_mesh.vertices)) + " " + str(len(target_mesh.indices)) + "\n"
+                output += "MESH " + str(target_mesh.group) + " " + str(target_mesh.far_lod) + " " + str(target_mesh.cuts) + " " + str(len(target_mesh.vertices)) + " " + str(len(target_mesh.indices)) + "\n"
 
                 #X-Plane facades are *very* weird. They scale the wall mesh by -1 on their z axis (our y). So we need to do the same here so XP appears the same as blender - 0y being the start of the wall
 
