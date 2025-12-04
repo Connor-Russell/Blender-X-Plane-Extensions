@@ -9,6 +9,7 @@ import os
 import bpy
 import numpy as np
 from . import file_utils
+from . import log_utils
 
 def separate_xp_combined_nml(xp_combined_nml_path):
     """
@@ -128,11 +129,13 @@ def combine_xp_separate_maps(xp_normal_map_path, xp_material_map_path):
     try:
         #Attempt to load
         if os.path.isfile(xp_normal_map_path):
+            log_utils.info(f"Loading normal map for combination: {xp_normal_map_path}")
             img_xp_normal = bpy.data.images.load(xp_normal_map_path)
             img_xp_normal.colorspace_settings.name = 'sRGB'
             img_xp_normal.name = "CONVERT_BUFFER_XP_Normal_Map"
 
         if os.path.isfile(xp_material_map_path):
+            log_utils.info(f"Loading material map for combination: {xp_material_map_path}")
             img_xp_material = bpy.data.images.load(xp_material_map_path)
             img_xp_material.colorspace_settings.name = 'sRGB'
             img_xp_material.name = "CONVERT_BUFFER_XP_Material_Map"
@@ -156,6 +159,10 @@ def combine_xp_separate_maps(xp_normal_map_path, xp_material_map_path):
             #Resize the smaller to match the larger
             if nrm_width != width or nrm_height != height:
                 img_xp_normal.scale(width, height)
+                log_utils.info(f"Resized normal map to {width}x{height} for combination.")
+            if mat_width != width or mat_height != height:
+                img_xp_material.scale(width, height)
+                log_utils.info(f"Resized material map to {width}x{height} for combination.")
 
         # Default the normal pixels to an array of 0.5, 0.5, 1.0, 1.0 (flat normal)
         normal_pixels = np.full((height, width, 4), [0.5, 0.5, 1.0, 1.0], dtype=np.float32)
@@ -182,6 +189,7 @@ def combine_xp_separate_maps(xp_normal_map_path, xp_material_map_path):
         if no_suffix_xp_normal_map_path.endswith(prefs.suffix_normal):
             no_suffix_xp_normal_map_path = no_suffix_xp_normal_map_path[:-len(prefs.suffix_normal)]
         xp_combined_nml_map_path = no_suffix_xp_normal_map_path + prefs.suffix_combined_normal + ".png"
+        log_utils.info(f"Saving combined normal/material map to: {xp_combined_nml_map_path}")
 
         #Backup the old file
         file_utils.backup_file(xp_combined_nml_map_path)
