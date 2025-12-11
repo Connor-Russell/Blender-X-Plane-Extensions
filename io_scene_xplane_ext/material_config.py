@@ -1119,7 +1119,7 @@ def update_nodes(material: bpy.types.Material):
             node_dither_mix_1.location = (-1250, -250)
             node_dither_mix_1.label = "Mix Decal 1 Dither"
             node_dither_mix_1.operation = 'ADD'
-            node_dither_mix_1.inputs[1].default_value = 0.5
+            node_dither_mix_1.inputs[1].default_value = 0
             material.node_tree.links.new(node_alpha_post_mix.outputs[0], node_dither_mix_1.inputs[0])
             if output_src_1_dither is not None:
                 material.node_tree.links.new(output_src_1_dither, node_dither_mix_1.inputs[1])
