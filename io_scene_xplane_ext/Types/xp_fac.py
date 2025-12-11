@@ -208,9 +208,13 @@ class floor:
                 break
         
         if roof_col is None:
-            log_utils.warning("Could not find roof collection: " + self.name + "_roof")
-            self.roof_scale_x = 1
-            self.roof_scale_y = 1
+            if in_floor.roof_collection != "":
+                log_utils.warning("Could not find roof collection: " + self.name + "_roof")
+            else:
+                log_utils.info("No roof collection specified for floor: " + self.name + ", using defaults.")
+            # I'm not sure if X-Plane subdivides the roof, or if this is only used for UV scaling. I've set this to 100 *just in case* it is subdivided. There's no downside so...
+            self.roof_scale_x = 100
+            self.roof_scale_y = 100
             self.roof_objs = []
             self.roof_heights = [1.0]
         else:
