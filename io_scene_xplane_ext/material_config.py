@@ -9,6 +9,29 @@ from .Helpers import file_utils
 from .Helpers import decal_utils
 from .Helpers import log_utils
 
+import struct
+
+def _png_color_type(path):
+    with open(path, "rb") as f:
+        sig = f.read(8)
+        if sig != b"\x89PNG\r\n\x1a\n":
+            raise ValueError("Not a PNG")
+        length = struct.unpack(">I", f.read(4))[0]
+        if f.read(4) != b"IHDR":
+            raise ValueError("Missing IHDR")
+        ihdr = f.read(length)
+        # IHDR: width(4), height(4), bit depth(1), color type(1), compression(1), filter(1), interlace(1)
+        color_type = ihdr[9]
+        return color_type
+
+def _is_grayscale_no_alpha_png(path):
+    try:
+        return _png_color_type(path) == 0
+    except:
+        log_utils.warning(f"Failed to determine if texture {path} is grayscale without alpha for decal textures.")
+        return False
+
+
 def operator_wrapped_update_settings(self = None, context = None):
     if bpy.context.active_object == None:
         return
@@ -482,7 +505,7 @@ def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_
     return node_clamp_final.outputs[0]
 
 #Function to update the nodes of a material
-def update_nodes(material):
+def update_nodes(material: bpy.types.Material):
     #Check to make sure teh file is saved, otherwise exit and warn the user in the status bar
         if bpy.data.filepath == "":
             raise Exception("Please save the file before attempting to update materials. Textures are relative to the blender file, so if the file isn't saved I can't find your textures!")
@@ -767,6 +790,8 @@ def update_nodes(material):
         # For the albedo, that means mixing in the alb rgb and alpha portions of the decal (cascading mix nodes, with the factor being the appropriate key, difference mode)
         # For dithering, this means mixing in the alpha portion of the alb decal (cascading mix nodes, with the factor being the appropriate key, blend mode being difference)
         # For the normal, that means mixing in the normal map portion of the decal (cascading mix nodes, with the factor being the appropriate key, add mode)
+        # 
+        # One more factor: If a decal *image* is only grayscale with no alpha, it has no RGB component, and goes directly into the "alpha" decal portion
 
         # Before we do anything, we're going to define all the outputs we'll need here. They'll default to None, and we'll set them as we go
         output_mod_r = None
@@ -887,8 +912,20 @@ def update_nodes(material):
 
         # Now that we have the UVs, we need to set up the actual source nodes.
         # Basically for Alb, we have just an image node, with the appropriate UV
+        # We subtract 0.5 from RGB and alpha so we're basically signed add blend mode (kinda?), then use those as the outputs for the decal mixing.
+        # NOTE: As mentioned earlier, if the decal image is grayscale, there is no RGB component, we just feed it's color data directly into the alpha portion
+        #
         # For Normals, we need an image node, we split it's RGB, merge R G and B as 1, then connect it to a normal map.
 
+        #First off get bools of the decal images being grayscale only
+        image_1_decal_alb_is_grayscale = False
+        image_2_decal_alb_is_grayscale = False
+        if image_decal_1_alb != None:
+            image_1_decal_alb_is_grayscale = _is_grayscale_no_alpha_png(str_image_decal_1_alb)
+        if image_decal_2_alb != None:
+            image_2_decal_alb_is_grayscale = _is_grayscale_no_alpha_png(str_image_decal_2_alb)
+
+        #Setup decal 1 alb source nodes
         if image_decal_1_alb != None:
             node_decal_1_alb = material.node_tree.nodes.new(type="ShaderNodeTexImage")
             node_decal_1_alb.location = (-4000, 0)
@@ -897,40 +934,47 @@ def update_nodes(material):
             node_decal_1_alb.image.colorspace_settings.name = 'Non-Color'
             material.node_tree.links.new(output_uv_decal_alb_1, node_decal_1_alb.inputs[0])
 
-            #Now we need to subtract 0.5 from the rgb and the alpha
-            node_decal_1_subtract_rgb = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_1_subtract_rgb.location = (-3750, 0)
-            node_decal_1_subtract_rgb.label = "Decal 1 Subtract RGB"
-            node_decal_1_subtract_rgb.operation = 'SUBTRACT'
-            node_decal_1_subtract_rgb.inputs[1].default_value = 0.5
-            material.node_tree.links.new(node_decal_1_alb.outputs[0], node_decal_1_subtract_rgb.inputs[0])
+            if not image_1_decal_alb_is_grayscale:
+                #Now we need to subtract 0.5 from the rgb and the alpha
+                node_decal_1_subtract_rgb = material.node_tree.nodes.new(type="ShaderNodeMath")
+                node_decal_1_subtract_rgb.location = (-3750, 0)
+                node_decal_1_subtract_rgb.label = "Decal 1 Subtract RGB"
+                node_decal_1_subtract_rgb.operation = 'SUBTRACT'
+                node_decal_1_subtract_rgb.inputs[1].default_value = 0.5
+                material.node_tree.links.new(node_decal_1_alb.outputs[0], node_decal_1_subtract_rgb.inputs[0])
 
             node_decal_1_subtract_alpha = material.node_tree.nodes.new(type="ShaderNodeMath")
             node_decal_1_subtract_alpha.location = (-3750, -250)
             node_decal_1_subtract_alpha.label = "Decal 1 Subtract Alpha"
             node_decal_1_subtract_alpha.operation = 'SUBTRACT'
             node_decal_1_subtract_alpha.inputs[1].default_value = 0.5
-            material.node_tree.links.new(node_decal_1_alb.outputs[1], node_decal_1_subtract_alpha.inputs[0])
+            if not image_1_decal_alb_is_grayscale:
+                material.node_tree.links.new(node_decal_1_alb.outputs[1], node_decal_1_subtract_alpha.inputs[0])
+            else:
+                #If grayscale only, connect the color output to the alpha subtract
+                material.node_tree.links.new(node_decal_1_alb.outputs[0], node_decal_1_subtract_alpha.inputs[0])
 
-            #Now for the dither, we need to add a math node to multiply the alpha by the dither ratio
-            node_decal_1_dither = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_1_dither.location = (-3500, -250)
-            node_decal_1_dither.label = "Decal 1 Dither"
-            node_decal_1_dither.operation = 'MULTIPLY'
-            node_decal_1_dither.inputs[1].default_value = xp_material_props.decals[0].dither_ratio
-            material.node_tree.links.new(node_decal_1_subtract_alpha.outputs[0], node_decal_1_dither.inputs[0])
+            if not image_1_decal_alb_is_grayscale:
+                #Now for the dither, we need to add a math node to multiply the alpha by the dither ratio
+                node_decal_1_dither = material.node_tree.nodes.new(type="ShaderNodeMath")
+                node_decal_1_dither.location = (-3500, -250)
+                node_decal_1_dither.label = "Decal 1 Dither"
+                node_decal_1_dither.operation = 'MULTIPLY'
+                node_decal_1_dither.inputs[1].default_value = xp_material_props.decals[0].dither_ratio
+                material.node_tree.links.new(node_decal_1_subtract_alpha.outputs[0], node_decal_1_dither.inputs[0])
 
-            #Then we need to add a math node and multiply the dither by -1 to match XP
-            node_decal_1_dither_neg = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_1_dither_neg.location = (-3250, -250)
-            node_decal_1_dither_neg.label = "Decal 1 Dither Neg"
-            node_decal_1_dither_neg.operation = 'MULTIPLY'
-            node_decal_1_dither_neg.inputs[1].default_value = -1
-            material.node_tree.links.new(node_decal_1_dither.outputs[0], node_decal_1_dither_neg.inputs[0])
+                #Then we need to add a math node and multiply the dither by -1 to match XP
+                node_decal_1_dither_neg = material.node_tree.nodes.new(type="ShaderNodeMath")
+                node_decal_1_dither_neg.location = (-3250, -250)
+                node_decal_1_dither_neg.label = "Decal 1 Dither Neg"
+                node_decal_1_dither_neg.operation = 'MULTIPLY'
+                node_decal_1_dither_neg.inputs[1].default_value = -1
+                material.node_tree.links.new(node_decal_1_dither.outputs[0], node_decal_1_dither_neg.inputs[0])
 
-            output_src_1_alb_rgb = node_decal_1_subtract_rgb.outputs[0]
+            if not image_1_decal_alb_is_grayscale:
+                output_src_1_alb_rgb = node_decal_1_subtract_rgb.outputs[0]
+                output_src_1_dither = node_decal_1_dither_neg.outputs[0]
             output_src_1_alb_alpha = node_decal_1_subtract_alpha.outputs[0]
-            output_src_1_dither = node_decal_1_dither_neg.outputs[0]
 
         if image_decal_1_nml != None:
             node_decal_1_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
@@ -967,40 +1011,48 @@ def update_nodes(material):
             node_decal_2_alb.image.colorspace_settings.name = 'Non-Color'
             material.node_tree.links.new(output_uv_decal_alb_2, node_decal_2_alb.inputs[0])
 
-            #Now we need to subtract 0.5 from the rgb and the alpha
-            node_decal_2_subtract_rgb = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_2_subtract_rgb.location = (-3750, -1000)
-            node_decal_2_subtract_rgb.label = "Decal 2 Subtract RGB"
-            node_decal_2_subtract_rgb.operation = 'SUBTRACT'
-            node_decal_2_subtract_rgb.inputs[1].default_value = 0.5
-            material.node_tree.links.new(node_decal_2_alb.outputs[0], node_decal_2_subtract_rgb.inputs[0])
+            if not image_2_decal_alb_is_grayscale:
+                #Now we need to subtract 0.5 from the rgb and the alpha
+                node_decal_2_subtract_rgb = material.node_tree.nodes.new(type="ShaderNodeMath")
+                node_decal_2_subtract_rgb.location = (-3750, -1000)
+                node_decal_2_subtract_rgb.label = "Decal 2 Subtract RGB"
+                node_decal_2_subtract_rgb.operation = 'SUBTRACT'
+                node_decal_2_subtract_rgb.inputs[1].default_value = 0.5
+                material.node_tree.links.new(node_decal_2_alb.outputs[0], node_decal_2_subtract_rgb.inputs[0])
 
             node_decal_2_subtract_alpha = material.node_tree.nodes.new(type="ShaderNodeMath")
             node_decal_2_subtract_alpha.location = (-3750, -1250)
             node_decal_2_subtract_alpha.label = "Decal 2 Subtract Alpha"
             node_decal_2_subtract_alpha.operation = 'SUBTRACT'
             node_decal_2_subtract_alpha.inputs[1].default_value = 0.5
-            material.node_tree.links.new(node_decal_2_alb.outputs[1], node_decal_2_subtract_alpha.inputs[0])
+            if not image_2_decal_alb_is_grayscale:
+                material.node_tree.links.new(node_decal_2_alb.outputs[1], node_decal_2_subtract_alpha.inputs[0])
+            else:
+                #If grayscale only, connect the color output to the alpha subtract
+                material.node_tree.links.new(node_decal_2_alb.outputs[0], node_decal_2_subtract_alpha.inputs[0])
 
-            #Now for the dither, we need to add a math node to multiply the alpha by the dither ratio
-            node_decal_2_dither = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_2_dither.location = (-3500, -1250)
-            node_decal_2_dither.label = "Decal 2 Dither"
-            node_decal_2_dither.operation = 'MULTIPLY'
-            node_decal_2_dither.inputs[1].default_value = xp_material_props.decals[1].dither_ratio
-            material.node_tree.links.new(node_decal_2_subtract_alpha.outputs[0], node_decal_2_dither.inputs[0])
+            if not image_2_decal_alb_is_grayscale:
+                #Now for the dither, we need to add a math node to multiply the alpha by the dither ratio
+                node_decal_2_dither = material.node_tree.nodes.new(type="ShaderNodeMath")
+                node_decal_2_dither.location = (-3500, -1250)
+                node_decal_2_dither.label = "Decal 2 Dither"
+                node_decal_2_dither.operation = 'MULTIPLY'
+                node_decal_2_dither.inputs[1].default_value = xp_material_props.decals[1].dither_ratio
+                material.node_tree.links.new(node_decal_2_subtract_alpha.outputs[0], node_decal_2_dither.inputs[0])
 
-            #Then we need to add a math node and multiply the dither by -1 to match XP
-            node_decal_2_dither_neg = material.node_tree.nodes.new(type="ShaderNodeMath")
-            node_decal_2_dither_neg.location = (-3250, -1250)
-            node_decal_2_dither_neg.label = "Decal 2 Dither Neg"
-            node_decal_2_dither_neg.operation = 'MULTIPLY'
-            node_decal_2_dither_neg.inputs[1].default_value = -1
-            material.node_tree.links.new(node_decal_2_dither.outputs[0], node_decal_2_dither_neg.inputs[0])
+                #Then we need to add a math node and multiply the dither by -1 to match XP
+                node_decal_2_dither_neg = material.node_tree.nodes.new(type="ShaderNodeMath")
+                node_decal_2_dither_neg.location = (-3250, -1250)
+                node_decal_2_dither_neg.label = "Decal 2 Dither Neg"
+                node_decal_2_dither_neg.operation = 'MULTIPLY'
+                node_decal_2_dither_neg.inputs[1].default_value = -1
+                material.node_tree.links.new(node_decal_2_dither.outputs[0], node_decal_2_dither_neg.inputs[0])
 
-            output_src_2_alb_rgb = node_decal_2_subtract_rgb.outputs[0]
+            if not image_2_decal_alb_is_grayscale:
+                output_src_2_alb_rgb = node_decal_2_subtract_rgb.outputs[0]
+                output_src_2_dither = node_decal_2_dither_neg.outputs[0]
+                
             output_src_2_alb_alpha = node_decal_2_subtract_alpha.outputs[0]
-            output_src_2_dither = node_decal_2_dither_neg.outputs[0]
 
         if image_decal_2_nml != None:
             node_decal_2_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
@@ -1038,15 +1090,19 @@ def update_nodes(material):
         node_alpha_post_mix = node_alpha_clamp #This defaults to add because if we have a decal 2 and not decal 1, we still need an input for the decal 2 input
 
         if image_decal_1_alb != None and node_alb_post_mix_1 != None:
+            #Mix the RGB
             node_mix_1 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
             node_mix_1.location = (-1500, 0)
             node_mix_1.label = "Mix Decal 1 Alb RGB"
             node_mix_1.blend_type = 'ADD'
+            node_mix_1.inputs[2].default_value = (0.0, 0.0, 0.0, 0.0) #Set the base to 0.5 in case we don't have the RGB portion of the decal (i.e. with a grayscale only decal)
             
             material.node_tree.links.new(output_key_1_alb_rgb, node_mix_1.inputs[0])
             material.node_tree.links.new(node_alb.outputs[0], node_mix_1.inputs[1])
-            material.node_tree.links.new(output_src_1_alb_rgb, node_mix_1.inputs[2])
+            if output_src_1_alb_rgb is not None:
+                material.node_tree.links.new(output_src_1_alb_rgb, node_mix_1.inputs[2])
 
+            #Mix the Alpha
             node_mix_2 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
             node_mix_2.location = (-1250, 0)
             node_mix_2.label = "Mix Decal 1 Alb Alpha"
@@ -1063,8 +1119,10 @@ def update_nodes(material):
             node_dither_mix_1.location = (-1250, -250)
             node_dither_mix_1.label = "Mix Decal 1 Dither"
             node_dither_mix_1.operation = 'ADD'
+            node_dither_mix_1.inputs[1].default_value = 0.5
             material.node_tree.links.new(node_alpha_post_mix.outputs[0], node_dither_mix_1.inputs[0])
-            material.node_tree.links.new(output_src_1_dither, node_dither_mix_1.inputs[1])
+            if output_src_1_dither is not None:
+                material.node_tree.links.new(output_src_1_dither, node_dither_mix_1.inputs[1])
 
             node_alpha_post_mix = node_dither_mix_1
 
@@ -1085,10 +1143,12 @@ def update_nodes(material):
             node_mix_3.location = (-1000, 0)
             node_mix_3.label = "Mix Decal 2 Alb RGB"
             node_mix_3.blend_type = 'ADD'
+            node_mix_3.inputs[2].default_value = (0.0, 0.0, 0.0, 0.0) #Set the base to 0.5 in case we don't have the RGB portion of the decal (i.e. with a grayscale only decal)
 
             material.node_tree.links.new(output_key_2_alb_rgb, node_mix_3.inputs[0])
             material.node_tree.links.new(node_alb_post_mix_1.outputs[0], node_mix_3.inputs[1])
-            material.node_tree.links.new(output_src_2_alb_rgb, node_mix_3.inputs[2])
+            if output_src_2_alb_rgb is not None:
+                material.node_tree.links.new(output_src_2_alb_rgb, node_mix_3.inputs[2])
 
             node_mix_4 = material.node_tree.nodes.new(type="ShaderNodeMixRGB")
             node_mix_4.location = (-750, -0)
@@ -1106,8 +1166,10 @@ def update_nodes(material):
             node_dither_mix_2.location = (-1000, -250)
             node_dither_mix_2.label = "Mix Decal 2 Dither"
             node_dither_mix_2.operation = 'ADD'
+            node_dither_mix_2.inputs[1].default_value = 0
             material.node_tree.links.new(node_alpha_post_mix.outputs[0], node_dither_mix_2.inputs[0])
-            material.node_tree.links.new(output_src_2_dither, node_dither_mix_2.inputs[1])
+            if output_src_2_dither is not None:
+                material.node_tree.links.new(output_src_2_dither, node_dither_mix_2.inputs[1])
 
             node_alpha_post_mix = node_dither_mix_2
 
@@ -1148,6 +1210,3 @@ def update_nodes(material):
                 material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[21]) #Clamped alpha to alpha
             else:
                 material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
-
-            
-
