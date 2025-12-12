@@ -1408,6 +1408,43 @@ class BTN_preview_attached_object(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_clear_attached_object_preview(bpy.types.Operator):
+    """Clears the preview of an attached object"""
+    bl_idname = "xp_ext.clear_attached_object_preview"
+    bl_label = "Clear Attached Object Preview"
+    bl_description = "Clears the preview of an attached object that was previously imported for previewing."
+
+    def execute(self, context):
+        log_utils.new_section("Clear attached object preview")
+
+        # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
+        # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
+        # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
+        selected_objects = context.selected_objects
+
+        for obj in selected_objects:
+            if obj.type != 'EMPTY':
+                continue
+
+            print(f"Processing object {obj.name}")
+
+            resource = ""
+            if obj.xp_attached_obj.exportable:
+                resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
+            elif obj.xp_agp.type == 'ATTACHED_OBJ':
+                resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
+            else:
+                continue
+
+            #Iterate through obj's children. If mesh, and hide_select, delete it
+            for child in obj.children:
+                if child.type == 'MESH' and child.hide_select:
+                    bpy.data.objects.remove(child, do_unlink=True)
+
+        log_utils.display_messages()
+
+        return {'FINISHED'}
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -1449,6 +1486,7 @@ def register():
     bpy.utils.register_class(BTN_find_textures)
     bpy.utils.register_class(BTN_set_all_export_dirs)
     bpy.utils.register_class(BTN_preview_attached_object)
+    bpy.utils.register_class(BTN_clear_attached_object_preview)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -1485,4 +1523,5 @@ def unregister():
     bpy.utils.unregister_class(BTN_find_textures)
     bpy.utils.unregister_class(BTN_set_all_export_dirs)
     bpy.utils.unregister_class(BTN_preview_attached_object)
+    bpy.utils.unregister_class(BTN_clear_attached_object_preview)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

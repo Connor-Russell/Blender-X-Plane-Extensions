@@ -247,6 +247,8 @@ class attached_object_preview:
         
         #Join all objects into one
         joined_obj = geometery_utils.join_objects(all_objs, self.name)
+        joined_obj.xp_attached_obj.exportable = False
+        joined_obj.xp_agp.exportable = False
             
         #Link to the collection and set parent
         joined_obj.parent = target_parent

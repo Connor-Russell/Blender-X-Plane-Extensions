@@ -400,7 +400,9 @@ class MENU_agp_obj(bpy.types.Panel):
                 layout.prop(agp_obj, "attached_obj_draped")
                 box = layout.box()
                 box.prop(agp_obj, "attached_obj_preview_resource")
-                box.operator("xp_ext.preview_attached_object", text="Preview Resource")
+                row = box.row()
+                row.operator("xp_ext.preview_attached_object", text="Preview Resource")
+                row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
             elif agp_obj.type == "AUTO_SPLIT_OBJ":
                 layout.separator()
                 layout.label(text="DISCLAIMER:")
@@ -903,7 +905,10 @@ class MENU_attached_object(bpy.types.Panel):
             layout.separator()
             box = layout.box()
             box.prop(attached_obj, "attached_obj_preview_resource")
-            box.operator("xp_ext.preview_attached_object", text="Preview Resource")
+            row = box.row()
+            row.operator("xp_ext.preview_attached_object", text="Preview Resource")
+            row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
+            
 
 class MENU_fac_mesh(bpy.types.Panel):
     """Creates a Panel in the object properties window"""
