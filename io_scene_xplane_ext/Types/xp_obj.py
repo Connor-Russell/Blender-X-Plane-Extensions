@@ -848,7 +848,8 @@ class draw_call:
         dc_indicies.reverse()
 
         dc_obj = geometery_utils.create_obj_from_draw_call(dc_verticies, dc_indicies, f"TRIS {self.start_index} {self.length}")
-        in_collection.objects.link(dc_obj)
+        if in_collection is not None:
+            in_collection.objects.link(dc_obj)
 
         override_return_obj = None
 

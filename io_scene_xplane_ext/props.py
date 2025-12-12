@@ -86,6 +86,12 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
     draped: bpy.props.BoolProperty(name="Draped", description="Whether the object is draped", default=False)    # type: ignore
     resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
+    attached_obj_preview_resource: bpy.props.StringProperty(
+        name="Preview Resource",
+        description="The preview resource for the attached object",
+        default="",
+        subtype="FILE_PATH"
+    ) # type: ignore
 
 class PROP_xp_ext_scene(bpy.types.PropertyGroup):
     last_save_plugin_version: bpy.props.IntProperty(
@@ -801,6 +807,13 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         name="Resource",
         description="The resource for the attached object",
         default=""
+    ) # type: ignore
+
+    attached_obj_preview_resource: bpy.props.StringProperty(
+        name="Preview Resource",
+        description="The preview resource for the attached object",
+        default="",
+        subtype="FILE_PATH",
     ) # type: ignore
 
     attached_obj_show_between_low: bpy.props.IntProperty(

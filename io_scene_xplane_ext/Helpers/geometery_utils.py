@@ -282,3 +282,37 @@ def get_draw_call_from_obj(obj):
 
         return (out_verts, out_inds)
 
+def join_objects(objects, name):
+    """
+    Join multiple Blender objects into one. All objects are joined to the first one.
+    Args:
+        objects (list of bpy.types.Object): List of Blender objects to join. Must contain at least one object.
+        name (str): Name for the joined object.
+    Returns:
+        bpy.types.Object: The joined object.
+    """
+    if not objects or len(objects) == 0:
+        raise ValueError("Objects list must contain at least one object")
+    
+    # Make sure we're in object mode
+    if bpy.context.active_object and bpy.context.active_object.mode != "OBJECT":
+        bpy.ops.object.mode_set(mode="OBJECT")
+    
+    # Deselect all objects first
+    bpy.ops.object.select_all(action='DESELECT')
+    
+    # Select all objects to join
+    for obj in objects:
+        obj.select_set(True)
+    
+    # Make the first object the active one
+    bpy.context.view_layer.objects.active = objects[0]
+    
+    # Join all selected objects
+    bpy.ops.object.join()
+    
+    # Rename the joined object
+    objects[0].name = name
+    
+    return objects[0]
+

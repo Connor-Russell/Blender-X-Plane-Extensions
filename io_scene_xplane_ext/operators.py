@@ -17,9 +17,11 @@ from .Helpers import misc_utils
 from .Helpers import log_utils
 from .Helpers import facade_utils
 from .Helpers import normal_conversion_utils
+from .Types import xp_attached_obj_preview
 from . import anim_actions
 from . import auto_baker
 import os
+
 
 class BTN_lin_exporter(bpy.types.Operator):
     bl_idname = "xp_ext.export_lines"
@@ -1338,7 +1340,74 @@ class BTN_set_all_export_dirs(bpy.types.Operator):
         log_utils.display_messages()
 
         return {'FINISHED'}
-  
+
+class BTN_preview_attached_object(bpy.types.Operator):
+    """Imports for preview an object that is attached to a facade or .agp"""
+    bl_idname = "xp_ext.preview_attached_object"
+    bl_label = "Preview Attached Object"
+    bl_description = "Imports and previews an object that is attached to a facade or .agp file. This is useful for previewing objects that are not part of the main scene but are referenced by the facade or agp file."
+
+    def execute(self, context):
+        log_utils.new_section("Preview attached object")
+
+        # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
+        # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
+        # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
+        selected_objects = context.selected_objects
+        original_active_object = context.active_object
+
+        for obj in selected_objects:
+            if obj.type != 'EMPTY':
+                continue
+
+            print(f"Processing object {obj.name}")
+
+            resource = ""
+            if obj.xp_attached_obj.exportable:
+                resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
+            elif obj.xp_agp.type == 'ATTACHED_OBJ':
+                resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
+            else:
+                continue
+
+            #Iterate through obj's children. If mesh, and hide_select, delete it
+            for child in obj.children:
+                if child.type == 'MESH' and child.hide_select:
+                    bpy.data.objects.remove(child, do_unlink=True)
+
+            #Skip empty. Warn on missing
+            if resource == "":
+                continue
+            if not os.path.isfile(resource):
+                log_utils.warning(f"Attached object preview resource '{resource}' not found.")
+                continue
+
+            parent_collection = None
+
+            #Find the parent collection
+            for col in obj.users_collection:
+                parent_collection = col
+                break
+
+            #Read and add
+            new_obj = xp_attached_obj_preview.attached_object_preview()
+            new_obj.read(resource)
+            new_obj.to_scene(obj, parent_collection)
+
+        log_utils.display_messages()
+
+        #Deselect all objects
+        for obj in context.scene.objects:
+            obj.select_set(False)
+
+        #Re-select the original active object
+        for obj in selected_objects:
+            obj.select_set(True)
+        if original_active_object is not None:
+            context.view_layer.objects.active = original_active_object
+
+        return {'FINISHED'}
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -1379,6 +1448,7 @@ def register():
     bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.register_class(BTN_find_textures)
     bpy.utils.register_class(BTN_set_all_export_dirs)
+    bpy.utils.register_class(BTN_preview_attached_object)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -1414,4 +1484,5 @@ def unregister():
     bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.unregister_class(BTN_find_textures)
     bpy.utils.unregister_class(BTN_set_all_export_dirs)
+    bpy.utils.unregister_class(BTN_preview_attached_object)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)
