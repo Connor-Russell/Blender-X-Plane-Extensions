@@ -66,12 +66,18 @@ class segment:
         for obj in collection.objects:
             #If the object is a segment, get its geometry
             if obj.type == "MESH":
-                cur_mesh = mesh()
-                cur_mesh.from_obj(obj)
-                self.meshes.append(cur_mesh)
+                if obj.xp_fac_mesh.exportable:
+                    cur_mesh = mesh()
+                    cur_mesh.from_obj(obj)
+                    self.meshes.append(cur_mesh)
             
             #If this is an empty, these typically are an attached object. We will check and handle that here.
             elif obj.type == "EMPTY":
+                attached_obj_file_name = os.path.basename(obj.xp_attached_obj.resource)
+                attached_obj_preview_file_name = os.path.basename(file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource))
+                if attached_obj_file_name != attached_obj_preview_file_name and attached_obj_preview_file_name != "":
+                    log_utils.warning(f"Warning: Attached object file name and preview file differ. Results may be unexpected. {obj.name} Resource Name: {attached_obj_file_name} Preview Name: {attached_obj_preview_file_name}")
+                    continue
                 new_attached_obj = xp_attached_obj.xp_attached_obj()
                 new_attached_obj.read_from_obj(obj)
 
@@ -313,11 +319,13 @@ class facade:
         current_mesh = None
         current_material = None
 
+        last_comment_name = ""
+
         for line in lines:
             line = line.strip()
 
-            if not line or line.startswith("#"):
-                continue  # Ignore empty lines and comments
+            if not line:
+                continue  # Ignore empty lines (comments are processed later, we use them to guess at segment names)
 
             tokens = line.split()
             if not tokens:
@@ -373,6 +381,10 @@ class facade:
             elif command == "FACADE":
                 # Start of a facade definition, skip
                 continue
+
+            elif command.startswith("#"):
+                #Join the tokens, remove the first char, and we have the last comment name
+                last_comment_name = (" ".join(tokens))[1:]
 
             elif command == "GRADED":
                 self.graded = True
@@ -465,13 +477,15 @@ class facade:
 
             elif command == "SEGMENT":
                 current_segment = segment()
-                current_segment.name = tokens[1]
+                current_segment.name = tokens[1] + " - " + last_comment_name
+                last_comment_name = ""
                 if current_floor:
                     current_floor.all_segments.append(current_segment)
 
             elif command == "SEGMENT_CURVED":
                 current_segment = segment()
-                current_segment.name = tokens[1]
+                current_segment.name = tokens[1] + " - " + last_comment_name
+                last_comment_name = ""
                 current_segment.is_curved = True
                 if current_floor:
                     current_floor.all_curved_segments.append(current_segment)
@@ -539,6 +553,11 @@ class facade:
                         attached_obj.min_draw = float(tokens[6])
                         attached_obj.max_draw = float(tokens[7])
                     attached_obj.draped = True
+
+                    real_resource_path = os.path.join(os.path.dirname(in_path), obj_resource)
+                    if os.path.exists(real_resource_path):
+                        attached_obj.preview_path = real_resource_path
+
                     current_segment.attached_objects.append(attached_obj)
 
             elif command == "ATTACH_GRADED":
@@ -555,7 +574,13 @@ class facade:
                         attached_obj.min_draw = float(tokens[6])
                         attached_obj.max_draw = float(tokens[7])
                     attached_obj.draped = False
+                    
+                    real_resource_path = os.path.join(os.path.dirname(in_path), obj_resource)
+                    if os.path.exists(real_resource_path):
+                        attached_obj.preview_path = real_resource_path
+                    
                     current_segment.attached_objects.append(attached_obj)
+                    
 
         # Sort objects and segments for consistency
         self.all_objects.sort()

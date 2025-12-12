@@ -4,8 +4,10 @@
 #Module:    ui.py
 #Purpose:   Provide UI classes for the plugin
 
+import os
 import bpy # type: ignore
 from . import props
+from .Helpers import file_utils
 
 def draw_decal_prop(layout, property_item, index, material_name=""):
     box = layout.box()
@@ -399,6 +401,10 @@ class MENU_agp_obj(bpy.types.Panel):
                 layout.prop(agp_obj, "attached_obj_resource")
                 layout.prop(agp_obj, "attached_obj_draped")
                 box = layout.box()
+                attached_obj_file_name = os.path.basename(agp_obj.resource)
+                attached_obj_preview_file_name = os.path.basename(file_utils.to_absolute(agp_obj.attached_obj_preview_resource))
+                if attached_obj_file_name != attached_obj_preview_file_name and attached_obj_preview_file_name != "":
+                    box.label(text="WARNING: Preview resource does not match the main resource.")
                 box.prop(agp_obj, "attached_obj_preview_resource")
                 row = box.row()
                 row.operator("xp_ext.preview_attached_object", text="Preview Resource")
@@ -897,18 +903,20 @@ class MENU_attached_object(bpy.types.Panel):
         layout = self.layout
 
         attached_obj = context.object.xp_attached_obj
-
         if context.object.type == 'EMPTY':
             layout.prop(attached_obj, "exportable")
             layout.prop(attached_obj, "draped")
             layout.prop(attached_obj, "resource")
             layout.separator()
             box = layout.box()
+            attached_obj_file_name = os.path.basename(attached_obj.resource)
+            attached_obj_preview_file_name = os.path.basename(file_utils.to_absolute(attached_obj.attached_obj_preview_resource))
+            if attached_obj_file_name != attached_obj_preview_file_name and attached_obj_preview_file_name != "":
+                box.label(text="WARNING: Preview resource does not match the main resource.")
             box.prop(attached_obj, "attached_obj_preview_resource")
             row = box.row()
             row.operator("xp_ext.preview_attached_object", text="Preview Resource")
             row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
-            
 
 class MENU_fac_mesh(bpy.types.Panel):
     """Creates a Panel in the object properties window"""
