@@ -576,11 +576,11 @@ def add_fake_lod_obj_to_collections(lods: int, size: int):
     if lods > 0:
         fake_lod_obj.xplane.override_lods = True
         fake_lod_obj.xplane.lod[0] = True
-    if size > 1:
+    if lods > 1:
         fake_lod_obj.xplane.lod[1] = True
-    if size > 2:
+    if lods > 2:
         fake_lod_obj.xplane.lod[2] = True
-    if size > 3:
+    if lods > 3:
         fake_lod_obj.xplane.lod[3] = True
 
     return fake_lod_obj
