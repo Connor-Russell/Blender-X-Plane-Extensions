@@ -368,7 +368,7 @@ class attached_obj:
 
     def from_obj(self, obj):
 
-        attached_obj_file_name = os.path.basename(obj.xp_agp.resource)
+        attached_obj_file_name = os.path.basename(obj.xp_agp.attached_obj_resource)
         attached_obj_preview_file_name = os.path.basename(file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource))
 
         if not attached_obj_file_name == attached_obj_preview_file_name and attached_obj_preview_file_name != "":
