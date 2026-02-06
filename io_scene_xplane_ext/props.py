@@ -632,6 +632,13 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
+    local_no_lit: bpy.props.BoolProperty(
+        name="Local No Lit",
+        description="Whether the material is unaffected by the LIT texture and global lighting. Uses light level override settings to dim lits to an invisible level.",
+        default=False,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
     light_level_override: bpy.props.BoolProperty(
         name="Light Level Override",
         description="Whether the material overrides the light level",

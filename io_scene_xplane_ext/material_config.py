@@ -275,12 +275,20 @@ def update_settings(in_material):
 
     #Set light level override
     if in_material.xplane:
-        in_material.xplane.lightLevel = xp_mat.light_level_override
-        in_material.xplane.lightLevel_v1 = xp_mat.light_level_v1
-        in_material.xplane.lightLevel_v2 = xp_mat.light_level_v2
-        in_material.xplane.lightLevel_photometric = xp_mat.light_level_photometric
-        in_material.xplane.lightLevel_brightness = xp_mat.light_level_brightness
-        in_material.xplane.lightLevel_dataref = xp_mat.light_level_dataref
+        if xp_mat.local_no_lit:
+            in_material.xplane.lightLevel = True
+            in_material.xplane.lightLevel_v1 = 0
+            in_material.xplane.lightLevel_v2 = 10000
+            in_material.xplane.lightLevel_photometric = True
+            in_material.xplane.lightLevel_brightness = 0
+            in_material.xplane.lightLevel_dataref = ""
+        else:
+            in_material.xplane.lightLevel = xp_mat.light_level_override
+            in_material.xplane.lightLevel_v1 = xp_mat.light_level_v1
+            in_material.xplane.lightLevel_v2 = xp_mat.light_level_v2
+            in_material.xplane.lightLevel_photometric = xp_mat.light_level_photometric
+            in_material.xplane.lightLevel_brightness = xp_mat.light_level_brightness
+            in_material.xplane.lightLevel_dataref = xp_mat.light_level_dataref
 
     #Set cockpit device params
     if xp_mat.use_2d_panel_texture:
