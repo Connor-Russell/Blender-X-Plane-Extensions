@@ -943,7 +943,7 @@ class BTN_paste_decal(bpy.types.Operator):
     bl_idname = "xp_ext.paste_decal"
     bl_label = "Paste Decal"
     bl_description = "Pastes a PROP_decal from the clipboard to a material's collection property. The clipboard must contain a valid decal command."
-    bl_options = {'REGISTER', 'UNDO'}  # Add 'REGISTER' here
+    bl_options = {'REGISTER', 'UNDO'}
 
     material_name: bpy.props.StringProperty() # type: ignore
     decal_index: bpy.props.IntProperty() # type: ignore
@@ -1249,6 +1249,7 @@ class BTN_find_textures(bpy.types.Operator):
     bl_idname = "xp_ext.find_textures"
     bl_label = "Find Missing Textures"
     bl_description = "Search for missing material textures relative to a specified directory. This will only update textures that can be found relative to the specified directory."
+    bl_options = {'REGISTER', 'UNDO'}
 
     filepath: bpy.props.StringProperty( # type: ignore
         name="Base Path",
@@ -1309,6 +1310,7 @@ class BTN_set_all_export_dirs(bpy.types.Operator):
     bl_idname = "xp_ext.set_export_paths"
     bl_label = "Set Export Directory"
     bl_description = "Set the export directory for all X-Plane export formats."
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         log_utils.new_section("Set Export Directory")
@@ -1318,24 +1320,18 @@ class BTN_set_all_export_dirs(bpy.types.Operator):
 
         rel_path = file_utils.to_relative(bpy.context.scene.xp_ext.export_path)
 
-        def get_export_path(in_existing_path: str, in_col_name: str) -> str:
-            #If there is an existing path, extract the file *name*, and remove the extension
-            existing_name = os.path.splitext(os.path.basename(in_existing_path))[0] if in_existing_path != "" else in_col_name
-
-            return os.path.join(rel_path, existing_name)
-
         #Iterate over every collection in the scene
         for col in bpy.data.collections:
             if col.xplane.is_exportable_collection:
-                col.xplane.layer.name = get_export_path(col.xplane.layer.name, col.name)
+                col.xplane.layer.name = rel_path
             if col.xp_fac.exportable:
-                col.xp_fac.name = get_export_path(col.xp_fac.name, col.name)
+                col.xp_fac.name = rel_path
             if col.xp_pol.exportable:
-                col.xp_pol.name = get_export_path(col.xp_pol.name, col.name)
+                col.xp_pol.name = rel_path
             if col.xp_lin.exportable:
-                col.xp_lin.name = get_export_path(col.xp_lin.name, col.name)
+                col.xp_lin.name = rel_path
             if col.xp_agp.exportable:
-                col.xp_agp.name = get_export_path(col.xp_agp.name, col.name)
+                col.xp_agp.name = rel_path
 
         log_utils.display_messages()
 
@@ -1346,6 +1342,7 @@ class BTN_preview_attached_object(bpy.types.Operator):
     bl_idname = "xp_ext.preview_attached_object"
     bl_label = "Preview Attached Object"
     bl_description = "Imports and previews an object that is attached to a facade or .agp file. This is useful for previewing objects that are not part of the main scene but are referenced by the facade or agp file."
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         log_utils.new_section("Preview attached object")
@@ -1413,6 +1410,7 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
     bl_idname = "xp_ext.clear_attached_object_preview"
     bl_label = "Clear Attached Object Preview"
     bl_description = "Clears the preview of an attached object that was previously imported for previewing."
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         log_utils.new_section("Clear attached object preview")

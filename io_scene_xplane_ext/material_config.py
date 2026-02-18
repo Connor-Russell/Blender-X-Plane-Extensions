@@ -208,6 +208,9 @@ def update_settings(in_material):
     if xp_mat.weather_texture != "":
         xp_mat.was_programmatically_updated = True
         xp_mat.weather_texture = file_utils.to_relative(xp_mat.weather_texture, True)
+    if xp_mat.decal_modulator != "":
+        xp_mat.was_programmatically_updated = True
+        xp_mat.decal_modulator = file_utils.to_relative(xp_mat.decal_modulator, True)
     for decal in xp_mat.decals:
         if decal.texture != "":
             decal.texture = file_utils.to_relative(decal.texture, True)

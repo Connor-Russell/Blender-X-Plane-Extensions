@@ -16,6 +16,11 @@ line_type = [
     ("SEGMENT", "Segment", "Segment")
 ]
 
+path_options = {}
+if bpy.app.version >= (4, 5, 0):
+    path_options["options"] = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+
+
 #Enum for layer groups
 layer_group_enum = [
     ('TERRAIN', "Terrain", "Terrain layer group"),
@@ -83,14 +88,31 @@ def sanitize_mat_paths(self, context):
 #General properties
 
 class PROP_attached_obj(bpy.types.PropertyGroup):
-    exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the object is exportable", default=True) # type: ignore
-    draped: bpy.props.BoolProperty(name="Draped", description="Whether the object is draped", default=False)    # type: ignore
-    resource: bpy.props.StringProperty(name="Resource", description="The resource for the object")  # type: ignore
+    exportable: bpy.props.BoolProperty(
+        name="Exportable",
+        description="Whether the object is exportable",
+        default=True
+    ) # type: ignore
+
+    draped: bpy.props.BoolProperty(
+        name="Draped",
+        description="Whether the object is draped",
+        default=False
+    ) # type: ignore
+
+    resource: bpy.props.StringProperty(
+        name="Resource",
+        description="The resource for the object",
+        subtype="FILE_PATH",
+        **path_options
+    ) # type: ignore
+
     attached_obj_preview_resource: bpy.props.StringProperty(
         name="Preview Resource",
         description="The preview resource for the attached object",
         default="",
-        subtype="FILE_PATH"
+        subtype="FILE_PATH",
+        **path_options
     ) # type: ignore
 
 class PROP_xp_ext_scene(bpy.types.PropertyGroup):
@@ -358,7 +380,7 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
 
 class PROP_decal(bpy.types.PropertyGroup):
     enabled: bpy.props.BoolProperty(name="Enabled", description="Whether this decal slot is enabled", update=update_ui)# type: ignore
-    texture: bpy.props.StringProperty(name="Texture", description="The texture for the decal", default="", subtype='FILE_PATH', update=update_ui)# type: ignore
+    texture: bpy.props.StringProperty(name="Texture", description="The texture for the decal", default="", subtype='FILE_PATH', **path_options, update=update_ui)# type: ignore
     is_normal: bpy.props.BoolProperty(name="Normal", description="Whether the decal is a normal map decal", default=False, update=update_ui)# type: ignore
 
     projected: bpy.props.BoolProperty(name="Projected", description="Whether the decal's UVs are projected, independant of the base UVs'", update=update_ui)# type: ignore
@@ -418,6 +440,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The albedo texture",
         default="",
         subtype='FILE_PATH',
+        **path_options,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -426,6 +449,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The material texture",
         default="",
         subtype='FILE_PATH',
+        **path_options,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -442,6 +466,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The normal texture",
         default="",
         subtype='FILE_PATH',
+        **path_options,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -458,6 +483,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The lit texture",
         default="",
         subtype='FILE_PATH',
+        **path_options,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -466,6 +492,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The texture used to control weather effects",
         default="",
         subtype='FILE_PATH',
+        **path_options,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -690,6 +717,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The modulator texture for the decals",
         default="",
         subtype='FILE_PATH',
+        **path_options,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
@@ -737,6 +765,7 @@ class PROP_lin_collection(bpy.types.PropertyGroup):
         name="Export Path",
         default="",
         subtype="FILE_PATH",
+        **path_options,
         description="The path to the file to export to, and name",
         update=update_ui
     ) # type: ignore
@@ -759,7 +788,7 @@ class PROP_lin_collection(bpy.types.PropertyGroup):
 #Polygon properties
 
 class PROP_pol_collection(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Name", description="The name of the polygon layer") # type: ignore
+    name: bpy.props.StringProperty(name="Name", description="The name of the polygon layer", subtype='FILE_PATH', **path_options) # type: ignore
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the polygon is exportable", default=False) # type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the polygon is expanded in the UI", default=False, update=update_ui) # type: ignore
     
@@ -776,14 +805,14 @@ class PROP_pol_collection(bpy.types.PropertyGroup):
     texture_tiling_y_pages: bpy.props.IntProperty(name="Texture Tiling Y Pages", description="The number of pages in the y direction", default=1) # type: ignore
     texture_tiling_map_x_res: bpy.props.IntProperty(name="Texture Tiling Map X Resolution", description="The resolution of the texture tiling map in the x direction", default=4096) # type: ignore
     texture_tiling_map_y_res: bpy.props.IntProperty(name="Texture Tiling Map Y Resolution", description="The resolution of the texture tiling map in the y direction", default=4096) # type: ignore
-    texture_tiling_map_texture: bpy.props.StringProperty(name="Texture Tiling Map Texture", description="The texture used for the texture tiling map", default="", subtype="FILE_PATH") # type: ignore
+    texture_tiling_map_texture: bpy.props.StringProperty(name="Texture Tiling Map Texture", description="The texture used for the texture tiling map", default="", subtype="FILE_PATH", **path_options) # type: ignore
 
     is_runway_markings: bpy.props.BoolProperty(name="LR Runway Markings (Advanced)", description="Whether the polygon uses runway markings. These can only be used for polygons used by X-Plane runways, which currently are only default polygons", default=False) # type: ignore
     runway_markings_r: bpy.props.FloatProperty(name="Runway Markings Red", description="The red value for the runway markings", default=1.0) # type: ignore
     runway_markings_g: bpy.props.FloatProperty(name="Runway Markings Green", description="The green value for the runway markings", default=1.0) # type: ignore
     runway_markings_b: bpy.props.FloatProperty(name="Runway Markings Blue", description="The blue value for the runway markings", default=1.0) # type: ignore
     runway_markings_a: bpy.props.FloatProperty(name="Runway Markings Alpha", description="The alpha value for the runway markings", default=1.0) # type: ignore
-    runway_markings_texture: bpy.props.StringProperty(name="Runway Markings Texture", description="The texture used for the runway markings", default="", subtype="FILE_PATH") # type: ignore
+    runway_markings_texture: bpy.props.StringProperty(name="Runway Markings Texture", description="The texture used for the runway markings", default="", subtype="FILE_PATH", **path_options) # type: ignore
 
 #Autogen Point Properties
 
@@ -821,6 +850,7 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         description="The preview resource for the attached object",
         default="",
         subtype="FILE_PATH",
+        **path_options
     ) # type: ignore
 
     attached_obj_show_between_low: bpy.props.IntProperty(
@@ -888,7 +918,7 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
     autosplit_lod_4_max: bpy.props.FloatProperty(name="Autosplit LOD 4 Max Distance", description="The maximum distance for the fourth LOD of autosplit objects", default=0.0, min=0.0) # type: ignore
 
 class PROP_agp_collection(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Name", description="The name of the autogen point collection") # type: ignore
+    name: bpy.props.StringProperty(name="Name", description="The name of the autogen point collection", subtype="FILE_PATH", **path_options) # type: ignore
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the autogen point collection is exportable", default=False) # type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the autogen point collection is expanded in the UI", default=False, update=update_ui) # type: ignore
 
@@ -939,7 +969,7 @@ class PROP_fac_floor(bpy.types.PropertyGroup):
 class PROP_facade(bpy.types.PropertyGroup):
     #Facade name
     exportable: bpy.props.BoolProperty(name="Exportable", description="Whether the facade is exportable", default=False, update=update_ui)# type: ignore
-    name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade")# type: ignore
+    name: bpy.props.StringProperty( name="Facade Name", description="The name of the facade", subtype="FILE_PATH", **path_options)# type: ignore
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the facade is expanded in the UI", default=False, update=update_ui)# type: ignore
 
     #Global properties
