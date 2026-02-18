@@ -172,7 +172,7 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
 
         #If the material has an albedo texture, use that as our name
-        if material.xp_materials.alb_texture != "":
+        if file_utils.is_empty(material.xp_materials.alb_texture):
             name = material.xp_materials.alb_texture
 
         #Remove the extension from the name
@@ -226,9 +226,8 @@ class BTN_mats_update_all_mat_nodes(bpy.types.Operator):
     def execute(self, context):
         #Get all the materials
         for mat in bpy.data.materials:
-            if mat.xp_materials.alb_texture != "":
-                material_config.update_settings(mat)
-                material_config.update_nodes(mat)
+            material_config.update_settings(mat)
+            material_config.update_nodes(mat)
 
         return {'FINISHED'}
 

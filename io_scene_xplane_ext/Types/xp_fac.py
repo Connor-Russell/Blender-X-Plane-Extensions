@@ -625,13 +625,13 @@ class facade:
                 return
 
             #Textures
-            if mat.alb_texture != "":
+            if not file_utils.is_empty(mat.alb_texture):
                 output += "TEXTURE " + os.path.relpath(file_utils.to_absolute(mat.alb_texture), output_folder) + "\n"
-            if mat.lit_texture != "":
+            if not file_utils.is_empty(mat.lit_texture):
                 output += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(mat.lit_texture), output_folder) + "\n"
-            if mat.normal_texture != "":
+            if not file_utils.is_empty(mat.normal_texture):
                 output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.to_absolute(mat.normal_texture), output_folder)+ "\n"
-            if mat.decal_modulator != "":
+            if not file_utils.is_empty(mat.decal_modulator):
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(mat.decal_modulator), output_folder) + "\n"
 
             #Write the decals
@@ -670,13 +670,13 @@ class facade:
                 return
 
             #Textures
-            if mat.alb_texture != "":
+            if not file_utils.is_empty(mat.alb_texture):
                 output += "TEXTURE " + os.path.relpath(file_utils.to_absolute(mat.alb_texture), output_folder) + "\n"
-            if mat.lit_texture != "":
+            if not file_utils.is_empty(mat.lit_texture):
                 output += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(mat.lit_texture), output_folder) + "\n"
-            if mat.normal_texture != "":
+            if not file_utils.is_empty(mat.normal_texture):
                 output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.to_absolute(mat.normal_texture), output_folder)+ "\n"
-            if mat.decal_modulator != "":
+            if not file_utils.is_empty(mat.decal_modulator):
                 output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(mat.decal_modulator), output_folder) + "\n"
 
             #Write the decals

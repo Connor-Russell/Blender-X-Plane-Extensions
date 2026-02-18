@@ -1140,13 +1140,13 @@ class agp:
         #Write the material data
         of += "#Materials\n"
 
-        if self.alb_texture != "":
+        if not file_utils.is_empty(self.alb_texture):
             of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
-        if self.lit_texture != "":
+        if not file_utils.is_empty(self.lit_texture):
             of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
-        if self.nml_texture != "":
+        if not file_utils.is_empty(self.nml_texture):
             of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
-        if self.weather_texture != "":
+        if not file_utils.is_empty(self.weather_texture):
             of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
         else:
             of += "WEATHER_TRANSPARENT\n"
@@ -1171,7 +1171,7 @@ class agp:
         of += "LAYER_GROUP " + self.layer_group.lower() + " " + str(self.layer_group_offset) + "\n"
         if self.surface != None:
             of += "SURFACE " + self.surface + "\n"
-        if self.do_tiling:
+        if self.do_tiling and not file_utils.is_empty(self.tiling_map_texture):
             of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
         if not self.render_tiles:
             of += "HIDE_TILES\n"

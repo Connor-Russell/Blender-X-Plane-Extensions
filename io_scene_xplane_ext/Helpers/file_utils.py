@@ -94,6 +94,9 @@ def to_absolute(in_path):
 
     if in_path == "":
         return ""
+    
+    if in_path == "//":
+        return ""
 
     #We always sanitize the path first
     in_path = remove_blender_prefix(in_path)
@@ -118,6 +121,9 @@ def to_relative(in_path, include_blend_prefix=False):
 
     if in_path == "":
         return ""
+    
+    if in_path == "//":
+        return ""
 
     #We always sanitize the path first
     in_path = remove_blender_prefix(in_path)
@@ -141,6 +147,17 @@ def to_relative(in_path, include_blend_prefix=False):
         in_path = "//" + in_path
 
     return in_path
+
+def is_empty(in_path):
+    """
+    Checks if a given path is empty or just the Blender relative path prefix.
+
+    Args:
+        in_path (str): The path to check.
+    Returns:
+        bool: True if the path is empty or just the Blender prefix, False otherwise.
+    """
+    return in_path == "" or in_path == "//"
 
 def resolve_file_export_path(in_path, col_name, extension):
     """

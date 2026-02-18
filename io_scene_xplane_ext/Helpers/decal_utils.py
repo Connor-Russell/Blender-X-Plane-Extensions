@@ -40,7 +40,7 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
                 setattr(in_collection.xplane.layer, "file_" + dcl_name, "")
         else:
             if in_material.xp_materials.draped:
-                setattr(in_collection.xplane.layer, "file_draped_" + dcl_name, dcl.texture)
+                setattr(in_collection.xplane.layer, "file_draped_" + dcl_name, file_utils.to_relative(dcl.texture))
                 setattr(in_collection.xplane.layer, "draped_" + dcl_name + "_projected", dcl.projected)
 
                 if dcl.projected:
@@ -63,7 +63,7 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
                 setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_constant", dcl.strength2_constant)
                 setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_modulator", dcl.strength2_modulator)
             else:
-                setattr(in_collection.xplane.layer, "file_" + dcl_name, dcl.texture)
+                setattr(in_collection.xplane.layer, "file_" + dcl_name, file_utils.to_relative(dcl.texture))
                 setattr(in_collection.xplane.layer, dcl_name + "_projected", dcl.projected)
 
                 if dcl.projected:
@@ -90,7 +90,7 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
     if not dcl.enabled:
         setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, "")
     else:
-        setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, dcl.texture)
+        setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, file_utils.to_relative(dcl.texture))
         setattr(in_collection.xplane.layer, dcl_name_nml + "_projected", dcl.projected)
 
         if dcl.projected:

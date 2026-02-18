@@ -17,6 +17,7 @@ from ..Helpers import anim_utils
 from ..Helpers import light_data    #These are defines for the parameter layout of PARAM lights
 from ..Helpers import decal_utils
 from ..Helpers import log_utils
+from ..Helpers import file_utils
 from typing import List
 
 #Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
@@ -2454,7 +2455,7 @@ class object:
         xp_mat = mat.xp_materials
         xp_mat.alb_texture = self.alb_texture
         xp_mat.normal_texture = self.nml_texture
-        if self.mat_texture != "":
+        if not file_utils.is_empty(self.mat_texture):
             xp_mat.material_texture = self.mat_texture
             xp_mat.do_separate_material_texture = True
         xp_mat.lit_texture = self.lit_texture
@@ -2487,7 +2488,7 @@ class object:
         all_mats.append(mat)
 
         #Create the draped material if it exists
-        if self.draped_alb_texture != "":
+        if not file_utils.is_empty(self.draped_alb_texture):
             draped_mat = mat.copy()
             draped_mat.name = self.name + "_draped"
             draped_mat.use_nodes = True

@@ -70,19 +70,18 @@ def update_ui(self, context):
 
 #Sanitizes and includes the // in all material texture paths. Why? Because when Blender goes to file browse again, it will actually go to the right spot thanks to the //
 def sanitize_mat_paths(self, context):
-    if self.alb_texture != "":
-        self.alb_texture = file_utils.to_relative(self.alb_texture)
-    if self.normal_texture != "":
-        self.normal_texture = file_utils.to_relative(self.normal_texture)
-    if self.lit_texture != "":
-        self.lit_texture = file_utils.to_relative(self.lit_texture)
-    if self.material_texture != "":
-        self.material_texture = file_utils.to_relative(self.material_texture)
-    if self.weather_texture != "":
-        self.weather_texture = file_utils.to_relative(self.weather_texture)
+    def sanitize(in_path):
+        if in_path == "":
+            return "//"
+        else:
+            return file_utils.to_relative(in_path)
+    self.alb_texture = sanitize(self.alb_texture)
+    self.normal_texture = sanitize(self.normal_texture)
+    self.lit_texture = sanitize(self.lit_texture)
+    self.material_texture = sanitize(self.material_texture)
+    self.weather_texture = sanitize(self.weather_texture)
     for decal in self.decals:
-        if decal.texture != "":
-            decal.texture = file_utils.to_relative(decal.texture)
+        decal.texture = sanitize(decal.texture)
     update_ui(self, context)
 
 #General properties
@@ -438,7 +437,7 @@ class PROP_mats(bpy.types.PropertyGroup):
     alb_texture: bpy.props.StringProperty(
         name="Albedo Texture",
         description="The albedo texture",
-        default="",
+        default="//",
         subtype='FILE_PATH',
         **path_options,
         update=material_config.operator_wrapped_update_settings
@@ -447,7 +446,7 @@ class PROP_mats(bpy.types.PropertyGroup):
     material_texture: bpy.props.StringProperty(
         name="Material Texture",
         description="The material texture",
-        default="",
+        default="//",
         subtype='FILE_PATH',
         **path_options,
         update=material_config.operator_wrapped_update_settings
@@ -464,7 +463,7 @@ class PROP_mats(bpy.types.PropertyGroup):
     normal_texture: bpy.props.StringProperty(
         name="Normal Texture",
         description="The normal texture",
-        default="",
+        default="//",
         subtype='FILE_PATH',
         **path_options,
         update=material_config.operator_wrapped_update_settings
@@ -481,7 +480,7 @@ class PROP_mats(bpy.types.PropertyGroup):
     lit_texture: bpy.props.StringProperty(
         name="Lit Texture",
         description="The lit texture",
-        default="",
+        default="//",
         subtype='FILE_PATH',
         **path_options,
         update=material_config.operator_wrapped_update_settings
@@ -490,7 +489,7 @@ class PROP_mats(bpy.types.PropertyGroup):
     weather_texture: bpy.props.StringProperty(
         name="Weather Texture",
         description="The texture used to control weather effects",
-        default="",
+        default="//",
         subtype='FILE_PATH',
         **path_options,
         update=material_config.operator_wrapped_update_settings
@@ -715,7 +714,7 @@ class PROP_mats(bpy.types.PropertyGroup):
     decal_modulator: bpy.props.StringProperty(
         name="Decal Modulator",
         description="The modulator texture for the decals",
-        default="",
+        default="//",
         subtype='FILE_PATH',
         **path_options,
         update=material_config.operator_wrapped_update_settings
