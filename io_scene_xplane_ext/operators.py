@@ -1356,23 +1356,27 @@ class BTN_preview_attached_object(bpy.types.Operator):
             if obj.type != 'EMPTY':
                 continue
 
-            print(f"Processing object {obj.name}")
+            log_utils.info(f"Processing object {obj.name}")
 
             resource = ""
-            if obj.xp_attached_obj.exportable:
+            if obj.xp_attached_obj.exportable and obj.xp_attached_obj.attached_obj_preview_resource != "":
                 resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
-            elif obj.xp_agp.type == 'ATTACHED_OBJ':
+            if obj.xp_agp.type == 'ATTACHED_OBJ' and obj.xp_agp.attached_obj_preview_resource != "":
+                print(f"src path {obj.xp_agp.attached_obj_preview_resource}")
                 resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
+                print(resource)
             else:
                 continue
 
             #Iterate through obj's children. If mesh, and hide_select, delete it
             for child in obj.children:
                 if child.type == 'MESH' and child.hide_select:
+                    log_utils.info(f"Deleting child object '{child.name}' of '{obj.name}' because it is a mesh with hide_select enabled, which indicates it's an old preview object.")
                     bpy.data.objects.remove(child, do_unlink=True)
 
             #Skip empty. Warn on missing
             if resource == "":
+                log_utils.info(f"Attached object '{obj.name}' does not have a preview resource specified. {obj.xp_agp.attached_obj_preview_resource}")
                 continue
             if not os.path.isfile(resource):
                 log_utils.warning(f"Attached object preview resource '{resource}' not found.")
@@ -1386,6 +1390,7 @@ class BTN_preview_attached_object(bpy.types.Operator):
                 break
 
             #Read and add
+            log_utils.info(f"Importing attached object preview from resource '{resource}' for object '{obj.name}'")
             new_obj = xp_attached_obj_preview.attached_object_preview()
             new_obj.read(resource)
             new_obj.to_scene(obj, parent_collection)

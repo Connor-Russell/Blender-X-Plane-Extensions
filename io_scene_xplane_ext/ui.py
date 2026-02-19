@@ -401,7 +401,7 @@ class MENU_agp_obj(bpy.types.Panel):
                 layout.prop(agp_obj, "attached_obj_resource")
                 layout.prop(agp_obj, "attached_obj_draped")
                 box = layout.box()
-                attached_obj_file_name = os.path.basename(agp_obj.resource)
+                attached_obj_file_name = os.path.basename(agp_obj.attached_obj_resource)
                 attached_obj_preview_file_name = os.path.basename(file_utils.to_absolute(agp_obj.attached_obj_preview_resource))
                 if attached_obj_file_name != attached_obj_preview_file_name and attached_obj_preview_file_name != "":
                     box.label(text="WARNING: Preview resource does not match the main resource.")

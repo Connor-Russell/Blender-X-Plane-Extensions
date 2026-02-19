@@ -106,6 +106,7 @@ def to_absolute(in_path):
         return in_path
     
     in_path = os.path.normpath(os.path.join(os.path.dirname(bpy.data.filepath), in_path))
+    print(f"Resolved absolute path: {in_path}")
 
     return in_path
 
