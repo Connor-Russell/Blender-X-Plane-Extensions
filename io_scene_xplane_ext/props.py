@@ -69,19 +69,22 @@ def update_ui(self, context):
             context.area.tag_redraw()
 
 #Sanitizes and includes the // in all material texture paths. Why? Because when Blender goes to file browse again, it will actually go to the right spot thanks to the //
-def sanitize_mat_paths(self, context):
-    def sanitize(in_path):
+def sanitize_prop_path(in_path):
         if in_path == "":
             return "//"
+        if in_path == "//":
+            return in_path
         else:
-            return file_utils.to_relative(in_path)
-    self.alb_texture = sanitize(self.alb_texture)
-    self.normal_texture = sanitize(self.normal_texture)
-    self.lit_texture = sanitize(self.lit_texture)
-    self.material_texture = sanitize(self.material_texture)
-    self.weather_texture = sanitize(self.weather_texture)
-    for decal in self.decals:
-        decal.texture = sanitize(decal.texture)
+            return file_utils.to_relative(in_path, True)
+
+last_update_was_programmatic = False
+def sanitize_file_path(self, context):
+    global last_update_was_programmatic
+    if last_update_was_programmatic:
+        last_update_was_programmatic = False
+        return
+    last_update_was_programmatic = True
+    self.attached_obj_preview_resource = sanitize_prop_path(self.attached_obj_preview_resource)
     update_ui(self, context)
 
 #General properties
@@ -109,7 +112,8 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     attached_obj_preview_resource: bpy.props.StringProperty(
         name="Preview Resource",
         description="The preview resource for the attached object",
-        default="",
+        default="//",
+        update=sanitize_file_path,
         subtype="FILE_PATH",
         **path_options
     ) # type: ignore
@@ -842,14 +846,6 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         name="Resource",
         description="The resource for the attached object",
         default=""
-    ) # type: ignore
-
-    attached_obj_preview_resource: bpy.props.StringProperty(
-        name="Preview Resource",
-        description="The preview resource for the attached object",
-        default="",
-        subtype="FILE_PATH",
-        **path_options
     ) # type: ignore
 
     attached_obj_show_between_low: bpy.props.IntProperty(

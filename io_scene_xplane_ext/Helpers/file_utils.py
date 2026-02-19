@@ -23,8 +23,7 @@ def sanitize_path(path):
     if not path:
         return ""
 
-    path = path.replace("\\", os.sep)  # Normalize slashes    
-    path = path.replace("/", os.sep)  # Normalize slashes
+    path = path.replace("\\", "/")  # Normalize slashes    
 
     # Replace invalid characters with dashes, OS-specific
     if sys.platform.startswith('win'):
@@ -44,7 +43,7 @@ def sanitize_path(path):
                 char = "-"
         
         # Avoid duplicate separators
-        if prev_char == os.sep and char == os.sep:
+        if prev_char == "/" and char == "/":
             idx += 1
             continue
         sanitized.append(char)
@@ -106,7 +105,6 @@ def to_absolute(in_path):
         return in_path
     
     in_path = os.path.normpath(os.path.join(os.path.dirname(bpy.data.filepath), in_path))
-    print(f"Resolved absolute path: {in_path}")
 
     return in_path
 

@@ -1359,12 +1359,8 @@ class BTN_preview_attached_object(bpy.types.Operator):
             log_utils.info(f"Processing object {obj.name}")
 
             resource = ""
-            if obj.xp_attached_obj.exportable and obj.xp_attached_obj.attached_obj_preview_resource != "":
+            if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
                 resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
-            if obj.xp_agp.type == 'ATTACHED_OBJ' and obj.xp_agp.attached_obj_preview_resource != "":
-                print(f"src path {obj.xp_agp.attached_obj_preview_resource}")
-                resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
-                print(resource)
             else:
                 continue
 

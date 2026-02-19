@@ -7,7 +7,7 @@
 import os
 import bpy # type: ignore
 from . import props
-from .Helpers import file_utils
+from .Helpers import file_utils    
 
 def draw_decal_prop(layout, property_item, index, material_name=""):
     box = layout.box()
@@ -401,11 +401,11 @@ class MENU_agp_obj(bpy.types.Panel):
                 layout.prop(agp_obj, "attached_obj_resource")
                 layout.prop(agp_obj, "attached_obj_draped")
                 box = layout.box()
-                attached_obj_file_name = os.path.basename(agp_obj.attached_obj_resource)
-                attached_obj_preview_file_name = os.path.basename(file_utils.to_absolute(agp_obj.attached_obj_preview_resource))
+                attached_obj_file_name = os.path.basename(context.object.xp_attached_obj.attached_obj_preview_resource)
+                attached_obj_preview_file_name = os.path.basename(file_utils.to_absolute(context.object.xp_attached_obj.attached_obj_preview_resource))
                 if attached_obj_file_name != attached_obj_preview_file_name and attached_obj_preview_file_name != "":
                     box.label(text="WARNING: Preview resource does not match the main resource.")
-                box.prop(agp_obj, "attached_obj_preview_resource")
+                box.prop(context.object.xp_attached_obj, "attached_obj_preview_resource")
                 row = box.row()
                 row.operator("xp_ext.preview_attached_object", text="Preview Resource")
                 row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
