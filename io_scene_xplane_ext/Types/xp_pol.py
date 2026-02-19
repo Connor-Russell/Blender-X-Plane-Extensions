@@ -118,7 +118,7 @@ class polygon():
         of += "LAYER_GROUP " + self.layer.lower() + " " + str(self.layer_offset) + "\n"
         of += "SCALE " + str(float(self.scale_x)) + " " + str(float(self.scale_y)) + "\n"
         if self.surface != None:
-            of += "SURFACE " + self.surface + "\n"
+            of += "SURFACE " + self.surface.lower() + "\n"
         if self.do_load_center:
             of += "LOAD_CENTER " + misc_utils.ftos(self.load_center_lat, 8) + " " + misc_utils.ftos(self.load_center_lon, 8) + " " + str(int(self.load_center_size)) + " " + str(int(self.load_center_res)) + "\n"
         if self.do_tiling:

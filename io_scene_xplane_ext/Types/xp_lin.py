@@ -84,6 +84,10 @@ class line():
             of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
         
         of += "\n"
+
+        #Write the surface type if we have one
+        if self.surface != "NONE":
+            of += "SURFACE " + self.surface.lower() + "\n\n"
         
         #Write the decals
         if len(self.decals) > 0:

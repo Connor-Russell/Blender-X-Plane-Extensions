@@ -1170,7 +1170,7 @@ class agp:
         #Write the main polygon params
         of += "LAYER_GROUP " + self.layer_group.lower() + " " + str(self.layer_group_offset) + "\n"
         if self.surface != None:
-            of += "SURFACE " + self.surface + "\n"
+            of += "SURFACE " + self.surface.lower() + "\n"
         if self.do_tiling and not file_utils.is_empty(self.tiling_map_texture):
             of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
         if not self.render_tiles:
