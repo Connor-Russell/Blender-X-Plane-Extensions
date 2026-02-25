@@ -172,7 +172,7 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
 
         #If the material has an albedo texture, use that as our name
-        if file_utils.is_empty(material.xp_materials.alb_texture):
+        if not file_utils.is_empty(material.xp_materials.alb_texture):
             name = material.xp_materials.alb_texture
 
         #Remove the extension from the name
@@ -189,6 +189,8 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         if material.xp_materials.do_separate_material_texture:
             nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_normal + ".png")
             mat_check_path = file_utils.to_absolute(name + addon_prefs.suffix_material + ".png")
+
+        print(f"Checking for textures at {alb_check_path}, {nml_check_path}, {lit_check_path}, {mat_check_path}")
 
         #Set properties if the paths exist
         material.xp_materials.alb_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(alb_check_path))
