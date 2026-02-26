@@ -42,6 +42,7 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
             if in_material.xp_materials.draped:
                 setattr(in_collection.xplane.layer, "file_draped_" + dcl_name, file_utils.to_relative(dcl.texture))
                 setattr(in_collection.xplane.layer, "draped_" + dcl_name + "_projected", dcl.projected)
+                setattr(in_collection.xplane.layer, "draped_" + dcl_name + "_dither", dcl.dither_ratio)
 
                 if dcl.projected:
                     setattr(in_collection.xplane.layer, "draped_" + dcl_name + "_x_scale", dcl.scale_x)
