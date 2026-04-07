@@ -1278,7 +1278,7 @@ class BTN_find_textures(bpy.types.Operator):
             if cleaned_path == "":
                 return path
 
-            resolved_path = os.path.join(os.path.dirname(base), cleaned_path)
+            resolved_path = file_utils.check_for_dds_or_png(os.path.join(os.path.dirname(base), cleaned_path))
 
             if os.path.isfile(resolved_path):
                 log_utils.info(f"Resolved path '{path}' to '{resolved_path}'")

@@ -593,7 +593,7 @@ class auto_split_obj:
                     insert_name_folder += "/"
 
                 #First get the sanitized name, then make it relative to the .agp
-                obj_name = "_PT_" + file_utils.sanitize_path(insert_name + "_" + mat + ".obj")
+                obj_name = os.path.splitext(os.path.basename(agp_name))[0] + "_PT_" + file_utils.sanitize_path(insert_name + "_" + mat + ".obj")
                 obj_name = obj_name.replace(" ", "_")  # Replace spaces with underscores
                 obj_name = os.path.dirname(file_utils.to_absolute(agp_name)) + "/" + insert_name_folder + obj_name
 
