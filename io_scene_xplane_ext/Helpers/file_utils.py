@@ -25,9 +25,8 @@ def sanitize_path(path):
 
     path = path.replace("\\", "/")  # Normalize slashes    
 
-    # Replace invalid characters with dashes, OS-specific
-    if sys.platform.startswith('win'):
-        invalid_chars = '<>"|?*\n\r\t\0'
+    # Replace invalid characters with dashes. While OSs have different reserved chars, names need to be vlaid on *every* OS, so we deny everything
+    invalid_chars = '<>"|?*\n\r\t\0'
 
     sanitized = []
     prev_char = ''

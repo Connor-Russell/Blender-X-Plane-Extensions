@@ -198,7 +198,7 @@ class attached_object_preview:
         self.draped_nml_texture = resolve_texture_path(self.draped_nml_texture)
         self.draped_lit_texture = resolve_texture_path(self.draped_lit_texture)
             
-    def to_scene(self, target_parent, target_collection):
+    def to_scene(self, target_parent, target_collection, make_real=False):
         log_utils.new_section(f"Creating attached .obj object {self.name}")
 
         #Create the base material
@@ -217,10 +217,13 @@ class attached_object_preview:
 
         all_mats.append(mat)
 
-        material_config.update_nodes(mat)
-
         #Create the draped material if it exists
-        if not file_utils.is_empty(self.draped_alb_texture):
+        any_draped_dcs = False
+        for dc in self.draw_calls:
+            if dc.state.draped:
+                any_draped_dcs = True
+                break
+        if not file_utils.is_empty(self.draped_alb_texture) and any_draped_dcs:
             draped_mat = mat.copy()
             draped_mat.name = self.name + "_draped"
             draped_mat.use_nodes = True
@@ -234,12 +237,33 @@ class attached_object_preview:
 
             all_mats.append(draped_mat)
 
-            material_config.update_nodes(draped_mat)
+        #Now that we have materials, we need to dedupe them with other materials in the scene. Now, you're probably asking, WHY are we not checking this BEFORE we created the materials? This is SO slow!
+        #The reason is, materials aren't *just* data, they are code. They resolve file paths, and who knows what other logic they may have, so, rather than duplicate that logic elsewhere and make it harder to maintain, we just create the material, compare, then if needed, delete after.
+        new_mats = []
+        for our_mat in all_mats:
+            material_config.update_settings(our_mat)
+            new_mat = None
+            for other_mat in bpy.data.materials:
+                if material_config.materials_are_equivalent(our_mat, other_mat) and other_mat != our_mat:
+                    log_utils.info(f"Found matching material for {our_mat.name}, reusing {other_mat.name}")
+                    new_mat = other_mat
+                    break
+            #If we end up using our material, we'll update the nodes. Otherwise we swap our material for the existing
+            if new_mat is None:
+                log_utils.info(f"No match found for material {our_mat.name}, using it as is")
+                new_mats.append(our_mat)
+                material_config.update_nodes(our_mat)
+            else:
+                log_utils.info(f"Using existing material {new_mat.name} instead of {our_mat.name}")
+                new_mats.append(new_mat)
+                bpy.data.materials.remove(our_mat)
+        
+        print(f"Final material list: {[mat.name for mat in new_mats]}")
 
         #For the basic draw calls just add 'em to the scene
         all_objs = []
         for dc in self.draw_calls:
-            all_objs.append(dc.add_to_scene(self.verticies, self.indicies, all_mats, None))
+            all_objs.append(dc.add_to_scene(self.verticies, self.indicies, new_mats, None))
 
         #Link all the object to the view layer
         for obj in all_objs:
@@ -252,5 +276,10 @@ class attached_object_preview:
         joined_obj.xp_fac_mesh.exportable = False
             
         #Link to the collection and set parent
-        joined_obj.parent = target_parent
-        joined_obj.hide_select = True
+        if not make_real:
+            joined_obj.parent = target_parent
+            joined_obj.hide_select = True
+        else:
+            joined_obj.matrix_world = target_parent.matrix_world.copy()  #Copy the location/rotation/scale of the parent, but don't parent it, so it can be edited independently
+            joined_obj.parent = None
+            joined_obj.hide_select = False

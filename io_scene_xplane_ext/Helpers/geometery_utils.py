@@ -294,6 +294,10 @@ def join_objects(objects, name):
     if not objects or len(objects) == 0:
         raise ValueError("Objects list must contain at least one object")
     
+    if (len(objects) == 1):
+        objects[0].name = name
+        return objects[0]
+    
     # Make sure we're in object mode
     if bpy.context.active_object and bpy.context.active_object.mode != "OBJECT":
         bpy.ops.object.mode_set(mode="OBJECT")

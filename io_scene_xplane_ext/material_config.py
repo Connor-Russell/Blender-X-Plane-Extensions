@@ -1216,3 +1216,99 @@ def update_nodes(material: bpy.types.Material):
                 material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[21]) #Clamped alpha to alpha
             else:
                 material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
+
+def materials_are_equivalent(mat1, mat2):
+    """
+    Compare two materials' xp_materials properties for equivalence.
+    
+    Args:
+        mat1: First bpy.types.Material
+        mat2: Second bpy.types.Material
+        
+    Returns:
+        bool: True if all xp_materials properties are equivalent, False otherwise
+    """
+    if mat1 is None or mat2 is None:
+        return mat1 is mat2
+    
+    xm1 = mat1.xp_materials
+    xm2 = mat2.xp_materials
+    if xm1.alb_texture != xm2.alb_texture:
+        return False
+    if xm1.material_texture != xm2.material_texture:
+        return False
+    if xm1.do_separate_material_texture != xm2.do_separate_material_texture:
+        return False
+    if xm1.normal_texture != xm2.normal_texture:
+        return False
+    if xm1.normal_tile_ratio != xm2.normal_tile_ratio:
+        return False
+    if xm1.lit_texture != xm2.lit_texture:
+        return False
+    if xm1.weather_texture != xm2.weather_texture:
+        return False
+    if xm1.brightness != xm2.brightness:
+        return False
+    if xm1.draped != xm2.draped:
+        return False
+    if xm1.surface_type != xm2.surface_type:
+        return False
+    if xm1.surface_is_deck != xm2.surface_is_deck:
+        return False
+    if xm1.layer_group != xm2.layer_group:
+        return False
+    if xm1.layer_group_offset != xm2.layer_group_offset:
+        return False
+    if xm1.camera_collision_enabled != xm2.camera_collision_enabled:
+        return False
+    if xm1.drawing_enabled != xm2.drawing_enabled:
+        return False
+    if xm1.use_2d_panel_texture != xm2.use_2d_panel_texture:
+        return False
+    if xm1.panel_texture_region != xm2.panel_texture_region:
+        return False
+    if xm1.cockpit_device != xm2.cockpit_device:
+        return False
+    if xm1.custom_cockpit_device != xm2.custom_cockpit_device:
+        return False
+    if xm1.cockpit_device_use_bus_1 != xm2.cockpit_device_use_bus_1:
+        return False
+    if xm1.cockpit_device_use_bus_2 != xm2.cockpit_device_use_bus_2:
+        return False
+    if xm1.cockpit_device_use_bus_3 != xm2.cockpit_device_use_bus_3:
+        return False
+    if xm1.cockpit_device_use_bus_4 != xm2.cockpit_device_use_bus_4:
+        return False
+    if xm1.cockpit_device_use_bus_5 != xm2.cockpit_device_use_bus_5:
+        return False
+    if xm1.cockpit_device_use_bus_6 != xm2.cockpit_device_use_bus_6:
+        return False
+    if xm1.cockpit_device_lighting_channel != xm2.cockpit_device_lighting_channel:
+        return False
+    if xm1.blend_mode != xm2.blend_mode:
+        return False
+    if xm1.blend_cutoff != xm2.blend_cutoff:
+        return False
+    if xm1.cast_shadow != xm2.cast_shadow:
+        return False
+    if xm1.polygon_offset != xm2.polygon_offset:
+        return False
+    if xm1.local_no_lit != xm2.local_no_lit:
+        return False
+    if xm1.light_level_override != xm2.light_level_override:
+        return False
+    if xm1.light_level_v1 != xm2.light_level_v1:
+        return False
+    if xm1.light_level_v2 != xm2.light_level_v2:
+        return False
+    if xm1.light_level_dataref != xm2.light_level_dataref:
+        return False
+    if xm1.light_level_photometric != xm2.light_level_photometric:
+        return False
+    if xm1.light_level_brightness != xm2.light_level_brightness:
+        return False
+    if xm1.decal_modulator != xm2.decal_modulator:
+        return False
+    #TODO: Compare decals, but they need a helper function
+    return True
+
