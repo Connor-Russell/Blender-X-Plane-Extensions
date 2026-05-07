@@ -710,7 +710,7 @@ class draw_call_state:
         self.light_level_v1 = 0
         self.light_level_v2 = 0
         self.light_level_photometric = False
-        self.light_level_brightness = 0
+        self.light_level_brightness = 1
         self.light_level_dataref = ""
         self.is_hud = False
 
