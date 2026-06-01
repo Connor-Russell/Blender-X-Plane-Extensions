@@ -93,6 +93,20 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         default=1
     ) #type: ignore
 
+    for_collection_search: bpy.props.StringProperty(
+        name="Search",
+        default="",
+        description="Search for a collection to configure export",
+        update=update_ui
+    ) # type: ignore
+
+    for_disabled_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+
     agp_collection_search: bpy.props.StringProperty(
         name="Search",
         default="",
@@ -690,6 +704,12 @@ class PROP_mats(bpy.types.PropertyGroup):
 
 #Forest Properties
 class PROP_for_empty(bpy.tyes.PropertyGroup):
+    exportable: bpy.props.BoolProperty(
+        name="Exportable",
+        description="Whether this empty's contents are exportable as a tree",
+        default=True
+    ) #type: ignore
+
     weight_choice: bpy.props.FloatProperty(
         name="Weight",
         description="Frequency relative to other trees in this layer",
@@ -698,7 +718,7 @@ class PROP_for_empty(bpy.tyes.PropertyGroup):
 
     max_tree_height: bpy.props.FloatProperty(
         name="Max Tree height",
-        description="Max height of the tree, your model should be this size"
+        description="Max height of the tree, your model should be this size",
         default=1
     ) #type: ignore
 
@@ -735,7 +755,7 @@ class PROP_for_mesh(bpy.types.PropertyGroup):
 
     no_shadow: bpy.props.BoolProperty(
         name="No Shadow",
-        description="Whether to disable shadow casting for this mesh"
+        description="Whether to disable shadow casting for this mesh",
         default=False
     ) #type: ignore
 
@@ -811,7 +831,8 @@ class PROP_for_collection(bpy.types.PropertyGroup):
     has_seasons: bpy.props.BoolProperty(
         name="Has Seasons",
         description="Whether this forest has seasons. If so, 4 variants will be exported with the below selected materials for each",
-        default=False
+        default=False,
+        update=update_ui
     ) #type: ignore
 
     spring_material: bpy.props.PointerProperty(
@@ -1026,6 +1047,66 @@ class PROP_for_collection(bpy.types.PropertyGroup):
         description="Scalar multiplier for tree height in the fourth perlin noise wave (any value > 0)",
         default=0.0,
         min=0.0
+    ) #type: ignore
+
+    skip_asphalt: bpy.props.BoolProperty(
+        name="Skip Asphalt",
+        description="Skip placement of trees on asphalt terrain",
+        default=False
+    ) #type: ignore
+
+    skip_blastpad: bpy.props.BoolProperty(
+        name="Skip Blastpad",
+        description="Skip placement of trees on blastpad terrain",
+        default=False
+    ) #type: ignore
+
+    skip_concrete: bpy.props.BoolProperty(
+        name="Skip Concrete",
+        description="Skip placement of trees on concrete terrain",
+        default=False
+    ) #type: ignore
+
+    skip_dirt: bpy.props.BoolProperty(
+        name="Skip Dirt",
+        description="Skip placement of trees on dirt terrain",
+        default=False
+    ) #type: ignore
+
+    skip_grass: bpy.props.BoolProperty(
+        name="Skip Grass",
+        description="Skip placement of trees on grass terrain",
+        default=False
+    ) #type: ignore
+
+    skip_gravel: bpy.props.BoolProperty(
+        name="Skip Gravel",
+        description="Skip placement of trees on gravel terrain",
+        default=False
+    ) #type: ignore
+
+    skip_lakebed: bpy.props.BoolProperty(
+        name="Skip Lakebed",
+        description="Skip placement of trees on lakebed terrain",
+        default=False
+    ) #type: ignore
+
+    skip_shoulder: bpy.props.BoolProperty(
+        name="Skip Shoulder",
+        description="Skip placement of trees on shoulder terrain",
+        default=False
+    ) #type: ignore
+
+    skip_snow: bpy.props.BoolProperty(
+        name="Skip Snow",
+        description="Skip placement of trees on snow terrain",
+        default=False
+    ) #type: ignore
+
+    skip_water: bpy.props.BoolProperty(
+        name="Skip Water",
+        description="Skip placement of trees on water terrain",
+        default=False
     ) #type: ignore
 
 #Line properties
@@ -1310,6 +1391,9 @@ def register():
     
     bpy.utils.register_class(PROP_fac_filtered_spelling_choices)
     bpy.utils.register_class(PROP_pol_collection)
+    bpy.utils.register_class(PROP_for_empty)
+    bpy.utils.register_class(PROP_for_mesh)
+    bpy.utils.register_class(PROP_for_collection)
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
     bpy.utils.register_class(PROP_agp_obj)
@@ -1325,10 +1409,13 @@ def register():
     bpy.utils.register_class(PROP_facade)
     
 
+    bpy.types.Object.xp_for_tree = bpy.props.PointerProperty(type=PROP_for_empty)
+    bpy.types.Objetc.xp_for_mesh = bpy.props.PointerProperty(type=PROP_for_mesh)
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
     bpy.types.Object.xp_agp = bpy.props.PointerProperty(type=PROP_agp_obj)
     bpy.types.Object.xp_fac_mesh = bpy.props.PointerProperty(type=PROP_fac_mesh)
+    bpy.types.Collection.xp_for = bpy.props.PointerProperty(type=PROP_for_collection)
     bpy.types.Collection.xp_pol = bpy.props.PointerProperty(type=PROP_pol_collection)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Collection.xp_fac = bpy.props.PointerProperty(type=PROP_facade)
@@ -1345,6 +1432,7 @@ def unregister():
 
     del bpy.types.Material.xp_materials
     del bpy.types.Scene.xp_ext
+    del bpy.types.Collection.xp_for
     del bpy.types.Collection.xp_fac
     del bpy.types.Collection.xp_lin
     del bpy.types.Collection.xp_pol
@@ -1353,6 +1441,8 @@ def unregister():
     del bpy.types.Object.xp_attached_obj
     del bpy.types.Object.xp_lin
     del bpy.types.Object.xp_agp
+    del bpy.types.Object.xp_for_mesh
+    del bpy.types.Object.xp_for_tree
 
     bpy.utils.unregister_class(PROP_facade)
     bpy.utils.unregister_class(PROP_fac_floor)
@@ -1364,8 +1454,11 @@ def unregister():
     bpy.utils.unregister_class(PROP_xp_ext_scene)
     bpy.utils.unregister_class(PROP_pol_collection)
     bpy.utils.unregister_class(PROP_lin_collection)
+    bpy.utils.unregister_class(PROP_for_collection)
     bpy.utils.unregister_class(PROP_agp_obj)
     bpy.utils.unregister_class(PROP_agp_collection)
     bpy.utils.unregister_class(PROP_lin_layer)
+    bpy.utils.unregister_class(PROP_for_empty)
+    bpy.utils.unregister_class(PROP_for_mesh)
     bpy.utils.unregister_class(PROP_attached_obj)
     bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)
