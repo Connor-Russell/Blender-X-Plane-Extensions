@@ -970,22 +970,22 @@ class BTN_paste_decal(bpy.types.Operator):
                         decal_utils.get_decal_from_command(clipboard_content, decal)
                     else:
                         log_utils.new_section("Decal Paste")
-                        log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS_PROJ' with 11 parameters. Got: " + clipboard_content)
+                        log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS_PROJ' with 11 parameters. Got: " + clipboard_content, "Wrong number of arguments for NORMAL_DECAL_PARAMS_PROJ")
                         log_utils.display_messages()
                 elif tokens[0] == "NORMAL_DECAL_PARAMS":
                     if len(tokens) == 10:
                         decal_utils.get_decal_from_command(clipboard_content, decal)
                     else:
                         log_utils.new_section("Decal Paste")
-                        log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS' with 10 parameters. Got: " + clipboard_content)
+                        log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS' with 10 parameters. Got: " + clipboard_content, "Wrong number of arguments for NORMAL_DECAL_PARAMS")
                         log_utils.display_messages()
                 else:
                     log_utils.new_section("Decal Paste")
-                    log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS_PROJ' or 'NORMAL_DECAL_PARAMS' with correct number of parameters. Got: " + clipboard_content)
+                    log_utils.error("Invalid NORMAL_DECAL command format. Expected 'NORMAL_DECAL_PARAMS_PROJ' or 'NORMAL_DECAL_PARAMS' with correct number of parameters. Got: " + clipboard_content, "Command was not NORMAL_DECAL_PARAMS or NORMAL_DECAL_PARAMS_PROJ")
                     log_utils.display_messages()
             else:
                 log_utils.new_section("Decal Paste")
-                log_utils.error("Cannot paste a NORMAL_DECAL command into a non-normal map decal slot. The clipboard content is: " + clipboard_content)
+                log_utils.error("Cannot paste a NORMAL_DECAL command into a non-normal map decal slot. The clipboard content is: " + clipboard_content, "Cannot paste normal map decal into albedo decal slot")
                 log_utils.display_messages()
                 return {'CANCELLED'}
                 
@@ -998,26 +998,26 @@ class BTN_paste_decal(bpy.types.Operator):
                         decal_utils.get_decal_from_command(clipboard_content, decal)
                     else:
                         log_utils.new_section("Decal Paste")
-                        log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS_PROJ' with 17 parameters. Got: " + clipboard_content)
+                        log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS_PROJ' with 17 parameters. Got: " + clipboard_content, "Wrong number of arguments for DECAL_PARAMS_PROJ")
                         log_utils.display_messages()
                 elif tokens[0] == "DECAL_PARAMS":
                     if len(tokens) == 16:
                         decal_utils.get_decal_from_command(clipboard_content, decal)
                     else:
                         log_utils.new_section("Decal Paste")
-                        log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS' with 16 parameters. Got: " + clipboard_content)
+                        log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS' with 16 parameters. Got: " + clipboard_content, "Wrong number of arguments for DECAL_PARAMS")
                         log_utils.display_messages()
                 else:
                     log_utils.new_section("Decal Paste")
-                    log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS_PROJ' or 'DECAL_PARAMS' with correct number of parameters. Got: " + clipboard_content)
+                    log_utils.error("Invalid DECAL command format. Expected 'DECAL_PARAMS_PROJ' or 'DECAL_PARAMS' with correct number of parameters. Got: " + clipboard_content, "Decal command must start with DECAL_PARAMS or DECAL_PARAMS_PROJ")
                     log_utils.display_messages()
             else:
                 log_utils.new_section("Decal Paste")
-                log_utils.error("Cannot paste a DECAL command into a normal map decal slot. The clipboard content is: " + clipboard_content)
+                log_utils.error("Cannot paste a DECAL command into a normal map decal slot. The clipboard content is: " + clipboard_content, "Cannot paste albedo decal into normal slot")
                 log_utils.display_messages()
         else:
             log_utils.new_section("Decal Paste")
-            log_utils.error("Clipboard content does not start with 'NORMAL_DECAL' or 'DECAL'. Got: " + clipboard_content)
+            log_utils.error("Clipboard content does not start with 'NORMAL_DECAL' or 'DECAL'. Got: " + clipboard_content, "Unknown decal command")
             log_utils.display_messages()
             return {'CANCELLED'}
 
@@ -1112,20 +1112,20 @@ class BTN_convert_combined_xp_nml_to_separate(bpy.types.Operator):
         #Get the target material
         mat = bpy.data.materials.get(self.material_name)
         if not mat:
-            log_utils.error(f"Material '{self.material_name}' not found.")
+            log_utils.error(f"Material '{self.material_name}' not found. This shouldn't happen! Try restarting, if it still doesn't work, please contact the plugin developer")
             log_utils.display_messages()
             return {'CANCELLED'}
         
         #Make sure we weren't already set to separate
         if mat.xp_materials.do_separate_material_texture:
-            log_utils.error(f"Material '{self.material_name}' is already set to use separate normal and material maps.")
+            log_utils.error(f"Material '{self.material_name}' is already set to use separate normal and material maps.", "Material is already using separate normal/material maps")
             log_utils.display_messages()
             return {'CANCELLED'}
             
         #Get the image paths from the material
         nml_path = mat.xp_materials.normal_texture
         if not nml_path:
-            log_utils.error(f"Material '{self.material_name}' does not have a normal map set.")
+            log_utils.error(f"Material '{self.material_name}' does not have a normal map set.", "No normal map is set to convert")
             log_utils.display_messages()
             return {'CANCELLED'}
         
@@ -1133,7 +1133,7 @@ class BTN_convert_combined_xp_nml_to_separate(bpy.types.Operator):
         nml_path = file_utils.to_absolute(nml_path)
 
         if not os.path.isfile(nml_path):
-            log_utils.error(f"Normal map file '{nml_path}' not found.")
+            log_utils.error(f"Normal map file '{nml_path}' not found.", "Could not find normal map on the disk")
             log_utils.display_messages()
             return {'CANCELLED'}
         
@@ -1185,7 +1185,7 @@ class BTN_convert_separate_maps_to_combined_xp_nml(bpy.types.Operator):
         
         #Make sure we are set to separate
         if not mat.xp_materials.do_separate_material_texture:
-            log_utils.error(f"Material '{self.material_name}' is already set to use a combined X-Plane normal map.")
+            log_utils.error(f"Material '{self.material_name}' is already set to use a combined X-Plane normal map.", "Material is already using a combined normal map")
             log_utils.display_messages()
             return {'CANCELLED'}
             
@@ -1193,11 +1193,11 @@ class BTN_convert_separate_maps_to_combined_xp_nml(bpy.types.Operator):
         nml_path = mat.xp_materials.normal_texture
         mat_path = mat.xp_materials.material_texture
         if not nml_path:
-            log_utils.error(f"Material '{self.material_name}' does not have a normal map set.")
+            log_utils.error(f"Material '{self.material_name}' does not have a normal map set.", "Material is missing a normal map")
             log_utils.display_messages()
             return {'CANCELLED'}
         if not mat_path:
-            log_utils.error(f"Material '{self.material_name}' does not have a material map set.")
+            log_utils.error(f"Material '{self.material_name}' does not have a material map set.", "Material is missing a material map")
             log_utils.display_messages()
             return {'CANCELLED'}
         
@@ -1206,12 +1206,12 @@ class BTN_convert_separate_maps_to_combined_xp_nml(bpy.types.Operator):
         mat_path = file_utils.to_absolute(mat_path)
 
         if not os.path.isfile(nml_path):
-            log_utils.error(f"Normal map file '{nml_path}' not found.")
+            log_utils.error(f"Normal map file '{nml_path}' not found.", "Normal map could not be found on the disk")
             log_utils.display_messages()
             return {'CANCELLED'}
         
         if not os.path.isfile(mat_path):
-            log_utils.error(f"Material map file '{mat_path}' not found.")
+            log_utils.error(f"Material map file '{mat_path}' not found.", "Material map could not be found on the disk")
             log_utils.display_messages()
             return {'CANCELLED'}
         
@@ -1311,7 +1311,7 @@ class BTN_set_all_export_dirs(bpy.types.Operator):
     def execute(self, context):
         log_utils.new_section("Set Export Directory")
         if bpy.context.scene.xp_ext.export_path == "":
-            log_utils.warning("Export path is empty. Please set a valid export path in the addon preferences.")
+            log_utils.warning("Export path is empty. Please set a valid export path", "No export path set")
             log_utils.display_messages()
 
         rel_path = file_utils.to_relative(bpy.context.scene.xp_ext.export_path)

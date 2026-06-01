@@ -174,7 +174,7 @@ class floor:
                     break
 
             if col is None:
-                log_utils.error("Could not find collection: " + cur_segment + " Maybe it was deleted?")
+                log_utils.error("Could not find collection: " + cur_segment + " Maybe it was deleted?", f"Collection {cur_segment} could not be found")
                 return
             
             #Check if there is an _Curved variant of this segment.
@@ -209,7 +209,7 @@ class floor:
         
         if roof_col is None:
             if in_floor.roof_collection != "":
-                log_utils.warning("Could not find roof collection: " + self.name + "_roof")
+                log_utils.warning("Could not find roof collection: " + self.name + "_roof", "Could not find roof collection")
             else:
                 log_utils.info("No roof collection specified for floor: " + self.name + ", using defaults.")
             # I'm not sure if X-Plane subdivides the roof, or if this is only used for UV scaling. I've set this to 100 *just in case* it is subdivided. There's no downside so...
@@ -363,7 +363,7 @@ class facade:
                 if command == "MESH" and len(tokens) == 4:
                     pass
                 else:
-                    log_utils.warning(f"Not enough tokens for command '{command}'! Expected at least {min_tokens[command]}, got {len(tokens)}. Line: '{line}'")
+                    log_utils.warning(f"Not enough tokens for command '{command}'! Expected at least {min_tokens[command]}, got {len(tokens)}. Line: '{line}'", f"Not enough arguments for command {command}")
                     continue
 
             if command == "I":
@@ -596,7 +596,7 @@ class facade:
             mat = self.wall_material.xp_materials
 
             if mat.do_separate_material_texture:
-                log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+                log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.", "Separate material textures not supported on facades")
                 return
 
             #Textures
@@ -641,7 +641,7 @@ class facade:
             mat = self.roof_material.xp_materials
 
             if mat.do_separate_material_texture:
-                log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+                log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.", "Separate material textures not suported on facades")
                 return
 
             #Textures
@@ -794,7 +794,7 @@ class facade:
                                 break
 
                         if idx_cur_wall == -1:
-                            log_utils.error("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?")
+                            log_utils.error("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?", f"Collection {seg_name} could not be found")
                             return
 
                         output += str(idx_cur_wall) + " "
@@ -840,7 +840,7 @@ class facade:
 
         #Make sure we have at least one floor
         if len(self.floors) == 0:
-            log_utils.error("No floors found in facade: " + self.name)
+            log_utils.error("No floors found in facade: " + self.name, "Facade must have at least 1 floor")
 
         #Get the roof scale from the first floor.
         self.roof_scale_x = self.floors[0].roof_scale_x
@@ -892,13 +892,13 @@ class facade:
             for decal in self.import_wall_material.imported_decal_commands:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
-                        log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.", "Too many normal decals")
                         break
                     decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_nml_index])
                     decal_nml_index += 1
                 else:
                     if decal_alb_index > 2:
-                        log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.", "Too many albedo decals")
                         break
                     decal_utils.get_decal_from_command(decal, wall_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
@@ -929,13 +929,13 @@ class facade:
             for decal in self.import_roof_material.imported_decal_commands:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
-                        log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.", "Too many normal decals")
                         break
                     decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_nml_index])
                     decal_nml_index += 1
                 else:
                     if decal_alb_index > 2:
-                        log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.", "Too many albedo decals")
                         break
                     decal_utils.get_decal_from_command(decal, roof_material.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1

@@ -246,7 +246,7 @@ def get_or_load_image(image_path, do_reload=False, copy_append_name=""):
                     image.reload()
                     return image
         except Exception as e:
-            log_utils.warning(f"Error checking existing images when trying to find image {image_path}: {e}")
+            log_utils.warning(f"Error checking existing images when trying to find image {image_path}: {e}", f"Unexpected error trying to load {image_path}")
 
     # Load the image
     new_image = bpy.data.images.load(image_path)

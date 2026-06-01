@@ -9,6 +9,9 @@ from datetime import datetime
 
 warning_count = 0
 error_count = 0
+summaries = []
+
+log_file_name = "X-Plane Extensions Log.txt"
 
 def get_log_file():
     """
@@ -16,8 +19,7 @@ def get_log_file():
     Returns:
         bpy.types.Text: The log text block.
     """
-    log_file_name = "X-Plane Extensions Log.txt"
-
+    global log_file_name
     log_text = bpy.data.texts.get(log_file_name)
     if log_text is None:
         log_text = bpy.data.texts.new(log_file_name)
@@ -41,7 +43,7 @@ def info(message):
 
     log.write(msg)
 
-def warning(message):
+def warning(message, summary = None):
     """
     Log a warning message to the Blender internal log text block, with a timestamp.
     Args:
@@ -56,11 +58,14 @@ def warning(message):
 
     msg = current_time + " [WARNING] " + message + "\n"
 
-    print(msg)  # Print to console for immediate feedback
+    if summary is not None:
+        summaries.append(" [WARNING] " + summary)
+
+    print(msg)
 
     log.write(msg)
 
-def error(message):
+def error(message, summary = None):
     """
     Log an error message to the Blender internal log text block, with a timestamp.
     Args:
@@ -75,7 +80,10 @@ def error(message):
 
     msg = current_time + " [ERROR] " + message + "\n"
 
-    print(msg)  # Print to console for immediate feedback
+    if summary is not None:
+        summaries.append(" [ERROR] " + summary)
+
+    print(msg)
 
     log.write(msg)
 
@@ -105,11 +113,16 @@ def display_messages():
     """
     global warning_count
     global error_count
+    global summaries
     if warning_count > 0 or error_count > 0:
         message = f"{warning_count} warnings and {error_count} errors occured. Please check the \"X-Plane Extensions Log.txt\" in the text editor for details\n\n"
 
         def draw(self, context):
             self.layout.label(text=message)
+            if len(summaries) > 0:
+                self.layout.label(text="Warning/Error Summaries:")
+            for summary in summaries:
+                self.layout.label(text=summary)
 
         try:
             if not bpy.app.background and bpy.context.window is not None and bpy.context.area is not None:
@@ -121,3 +134,4 @@ def display_messages():
     
     warning_count = 0
     error_count = 0
+    del summaries[:]

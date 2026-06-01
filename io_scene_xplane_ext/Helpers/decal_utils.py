@@ -223,7 +223,7 @@ def get_decal_from_command(in_command, out_decal_prop):
         out_decal_prop.strength_constant = float(cmd_parts[7])
         out_decal_prop.texture = cmd_parts[8]
     elif cmd_parts[0] == "DECAL_LIB":
-        log_utils.warning("DECAL_LIB command found, which is not supported in this plugin.")
+        log_utils.warning("DECAL_LIB command found, which is not supported in this plugin.", "DECAL_LIB not supported")
     else:
-        log_utils.warning(f"Unknown decal command: {cmd_parts[0]}")
+        log_utils.warning(f"Unknown decal command: {cmd_parts[0]}", f"Unknown decal command {cmd_parts[0]}")
     

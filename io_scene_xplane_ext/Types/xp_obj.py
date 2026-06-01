@@ -557,7 +557,7 @@ class manipulator:
                 obj.xplane.manip.type = "drag_rotate_detent"
             obj.xplane.manip.cursor = self.params[1].lower()
 
-            log_utils.warning(f"Drag rotate manipulators are autodetected by X-Plane2Blender. Depending on this object's authoring, X-Plane2Blender may not autodetect this manipulator, requiring manual changes. Obj is {obj.name}")
+            log_utils.warning(f"Drag rotate manipulators are autodetected by X-Plane2Blender. Depending on this object's authoring, X-Plane2Blender may not autodetect this manipulator, requiring manual changes. Obj is {obj.name}", f"Drag rotate manipulators may not convert correctly. Please check {obj.name}")
 
         for det in self.detents:
             obj.xplane.manip.axis_detent_ranges.add()
@@ -565,7 +565,7 @@ class manipulator:
             obj.xplane.manip.axis_detent_ranges[-1].end = det.end
             obj.xplane.manip.axis_detent_ranges[-1].height = det.length
 
-            log_utils.warning("This manipulator has detents. X-Plane2Blender autodetects detents, but depending on the authoring of this object, it may not be able to detect them, requiring manual changes. Obj is " + obj.name)
+            log_utils.warning("This manipulator has detents. X-Plane2Blender autodetects detents, but depending on the authoring of this object, it may not be able to detect them, requiring manual changes. Obj is " + obj.name, f"Manipulator detents may not convert correctly, please check {obj.name}")
 
         #Now we need to add animations if applicable
         if do_animate:
@@ -876,7 +876,7 @@ class draw_call:
                 cur_parent = cur_parent.parent
 
             if do_need_animate and (self.manipulator.params[0] == "ATTR_manip_drag_axis" or self.manipulator.params[0] == "ATTR_manip_drag_rotate"):
-                log_utils.warning(f"Manipulator {self.manipulator.params[0]} on object {dc_obj.name} is not animated. X-Plane2Blender autodetects these manipulators from animations, so without animations, the manipulator will throw an error on export. Manual fixing is required for this object's manipulator. Obj is {dc_obj.name}")
+                log_utils.warning(f"Manipulator {self.manipulator.params[0]} on object {dc_obj.name} is not animated. X-Plane2Blender autodetects these manipulators from animations, so without animations, the manipulator will throw an error on export. Manual fixing is required for this object's manipulator. Obj is {dc_obj.name}", f"X-Plane2Blender autodetects manipulators from animations, but {dc_obj.name} is not animated, you will have to reconfigure this object")
 
             override_return_obj = self.manipulator.apply_to_obj(dc_obj)
 
@@ -1681,7 +1681,7 @@ class object:
             
             # Only check if command is in our map
             if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
-                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
+                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'", f"Not enough tokens for command '{cmd}'")
                 continue
 
             if tokens[0] == "VT":
@@ -2096,12 +2096,12 @@ class object:
 
                 additional_params_keys = light_data.param_lights_dict.get(new_light.name, None)
                 if additional_params_keys is None:
-                    log_utils.warning(f"Unknown light type {new_light.name} in object {self.name}. Skipping light.")
+                    log_utils.warning(f"Unknown light type {new_light.name} in object {self.name}. Skipping light.", f"Unknown light type for {new_light.name}")
                     continue
 
                 #Make sure we have the right number of additional params
                 if len(tokens) - 5 != len(additional_params_keys):
-                    log_utils.warning(f"Light {new_light.name} in object {self.name} has {len(tokens) - 5} additional params, but expected {len(additional_params_keys)}. Skipping light.")
+                    log_utils.warning(f"Light {new_light.name} in object {self.name} has {len(tokens) - 5} additional params, but expected {len(additional_params_keys)}. Skipping light.", f"Unexpected number of arguments for light {new_light.name}")
                     continue
 
                 new_light.type = "POINT"
@@ -2470,13 +2470,13 @@ class object:
         for decal in self.imported_decal_commands:
             if decal.startswith("NORMAL"):
                 if decal_nml_index > 3:
-                    log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material.", "Too many normal map decals")
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                 decal_nml_index += 1
             else:
                 if decal_alb_index > 2:
-                    log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.", "Too many albedo decals")
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1
@@ -2507,13 +2507,13 @@ class object:
             for decal in self.imported_decal_commands_draped:
                 if decal.startswith("NORMAL"):
                     if decal_nml_index > 3:
-                        log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                        log_utils.warning("Too many normal decals! X-Plane only supports 2 normal decals per material.", "Too many draped normal map decals")
                         break
                     decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                     decal_nml_index += 1
                 else:
                     if decal_alb_index > 2:
-                        log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.")
+                        log_utils.warning("Too many albedo decals! X-Plane only supports 2 decals per material.", "Too many draped albedo decals")
                         break
                     decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                     decal_alb_index += 1
@@ -2546,7 +2546,7 @@ class object:
                 if not did_find_matching_bucket:
                     all_lod_buckets.append(lod_range)
             else:
-                log_utils.warning(f"Too many LOD buckets for object {self.name}. Skipping LOD {lod_range} for draw call {dc.start_index}-{dc.length}. Object will be added to best guess bucket. Double check this choice!")
+                log_utils.warning(f"Too many LOD buckets for object {self.name}. Skipping LOD {lod_range} for draw call {dc.start_index}-{dc.length}. Object will be added to best guess bucket. Double check this choice!", f"Object {self.name} may be in wrong LOD bucket")
 
         obj_does_use_lods = True
         if len(all_lod_buckets) == 1:

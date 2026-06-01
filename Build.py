@@ -6,7 +6,6 @@ import sys
 plugin_name = "io_scene_xplane_ext"
 source_path = os.getcwd() + os.sep + plugin_name
 target_paths = []
-target_paths.append(r"C:\Users\cmrbu\AppData\Roaming\Blender Foundation\Blender\3.6\scripts\addons")
 target_paths.append(r"C:\Tools\Blender\scripts\addons")
 
 # Remove target directories if they exist

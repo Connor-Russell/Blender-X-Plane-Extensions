@@ -215,7 +215,7 @@ def get_scale_from_layer(in_object):
         #Calculate the height based on the ratio
         y_scale = actual_width * (y_dim / x_dim)
     except Exception as e:
-        log_utils.warning(f"Error getting texture dimensions for {in_object.name}, assuming square texture: {e}")
+        log_utils.warning(f"Error getting texture dimensions for {in_object.name}, assuming square texture: {e}", f"Couldn't get texture dimensions for {in_object.name}, assuming square")
         y_scale = actual_width  # If we can't get the texture dimensions, assume it's square
         pass
 
