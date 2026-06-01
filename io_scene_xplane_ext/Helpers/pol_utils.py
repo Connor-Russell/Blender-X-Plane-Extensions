@@ -6,6 +6,8 @@
 
 import bpy
 
+from ..Helpers import misc_utils
+
 def get_uv_bounds(obj):
     """
     Get the lowest and highest U and V values from an object in Blender.
@@ -25,10 +27,10 @@ def get_uv_bounds(obj):
     if len(obj.data.vertices) != 4:
         raise ValueError("Object must have exactly 4 vertices.")
 
-    if not obj.data.uv_layers.active:
-        raise ValueError("Object is missing UVs.")
+    uv_layer = misc_utils.get_uv_layer(obj)
 
-    uv_layer = obj.data.uv_layers.active.data
+    if uv_layer is None:
+        raise ValueError("Object is missing UVs.")
 
     # Initialize bounds
     min_u, max_u = float('inf'), float('-inf')

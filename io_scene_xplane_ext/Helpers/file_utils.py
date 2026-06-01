@@ -26,9 +26,8 @@ def sanitize_path(path):
     path = path.replace("\\", os.sep)  # Normalize slashes    
     path = path.replace("/", os.sep)  # Normalize slashes
 
-    # Replace invalid characters with dashes, OS-specific
-    if sys.platform.startswith('win'):
-        invalid_chars = '<>"|?*\n\r\t\0'
+    # Replace invalid characters with dashes
+    invalid_chars = '<>"|?*\n\r\t\0'
 
     sanitized = []
     prev_char = ''

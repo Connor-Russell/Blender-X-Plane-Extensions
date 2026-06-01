@@ -312,7 +312,7 @@ def get_tile_bounds_and_transform(obj):
     bottom_vertex_pos = obj.scale * bottom_vertex.co
 
     #Get the UVs for these vertices
-    uv_layer = obj.data.uv_layers.active.data
+    uv_layer = misc_utils.get_uv_layer(obj)
     if uv_layer is None:
         log_utils.error(f"No UV layer on BASE_TILE object! {obj.name}", "BASE_TILE is missing UV layer")
         return -1, -1, -1, -1, None

@@ -176,3 +176,14 @@ def float_close(f1, f2, epsilon=0.0001):
         bool: True if floats are close, False otherwise.
     """
     return math.isclose(f1, f2, abs_tol=epsilon)
+
+def get_uv_layer(obj : bpy.types.Object):
+    try:
+        if len(obj.data.uv_layers) > 0:
+            layer = obj.data.uv_layers.active
+            if layer is None:
+                layer = obj.data.uv_layers[0]
+            return layer
+    except:
+        pass
+    return None

@@ -161,10 +161,17 @@ def get_draw_call_from_obj(obj):
         loop_triangles = mesh.loop_triangles
 
         #Attempt to get the uv layer. We look for the first layer. 
+        uv_layer = None
         try:
-            uv_layer = mesh.uv_layers[0]
-        except (KeyError, TypeError) as e:
-            uv_layer = None
+            if len(obj.data.uv_layers) > 0:
+                uv_layer = obj.data.uv_layers.active
+                if uv_layer is None:
+                    uv_layer = obj.data.uv_layers[0]
+        except:
+            pass
+
+        if uv_layer is None:
+            raise Exception("Could not find UV map")
 
         #Define a temporary data structure to hold our triangle faces.
         XPTriangle = collections.namedtuple(
