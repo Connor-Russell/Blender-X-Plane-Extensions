@@ -69,7 +69,7 @@ def get_phase_vertex_group(obj):
     return obj.vertex_groups.new(name="w_phase")
 
 #Simple container to hold an X-Plane Vertex
-class xp_vertex:
+class for_xp_vertex:
     """
     Simple class that contains all the data for a vertex in X-Plane.
     """
@@ -93,11 +93,11 @@ class xp_vertex:
     def __eq__(self, other):
         return self.loc_x == other.loc_x and self.loc_y == other.loc_y and self.loc_z == other.loc_z and self.normal_x == other.normal_x and self.normal_y == other.normal_y and self.normal_z == other.normal_z and self.uv_x == other.uv_x and self.uv_y == other.uv_y
 
-def create_obj_from_draw_call(vertices, indicies, name):
+def create_for_obj_from_draw_call(vertices, indicies, name):
     """
     Create a Blender mesh and object from an X-Plane draw call.
     Args:
-        vertices (list of xp_vertex): List of xp_vertex objects representing the vertices.
+        vertices (list of for_xp_vertex): List of for_xp_vertex objects representing the vertices.
         indicies (list of int): List of indices to create faces with the vertices.
         name (str): Name for the new object.
     Returns:
@@ -169,7 +169,7 @@ def create_obj_from_draw_call(vertices, indicies, name):
     # Create an object with the mesh and link it to the scene
     obj = bpy.data.objects.new(name, mesh)
 
-    # Set up vertex groups and assign weights from xp_vertex data
+    # Set up vertex groups and assign weights from for_xp_vertex data
     stiffness_vg = get_stiffness_vertex_group(obj)
     edge_stiffness_vg = get_edge_stiffness_vertex_group(obj)
     phase_vg = get_phase_vertex_group(obj)
@@ -184,13 +184,13 @@ def create_obj_from_draw_call(vertices, indicies, name):
 
     return obj
 
-def get_draw_call_from_obj(obj):
+def get_for_draw_call_from_obj(obj):
     """
-    Get the geometry from a Blender object and return it as a tuple of xp_vertexs and integer indices.
+    Get the geometry from a Blender object and return it as a tuple of for_xp_vertexs and integer indices.
     Args:
         obj (bpy.types.Object): Blender object to extract geometry from.
     Returns:
-        Tuple[List[xp_vertex], List[int]]:
+        Tuple[List[for_xp_vertex], List[int]]:
     """
 
     # Ensure the object is a mesh
@@ -198,7 +198,7 @@ def get_draw_call_from_obj(obj):
         raise TypeError("Object must be a mesh")
     
     #Define our output arrays
-    out_verts = []  #Array of xp_vertex
+    out_verts = []  #Array of for_xp_vertex
     out_inds = []   #Ints
 
     #Check if this object has modifiers. If it does, we'll duplicate it, and apply the modifiers to the duplicate.
@@ -286,9 +286,9 @@ def get_draw_call_from_obj(obj):
             mesh_v_indices = loop_triangles[tri_idx].vertices
             
             #Define vertices for each triangle. Then see if they exist, if they don't, add them.
-            v1 = xp_vertex(tri.vertex_pos[0][0], tri.vertex_pos[0][1], tri.vertex_pos[0][2], tri.vertex_nrm[0][0], tri.vertex_nrm[0][1], tri.vertex_nrm[0][2], tri.uvs[0][0], tri.uvs[0][1])
-            v2 = xp_vertex(tri.vertex_pos[1][0], tri.vertex_pos[1][1], tri.vertex_pos[1][2], tri.vertex_nrm[1][0], tri.vertex_nrm[1][1], tri.vertex_nrm[1][2], tri.uvs[1][0], tri.uvs[1][1])
-            v3 = xp_vertex(tri.vertex_pos[2][0], tri.vertex_pos[2][1], tri.vertex_pos[2][2], tri.vertex_nrm[2][0], tri.vertex_nrm[2][1], tri.vertex_nrm[2][2], tri.uvs[2][0], tri.uvs[2][1])
+            v1 = for_xp_vertex(tri.vertex_pos[0][0], tri.vertex_pos[0][1], tri.vertex_pos[0][2], tri.vertex_nrm[0][0], tri.vertex_nrm[0][1], tri.vertex_nrm[0][2], tri.uvs[0][0], tri.uvs[0][1])
+            v2 = for_xp_vertex(tri.vertex_pos[1][0], tri.vertex_pos[1][1], tri.vertex_pos[1][2], tri.vertex_nrm[1][0], tri.vertex_nrm[1][1], tri.vertex_nrm[1][2], tri.uvs[1][0], tri.uvs[1][1])
+            v3 = for_xp_vertex(tri.vertex_pos[2][0], tri.vertex_pos[2][1], tri.vertex_pos[2][2], tri.vertex_nrm[2][0], tri.vertex_nrm[2][1], tri.vertex_nrm[2][2], tri.uvs[2][0], tri.uvs[2][1])
             
             # Extract weight data from vertex groups
             for v_idx, vert in enumerate([v1, v2, v3]):

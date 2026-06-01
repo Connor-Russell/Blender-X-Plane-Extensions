@@ -7,6 +7,7 @@
 from ..Helpers import file_utils
 from ..Helpers import forest_geometry_utils
 from ..Helpers import decal_utils
+from ..Helpers import for_utils
 
 import bpy
 
@@ -30,6 +31,7 @@ class TreeMesh():
         self.branch_bending = xp_for.branch_bending
         self.max_wind_speed = xp_for.max_wind_speed
         self.verticies, self.indicies = forest_geometry_utils.get_draw_call_from_obj(in_obj)
+
     def to_obj(self, in_name : str):
         obj = forest_geometry_utils.create_obj_from_draw_call(self.verticies, self.indicies, in_name)
         obj.xp_for.near_lod = self.near_lod
@@ -45,6 +47,7 @@ class Tree():
         self.meshes : list[TreeMesh] = []
         self.weight_choice = 1.0
         self.min_tree_height = 0.5
+        self.normal_height = 0.0
         self.max_tree_height = 1.0
         self.base_height = 1.0
         self.use_custom_lod = False
@@ -77,9 +80,19 @@ class Tree():
         
         for child in in_obj.children:
             if child.type == "MESH":
-                new_mesh = TreeMesh()
-                new_mesh.from_obj(child)
-                self.meshes.append(new_mesh)
+                if for_utils.is_forest_quad_obj(child):
+                    qd = for_utils.get_forest_quad_from_obj(child)
+                    self.quad_x = qd.left_x
+                    self.quad_y = qd.bottom_y
+                    self.quad_width = qd.width
+                    self.quad_height = qd.height
+                    self.quad_center_offset = qd.offset_to_center
+                    self.normal_height = qd.height_meters
+                else:
+                    new_mesh = TreeMesh()
+                    new_mesh.from_obj(child)
+                    self.meshes.append(new_mesh)
+
         
     def to_obj(self, target_collection : bpy.types.Collection):
         obj = bpy.data.objects.new(self.name, None)
@@ -103,7 +116,17 @@ class Tree():
         for mesh in self.meshes:
             new_obj = mesh.to_obj(self.name + "_mesh")
             target_collection.objects.link(new_obj)
-        
+
+        #Create the quad object
+        qd = for_utils.TreeQuad()
+        qd.left_x = self.quad_x
+        qd.bottom_y = self.quad_y
+        qd.width = self.quad_width
+        qd.height = self.quad_height
+        qd.offset_to_center = self.quad_center_offset
+        qd.height_meters = self.base_height
+        qd_obj = for_utils.create_obj_from_forest_quad(qd, 1.0) #TODO: Get this ratio from the texture
+        target_collection.objects.link(qd_obj)
 
 class ForestMaterial():
     def __init__(self):
