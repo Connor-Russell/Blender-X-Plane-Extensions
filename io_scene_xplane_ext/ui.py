@@ -391,6 +391,55 @@ class MENU_for_exporter(bpy.types.Panel):
                         continue
                     draw_collection(col, disabled_collections)
 
+class MENU_for_object(bpy.types.Panel):
+    bl_label = "X-Plane Forest Exporter"
+    bl_idname = "SCENE_PT_for_exporter"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj is None:
+            return False
+        
+        if obj.type != "MESH" and obj.type != "EMPTY":
+            return False
+        
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        obj = context.active_object
+        fr = obj.xp_for
+
+        # Empty (tree) menu
+        if obj.type == "EMPTY":
+            layout.prop(fr, "exportable")
+            layout.prop(fr, "weight_choice")
+            layout.prop(fr, "max_tree_height")
+
+            row = layout.row()
+            row.prop(fr, "use_custom_lod")
+            if (fr.use_custom_lod):
+                row.prop(fr, "custom_lod")
+
+            layout.prop(fr, "group")
+        elif obj.type == "MESH":
+            row = layout.row()
+            row.prop(fr, "near_lod")
+            row.prop(fr, "far_lod")
+            layout.prop(fr, "no_shadow")
+            
+            box = layout.box()
+            box.label(text="Wind Settings")
+            box.prop(fr, "wind_bend_ratio")
+            row = box.row()
+            row.prop(fr, "branch_bending")
+            row.prop(fr, "max_wind_speed")
+
 class MENU_lin_exporter(bpy.types.Panel):
     bl_label = "X-Plane Line Exporter"
     bl_idname = "SCENE_PT_lin_exporter"
@@ -1152,6 +1201,8 @@ def register():
     bpy.utils.register_class(MENU_fac_mesh)
     bpy.utils.register_class(MENU_pol_exporter)
     bpy.utils.register_class(MENU_agp_obj)
+    bpy.utils.register_class(MENU_for_exporter)
+    bpy.utils.register_class(MENU_for_object)
 
 def unregister():
     bpy.utils.unregister_class(MENU_lin_exporter)
@@ -1164,3 +1215,5 @@ def unregister():
     bpy.utils.unregister_class(MENU_fac_mesh)
     bpy.utils.unregister_class(MENU_pol_exporter)
     bpy.utils.unregister_class(MENU_agp_obj)
+    bpy.utils.unregister_class(MENU_for_exporter)
+    bpy.utils.unregister_class(MENU_for_object)

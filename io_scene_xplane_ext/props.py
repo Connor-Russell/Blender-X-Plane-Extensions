@@ -702,8 +702,8 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The decals for the material, aka detail textures."
     ) # type: ignore
 
-#Forest Properties
-class PROP_for_empty(bpy.tyes.PropertyGroup):
+class PROP_for(bpy.types.PropertyGroup):
+    # Empty (tree) properties
     exportable: bpy.props.BoolProperty(
         name="Exportable",
         description="Whether this empty's contents are exportable as a tree",
@@ -725,7 +725,8 @@ class PROP_for_empty(bpy.tyes.PropertyGroup):
     use_custom_lod: bpy.props.BoolProperty(
         name="Use Custom LOD",
         description="Whether to use a custom LOD for this tree",
-        default=False
+        default=False,
+        update=update_ui
     ) #type: ignore
 
     custom_lod: bpy.props.FloatProperty(
@@ -740,7 +741,7 @@ class PROP_for_empty(bpy.tyes.PropertyGroup):
         default=0
     ) #type: ignore
 
-class PROP_for_mesh(bpy.types.PropertyGroup):
+    # Mesh properties
     near_lod: bpy.props.FloatProperty(
         name="Near LOD",
         description="The minimum distance you must be for this mesh to draw",
@@ -1391,8 +1392,7 @@ def register():
     
     bpy.utils.register_class(PROP_fac_filtered_spelling_choices)
     bpy.utils.register_class(PROP_pol_collection)
-    bpy.utils.register_class(PROP_for_empty)
-    bpy.utils.register_class(PROP_for_mesh)
+    bpy.utils.register_class(PROP_for)
     bpy.utils.register_class(PROP_for_collection)
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
@@ -1409,8 +1409,7 @@ def register():
     bpy.utils.register_class(PROP_facade)
     
 
-    bpy.types.Object.xp_for_tree = bpy.props.PointerProperty(type=PROP_for_empty)
-    bpy.types.Objetc.xp_for_mesh = bpy.props.PointerProperty(type=PROP_for_mesh)
+    bpy.types.Object.xp_for = bpy.props.PointerProperty(type=PROP_for)
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
     bpy.types.Object.xp_agp = bpy.props.PointerProperty(type=PROP_agp_obj)
@@ -1441,8 +1440,7 @@ def unregister():
     del bpy.types.Object.xp_attached_obj
     del bpy.types.Object.xp_lin
     del bpy.types.Object.xp_agp
-    del bpy.types.Object.xp_for_mesh
-    del bpy.types.Object.xp_for_tree
+    del bpy.types.Object.xp_for
 
     bpy.utils.unregister_class(PROP_facade)
     bpy.utils.unregister_class(PROP_fac_floor)
@@ -1458,7 +1456,6 @@ def unregister():
     bpy.utils.unregister_class(PROP_agp_obj)
     bpy.utils.unregister_class(PROP_agp_collection)
     bpy.utils.unregister_class(PROP_lin_layer)
-    bpy.utils.unregister_class(PROP_for_empty)
-    bpy.utils.unregister_class(PROP_for_mesh)
+    bpy.utils.unregister_class(PROP_for)
     bpy.utils.unregister_class(PROP_attached_obj)
     bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)
