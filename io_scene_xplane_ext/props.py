@@ -688,6 +688,346 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The decals for the material, aka detail textures."
     ) # type: ignore
 
+#Forest Properties
+class PROP_for_empty(bpy.tyes.PropertyGroup):
+    weight_choice: bpy.props.FloatProperty(
+        name="Weight",
+        description="Frequency relative to other trees in this layer",
+        default=1
+    ) #type: ignore
+
+    max_tree_height: bpy.props.FloatProperty(
+        name="Max Tree height",
+        description="Max height of the tree, your model should be this size"
+        default=1
+    ) #type: ignore
+
+    use_custom_lod: bpy.props.BoolProperty(
+        name="Use Custom LOD",
+        description="Whether to use a custom LOD for this tree",
+        default=False
+    ) #type: ignore
+
+    custom_lod: bpy.props.FloatProperty(
+        name="Custom LOD",
+        description="Max draw distance of this tree in meters",
+        default="1000"
+    ) #type: ignore
+
+    group: bpy.props.IntProperty(
+        name="Group",
+        description="The group this tree is a part of, for use with CHOICE selections",
+        default=0
+    ) #type: ignore
+
+class PROP_for_mesh(bpy.types.PropertyGroup):
+    near_lod: bpy.props.FloatProperty(
+        name="Near LOD",
+        description="The minimum distance you must be for this mesh to draw",
+        default="0"
+    ) #type: ignore
+
+    far_lod: bpy.props.FloatProperty(
+        name="Far LOD",
+        description="Maximum distance this mesh will draw at",
+        default=1000
+    ) #type: ignore
+
+    no_shadow: bpy.props.BoolProperty(
+        name="No Shadow",
+        description="Whether to disable shadow casting for this mesh"
+        default=False
+    ) #type: ignore
+
+    wind_bend_ratio: bpy.props.FloatProperty(
+        name="Wind Bend Ratio",
+        description="Multiplicative on the amount of bending of branches",
+        default=1.0
+    ) #type: ignore
+
+    branch_bending: bpy.props.FloatProperty(
+        name="Branch Bending",
+        description="Defines maximum branch displacement in meters at max wind speed",
+        default="1.0"
+    ) #type: ignore
+
+    max_wind_speed: bpy.props.FloatProperty(
+        name="Max Wind Speed",
+        description="The speed at which the branches will be deformed to their maximum value"
+    ) #type: ignore
+
+class PROP_for_collection(bpy.types.PropertyGroup):
+    is_ui_expanded: bpy.props.BoolProperty(
+        name="UI Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    exportable: bpy.props.BoolProperty(
+        name="Exportable",
+        default=False,
+        description="Whether or not this layer should be exported",
+        update=update_ui
+    ) # type: ignore
+    
+    name: bpy.props.StringProperty(
+        name="Export Path",
+        default="",
+        subtype="FILE_PATH",
+        description="The path to the file to export to, and name",
+        update=update_ui
+    ) # type: ignore
+
+    spacing_x: bpy.props.FloatProperty(
+        name="Spacing X",
+        description="Spacing between trees on the X axis",
+        default=1
+    ) #type: ignore
+
+    spacing_y: bpy.props.FloatProperty(
+        name="Spacing Y",
+        description="Spacing on the Y axis",
+        default=1
+    ) #type: ignore
+
+    random_x: bpy.props.FloatProperty(
+        name="Random X",
+        description="Random position offset in meters on the X axis",
+        default=1
+    ) #type: ignore
+    
+    random_y: bpy.props.FloatProperty(
+        name="Random Y",
+        description="Random position offset in meters on the Y axis",
+        default=1
+    ) #type: ignore
+
+    cast_shadow: bpy.props.BoolProperty(
+        name="Cast Shadows",
+        description="Whether this forest casts shadows",
+        default=True
+    ) #type: ignore
+
+    has_seasons: bpy.props.BoolProperty(
+        name="Has Seasons",
+        description="Whether this forest has seasons. If so, 4 variants will be exported with the below selected materials for each",
+        default=False
+    ) #type: ignore
+
+    spring_material: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Spring material",
+        description="Material to use for the spring version of the forest",
+        default=None
+    ) #type: ignore
+
+    summer_material: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Summer material",
+        description="Material to use for the summer version of the forest",
+        default=None
+    ) #type: ignore
+
+    fall_material: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Fall material",
+        description="Material to use for the fall version of the forest",
+        default=None
+    ) #type: ignore
+
+    winter_material: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Winter material",
+        description="Material to use for the winter version of the forest",
+        default=None
+    ) #type: ignore
+
+    density_params: bpy.props.BoolProperty(
+        name="Density Params",
+        description="Whether to use noise to vary the density",
+        default=False
+    ) #type: ignore
+
+    density_0_length: bpy.props.FloatProperty(
+        name="First Wavelength",
+        description="Length in meters of the first perlin noise wave",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_0_value: bpy.props.FloatProperty(
+        name="First Wavelength Density",
+        description="Density of the forst in the first perlin noise wave (multiplies spacing(?))",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_1_length: bpy.props.FloatProperty(
+        name="Second Wavelength",
+        description="Length in meters of the second perlin noise wave",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_1_value: bpy.props.FloatProperty(
+        name="Second Wave Density",
+        description="Density of the forst in the second perlin noise wave (multiplies spacing(?))",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_2_length: bpy.props.FloatProperty(
+        name="Third Wavelength",
+        description="Length in meters of the third perlin noise wave",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_2_value: bpy.props.FloatProperty(
+        name="Third Wave Density",
+        description="Density of the forst in the third perlin noise wave (multiplies spacing(?))",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_3_length: bpy.props.FloatProperty(
+        name="Fourth Wavelength",
+        description="Length in meters of the fourth perlin noise wave",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_3_value: bpy.props.FloatProperty(
+        name="Fourth Wave Density",
+        description="Density of the forst in the fourth perlin noise wave (multiplies spacing(?))",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_params: bpy.props.BoolProperty(
+        name="Choice Params",
+        description="Whether to use noise to vary the tree choice selection",
+        default=False
+    ) #type: ignore
+
+    choice_0_length: bpy.props.FloatProperty(
+        name="First Wavelength",
+        description="Length in meters of the first perlin noise wave for choice variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_0_value: bpy.props.FloatProperty(
+        name="First Wave Choice Weight",
+        description="Weighted value for tree choice 1 in the first perlin noise wave (range 1-4)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_1_length: bpy.props.FloatProperty(
+        name="Second Wavelength",
+        description="Length in meters of the second perlin noise wave for choice variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_1_value: bpy.props.FloatProperty(
+        name="Second Wave Choice Weight",
+        description="Weighted value for tree choice 2 in the second perlin noise wave (range 1-4)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_2_length: bpy.props.FloatProperty(
+        name="Third Wavelength",
+        description="Length in meters of the third perlin noise wave for choice variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_2_value: bpy.props.FloatProperty(
+        name="Third Wave Choice Weight",
+        description="Weighted value for tree choice 3 in the third perlin noise wave (range 1-4)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_3_length: bpy.props.FloatProperty(
+        name="Fourth Wavelength",
+        description="Length in meters of the fourth perlin noise wave for choice variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_3_value: bpy.props.FloatProperty(
+        name="Fourth Wave Choice Weight",
+        description="Weighted value for tree choice 4 in the fourth perlin noise wave (range 1-4)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_params: bpy.props.BoolProperty(
+        name="Height Params",
+        description="Whether to use noise to vary the tree height scale",
+        default=False
+    ) #type: ignore
+
+    height_0_length: bpy.props.FloatProperty(
+        name="First Wavelength",
+        description="Length in meters of the first perlin noise wave for height variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_0_value: bpy.props.FloatProperty(
+        name="First Wave Height Scale",
+        description="Scalar multiplier for tree height in the first perlin noise wave (any value > 0)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_1_length: bpy.props.FloatProperty(
+        name="Second Wavelength",
+        description="Length in meters of the second perlin noise wave for height variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_1_value: bpy.props.FloatProperty(
+        name="Second Wave Height Scale",
+        description="Scalar multiplier for tree height in the second perlin noise wave (any value > 0)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_2_length: bpy.props.FloatProperty(
+        name="Third Wavelength",
+        description="Length in meters of the third perlin noise wave for height variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_2_value: bpy.props.FloatProperty(
+        name="Third Wave Height Scale",
+        description="Scalar multiplier for tree height in the third perlin noise wave (any value > 0)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_3_length: bpy.props.FloatProperty(
+        name="Fourth Wavelength",
+        description="Length in meters of the fourth perlin noise wave for height variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_3_value: bpy.props.FloatProperty(
+        name="Fourth Wave Height Scale",
+        description="Scalar multiplier for tree height in the fourth perlin noise wave (any value > 0)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
 #Line properties
 
 class PROP_lin_layer(bpy.types.PropertyGroup):
