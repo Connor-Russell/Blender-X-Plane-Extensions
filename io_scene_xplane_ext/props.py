@@ -610,6 +610,7 @@ class PROP_mats(bpy.types.PropertyGroup):
             ('CLIP', "Alpha Clip", "Alpha is clipped at the cutoff value"),
             ('BLEND', "Alpha Blend", "Alpha is blended"),
             ('SHADOW', "Alpha Blend, Shadow Clip", "Alpha is blended, shadows are clipped")
+            ('HASH', "Alpha Hashed", "Forest exclusive, albedo pixels are clipped but dithered for psuedo blending without culling artifacts")
         ],
         default='BLEND',
         update=material_config.operator_wrapped_update_settings
@@ -716,9 +717,15 @@ class PROP_for(bpy.types.PropertyGroup):
         default=1
     ) #type: ignore
 
+    min_tree_height: bpy.props.FloatProperty(
+        name="Max Tree height",
+        description="Min height of the tree",
+        default=1
+    ) #type: ignore
+
     max_tree_height: bpy.props.FloatProperty(
         name="Max Tree height",
-        description="Max height of the tree, your model should be this size",
+        description="Max height of the tree",
         default=1
     ) #type: ignore
 
@@ -836,31 +843,59 @@ class PROP_for_collection(bpy.types.PropertyGroup):
         update=update_ui
     ) #type: ignore
 
-    spring_material: bpy.props.PointerProperty(
+    spring_material_2d: bpy.props.PointerProperty(
         type=bpy.types.Material,
-        name="Spring material",
-        description="Material to use for the spring version of the forest",
+        name="Spring material 2D",
+        description="Material to use for the spring version of the forest for the 2D quads",
         default=None
     ) #type: ignore
 
-    summer_material: bpy.props.PointerProperty(
+    summer_material_2d: bpy.props.PointerProperty(
         type=bpy.types.Material,
-        name="Summer material",
-        description="Material to use for the summer version of the forest",
+        name="Summer material 2D",
+        description="Material to use for the summer version of the forest for the 2D quads",
         default=None
     ) #type: ignore
 
-    fall_material: bpy.props.PointerProperty(
+    fall_material_2d: bpy.props.PointerProperty(
         type=bpy.types.Material,
-        name="Fall material",
-        description="Material to use for the fall version of the forest",
+        name="Fall material 2D",
+        description="Material to use for the fall version of the forest for the 2D quads",
         default=None
     ) #type: ignore
 
-    winter_material: bpy.props.PointerProperty(
+    winter_material_2d: bpy.props.PointerProperty(
         type=bpy.types.Material,
-        name="Winter material",
-        description="Material to use for the winter version of the forest",
+        name="Winter material 2D",
+        description="Material to use for the winter version of the forest for the 2D quads",
+        default=None
+    ) #type: ignore
+
+    spring_material_3d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Spring material 3D",
+        description="Material to use for the spring version of the forest for the 3D mesh",
+        default=None
+    ) #type: ignore
+
+    summer_material_3d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Summer material 3D",
+        description="Material to use for the summer version of the forest for the 3D mesh",
+        default=None
+    ) #type: ignore
+
+    fall_material_3d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Fall material 3D",
+        description="Material to use for the fall version of the forest for the 3D mesh",
+        default=None
+    ) #type: ignore
+
+    winter_material_3d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Winter material 3D",
+        description="Material to use for the winter version of the forest for the 3D mesh",
         default=None
     ) #type: ignore
 

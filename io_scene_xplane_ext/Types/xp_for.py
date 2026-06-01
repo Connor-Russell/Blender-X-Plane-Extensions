@@ -1,0 +1,445 @@
+#Project:   Blender-X-Plane-Extensions
+#Author:    Connor Russell
+#Date:      6/1/2025
+#Module:    xp_for.py
+#Purpose:   Provide a class that defines the X-Plane forest type
+
+from ..Helpers import file_utils
+from ..Helpers import forest_geometry_utils
+from ..Helpers import decal_utils
+
+import bpy
+
+class TreeMesh():
+    def __init__(self):
+        self.near_lod = 0
+        self.far_lod = 1000
+        self.no_shadow = False
+        self.wind_bend_ratio = 0.0
+        self.branch_bending = 1.0
+        self.max_wind_speed = 1.0
+        self.verticies : list[forest_geometry_utils.xp_vertex] = []
+        self.indicies : list[int] = []
+    
+    def from_obj(self, in_obj : bpy.types.Object):
+        xp_for = in_obj.xp_for
+        self.near_lod = xp_for.near_lod
+        self.far_lod = xp_for.far_lod
+        self.no_shadow = xp_for.no_shadow
+        self.wind_bend_ratio = xp_for.wind_bend_ratio
+        self.branch_bending = xp_for.branch_bending
+        self.max_wind_speed = xp_for.max_wind_speed
+        self.verticies, self.indicies = forest_geometry_utils.get_draw_call_from_obj(in_obj)
+    def to_obj(self, in_name : str):
+        obj = forest_geometry_utils.create_obj_from_draw_call(self.verticies, self.indicies, in_name)
+        obj.xp_for.near_lod = self.near_lod
+        obj.xp_for.far_lod = self.far_lod
+        obj.xp_for.no_shadow = self.no_shadow
+        obj.xp_for.wind_bend_ratio = self.wind_bend_ratio
+        obj.xp_for.branch_bending = self.branch_bending
+        obj.xp_for.max_wind_speed = self.max_wind_speed
+        return obj
+
+class Tree():
+    def __init__(self):
+        self.meshes : list[TreeMesh] = []
+        self.weight_choice = 1.0
+        self.min_tree_height = 0.5
+        self.max_tree_height = 1.0
+        self.base_height = 1.0
+        self.use_custom_lod = False
+        self.custom_lod = 1000
+        self.group = 0
+
+        self.quad_x = 0.0
+        self.quad_y = 0.0
+        self.quad_width = 1.0
+        self.quad_height = 1.0
+        self.quad_center_offset = 0.5
+        self.frequency = 1.0    #The docs for tree say these must add up to 100%, but the existing X-Plane exporter indicates this is an arbitrary weight. I'm inclined to go with the later as it matches other X-Plane behavior
+        self.quads = 2 #Always 2
+        self.layer = 0  #Trees are stored in lists based on their layer, but this is *also* stored in the tree command
+        self.name = ""  #Arbitrary string to make trees easier to identify if reading the file by hand
+
+    def from_obj(self, in_obj : bpy.types.Object, layer : int):
+        #TODO: We need a helper to extract the quad data, including the base height
+
+        #Copy the basic params
+        xp_for = in_obj.xp_for
+        self.layer = layer
+        self.name = in_obj.name
+        self.weight_choice = xp_for.weight_choice
+        self.min_tree_height = xp_for.min_tree_height
+        self.max_tree_height = xp_for.max_tree_height
+        self.use_custom_lod = xp_for.use_custom_lod
+        self.custom_lod = xp_for.custom_lod
+        self.group = xp_for.group
+        
+        for child in in_obj.children:
+            if child.type == "MESH":
+                new_mesh = TreeMesh()
+                new_mesh.from_obj(child)
+                self.meshes.append(new_mesh)
+        
+    def to_obj(self, target_collection : bpy.types.Collection):
+        obj = bpy.data.objects.new(self.name, None)
+        obj.type = "EMPTY"
+        obj.empty_display_type = "ARROWS"
+
+        #Link the object to the collection and view layer
+        target_collection.objects.link(obj)
+        
+        #TODO: We need a helper to create a quad from the data
+
+        #Copy the basic params
+        obj.xp_for.weight_choice = self.weight_choice
+        obj.xp_for.min_tree_height = self.min_tree_height
+        obj.xp_for.max_tree_height = self.max_tree_height
+        obj.xp_for.use_custom_lod = self.use_custom_lod
+        obj.xp_for.custom_lod = self.custom_lod
+        obj.xp_for.group = self.group
+
+        #Create the mesh objects
+        for mesh in self.meshes:
+            new_obj = mesh.to_obj(self.name + "_mesh")
+            target_collection.objects.link(new_obj)
+        
+
+class ForestMaterial():
+    def __init__(self):
+        self.alb_texture = ""
+        self.lit_texture = ""
+        self.nml_texture = ""
+        self.mod_texture = ""
+        self.weather_texture = ""
+        self.layer = "objects"
+        self.layer_offset = 0
+        self.blend_cutoff = 0   #Clip level for 
+        self.blend_mode = "CLIP"    #Can be SHADOW, BLEND, CLIP, or HASH (hash is like dither)
+        self.mat_mode = "NORMAL_METALNESS"  #Can be NONE, NORMAL_METALNESS, or NORMAL_TRANSLUCENT
+        self.decals = []
+        self.imported_decal_commands = []
+
+    def from_material(self, in_material : bpy.types.Material):
+        mat = in_material.xp_materials
+        self.alb_texture = mat.alb_texture
+        self.lit_texture = mat.lit_texture
+        self.nml_texture = mat.normal_texture
+        self.mod_texture = mat.modulator_texture
+        self.layer = mat.layer_group
+        self.layer_offset = mat.layer_group_offset
+        self.mat_mode = "NORMAL_METALNESS"  #TODO: Add a mod selector to material properties
+        self.blend_cutoff = mat.blend_cutoff
+        self.blend_mode = mat.blend_mode
+        self.decals = mat.decals
+        
+    def to_material(self, in_material : bpy.types.Material):
+        mat = in_material.xp_materials
+        mat.alb_texture = self.alb_texture
+        mat.lit_texture = self.lit_texture
+        mat.normal_texture = self.nml_texture
+        mat.modulator_texture = self.mod_texture
+        mat.layer_group = self.layer
+        mat.layer_group_offset = self.layer_offset
+        mat.blend_cutoff = self.blend_cutoff
+        mat.blend_mode = self.blend_mode
+        mat.decals = self.decals
+
+class Forest():
+    def __init__(self):
+        self.name = ""
+
+        self.mat_2d : ForestMaterial | None = None
+        self.mat_3d : ForestMaterial | None = None
+
+        self.do_seasons = False
+
+        self.mat_spring_2d : ForestMaterial | None = None
+        self.mat_spring_3d : ForestMaterial | None = None
+
+        self.mat_summer_2d : ForestMaterial | None = None
+        self.mat_summer_3d : ForestMaterial | None = None
+
+        self.mat_fall_2d : ForestMaterial | None = None
+        self.mat_fall_3d : ForestMaterial | None = None
+
+        self.mat_winter_2d : ForestMaterial | None = None
+        self.mat_winter_3d : ForestMaterial | None = None
+
+        self.spacing_x = 1.0
+        self.spacing_y = 1.0
+        self.random_x = 1.0
+        self.random_y = 1.0
+
+        self.cast_shadws = True
+        
+        self.density_params = False
+        self.density_wavelength_0 = 0
+        self.density_wavestrength_0 = 0
+        self.density_wavelength_1 = 0
+        self.density_wavestrength_1 = 0
+        self.density_wavelength_2 = 0
+        self.density_wavestrength_2 = 0
+        self.density_wavelength_3 = 0
+        self.density_wavestrength_3 = 0
+
+        self.choice_params = False
+        self.choice_wavelength_0 = 0
+        self.choice_wavestrength_0 = 0
+        self.choice_wavelength_1 = 0
+        self.choice_wavestrength_1 = 0
+        self.choice_wavelength_2 = 0
+        self.choice_wavestrength_2 = 0
+        self.choice_wavelength_3 = 0
+        self.choice_wavestrength_3 = 0
+
+        self.height_params = False
+        self.height_wavelength_0 = 0
+        self.height_wavestrength_0 = 0
+        self.height_wavelength_1 = 0
+        self.height_wavestrength_1 = 0
+        self.height_wavelength_2 = 0
+        self.height_wavestrength_2 = 0
+        self.height_wavelength_3 = 0
+        self.height_wavestrength_3 = 0
+
+        self.layers : list[list[Tree]] = []
+
+    def from_collection(self, in_collection : bpy.types.Collection):
+        #Copy the properties from the collections .xp_for property group into our local copy
+        # If a material is None in the PG, leave it as none here
+        
+        props = in_collection.xp_for_collection
+        
+        self.name = props.name
+        self.spacing_x = props.spacing_x
+        self.spacing_y = props.spacing_y
+        self.random_x = props.random_x
+        self.random_y = props.random_y
+        self.cast_shadws = props.cast_shadow
+        self.do_seasons = props.has_seasons
+        
+        # Handle 2D and 3D materials
+        if props.has_seasons:
+            if props.spring_material_2d:
+                self.mat_spring_2d = ForestMaterial()
+                self.mat_spring_2d.from_material(props.spring_material_2d)
+            if props.spring_material_3d:
+                self.mat_spring_3d = ForestMaterial()
+                self.mat_spring_3d.from_material(props.spring_material_3d)
+            if self.mat_spring_2d is None and self.mat_spring_3d is not None:
+                self.mat_spring_2d = self.mat_spring_3d
+            elif self.mat_spring_3d is None and self.mat_spring_2d is not None:
+                self.mat_spring_3d = self.mat_spring_2d
+            
+            if props.summer_material_2d:
+                self.mat_summer_2d = ForestMaterial()
+                self.mat_summer_2d.from_material(props.summer_material_2d)
+            if props.summer_material_3d:
+                self.mat_summer_3d = ForestMaterial()
+                self.mat_summer_3d.from_material(props.summer_material_3d)
+            if self.mat_summer_2d is None and self.mat_summer_3d is not None:
+                self.mat_summer_2d = self.mat_summer_3d
+            elif self.mat_summer_3d is None and self.mat_summer_2d is not None:
+                self.mat_summer_3d = self.mat_summer_2d
+            
+            if props.fall_material_2d:
+                self.mat_fall_2d = ForestMaterial()
+                self.mat_fall_2d.from_material(props.fall_material_2d)
+            if props.fall_material_3d:
+                self.mat_fall_3d = ForestMaterial()
+                self.mat_fall_3d.from_material(props.fall_material_3d)
+            if self.mat_fall_2d is None and self.mat_fall_3d is not None:
+                self.mat_fall_2d = self.mat_fall_3d
+            elif self.mat_fall_3d is None and self.mat_fall_2d is not None:
+                self.mat_fall_3d = self.mat_fall_2d
+            
+            if props.winter_material_2d:
+                self.mat_winter_2d = ForestMaterial()
+                self.mat_winter_2d.from_material(props.winter_material_2d)
+            if props.winter_material_3d:
+                self.mat_winter_3d = ForestMaterial()
+                self.mat_winter_3d.from_material(props.winter_material_3d)
+            if self.mat_winter_2d is None and self.mat_winter_3d is not None:
+                self.mat_winter_2d = self.mat_winter_3d
+            elif self.mat_winter_3d is None and self.mat_winter_2d is not None:
+                self.mat_winter_3d = self.mat_winter_2d
+        
+        #TODO: If there are no seasons, auto detect the materials from the meshes. We need the rest of the forst infrastructure written first though
+        
+        # Handle density parameters
+        self.density_params = props.density_params
+        self.density_wavelength_0 = props.density_0_length
+        self.density_wavestrength_0 = props.density_0_value
+        self.density_wavelength_1 = props.density_1_length
+        self.density_wavestrength_1 = props.density_1_value
+        self.density_wavelength_2 = props.density_2_length
+        self.density_wavestrength_2 = props.density_2_value
+        self.density_wavelength_3 = props.density_3_length
+        self.density_wavestrength_3 = props.density_3_value
+        
+        # Handle choice parameters
+        self.choice_params = props.choice_params
+        self.choice_wavelength_0 = props.choice_0_length
+        self.choice_wavestrength_0 = props.choice_0_value
+        self.choice_wavelength_1 = props.choice_1_length
+        self.choice_wavestrength_1 = props.choice_1_value
+        self.choice_wavelength_2 = props.choice_2_length
+        self.choice_wavestrength_2 = props.choice_2_value
+        self.choice_wavelength_3 = props.choice_3_length
+        self.choice_wavestrength_3 = props.choice_3_value
+        
+        # Handle height parameters
+        self.height_params = props.height_params
+        self.height_wavelength_0 = props.height_0_length
+        self.height_wavestrength_0 = props.height_0_value
+        self.height_wavelength_1 = props.height_1_length
+        self.height_wavestrength_1 = props.height_1_value
+        self.height_wavelength_2 = props.height_2_length
+        self.height_wavestrength_2 = props.height_2_value
+        self.height_wavelength_3 = props.height_3_length
+        self.height_wavestrength_3 = props.height_3_value
+
+        #Get the layers of trees
+        sorted_child_collections : list[bpy.types.Collection] = []
+        for child in in_collection.children:
+            sorted_child_collections.append(child)
+        sorted_child_collections.sort()
+
+        for i, child in enumerate(sorted_child_collections):
+            self.layers.append([])
+            for obj in child.objects:
+                if obj.type == "MESH":
+                    new_tree = Tree()
+                    new_tree.from_obj(obj, i)
+                    self.layers[-1].append(new_tree)
+
+    def to_collection(self):
+        #First create a new collection
+        col = bpy.data.collections.new(self.name)
+        props = col.xp_for_collection
+
+        #Now copy over all the collection level settings
+        props.spacing_x = self.spacing_x
+        props.spacing_y = self.spacing_y
+        props.random_x = self.random_x
+        props.random_y = self.random_y
+        props.cast_shadow = self.cast_shadws
+        props.has_seasons = self.do_seasons
+        
+        # Handle materials
+        if self.do_seasons:
+            #Ensure that if we have a season in *either* the 2d or the 3d, both are populated for that season
+            if self.mat_spring_2d is None and self.mat_spring_3d is not None:
+                self.mat_spring_2d = self.mat_spring_3d
+            elif self.mat_spring_3d is None and self.mat_spring_2d is not None:
+                self.mat_spring_3d = self.mat_spring_2d
+
+            if self.mat_summer_2d is None and self.mat_summer_3d is not None:
+                self.mat_summer_2d = self.mat_summer_3d
+            elif self.mat_summer_3d is None and self.mat_summer_2d is not None:
+                self.mat_summer_3d = self.mat_summer_2d
+            
+            if self.mat_fall_2d is None and self.mat_fall_3d is not None:
+                self.mat_fall_2d = self.mat_fall_3d
+            elif self.mat_fall_3d is None and self.mat_fall_2d is not None:
+                self.mat_fall_3d = self.mat_fall_2d
+
+            if self.mat_winter_2d is None and self.mat_winter_3d is not None:
+                self.mat_winter_2d = self.mat_winter_3d
+            elif self.mat_winter_3d is None and self.mat_winter_2d is not None:
+                self.mat_winter_3d = self.mat_winter_2d
+
+            if self.mat_spring_2d:
+                # Create a new material for spring 2D
+                mat_spring_2d = bpy.data.materials.new("Spring_2D")
+                self.mat_spring_2d.to_material(mat_spring_2d)
+                props.spring_material_2d = mat_spring_2d
+            
+            if self.mat_spring_3d:
+                mat_spring_3d = bpy.data.materials.new("Spring_3D")
+                self.mat_spring_3d.to_material(mat_spring_3d)
+                props.spring_material_3d = mat_spring_3d
+            
+            if self.mat_summer_2d:
+                mat_summer_2d = bpy.data.materials.new("Summer_2D")
+                self.mat_summer_2d.to_material(mat_summer_2d)
+                props.summer_material_2d = mat_summer_2d
+            
+            if self.mat_summer_3d:
+                mat_summer_3d = bpy.data.materials.new("Summer_3D")
+                self.mat_summer_3d.to_material(mat_summer_3d)
+                props.summer_material_3d = mat_summer_3d
+            
+            if self.mat_fall_2d:
+                mat_fall_2d = bpy.data.materials.new("Fall_2D")
+                self.mat_fall_2d.to_material(mat_fall_2d)
+                props.fall_material_2d = mat_fall_2d
+            
+            if self.mat_fall_3d:
+                mat_fall_3d = bpy.data.materials.new("Fall_3D")
+                self.mat_fall_3d.to_material(mat_fall_3d)
+                props.fall_material_3d = mat_fall_3d
+            
+            if self.mat_winter_2d:
+                mat_winter_2d = bpy.data.materials.new("Winter_2D")
+                self.mat_winter_2d.to_material(mat_winter_2d)
+                props.winter_material_2d = mat_winter_2d
+            
+            if self.mat_winter_3d:
+                mat_winter_3d = bpy.data.materials.new("Winter_3D")
+                self.mat_winter_3d.to_material(mat_winter_3d)
+                props.winter_material_3d = mat_winter_3d
+        else:
+            if self.mat_2d:
+                mat_2d = bpy.data.materials.new("Material_2D")
+                self.mat_2d.to_material(mat_2d)
+                props.summer_material_2d = mat_2d
+            
+            if self.mat_3d:
+                mat_3d = bpy.data.materials.new("Material_3D")
+                self.mat_3d.to_material(mat_3d)
+                props.summer_material_3d = mat_3d
+        
+        # Handle density parameters
+        props.density_params = self.density_params
+        props.density_0_length = self.density_wavelength_0
+        props.density_0_value = self.density_wavestrength_0
+        props.density_1_length = self.density_wavelength_1
+        props.density_1_value = self.density_wavestrength_1
+        props.density_2_length = self.density_wavelength_2
+        props.density_2_value = self.density_wavestrength_2
+        props.density_3_length = self.density_wavelength_3
+        props.density_3_value = self.density_wavestrength_3
+        
+        # Handle choice parameters
+        props.choice_params = self.choice_params
+        props.choice_0_length = self.choice_wavelength_0
+        props.choice_0_value = self.choice_wavestrength_0
+        props.choice_1_length = self.choice_wavelength_1
+        props.choice_1_value = self.choice_wavestrength_1
+        props.choice_2_length = self.choice_wavelength_2
+        props.choice_2_value = self.choice_wavestrength_2
+        props.choice_3_length = self.choice_wavelength_3
+        props.choice_3_value = self.choice_wavestrength_3
+        
+        # Handle height parameters
+        props.height_params = self.height_params
+        props.height_0_length = self.height_wavelength_0
+        props.height_0_value = self.height_wavestrength_0
+        props.height_1_length = self.height_wavelength_1
+        props.height_1_value = self.height_wavestrength_1
+        props.height_2_length = self.height_wavelength_2
+        props.height_2_value = self.height_wavestrength_2
+        props.height_3_length = self.height_wavelength_3
+        props.height_3_value = self.height_wavestrength_3
+        
+        #Now add the trees
+        for i, layer in enumerate(self.layers):
+            layer_col = bpy.data.collections.new("Forest layer " + i)
+            col.children.link(layer_col)
+            for t in layer:
+                t.to_obj(layer_col)
+                
+
+        return col

@@ -419,7 +419,9 @@ class MENU_for_object(bpy.types.Panel):
         if obj.type == "EMPTY":
             layout.prop(fr, "exportable")
             layout.prop(fr, "weight_choice")
-            layout.prop(fr, "max_tree_height")
+            row = layout.row()
+            row.prop(fr, "min_tree_height")
+            row.prop(fr, "max_tree_height")
 
             row = layout.row()
             row.prop(fr, "use_custom_lod")
