@@ -8,8 +8,11 @@ from ..Helpers import file_utils
 from ..Helpers import forest_geometry_utils
 from ..Helpers import decal_utils
 from ..Helpers import for_utils
+from ..Helpers.misc_utils import ftos
+from ..Helpers import decal_utils
 
 import bpy
+import os
 
 class TreeMesh():
     def __init__(self):
@@ -19,8 +22,9 @@ class TreeMesh():
         self.wind_bend_ratio = 0.0
         self.branch_bending = 1.0
         self.max_wind_speed = 1.0
-        self.verticies : list[forest_geometry_utils.xp_vertex] = []
+        self.verticies : list[forest_geometry_utils.for_xp_vertex] = []
         self.indicies : list[int] = []
+        self.mesh_name : str = ""
     
     def from_obj(self, in_obj : bpy.types.Object):
         xp_for = in_obj.xp_for
@@ -31,6 +35,8 @@ class TreeMesh():
         self.branch_bending = xp_for.branch_bending
         self.max_wind_speed = xp_for.max_wind_speed
         self.verticies, self.indicies = forest_geometry_utils.get_draw_call_from_obj(in_obj)
+        self.mesh_name = in_obj.name
+        self.mesh_name = self.mesh_name.replace(" " "-")
 
     def to_obj(self, in_name : str):
         obj = forest_geometry_utils.create_obj_from_draw_call(self.verticies, self.indicies, in_name)
@@ -41,6 +47,54 @@ class TreeMesh():
         obj.xp_for.branch_bending = self.branch_bending
         obj.xp_for.max_wind_speed = self.max_wind_speed
         return obj
+
+    def to_string(self):
+        out = f"MESH {self.mesh_name} {self.near_lod} {self.far_lod} {len(self.verticies)} {len(self.indicies)} {self.wind_bend_ratio} {self.branch_bending} {self.max_wind_speed}\n"
+        if self.no_shadow:
+            out += "NO_SHADOW\n"
+        for vert in self.verticies:
+            out += f"VERTEX {ftos(vert.loc_x, 8)} {ftos(vert.loc_z, 8)} {ftos(vert.loc_y, 8)} {ftos(vert.normal_x, 8)} {ftos(vert.normal_z, 8)} {ftos(vert.normal_y, 8)} {ftos(vert.uv_x, 8)} {ftos(vert.uv_y, 8)} {ftos(vert.stiffness, 8)} {ftos(vert.edge_stiffness, 8)} {ftos(vert.phase, 8)}\n"
+        #TODO: Is this index printing logic correct?
+        for i in range(0, len(self.indicies), 10):
+            out += f"IDX {self.indicies[i]} {self.indicies[i+1]} {self.indicies[i+2]} {self.indicies[i+3]} {self.indicies[i+4]} {self.indicies[i+5]} {self.indicies[i+6]} {self.indicies[i+7]} {self.indicies[i+8]} {self.indicies[i+9]}\n"
+        for i in range(0, len(self.indicies) % 10):
+            out += f"IDX {self.indicies[len(self.indicies) / 10 + i]}"
+
+    def from_lines(self, lines : list[str]):
+        for line in lines:
+            if line.startswith("MESH"):
+                tokens = line.split()
+                if len(tokens) < 9:
+                    raise Exception(f"MESH command must have at least 9 tokens, has {len(tokens)}")
+                self.mesh_name = tokens[1]
+                self.near_lod = float(tokens[2])
+                self.far_lod = float(tokens[3])
+                self.wind_bend_ratio = float(tokens[6])
+                self.branch_bending = float(tokens[7])
+                self.max_wind_speed = float(tokens[8])
+            elif line.startswith("VERTEX"):
+                tokens = line.split()
+                if len(tokens) < 12:
+                    raise Exception(f"MESH command must have at least 9 tokens, has {len(tokens)}")
+                vert = forest_geometry_utils.for_xp_vertex()
+                vert.loc_x = tokens[1]
+                vert.loc_y = tokens[3]
+                vert.loc_z = tokens[2]
+                vert.normal_x = tokens[4]
+                vert.normal_y = tokens[6]
+                vert.normal_z = tokens[5]
+                vert.uv_x = tokens[7]
+                vert.uv_y = tokens[8]
+                vert.stiffness = tokens[9]
+                vert.edge_stiffness = tokens[10]
+                vert.phase = tokens[11]
+            elif line.startswith("IDX"):
+                tokens = line.split()
+                if len(tokens) < 2:
+                    raise Exception("IDX must be followed by one or more indicies")
+                for i in range(1, len(tokens)):
+                    self.indicies.append(int(float(tokens[i])))
+
 
 class Tree():
     def __init__(self):
@@ -63,6 +117,11 @@ class Tree():
         self.quads = 2 #Always 2
         self.layer = 0  #Trees are stored in lists based on their layer, but this is *also* stored in the tree command
         self.name = ""  #Arbitrary string to make trees easier to identify if reading the file by hand
+        # Meshes are a bit weird, we create them seperately then reference them by name.
+        # Good for VRAM savings if you can share meshes, but we need to reference them.
+        # Because of Blender's unique name enforcement however, these will be resolved and meshes made real
+        # during the read phase when importing, and will stay real during the whole right phase
+        self.mesh_names : list[str] = []
 
     def from_obj(self, in_obj : bpy.types.Object, layer : int):
         #TODO: We need a helper to extract the quad data, including the base height
@@ -92,8 +151,8 @@ class Tree():
                     new_mesh = TreeMesh()
                     new_mesh.from_obj(child)
                     self.meshes.append(new_mesh)
+                    self.mesh_names.append(child.name)
 
-        
     def to_obj(self, target_collection : bpy.types.Collection):
         obj = bpy.data.objects.new(self.name, None)
         obj.type = "EMPTY"
@@ -128,6 +187,46 @@ class Tree():
         qd_obj = for_utils.create_obj_from_forest_quad(qd, 1.0) #TODO: Get this ratio from the texture
         target_collection.objects.link(qd_obj)
 
+    def to_string(self, res_x : int, res_y : int):
+        #TREE2  <s1> <t1> <w> <h> <sw> <percent> <min_height> <max_height> <nominal_height> <lod_far> <quads> <type> <notes>
+        out = f"TREE2 {self.quad_x * res_x} {self.quad_y * res_y} {self.quad_width * res_x} {self.quad_height * res_y} {self.quad_center_offset * res_x} {self.frequency} {self.min_tree_height} {self.max_tree_height} {self.base_height} {self.custom_lod} {self.quads} {self.layer} {self.name}\n"
+
+        #Add references to the 3d meshess
+        for mn in self.mesh_names:
+            out += f"MESH_3D {mn}"
+
+        return out
+
+    def from_lines(self, lines : list[str], res_x : int, res_y : int, all_meshes : list[TreeMesh]):
+        for line in lines:
+            if line.startswith("TREE2"):
+                tokens = line.split()
+                if len(tokens) < 13:
+                    raise Exception("TREE2 command must have at least 12 arguments!")
+                self.quad_x = float(tokens[1]) * res_x
+                self.quad_y = float(tokens[2]) * res_y
+                self.quad_width = float(tokens[3]) * res_x
+                self.quad_height = float(tokens[4]) * res_y
+                self.quad_center_offset = float(tokens[5]) * res_x
+                self.frequency = float(tokens[6])
+                self.min_tree_height = float(tokens[7])
+                self.max_tree_height = float(tokens[8])
+                self.base_height = float(tokens[9]) #I don't think this is used anywhere when reading
+                self.custom_lod = float(tokens[10])
+                self.quads = 2  #Because it's always 2
+                self.layer = int(float(tokens[12]))
+                if len(tokens) >= 14:
+                    self.name = str.join(" ", tokens[13:])
+                else:
+                    self.name = "Imported Tree"
+            elif line.startswith("MESH_3D"):
+                tokens = line.split()
+                if len(tokens) < 2:
+                    raise Exception("MESH_3D command must have at least 1 argument")
+                for mesh in all_meshes:
+                    if mesh.mesh_name == tokens[1]:
+                        self.meshes.append(mesh)
+
 class ForestMaterial():
     def __init__(self):
         self.alb_texture = ""
@@ -145,10 +244,10 @@ class ForestMaterial():
 
     def from_material(self, in_material : bpy.types.Material):
         mat = in_material.xp_materials
-        self.alb_texture = mat.alb_texture
-        self.lit_texture = mat.lit_texture
-        self.nml_texture = mat.normal_texture
-        self.mod_texture = mat.modulator_texture
+        self.alb_texture = file_utils.to_relative(mat.alb_texture)
+        self.lit_texture = file_utils.to_relative(mat.lit_texture)
+        self.nml_texture = file_utils.to_relative(mat.normal_texture)
+        self.mod_texture = file_utils.to_relative(mat.modulator_texture)
         self.layer = mat.layer_group
         self.layer_offset = mat.layer_group_offset
         self.mat_mode = "NORMAL_METALNESS"  #TODO: Add a mod selector to material properties
@@ -167,6 +266,69 @@ class ForestMaterial():
         mat.blend_cutoff = self.blend_cutoff
         mat.blend_mode = self.blend_mode
         mat.decals = self.decals
+
+    def to_string(self, output_folder : str):
+        out = ""
+        
+        #TODO: When this gets merged into main, change this to use the file_utils.is_empty check
+        if self.alb_texture != "":
+            out += f"TEXTURE {os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder)}\n"
+        if self.nml_texture != "":
+            out += f"TEXTURE_NORMAL {os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder)}\n"
+        if self.lit_texture != "":
+            out += f"TEXTURE_LIT {os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder)}\n"
+        if self.mod_texture != "":
+            out += f"TEXTURE_MODULATOR {os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder)}\n"
+        
+        out += f"LAYER_GROUP {self.layer} {self.layer_offset}"
+
+        if self.mat_mode == "NORMAL_METALNESS":
+            out += "NORMAL_METALNESS\n"
+        elif self.mat_mode == "NORMAL_TRANSLUCENCY":
+            out += "NORMAL_TRANSLUCENCY"
+        
+        if self.blend_mode == "CLIP":
+            out += f"NO_BLEND {self.blend_cutoff}"
+        if self.blend_cutoff == "HASHED":
+            out += f"ALPHA_HASHED"
+        
+        for dcl in self.decals:
+            out += decal_utils.get_decal_command(dcl, output_folder)
+
+    def from_lines(self, lines : list[str]):
+        for line in lines:
+            if line.startswith("TEXTURE"):
+                tokens = line.split(maxsplit=1)
+                if len(tokens) > 1:
+                    self.alb_texture = file_utils.to_relative(tokens[1], True)
+            elif line.startswith("TEXTURE_NORMAL"):
+                tokens = line.split(maxsplit=1)
+                if len(tokens) > 1:
+                    self.nml_texture = file_utils.to_relative(tokens[1], True)
+            elif line.startswith("TEXTURE_LIT"):
+                tokens = line.split(maxsplit=1)
+                if len(tokens) > 1:
+                    self.lit_texture = file_utils.to_relative(tokens[1], True)
+            elif line.startswith("TEXTURE_MODULATOR"):
+                tokens = line.split(maxsplit=1)
+                if len(tokens) > 1:
+                    self.mod_texture = file_utils.to_relative(tokens[1], True)
+            elif line.startswith("LAYER_GROUP"):
+                tokens = line.split()
+                if len(tokens) >= 3:
+                    self.layer = tokens[1]
+                    self.layer_offset = int(tokens[2])
+            elif line.startswith("NORMAL_METALNESS"):
+                self.mat_mode = "NORMAL_METALNESS"
+            elif line.startswith("NORMAL_TRANSLUCENCY"):
+                self.mat_mode = "NORMAL_TRANSLUCENCY"
+            elif line.startswith("NO_BLEND"):
+                tokens = line.split()
+                self.blend_mode = "CLIP"
+                if len(tokens) >= 2:
+                    self.blend_cutoff = int(tokens[1])
+            elif line.startswith("ALPHA_HASHED"):
+                self.blend_mode = "HASHED"
 
 class Forest():
     def __init__(self):
