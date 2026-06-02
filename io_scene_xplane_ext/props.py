@@ -304,7 +304,6 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         name="Auto Animation Start Value",
         description="The starting value of the dataref for flipbook animation",
         default=0.0,
-        min=0.0,
         update=update_ui
     ) # type: ignore
 
@@ -312,7 +311,6 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         name="Auto Animation End Value",
         description="The ending value of the dataref for auto animation",
         default=1.0,
-        min=0.0,
         update=update_ui
     ) # type: ignore
 
@@ -320,7 +318,6 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         name="Auto Animation Loop Value",
         description="The value to loop the auto animation at",
         default=0.0,
-        min=0.0,
         update=update_ui
     ) # type: ignore
 
