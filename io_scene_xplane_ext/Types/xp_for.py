@@ -10,6 +10,7 @@ from ..Helpers import decal_utils
 from ..Helpers import for_utils
 from ..Helpers.misc_utils import ftos
 from ..Helpers import decal_utils
+from ..Helpers import log_utils
 
 import bpy
 import os
@@ -351,6 +352,9 @@ class Forest():
         self.mat_winter_2d : ForestMaterial | None = None
         self.mat_winter_3d : ForestMaterial | None = None
 
+        self.tex_scale_x = 4096
+        self.tex_scale_y = 4096
+
         self.spacing_x = 1.0
         self.spacing_y = 1.0
         self.random_x = 1.0
@@ -451,6 +455,14 @@ class Forest():
                 self.mat_winter_3d = self.mat_winter_2d
         
         #TODO: If there are no seasons, auto detect the materials from the meshes. We need the rest of the forst infrastructure written first though
+
+        #Make sure we have a 2d and 3d material
+        if self.mat_2d is None and self.mat_3d is not None:
+            self.mat_2d = self.mat_3d
+        elif self.mat_3d is None and self.mat_2d is not None:
+            self.mat_3d = self.mat_2d
+        elif self.mat_2d is None and self.mat_3d is None:
+            raise Exception("No material found for forest!")
         
         # Handle density parameters
         self.density_params = props.density_params
@@ -628,3 +640,114 @@ class Forest():
                 
 
         return col
+
+    def read(self, input_path : str):
+        pass
+    def write(self, output_path : str):
+
+        output_folder = os.path.dirname(output_path)
+
+        #Define a string to hold the file contents
+        header = ""
+
+        header += "A\n1200\nFOREST\n\n"
+
+        #Write the 2D and 3D materials
+        material = "SHADER_2D\n"
+        
+        material += self.mat_2d.to_string(output_folder)
+
+        material += "SHADER_3D\n"
+
+        material += self.mat_3d.to_string(output_folder)
+
+        material += "\n"
+
+        # Now we need to write the core of the file.
+        # The reason we're doing this in a separate string is so if we are exporting seasons, we can simply
+        # Append this string to their header
+        body = ""
+
+        body += f"SCALE_X {self.tex_scale_x}\n"
+        body += f"SCALE_Y {self.tex_scale_y}\n"
+        body += f"SPACING {self.spacing_x} {self.spacing_y}\n"
+        body += f"RANDOM {self.random_x} {self.random_y}\n"
+
+        if self.density_params:
+            body += f"DENSITY_PARAMS {self.density_wavelength_0} {self.density_wavestrength_0} {self.density_wavelength_1} {self.density_wavestrength_1} {self.density_wavelength_2} {self.density_wavestrength_2} {self.density_wavelength_3} {self.density_wavestrength_3}"
+        if self.height_params:
+            body += f"HEIGHT_PARAMS {self.height_wavelength_0} {self.height_wavestrength_0} {self.height_wavelength_1} {self.height_wavestrength_1} {self.height_wavelength_2} {self.height_wavestrength_2} {self.height_wavelength_3} {self.height_wavestrength_3}"
+        if self.choice_params:
+            body += f"CHOICE_PARAMS {self.choice_wavelength_0} {self.choice_wavestrength_0} {self.choice_wavelength_1} {self.choice_wavestrength_1} {self.choice_wavelength_2} {self.choice_wavestrength_2} {self.choice_wavelength_3} {self.choice_wavestrength_3}"
+        
+        body += "\n"
+
+        #Now we need to write the meshes. These are sepearate from the trees in the file, even though they are in Blender stored together
+        for layer in self.layers:
+            for tree in layer:
+                for mesh in tree.meshes:
+                    body += mesh.to_string() + "\n"
+
+        #Now, we sort the trees by their group variable, and write them!
+        for layer in self.layers:
+            if len(layer) < 1:
+                continue
+
+            #Sort
+            layer.sort(key=lambda x: x.group)
+
+            different_groups = set()
+            for tree in layer:
+                different_groups.add(tree.group)
+            different_group_count = len(different_groups)
+
+            #Track the group because we'll need to write a command every time the group changes
+            last_group = layer[0].group
+            
+            for tree in layer:
+                if tree.group != last_group:
+                    last_group = tree.group
+                    body += f"GROUP {last_group} {1.0 / different_group_count}"
+                body += tree.to_string(self.tex_scale_x, self.tex_scale_y)
+        
+        # At this point, we have the header, the body, and the material section.
+        # If we are in season mode, we just need to get the different paths and the different headrees
+        # Otherwise we just write it directly
+        if self.do_seasons:
+            sp_path = output_path.replace(".for", "_SP.for")
+            su_path = output_path.replace(".for", "_SU.for")
+            fl_path = output_path.replace(".for", "_FL.for")
+            wi_path = output_path.replace(".for", "_WI.for")
+
+            if self.mat_spring_2d is not None:
+                sp_material = "SHADER_2D"
+                sp_material += self.mat_spring_2d.to_string(output_folder)
+                sp_material = "SHADER_3D"
+                sp_material += self.mat_spring_3d.to_string(output_folder)
+                with open(sp_path, "w") as f:
+                    f.write(header + sp_material + body)
+            if self.mat_summer_2d is not None:
+                su_material = "SHADER_2D"
+                su_material += self.mat_summer_2d.to_string(output_folder)
+                su_material = "SHADER_3D"
+                su_material += self.mat_summer_3d.to_string(output_folder)
+                with open(su_path, "w") as f:
+                    f.write(header + su_material + body)
+            if self.mat_fall_2d is not None:
+                fl_material = "SHADER_2D"
+                fl_material += self.mat_fall_2d.to_string(output_folder)
+                fl_material = "SHADER_3D"
+                fl_material += self.mat_fall_3d.to_string(output_folder)
+                with open(fl_path, "w") as f:
+                    f.write(header + fl_material + body)
+            if self.mat_winter_2d is not None:
+                wi_material = "SHADER_2D"
+                wi_material += self.mat_winter_2d.to_string(output_folder)
+                wi_material = "SHADER_3D"
+                wi_material += self.mat_winter_3d.to_string(output_folder)
+                with open(wi_path, "w") as f:
+                    f.write(header + wi_material + body)
+        else:
+            with open(output_path, "w") as f:
+                f.write(header + material + body)
+            
