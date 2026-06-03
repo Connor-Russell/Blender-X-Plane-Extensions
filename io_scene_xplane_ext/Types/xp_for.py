@@ -61,41 +61,6 @@ class TreeMesh():
         for i in range(0, len(self.indicies) % 10):
             out += f"IDX {self.indicies[len(self.indicies) / 10 + i]}"
 
-    def from_lines(self, lines : list[str]):
-        for line in lines:
-            if line.startswith("MESH"):
-                tokens = line.split()
-                if len(tokens) < 9:
-                    raise Exception(f"MESH command must have at least 9 tokens, has {len(tokens)}")
-                self.mesh_name = tokens[1]
-                self.near_lod = float(tokens[2])
-                self.far_lod = float(tokens[3])
-                self.wind_bend_ratio = float(tokens[6])
-                self.branch_bending = float(tokens[7])
-                self.max_wind_speed = float(tokens[8])
-            elif line.startswith("VERTEX"):
-                tokens = line.split()
-                if len(tokens) < 12:
-                    raise Exception(f"MESH command must have at least 9 tokens, has {len(tokens)}")
-                vert = forest_geometry_utils.for_xp_vertex()
-                vert.loc_x = tokens[1]
-                vert.loc_y = tokens[3]
-                vert.loc_z = tokens[2]
-                vert.normal_x = tokens[4]
-                vert.normal_y = tokens[6]
-                vert.normal_z = tokens[5]
-                vert.uv_x = tokens[7]
-                vert.uv_y = tokens[8]
-                vert.stiffness = tokens[9]
-                vert.edge_stiffness = tokens[10]
-                vert.phase = tokens[11]
-            elif line.startswith("IDX"):
-                tokens = line.split()
-                if len(tokens) < 2:
-                    raise Exception("IDX must be followed by one or more indicies")
-                for i in range(1, len(tokens)):
-                    self.indicies.append(int(float(tokens[i])))
-
 
 class Tree():
     def __init__(self):
@@ -198,35 +163,6 @@ class Tree():
 
         return out
 
-    def from_lines(self, lines : list[str], res_x : int, res_y : int, all_meshes : list[TreeMesh]):
-        for line in lines:
-            if line.startswith("TREE2"):
-                tokens = line.split()
-                if len(tokens) < 13:
-                    raise Exception("TREE2 command must have at least 12 arguments!")
-                self.quad_x = float(tokens[1]) * res_x
-                self.quad_y = float(tokens[2]) * res_y
-                self.quad_width = float(tokens[3]) * res_x
-                self.quad_height = float(tokens[4]) * res_y
-                self.quad_center_offset = float(tokens[5]) * res_x
-                self.frequency = float(tokens[6])
-                self.min_tree_height = float(tokens[7])
-                self.max_tree_height = float(tokens[8])
-                self.base_height = float(tokens[9]) #I don't think this is used anywhere when reading
-                self.custom_lod = float(tokens[10])
-                self.quads = 2  #Because it's always 2
-                self.layer = int(float(tokens[12]))
-                if len(tokens) >= 14:
-                    self.name = str.join(" ", tokens[13:])
-                else:
-                    self.name = "Imported Tree"
-            elif line.startswith("MESH_3D"):
-                tokens = line.split()
-                if len(tokens) < 2:
-                    raise Exception("MESH_3D command must have at least 1 argument")
-                for mesh in all_meshes:
-                    if mesh.mesh_name == tokens[1]:
-                        self.meshes.append(mesh)
 
 class ForestMaterial():
     def __init__(self):
@@ -296,40 +232,6 @@ class ForestMaterial():
         for dcl in self.decals:
             out += decal_utils.get_decal_command(dcl, output_folder)
 
-    def from_lines(self, lines : list[str]):
-        for line in lines:
-            if line.startswith("TEXTURE"):
-                tokens = line.split(maxsplit=1)
-                if len(tokens) > 1:
-                    self.alb_texture = file_utils.to_relative(tokens[1], True)
-            elif line.startswith("TEXTURE_NORMAL"):
-                tokens = line.split(maxsplit=1)
-                if len(tokens) > 1:
-                    self.nml_texture = file_utils.to_relative(tokens[1], True)
-            elif line.startswith("TEXTURE_LIT"):
-                tokens = line.split(maxsplit=1)
-                if len(tokens) > 1:
-                    self.lit_texture = file_utils.to_relative(tokens[1], True)
-            elif line.startswith("TEXTURE_MODULATOR"):
-                tokens = line.split(maxsplit=1)
-                if len(tokens) > 1:
-                    self.mod_texture = file_utils.to_relative(tokens[1], True)
-            elif line.startswith("LAYER_GROUP"):
-                tokens = line.split()
-                if len(tokens) >= 3:
-                    self.layer = tokens[1]
-                    self.layer_offset = int(tokens[2])
-            elif line.startswith("NORMAL_METALNESS"):
-                self.mat_mode = "NORMAL_METALNESS"
-            elif line.startswith("NORMAL_TRANSLUCENCY"):
-                self.mat_mode = "NORMAL_TRANSLUCENCY"
-            elif line.startswith("NO_BLEND"):
-                tokens = line.split()
-                self.blend_mode = "CLIP"
-                if len(tokens) >= 2:
-                    self.blend_cutoff = int(tokens[1])
-            elif line.startswith("ALPHA_HASHED"):
-                self.blend_mode = "HASHED"
 
 class Forest():
     def __init__(self):
@@ -641,8 +543,174 @@ class Forest():
 
         return col
 
-    def read(self, input_path : str):
-        pass
+    def read(self, input_path: str):
+        self.name = os.path.splitext(os.path.basename(input_path))[0]
+
+        with open(input_path, 'r') as f:
+            lines = f.readlines()
+
+        self.mat_2d = ForestMaterial()
+        self.mat_3d = ForestMaterial()
+
+        current_shader = None   # "2D" or "3D"
+        current_mesh = None     # TreeMesh currently being built
+        current_tree = None     # Tree currently being built
+        all_meshes = []         # All completed TreeMesh objects
+
+        for raw_line in lines:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            tokens = line.split()
+            cmd = tokens[0]
+
+            # Section markers
+            if cmd == "SHADER_2D":
+                current_shader = "2D"
+                continue
+            if cmd == "SHADER_3D":
+                current_shader = "3D"
+                continue
+
+            # Material commands — only apply inside SHADER_2D / SHADER_3D
+            if current_shader is not None:
+                mat = self.mat_2d if current_shader == "2D" else self.mat_3d
+                if cmd == "TEXTURE" and len(tokens) > 1:
+                    mat.alb_texture = file_utils.to_relative(tokens[1], True)
+                    continue
+                if cmd == "TEXTURE_NORMAL" and len(tokens) > 1:
+                    mat.nml_texture = file_utils.to_relative(tokens[1], True)
+                    continue
+                if cmd == "TEXTURE_LIT" and len(tokens) > 1:
+                    mat.lit_texture = file_utils.to_relative(tokens[1], True)
+                    continue
+                if cmd == "TEXTURE_MODULATOR" and len(tokens) > 1:
+                    mat.mod_texture = file_utils.to_relative(tokens[1], True)
+                    continue
+                if cmd == "LAYER_GROUP" and len(tokens) >= 3:
+                    mat.layer = tokens[1]
+                    mat.layer_offset = int(tokens[2])
+                    continue
+                if cmd == "NORMAL_METALNESS":
+                    mat.mat_mode = "NORMAL_METALNESS"
+                    continue
+                if cmd == "NORMAL_TRANSLUCENCY":
+                    mat.mat_mode = "NORMAL_TRANSLUCENCY"
+                    continue
+                if cmd == "NO_BLEND":
+                    mat.blend_mode = "CLIP"
+                    if len(tokens) >= 2:
+                        mat.blend_cutoff = int(float(tokens[1]))
+                    continue
+                if cmd == "ALPHA_HASHED":
+                    mat.blend_mode = "HASHED"
+                    continue
+
+            # Global forest commands
+            if cmd == "SCALE_X" and len(tokens) >= 2:
+                self.tex_scale_x = int(float(tokens[1]))
+            elif cmd == "SCALE_Y" and len(tokens) >= 2:
+                self.tex_scale_y = int(float(tokens[1]))
+            elif cmd == "SPACING" and len(tokens) >= 3:
+                self.spacing_x = float(tokens[1])
+                self.spacing_y = float(tokens[2])
+            elif cmd == "RANDOM" and len(tokens) >= 3:
+                self.random_x = float(tokens[1])
+                self.random_y = float(tokens[2])
+            elif cmd == "DENSITY_PARAMS" and len(tokens) >= 9:
+                self.density_params = True
+                self.density_wavelength_0 = float(tokens[1])
+                self.density_wavestrength_0 = float(tokens[2])
+                self.density_wavelength_1 = float(tokens[3])
+                self.density_wavestrength_1 = float(tokens[4])
+                self.density_wavelength_2 = float(tokens[5])
+                self.density_wavestrength_2 = float(tokens[6])
+                self.density_wavelength_3 = float(tokens[7])
+                self.density_wavestrength_3 = float(tokens[8])
+            elif cmd == "HEIGHT_PARAMS" and len(tokens) >= 9:
+                self.height_params = True
+                self.height_wavelength_0 = float(tokens[1])
+                self.height_wavestrength_0 = float(tokens[2])
+                self.height_wavelength_1 = float(tokens[3])
+                self.height_wavestrength_1 = float(tokens[4])
+                self.height_wavelength_2 = float(tokens[5])
+                self.height_wavestrength_2 = float(tokens[6])
+                self.height_wavelength_3 = float(tokens[7])
+                self.height_wavestrength_3 = float(tokens[8])
+            elif cmd == "CHOICE_PARAMS" and len(tokens) >= 9:
+                self.choice_params = True
+                self.choice_wavelength_0 = float(tokens[1])
+                self.choice_wavestrength_0 = float(tokens[2])
+                self.choice_wavelength_1 = float(tokens[3])
+                self.choice_wavestrength_1 = float(tokens[4])
+                self.choice_wavelength_2 = float(tokens[5])
+                self.choice_wavestrength_2 = float(tokens[6])
+                self.choice_wavelength_3 = float(tokens[7])
+                self.choice_wavestrength_3 = float(tokens[8])
+
+            # Mesh definition commands
+            elif cmd == "MESH" and len(tokens) >= 9:
+                if current_mesh is not None:
+                    all_meshes.append(current_mesh)
+                current_mesh = TreeMesh()
+                current_mesh.mesh_name = tokens[1]
+                current_mesh.near_lod = float(tokens[2])
+                current_mesh.far_lod = float(tokens[3])
+                # tokens[4] = vertex count, tokens[5] = index count (informational only)
+                current_mesh.wind_bend_ratio = float(tokens[6])
+                current_mesh.branch_bending = float(tokens[7])
+                current_mesh.max_wind_speed = float(tokens[8])
+            elif cmd == "NO_SHADOW" and current_mesh is not None:
+                current_mesh.no_shadow = True
+            elif cmd == "VERTEX" and current_mesh is not None and len(tokens) >= 12:
+                # File format: VERTEX loc_x loc_z loc_y normal_x normal_z normal_y uv_x uv_y stiffness edge_stiffness phase
+                vert = forest_geometry_utils.for_xp_vertex(
+                    float(tokens[1]), float(tokens[3]), float(tokens[2]),
+                    float(tokens[4]), float(tokens[6]), float(tokens[5]),
+                    float(tokens[7]), float(tokens[8])
+                )
+                vert.stiffness = float(tokens[9])
+                vert.edge_stiffness = float(tokens[10])
+                vert.phase = float(tokens[11])
+                current_mesh.verticies.append(vert)
+            elif cmd == "IDX" and current_mesh is not None and len(tokens) >= 2:
+                for i in range(1, len(tokens)):
+                    current_mesh.indicies.append(int(float(tokens[i])))
+
+            # Tree definition commands
+            elif cmd == "TREE2" and len(tokens) >= 13:
+                if current_mesh is not None:
+                    all_meshes.append(current_mesh)
+                    current_mesh = None
+                current_tree = Tree()
+                current_tree.quad_x = float(tokens[1]) / self.tex_scale_x
+                current_tree.quad_y = float(tokens[2]) / self.tex_scale_y
+                current_tree.quad_width = float(tokens[3]) / self.tex_scale_x
+                current_tree.quad_height = float(tokens[4]) / self.tex_scale_y
+                current_tree.quad_center_offset = float(tokens[5]) / self.tex_scale_x
+                current_tree.frequency = float(tokens[6])
+                current_tree.min_tree_height = float(tokens[7])
+                current_tree.max_tree_height = float(tokens[8])
+                current_tree.base_height = float(tokens[9])
+                current_tree.custom_lod = float(tokens[10])
+                current_tree.quads = 2
+                current_tree.layer = int(float(tokens[12]))
+                current_tree.name = " ".join(tokens[13:]) if len(tokens) >= 14 else "Imported Tree"
+                while len(self.layers) <= current_tree.layer:
+                    self.layers.append([])
+                self.layers[current_tree.layer].append(current_tree)
+            elif cmd == "MESH_3D" and current_tree is not None and len(tokens) >= 2:
+                mesh_name = tokens[1]
+                for mesh in all_meshes:
+                    if mesh.mesh_name == mesh_name:
+                        current_tree.meshes.append(mesh)
+                        current_tree.mesh_names.append(mesh_name)
+                        break
+
+        # Finalize the last open mesh block
+        if current_mesh is not None:
+            all_meshes.append(current_mesh)
     def write(self, output_path : str):
 
         output_folder = os.path.dirname(output_path)
