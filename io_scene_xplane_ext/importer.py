@@ -12,6 +12,7 @@ from .Types import xp_fac
 from .Types import xp_obj
 from .Types import xp_pol
 from .Types import xp_agp
+from .Types import xp_for
 import os
 
 def import_lin(in_path):
@@ -72,6 +73,19 @@ def import_agp(in_path):
 
     #Read it
     agp = xp_agp.agp()
+    print(f"Importing {in_name}...")
+    agp.read(in_path)
+    agp.to_collection()
+
+    log_utils.display_messages()
+
+def import_for(in_path):
+    #Define just the file name from the path
+    in_name = in_path
+    in_name = in_path.split(os.sep)[-1]
+
+    #Read it
+    agp = xp_for.Forest()
     print(f"Importing {in_name}...")
     agp.read(in_path)
     agp.to_collection()

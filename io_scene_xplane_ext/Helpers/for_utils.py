@@ -46,10 +46,10 @@ def is_forest_quad_obj(obj : bpy.types.Object) -> bool:
         return False
     
     #Extract the verticies and UVs
-    v0 = obj.data.vertices[obj.data.polygons[0].vertices[0]]
-    v1 = obj.data.vertices[obj.data.polygons[0].vertices[1]]
-    v2 = obj.data.vertices[obj.data.polygons[0].vertices[2]]
-    v3 = obj.data.vertices[obj.data.polygons[0].vertices[3]]
+    v0 = obj.data.vertices[obj.data.polygons[0].vertices[0]].co
+    v1 = obj.data.vertices[obj.data.polygons[0].vertices[1]].co
+    v2 = obj.data.vertices[obj.data.polygons[0].vertices[2]].co
+    v3 = obj.data.vertices[obj.data.polygons[0].vertices[3]].co
 
     #Now that we have verticies, we need to apply the *object's* loc/scale. We don't really care about it's rotation
     v0 -= obj.location
@@ -102,14 +102,14 @@ def get_forest_quad_from_obj(obj : bpy.types.Object):
         raise ValueError("Object is missing UVs.")
     
     #Extract the verticies and UVs
-    v0 = obj.data.vertices[obj.data.polygons[0].vertices[0]]
-    uv0 = uv_layer.data[obj.data.polygons[0].loop_indices[0]]
-    v1 = obj.data.vertices[obj.data.polygons[0].vertices[1]]
-    uv1 = uv_layer.data[obj.data.polygons[0].loop_indices[1]]
-    v2 = obj.data.vertices[obj.data.polygons[0].vertices[2]]
-    uv2 = uv_layer.data[obj.data.polygons[0].loop_indices[2]]
-    v3 = obj.data.vertices[obj.data.polygons[0].vertices[3]]
-    uv3 = uv_layer.data[obj.data.polygons[0].loop_indices[3]]
+    v0 = obj.data.vertices[obj.data.polygons[0].vertices[0]].co
+    uv0 = uv_layer.data[obj.data.polygons[0].loop_indices[0]].uv
+    v1 = obj.data.vertices[obj.data.polygons[0].vertices[1]].co
+    uv1 = uv_layer.data[obj.data.polygons[0].loop_indices[1]].uv
+    v2 = obj.data.vertices[obj.data.polygons[0].vertices[2]].co
+    uv2 = uv_layer.data[obj.data.polygons[0].loop_indices[2]].uv
+    v3 = obj.data.vertices[obj.data.polygons[0].vertices[3]].co
+    uv3 = uv_layer.data[obj.data.polygons[0].loop_indices[3]].uv
 
     #Now that we have verticies, we need to apply the *object's* loc/scale. We don't really care about it's rotation
     v0 -= obj.location
@@ -140,10 +140,10 @@ def get_forest_quad_from_obj(obj : bpy.types.Object):
     # and x (or y) 0 corresponds to where the tree quad should be centered, which allows us to get the offset
 
     # Get the UV min/max first
-    min_u = min(uv0.x, uv1.x, uv2.x, uv3.x)
-    max_u = max(uv0.x, uv1.x, uv2.x, uv3.x)
-    min_v = min(uv0.y, uv1.y, uv2.y, uv3.y)
-    max_v = max(uv0.y, uv1.y, uv2.y, uv3.y)
+    min_u = min(uv0[0], uv1[0], uv2[0], uv3[0])
+    max_u = max(uv0[0], uv1[0], uv2[0], uv3[0])
+    min_v = min(uv0[1], uv1[1], uv2[1], uv3[1])
+    max_v = max(uv0[1], uv1[1], uv2[1], uv3[1])
 
     #Now get the lateral min/max
     height_min = min(v0.z, v1.z, v2.z, v3.z)

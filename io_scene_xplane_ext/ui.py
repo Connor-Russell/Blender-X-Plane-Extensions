@@ -280,7 +280,7 @@ class MENU_for_exporter(bpy.types.Panel):
         scene = context.scene
 
         #Export button
-        #layout.operator("xp_ext.export_forests", text="Export Forests")
+        layout.operator("xp_ext.export_forests", text="Export Forests")
         layout.separator()
 
         layout.prop(scene.xp_ext, "pol_collection_search")
@@ -302,7 +302,7 @@ class MENU_for_exporter(bpy.types.Panel):
                 box.separator()
                 box.label(text="Spacing")
                 row = box.row()
-                row.prop(fr, "spacing_z")
+                row.prop(fr, "spacing_x")
                 row.prop(fr, "spacing_y")
                 box.label(text="Random")
                 row=box.row()
@@ -322,42 +322,45 @@ class MENU_for_exporter(bpy.types.Panel):
 
                 density_box = box.box()
                 density_box.prop(fr, "density_params")
-                row = density_box.row()
-                row.prop(fr, "density_0_length")
-                row.prop(fr, "density_1_length")
-                row.prop(fr, "density_2_length")
-                row.prop(fr, "density_3_length")
-                row = density_box.row()
-                row.prop(fr, "density_0_value")
-                row.prop(fr, "density_1_value")
-                row.prop(fr, "density_2_value")
-                row.prop(fr, "density_3_value")
+                if fr.density_params:
+                    row = density_box.row()
+                    row.prop(fr, "density_0_length")
+                    row.prop(fr, "density_1_length")
+                    row.prop(fr, "density_2_length")
+                    row.prop(fr, "density_3_length")
+                    row = density_box.row()
+                    row.prop(fr, "density_0_value")
+                    row.prop(fr, "density_1_value")
+                    row.prop(fr, "density_2_value")
+                    row.prop(fr, "density_3_value")
 
                 choice_box = box.box()
                 choice_box.prop(fr, "choice_params")
-                row = choice_box.row()
-                row.prop(fr, "choice_0_length")
-                row.prop(fr, "choice_1_length")
-                row.prop(fr, "choice_2_length")
-                row.prop(fr, "choice_3_length")
-                row = choice_box.row()
-                row.prop(fr, "choice_0_value")
-                row.prop(fr, "choice_1_value")
-                row.prop(fr, "choice_2_value")
-                row.prop(fr, "choice_3_value")
+                if fr.choice_params:
+                    row = choice_box.row()
+                    row.prop(fr, "choice_0_length")
+                    row.prop(fr, "choice_1_length")
+                    row.prop(fr, "choice_2_length")
+                    row.prop(fr, "choice_3_length")
+                    row = choice_box.row()
+                    row.prop(fr, "choice_0_value")
+                    row.prop(fr, "choice_1_value")
+                    row.prop(fr, "choice_2_value")
+                    row.prop(fr, "choice_3_value")
 
                 height_box = box.box()
                 height_box.prop(fr, "height_params")
-                row = height_box.row()
-                row.prop(fr, "height_0_length")
-                row.prop(fr, "height_1_length")
-                row.prop(fr, "height_2_length")
-                row.prop(fr, "height_3_length")
-                row = height_box.row()
-                row.prop(fr, "height_0_value")
-                row.prop(fr, "height_1_value")
-                row.prop(fr, "height_2_value")
-                row.prop(fr, "height_3_value")
+                if fr.height_params:
+                    row = height_box.row()
+                    row.prop(fr, "height_0_length")
+                    row.prop(fr, "height_1_length")
+                    row.prop(fr, "height_2_length")
+                    row.prop(fr, "height_3_length")
+                    row = height_box.row()
+                    row.prop(fr, "height_0_value")
+                    row.prop(fr, "height_1_value")
+                    row.prop(fr, "height_2_value")
+                    row.prop(fr, "height_3_value")
 
                 skip_box = box.box()
                 skip_box.label(text="Skip Surfaces")
@@ -386,14 +389,14 @@ class MENU_for_exporter(bpy.types.Panel):
         disabled_collections.prop(scene.xp_ext, "for_disabled_collections_expanded", text="Disabled Collections", icon='TRIA_DOWN' if scene.xp_ext.for_disabled_collections_expanded else 'TRIA_RIGHT', emboss=False)
         if scene.xp_ext.for_disabled_collections_expanded:
             for col in bpy.data.collections:
-                if not col.xp_pol.exportable:
+                if not col.xp_for.exportable:
                     if scene.xp_ext.for_collection_search != "" and not (col.name.startswith(scene.xp_ext.for_collection_search) or col.name.endswith(scene.xp_ext.for_collection_search)):
                         continue
                     draw_collection(col, disabled_collections)
 
 class MENU_for_object(bpy.types.Panel):
     bl_label = "X-Plane Forest Exporter"
-    bl_idname = "SCENE_PT_for_exporter"
+    bl_idname = "SCENE_PT_for_object"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"

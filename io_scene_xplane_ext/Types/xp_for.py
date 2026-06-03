@@ -12,6 +12,7 @@ from ..Helpers.misc_utils import ftos
 from ..Helpers import decal_utils
 from ..Helpers import log_utils
 
+
 import bpy
 import os
 
@@ -35,12 +36,12 @@ class TreeMesh():
         self.wind_bend_ratio = xp_for.wind_bend_ratio
         self.branch_bending = xp_for.branch_bending
         self.max_wind_speed = xp_for.max_wind_speed
-        self.verticies, self.indicies = forest_geometry_utils.get_draw_call_from_obj(in_obj)
+        self.verticies, self.indicies = forest_geometry_utils.get_for_draw_call_from_obj(in_obj)
         self.mesh_name = in_obj.name
-        self.mesh_name = self.mesh_name.replace(" " "-")
+        self.mesh_name = self.mesh_name.replace(" ", "-")
 
     def to_obj(self, in_name : str):
-        obj = forest_geometry_utils.create_obj_from_draw_call(self.verticies, self.indicies, in_name)
+        obj = forest_geometry_utils.create_for_obj_from_draw_call(self.verticies, self.indicies, in_name)
         obj.xp_for.near_lod = self.near_lod
         obj.xp_for.far_lod = self.far_lod
         obj.xp_for.no_shadow = self.no_shadow
@@ -55,11 +56,15 @@ class TreeMesh():
             out += "NO_SHADOW\n"
         for vert in self.verticies:
             out += f"VERTEX {ftos(vert.loc_x, 8)} {ftos(vert.loc_z, 8)} {ftos(vert.loc_y, 8)} {ftos(vert.normal_x, 8)} {ftos(vert.normal_z, 8)} {ftos(vert.normal_y, 8)} {ftos(vert.uv_x, 8)} {ftos(vert.uv_y, 8)} {ftos(vert.stiffness, 8)} {ftos(vert.edge_stiffness, 8)} {ftos(vert.phase, 8)}\n"
-        #TODO: Is this index printing logic correct?
-        for i in range(0, len(self.indicies), 10):
+        i = 0
+        while i < len(self.indicies) - 9:
             out += f"IDX {self.indicies[i]} {self.indicies[i+1]} {self.indicies[i+2]} {self.indicies[i+3]} {self.indicies[i+4]} {self.indicies[i+5]} {self.indicies[i+6]} {self.indicies[i+7]} {self.indicies[i+8]} {self.indicies[i+9]}\n"
-        for i in range(0, len(self.indicies) % 10):
-            out += f"IDX {self.indicies[len(self.indicies) / 10 + i]}"
+            i += 10
+        i = 0
+        while i < len(self.indicies) % 10:
+            out += f"IDX {self.indicies[int(len(self.indicies) / 10) + i]}\n"
+            i += 1
+        return out + "\n"
 
 
 class Tree():
@@ -90,8 +95,6 @@ class Tree():
         self.mesh_names : list[str] = []
 
     def from_obj(self, in_obj : bpy.types.Object, layer : int):
-        #TODO: We need a helper to extract the quad data, including the base height
-
         #Copy the basic params
         xp_for = in_obj.xp_for
         self.layer = layer
@@ -104,8 +107,10 @@ class Tree():
         self.group = xp_for.group
         
         for child in in_obj.children:
+            log_utils.info("Checking child " + child.name + " of tree " + in_obj.name)
             if child.type == "MESH":
                 if for_utils.is_forest_quad_obj(child):
+                    log_utils.info("Found forest quad " + child.name + " for tree " + in_obj.name)
                     qd = for_utils.get_forest_quad_from_obj(child)
                     self.quad_x = qd.left_x
                     self.quad_y = qd.bottom_y
@@ -118,6 +123,7 @@ class Tree():
                     new_mesh.from_obj(child)
                     self.meshes.append(new_mesh)
                     self.mesh_names.append(child.name)
+                    log_utils.info("Added mesh " + child.name + " to tree " + in_obj.name)
 
     def to_obj(self, target_collection : bpy.types.Collection):
         obj = bpy.data.objects.new(self.name, None)
@@ -159,7 +165,7 @@ class Tree():
 
         #Add references to the 3d meshess
         for mn in self.mesh_names:
-            out += f"MESH_3D {mn}"
+            out += f"MESH_3D {mn}\n"
 
         return out
 
@@ -184,7 +190,7 @@ class ForestMaterial():
         self.alb_texture = file_utils.to_relative(mat.alb_texture)
         self.lit_texture = file_utils.to_relative(mat.lit_texture)
         self.nml_texture = file_utils.to_relative(mat.normal_texture)
-        self.mod_texture = file_utils.to_relative(mat.modulator_texture)
+        self.mod_texture = file_utils.to_relative(mat.decal_modulator)
         self.layer = mat.layer_group
         self.layer_offset = mat.layer_group_offset
         self.mat_mode = "NORMAL_METALNESS"  #TODO: Add a mod selector to material properties
@@ -197,7 +203,7 @@ class ForestMaterial():
         mat.alb_texture = self.alb_texture
         mat.lit_texture = self.lit_texture
         mat.normal_texture = self.nml_texture
-        mat.modulator_texture = self.mod_texture
+        mat.decal_modulator = self.mod_texture
         mat.layer_group = self.layer
         mat.layer_group_offset = self.layer_offset
         mat.blend_cutoff = self.blend_cutoff
@@ -217,20 +223,22 @@ class ForestMaterial():
         if self.mod_texture != "":
             out += f"TEXTURE_MODULATOR {os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder)}\n"
         
-        out += f"LAYER_GROUP {self.layer} {self.layer_offset}"
+        out += f"LAYER_GROUP {self.layer.lower()} {self.layer_offset}\n"
 
         if self.mat_mode == "NORMAL_METALNESS":
             out += "NORMAL_METALNESS\n"
         elif self.mat_mode == "NORMAL_TRANSLUCENCY":
-            out += "NORMAL_TRANSLUCENCY"
+            out += "NORMAL_TRANSLUCENCY\n"
         
         if self.blend_mode == "CLIP":
-            out += f"NO_BLEND {self.blend_cutoff}"
+            out += f"NO_BLEND {self.blend_cutoff}\n"
         if self.blend_cutoff == "HASHED":
-            out += f"ALPHA_HASHED"
+            out += f"ALPHA_HASHED\n"
         
         for dcl in self.decals:
             out += decal_utils.get_decal_command(dcl, output_folder)
+
+        return out
 
 
 class Forest():
@@ -300,7 +308,7 @@ class Forest():
         #Copy the properties from the collections .xp_for property group into our local copy
         # If a material is None in the PG, leave it as none here
         
-        props = in_collection.xp_for_collection
+        props = in_collection.xp_for
         
         self.name = props.name
         self.spacing_x = props.spacing_x
@@ -357,6 +365,17 @@ class Forest():
                 self.mat_winter_3d = self.mat_winter_2d
         
         #TODO: If there are no seasons, auto detect the materials from the meshes. We need the rest of the forst infrastructure written first though
+        all_col_objects = []
+        for child in in_collection.children:
+            for obj in child.objects:
+                all_col_objects.append(obj)
+        for obj in all_col_objects:
+            if for_utils.is_forest_quad_obj(obj):
+                self.mat_2d = ForestMaterial()
+                self.mat_2d.from_material(obj.active_material)
+            elif obj.type == "MESH":
+                self.mat_3d = ForestMaterial()
+                self.mat_3d.from_material(obj.active_material)
 
         #Make sure we have a 2d and 3d material
         if self.mat_2d is None and self.mat_3d is not None:
@@ -408,7 +427,8 @@ class Forest():
         for i, child in enumerate(sorted_child_collections):
             self.layers.append([])
             for obj in child.objects:
-                if obj.type == "MESH":
+                log_utils.info("Checking object " + obj.name + " in collection " + child.name + " for tree data")
+                if obj.type == "EMPTY" and obj.xp_for.exportable:
                     new_tree = Tree()
                     new_tree.from_obj(obj, i)
                     self.layers[-1].append(new_tree)
@@ -714,6 +734,7 @@ class Forest():
     def write(self, output_path : str):
 
         output_folder = os.path.dirname(output_path)
+        log_utils.info(f"Writing forest to {output_path} with output folder {output_folder}")
 
         #Define a string to hold the file contents
         header = ""
@@ -721,15 +742,15 @@ class Forest():
         header += "A\n1200\nFOREST\n\n"
 
         #Write the 2D and 3D materials
-        material = "SHADER_2D\n"
+        base_material = "SHADER_2D\n"
         
-        material += self.mat_2d.to_string(output_folder)
+        base_material += self.mat_2d.to_string(output_folder)
 
-        material += "SHADER_3D\n"
+        base_material += "SHADER_3D\n"
 
-        material += self.mat_3d.to_string(output_folder)
+        base_material += self.mat_3d.to_string(output_folder)
 
-        material += "\n"
+        base_material += "\n"
 
         # Now we need to write the core of the file.
         # The reason we're doing this in a separate string is so if we are exporting seasons, we can simply
@@ -750,9 +771,9 @@ class Forest():
         
         body += "\n"
 
-        #Now we need to write the meshes. These are sepearate from the trees in the file, even though they are in Blender stored together
         for layer in self.layers:
             for tree in layer:
+                log_utils.info("Tree mesh count " + str(len(tree.meshes)))
                 for mesh in tree.meshes:
                     body += mesh.to_string() + "\n"
 
@@ -817,5 +838,5 @@ class Forest():
                     f.write(header + wi_material + body)
         else:
             with open(output_path, "w") as f:
-                f.write(header + material + body)
+                f.write(header + base_material + body)
             
