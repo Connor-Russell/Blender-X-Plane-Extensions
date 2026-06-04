@@ -193,7 +193,7 @@ class ForestMaterial():
         self.mod_texture = file_utils.to_relative(mat.decal_modulator)
         self.layer = mat.layer_group
         self.layer_offset = mat.layer_group_offset
-        self.mat_mode = "NORMAL_METALNESS"  #TODO: Add a mod selector to material properties
+        self.mat_mode = mat.material_mode
         self.blend_cutoff = mat.blend_cutoff
         self.blend_mode = mat.blend_mode
         self.decals = mat.decals
@@ -215,30 +215,31 @@ class ForestMaterial():
         
         #TODO: When this gets merged into main, change this to use the file_utils.is_empty check
         if self.alb_texture != "":
-            out += f"TEXTURE {os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder)}\n"
+            out += f"\tTEXTURE {os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder)}\n"
         if self.nml_texture != "":
-            out += f"TEXTURE_NORMAL {os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder)}\n"
+            #TECHNICALLY we could specify the normal tile ratio, the format allows it... but... *why*??? (the format does it so it's a standard parser, but I can't imagine a reason someone would use it)
+            out += f"\tTEXTURE_NORMAL 1 {os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder)}\n"
         if self.lit_texture != "":
-            out += f"TEXTURE_LIT {os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder)}\n"
+            out += f"\tTEXTURE_LIT {os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder)}\n"
         if self.mod_texture != "":
-            out += f"TEXTURE_MODULATOR {os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder)}\n"
+            out += f"\tTEXTURE_MODULATOR {os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder)}\n"
         
-        out += f"LAYER_GROUP {self.layer.lower()} {self.layer_offset}\n"
+        out += f"\tLAYER_GROUP {self.layer.lower()} {self.layer_offset}\n"
 
         if self.mat_mode == "NORMAL_METALNESS":
-            out += "NORMAL_METALNESS\n"
+            out += "\tNORMAL_METALNESS\n"
         elif self.mat_mode == "NORMAL_TRANSLUCENCY":
-            out += "NORMAL_TRANSLUCENCY\n"
+            out += "\tNORMAL_TRANSLUCENCY\n"
         
         if self.blend_mode == "CLIP":
-            out += f"NO_BLEND {self.blend_cutoff}\n"
+            out += f"\tNO_BLEND {self.blend_cutoff}\n"
         if self.blend_cutoff == "HASHED":
-            out += f"ALPHA_HASHED\n"
+            out += f"\tALPHA_HASHED\n"
         
         for dcl in self.decals:
             out += decal_utils.get_decal_command(dcl, output_folder)
 
-        return out
+        return out + "\n"
 
 
 class Forest():
@@ -731,6 +732,7 @@ class Forest():
         # Finalize the last open mesh block
         if current_mesh is not None:
             all_meshes.append(current_mesh)
+    
     def write(self, output_path : str):
 
         output_folder = os.path.dirname(output_path)
@@ -809,30 +811,30 @@ class Forest():
             wi_path = output_path.replace(".for", "_WI.for")
 
             if self.mat_spring_2d is not None:
-                sp_material = "SHADER_2D"
+                sp_material = "SHADER_2D\n"
                 sp_material += self.mat_spring_2d.to_string(output_folder)
-                sp_material = "SHADER_3D"
+                sp_material += "SHADER_3D\n"
                 sp_material += self.mat_spring_3d.to_string(output_folder)
                 with open(sp_path, "w") as f:
                     f.write(header + sp_material + body)
             if self.mat_summer_2d is not None:
-                su_material = "SHADER_2D"
+                su_material = "SHADER_2D\n"
                 su_material += self.mat_summer_2d.to_string(output_folder)
-                su_material = "SHADER_3D"
+                su_material += "SHADER_3D\n"
                 su_material += self.mat_summer_3d.to_string(output_folder)
                 with open(su_path, "w") as f:
                     f.write(header + su_material + body)
             if self.mat_fall_2d is not None:
-                fl_material = "SHADER_2D"
+                fl_material = "SHADER_2D\n"
                 fl_material += self.mat_fall_2d.to_string(output_folder)
-                fl_material = "SHADER_3D"
+                fl_material += "SHADER_3D\n"
                 fl_material += self.mat_fall_3d.to_string(output_folder)
                 with open(fl_path, "w") as f:
                     f.write(header + fl_material + body)
             if self.mat_winter_2d is not None:
-                wi_material = "SHADER_2D"
+                wi_material = "SHADER_2D\n"
                 wi_material += self.mat_winter_2d.to_string(output_folder)
-                wi_material = "SHADER_3D"
+                wi_material += "SHADER_3D\n"
                 wi_material += self.mat_winter_3d.to_string(output_folder)
                 with open(wi_path, "w") as f:
                     f.write(header + wi_material + body)

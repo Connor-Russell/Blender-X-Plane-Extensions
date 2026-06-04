@@ -396,15 +396,6 @@ class PROP_decal(bpy.types.PropertyGroup):
     is_ui_expanded: bpy.props.BoolProperty(name="Expanded", description="Whether the decal is expanded in the UI", default=False, update=update_ui) # type: ignore
 
 class PROP_mats(bpy.types.PropertyGroup):
-    #Properties for the material:
-    # - Alb texture - String
-    # - Normal texture - String
-    # - Lit textures - String
-    # - Draped - Bool
-    # - Hard - Bool
-    # - Blend alpha - bool
-    # - Polygon offset - int
-
     #Internal state properties
     was_draped_last_update: bpy.props.BoolProperty(
         name="Was Draped Last Update",
@@ -438,6 +429,15 @@ class PROP_mats(bpy.types.PropertyGroup):
     ) # type: ignore
 
     #If calling this from code, always set was_programmatically_updated to True first!!!
+    material_mode: bpy.props.EnumProperty(
+        name="Material Mode",
+        description="The material mode, controlling which shader is used in sim",
+        items=[("LEGACY", "Legacy (XP9/10)", "Legacy (XP9/10)"),
+               ("NORMAL_METALNESS", "Normal Metalness", "Corresponds to Substance Painter"),
+               ("NORMAL_TRANSLUCENCY", "Normal Translucency", "Backlighting also brightens the face, good for foilage")],
+        default="NORMAL_METALNESS"
+    ) # type: ignore
+
     do_separate_material_texture: bpy.props.BoolProperty(
         name="Use separate Material Texture",
         description="Whether to use a separate material texture for the material",
@@ -702,6 +702,8 @@ class PROP_mats(bpy.types.PropertyGroup):
         name="Decals",
         description="The decals for the material, aka detail textures."
     ) # type: ignore
+
+# Forests
 
 class PROP_for(bpy.types.PropertyGroup):
     # Empty (tree) properties

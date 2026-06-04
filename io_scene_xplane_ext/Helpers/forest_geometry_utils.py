@@ -255,8 +255,6 @@ def get_for_draw_call_from_obj(obj):
         #Define an array to hold our faces
         xp_triangles = []
 
-        #TODO: We need to warn the user if this is Blender 4.1+ and they have an autosmooth modifier on the object, as this does not get applied to the normals
-
         for tri in loop_triangles:
 
             #Define our UV and normal data beforehand. The struct is immutable so we can't change it after the fact
@@ -337,7 +335,7 @@ def get_for_draw_call_from_obj(obj):
             out_inds.append(v1_index)
 
         #Now we need to get the transform matrix for the object
-        transform = obj.matrix_world
+        transform = obj.matrix_local
 
         #Now we loop through the vertices and apply the transform to each one
         for v in out_verts:
@@ -349,7 +347,7 @@ def get_for_draw_call_from_obj(obj):
             transformed_position = transform @ local_position
 
             #Work to apply the transform to the normals
-            normal_matrix = obj.matrix_world.to_3x3().inverted().transposed()
+            normal_matrix = obj.matrix_local.to_3x3().inverted().transposed()
             transformed_normal = normal_matrix @ normal
             transformed_normal.normalize()
 

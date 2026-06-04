@@ -315,10 +315,14 @@ class MENU_for_exporter(bpy.types.Panel):
                 if fr.has_seasons:
                     seasons_box = box.box()
                     seasons_box.label(text="Seasonal Materials")
-                    seasons_box.prop(fr, "spring_material")
-                    seasons_box.prop(fr, "summer_material")
-                    seasons_box.prop(fr, "fall_material")
-                    seasons_box.prop(fr, "winter_material")
+                    seasons_box.prop(fr, "spring_material_2d")
+                    seasons_box.prop(fr, "spring_material_3d")
+                    seasons_box.prop(fr, "summer_material_2d")
+                    seasons_box.prop(fr, "summer_material_3d")
+                    seasons_box.prop(fr, "fall_material_2d")
+                    seasons_box.prop(fr, "fall_material_3d")
+                    seasons_box.prop(fr, "winter_material_2d")
+                    seasons_box.prop(fr, "winter_material_3d")
 
                 density_box = box.box()
                 density_box.prop(fr, "density_params")
@@ -739,6 +743,8 @@ class MENU_mats(bpy.types.Panel):
 
             box = layout.box()
             box.label(text="Surface Properties")
+
+            box.prop(xp_materials, "material_mode")
 
             box.prop(xp_materials, "blend_mode")
             if xp_materials.blend_mode == "CLIP":
