@@ -38,7 +38,7 @@ class TreeMesh():
         self.max_wind_speed = xp_for.max_wind_speed
         self.verticies, self.indicies = forest_geometry_utils.get_for_draw_call_from_obj(in_obj)
         self.mesh_name = in_obj.name
-        self.mesh_name = self.mesh_name.replace(" ", "-")
+        self.mesh_name = file_utils.sanitize_path(in_obj.name).replace(" ", "_")
 
     def to_obj(self, in_name : str):
         obj = forest_geometry_utils.create_for_obj_from_draw_call(self.verticies, self.indicies, in_name)
@@ -94,17 +94,18 @@ class Tree():
         # during the read phase when importing, and will stay real during the whole right phase
         self.mesh_names : list[str] = []
 
-    def from_obj(self, in_obj : bpy.types.Object, layer : int):
+    def from_obj(self, in_obj : bpy.types.Object, layer : int, total_weight: float):
         #Copy the basic params
         xp_for = in_obj.xp_for
         self.layer = layer
         self.name = in_obj.name
-        self.weight_choice = xp_for.weight_choice
+        self.frequency = (xp_for.weight_choice / total_weight) * 100
         self.min_tree_height = xp_for.min_tree_height
         self.max_tree_height = xp_for.max_tree_height
         self.use_custom_lod = xp_for.use_custom_lod
         self.custom_lod = xp_for.custom_lod
         self.group = xp_for.group
+        
         
         for child in in_obj.children:
             log_utils.info("Checking child " + child.name + " of tree " + in_obj.name)
@@ -117,12 +118,12 @@ class Tree():
                     self.quad_width = qd.width
                     self.quad_height = qd.height
                     self.quad_center_offset = qd.offset_to_center
-                    self.normal_height = qd.height_meters
+                    self.base_height = qd.height_meters
                 else:
                     new_mesh = TreeMesh()
                     new_mesh.from_obj(child)
                     self.meshes.append(new_mesh)
-                    self.mesh_names.append(child.name)
+                    self.mesh_names.append(file_utils.sanitize_path(child.name).replace(" ", "_"))
                     log_utils.info("Added mesh " + child.name + " to tree " + in_obj.name)
 
     def to_obj(self, target_collection : bpy.types.Collection):
@@ -365,7 +366,6 @@ class Forest():
             elif self.mat_winter_3d is None and self.mat_winter_2d is not None:
                 self.mat_winter_3d = self.mat_winter_2d
         
-        #TODO: If there are no seasons, auto detect the materials from the meshes. We need the rest of the forst infrastructure written first though
         all_col_objects = []
         for child in in_collection.children:
             for obj in child.objects:
@@ -425,13 +425,22 @@ class Forest():
             sorted_child_collections.append(child)
         sorted_child_collections.sort()
 
+        
+
         for i, child in enumerate(sorted_child_collections):
             self.layers.append([])
+            #Before we do the trees, we need to get the total weight per layer so we can get correct frequencies
+            total_weight = 0.0
+            for obj in child.objects:
+                log_utils.info("Checking object " + obj.name + " in collection " + child.name + " for tree data")
+                if obj.type == "EMPTY" and obj.xp_for.exportable:
+                    total_weight += obj.xp_for.weight_choice
+
             for obj in child.objects:
                 log_utils.info("Checking object " + obj.name + " in collection " + child.name + " for tree data")
                 if obj.type == "EMPTY" and obj.xp_for.exportable:
                     new_tree = Tree()
-                    new_tree.from_obj(obj, i)
+                    new_tree.from_obj(obj, i, total_weight)
                     self.layers[-1].append(new_tree)
 
     def to_collection(self):
@@ -726,7 +735,7 @@ class Forest():
                 for mesh in all_meshes:
                     if mesh.mesh_name == mesh_name:
                         current_tree.meshes.append(mesh)
-                        current_tree.mesh_names.append(mesh_name)
+                        current_tree.mesh_names.append(file_utils.sanitize_path(mesh_name).replace(" ", "_"))
                         break
 
         # Finalize the last open mesh block
