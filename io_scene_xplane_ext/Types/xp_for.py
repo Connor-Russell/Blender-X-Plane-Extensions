@@ -40,7 +40,8 @@ class TreeMesh():
         self.mesh_name = in_obj.name
         self.mesh_name = file_utils.sanitize_path(in_obj.name).replace(" ", "_")
 
-    def to_obj(self, in_name : str):
+    def to_obj(self, in_name : str, in_mat : bpy.types.Material):
+        print("Creating mesh " + self.mesh_name + " with " + str(len(self.verticies)) + " verticies and " + str(len(self.indicies)) + " indicies")
         obj = forest_geometry_utils.create_for_obj_from_draw_call(self.verticies, self.indicies, in_name)
         obj.xp_for.near_lod = self.near_lod
         obj.xp_for.far_lod = self.far_lod
@@ -48,6 +49,7 @@ class TreeMesh():
         obj.xp_for.wind_bend_ratio = self.wind_bend_ratio
         obj.xp_for.branch_bending = self.branch_bending
         obj.xp_for.max_wind_speed = self.max_wind_speed
+        obj.data.materials.append(in_mat)
         return obj
 
     def to_string(self):
@@ -126,9 +128,9 @@ class Tree():
                     self.mesh_names.append(file_utils.sanitize_path(child.name).replace(" ", "_"))
                     log_utils.info("Added mesh " + child.name + " to tree " + in_obj.name)
 
-    def to_obj(self, target_collection : bpy.types.Collection):
+    def to_obj(self, target_collection : bpy.types.Collection, in_mat_2d : bpy.types.Material, in_mat_3d : bpy.types.Material):
+        print("Creating tree " + self.name + " with " + str(len(self.meshes)) + " meshes")
         obj = bpy.data.objects.new(self.name, None)
-        obj.type = "EMPTY"
         obj.empty_display_type = "ARROWS"
 
         #Link the object to the collection and view layer
@@ -146,7 +148,7 @@ class Tree():
 
         #Create the mesh objects
         for mesh in self.meshes:
-            new_obj = mesh.to_obj(self.name + "_mesh")
+            new_obj = mesh.to_obj(self.name + "_mesh", in_mat_3d)
             target_collection.objects.link(new_obj)
 
         #Create the quad object
@@ -159,6 +161,8 @@ class Tree():
         qd.height_meters = self.base_height
         qd_obj = for_utils.create_obj_from_forest_quad(qd, 1.0) #TODO: Get this ratio from the texture
         target_collection.objects.link(qd_obj)
+        qd_obj.parent = obj
+        qd_obj.data.materials.append(in_mat_2d)
 
     def to_string(self, res_x : int, res_y : int):
         #TREE2  <s1> <t1> <w> <h> <sw> <percent> <min_height> <max_height> <nominal_height> <lod_far> <quads> <type> <notes>
@@ -178,12 +182,9 @@ class ForestMaterial():
         self.nml_texture = ""
         self.mod_texture = ""
         self.weather_texture = ""
-        self.layer = "objects"
-        self.layer_offset = 0
         self.blend_cutoff = 0   #Clip level for 
         self.blend_mode = "CLIP"    #Can be SHADOW, BLEND, CLIP, or HASH (hash is like dither)
         self.mat_mode = "NORMAL_METALNESS"  #Can be NONE, NORMAL_METALNESS, or NORMAL_TRANSLUCENT
-        self.decals = []
         self.imported_decal_commands = []
 
     def from_material(self, in_material : bpy.types.Material):
@@ -192,12 +193,9 @@ class ForestMaterial():
         self.lit_texture = file_utils.to_relative(mat.lit_texture)
         self.nml_texture = file_utils.to_relative(mat.normal_texture)
         self.mod_texture = file_utils.to_relative(mat.decal_modulator)
-        self.layer = mat.layer_group
-        self.layer_offset = mat.layer_group_offset
         self.mat_mode = mat.material_mode
         self.blend_cutoff = mat.blend_cutoff
         self.blend_mode = mat.blend_mode
-        self.decals = mat.decals
         
     def to_material(self, in_material : bpy.types.Material):
         mat = in_material.xp_materials
@@ -205,11 +203,8 @@ class ForestMaterial():
         mat.lit_texture = self.lit_texture
         mat.normal_texture = self.nml_texture
         mat.decal_modulator = self.mod_texture
-        mat.layer_group = self.layer
-        mat.layer_group_offset = self.layer_offset
         mat.blend_cutoff = self.blend_cutoff
         mat.blend_mode = self.blend_mode
-        mat.decals = self.decals
 
     def to_string(self, output_folder : str):
         out = ""
@@ -224,8 +219,6 @@ class ForestMaterial():
             out += f"\tTEXTURE_LIT {os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder)}\n"
         if self.mod_texture != "":
             out += f"\tTEXTURE_MODULATOR {os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder)}\n"
-        
-        out += f"\tLAYER_GROUP {self.layer.lower()} {self.layer_offset}\n"
 
         if self.mat_mode == "NORMAL_METALNESS":
             out += "\tNORMAL_METALNESS\n"
@@ -236,9 +229,6 @@ class ForestMaterial():
             out += f"\tNO_BLEND {self.blend_cutoff}\n"
         if self.blend_cutoff == "HASHED":
             out += f"\tALPHA_HASHED\n"
-        
-        for dcl in self.decals:
-            out += decal_utils.get_decal_command(dcl, output_folder)
 
         return out + "\n"
 
@@ -446,7 +436,9 @@ class Forest():
     def to_collection(self):
         #First create a new collection
         col = bpy.data.collections.new(self.name)
-        props = col.xp_for_collection
+        bpy.context.scene.collection.children.link(col)
+
+        props = col.xp_for
 
         #Now copy over all the collection level settings
         props.spacing_x = self.spacing_x
@@ -455,80 +447,29 @@ class Forest():
         props.random_y = self.random_y
         props.cast_shadow = self.cast_shadws
         props.has_seasons = self.do_seasons
+
+        
         
         # Handle materials
-        if self.do_seasons:
-            #Ensure that if we have a season in *either* the 2d or the 3d, both are populated for that season
-            if self.mat_spring_2d is None and self.mat_spring_3d is not None:
-                self.mat_spring_2d = self.mat_spring_3d
-            elif self.mat_spring_3d is None and self.mat_spring_2d is not None:
-                self.mat_spring_3d = self.mat_spring_2d
+        mat_2d = None
+        mat_3d = None
+        if self.mat_2d:
+            mat_2d = bpy.data.materials.new("Material_2D")
+            self.mat_2d.to_material(mat_2d)
+            props.summer_material_2d = mat_2d
+        
+        if self.mat_3d:
+            mat_3d = bpy.data.materials.new("Material_3D")
+            self.mat_3d.to_material(mat_3d)
+            props.summer_material_3d = mat_3d
 
-            if self.mat_summer_2d is None and self.mat_summer_3d is not None:
-                self.mat_summer_2d = self.mat_summer_3d
-            elif self.mat_summer_3d is None and self.mat_summer_2d is not None:
-                self.mat_summer_3d = self.mat_summer_2d
-            
-            if self.mat_fall_2d is None and self.mat_fall_3d is not None:
-                self.mat_fall_2d = self.mat_fall_3d
-            elif self.mat_fall_3d is None and self.mat_fall_2d is not None:
-                self.mat_fall_3d = self.mat_fall_2d
+        if mat_2d is not None and mat_3d is None:
+            mat_3d = mat_2d
+        elif mat_3d is not None and mat_2d is None:
+            mat_2d = mat_3d
 
-            if self.mat_winter_2d is None and self.mat_winter_3d is not None:
-                self.mat_winter_2d = self.mat_winter_3d
-            elif self.mat_winter_3d is None and self.mat_winter_2d is not None:
-                self.mat_winter_3d = self.mat_winter_2d
-
-            if self.mat_spring_2d:
-                # Create a new material for spring 2D
-                mat_spring_2d = bpy.data.materials.new("Spring_2D")
-                self.mat_spring_2d.to_material(mat_spring_2d)
-                props.spring_material_2d = mat_spring_2d
-            
-            if self.mat_spring_3d:
-                mat_spring_3d = bpy.data.materials.new("Spring_3D")
-                self.mat_spring_3d.to_material(mat_spring_3d)
-                props.spring_material_3d = mat_spring_3d
-            
-            if self.mat_summer_2d:
-                mat_summer_2d = bpy.data.materials.new("Summer_2D")
-                self.mat_summer_2d.to_material(mat_summer_2d)
-                props.summer_material_2d = mat_summer_2d
-            
-            if self.mat_summer_3d:
-                mat_summer_3d = bpy.data.materials.new("Summer_3D")
-                self.mat_summer_3d.to_material(mat_summer_3d)
-                props.summer_material_3d = mat_summer_3d
-            
-            if self.mat_fall_2d:
-                mat_fall_2d = bpy.data.materials.new("Fall_2D")
-                self.mat_fall_2d.to_material(mat_fall_2d)
-                props.fall_material_2d = mat_fall_2d
-            
-            if self.mat_fall_3d:
-                mat_fall_3d = bpy.data.materials.new("Fall_3D")
-                self.mat_fall_3d.to_material(mat_fall_3d)
-                props.fall_material_3d = mat_fall_3d
-            
-            if self.mat_winter_2d:
-                mat_winter_2d = bpy.data.materials.new("Winter_2D")
-                self.mat_winter_2d.to_material(mat_winter_2d)
-                props.winter_material_2d = mat_winter_2d
-            
-            if self.mat_winter_3d:
-                mat_winter_3d = bpy.data.materials.new("Winter_3D")
-                self.mat_winter_3d.to_material(mat_winter_3d)
-                props.winter_material_3d = mat_winter_3d
-        else:
-            if self.mat_2d:
-                mat_2d = bpy.data.materials.new("Material_2D")
-                self.mat_2d.to_material(mat_2d)
-                props.summer_material_2d = mat_2d
-            
-            if self.mat_3d:
-                mat_3d = bpy.data.materials.new("Material_3D")
-                self.mat_3d.to_material(mat_3d)
-                props.summer_material_3d = mat_3d
+        if mat_2d is None:
+            raise Exception("No material found for forest!")        
         
         # Handle density parameters
         props.density_params = self.density_params
@@ -565,15 +506,38 @@ class Forest():
         
         #Now add the trees
         for i, layer in enumerate(self.layers):
-            layer_col = bpy.data.collections.new("Forest layer " + i)
+            layer_col = bpy.data.collections.new("Forest layer " + str(i))
             col.children.link(layer_col)
             for t in layer:
-                t.to_obj(layer_col)
+                t.to_obj(layer_col, mat_2d, mat_3d)
                 
 
         return col
 
     def read(self, input_path: str):
+        #Min token dict
+        min_tokens = {
+            "TEXTURE": 2,
+            "TEXTURE_NORMAL": 3,
+            "TEXTURE_LIT": 2,
+            "TEXTURE_MODULATOR": 2,
+            "LAYER_GROUP": 3,
+            "NO_BLEND": 2,
+            "SCALE_X": 2,
+            "SCALE_Y": 2,
+            "SPACING": 3,
+            "RANDOM": 3,
+            "DENSITY_PARAMS": 9,
+            "HEIGHT_PARAMS": 9,
+            "CHOICE_PARAMS": 9,
+            "MESH": 9,
+            "VERTEX": 12,
+            "TREE2": 13,
+            "TREE": 11,
+            "IDX": 2,
+            "MESH_3D": 2
+        }
+
         self.name = os.path.splitext(os.path.basename(input_path))[0]
 
         with open(input_path, 'r') as f:
@@ -582,10 +546,10 @@ class Forest():
         self.mat_2d = ForestMaterial()
         self.mat_3d = ForestMaterial()
 
-        current_shader = None   # "2D" or "3D"
-        current_mesh = None     # TreeMesh currently being built
-        current_tree = None     # Tree currently being built
-        all_meshes = []         # All completed TreeMesh objects
+        current_shader = None
+        current_mesh = None
+        current_tree = None
+        all_meshes = []
 
         for raw_line in lines:
             line = raw_line.strip()
@@ -594,6 +558,16 @@ class Forest():
 
             tokens = line.split()
             cmd = tokens[0]
+
+            #Get the min tokens and make sure we meet the min token threshold for this command
+            if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
+                log_utils.warning(f"Line '{line}' does not have enough tokens for command {cmd}, skipping", f"Command {cmd} doesn't have enough tokens")
+                continue
+
+            # When in a mesh, if we get a command other than a vertex or idx, we need to end the mesh
+            if current_mesh is not None and cmd not in ["VERTEX", "IDX"]:
+                all_meshes.append(current_mesh)
+                current_mesh = None
 
             # Section markers
             if cmd == "SHADER_2D":
@@ -606,21 +580,17 @@ class Forest():
             # Material commands — only apply inside SHADER_2D / SHADER_3D
             if current_shader is not None:
                 mat = self.mat_2d if current_shader == "2D" else self.mat_3d
-                if cmd == "TEXTURE" and len(tokens) > 1:
+                if cmd == "TEXTURE":
                     mat.alb_texture = file_utils.to_relative(tokens[1], True)
                     continue
-                if cmd == "TEXTURE_NORMAL" and len(tokens) > 1:
-                    mat.nml_texture = file_utils.to_relative(tokens[1], True)
+                if cmd == "TEXTURE_NORMAL":
+                    mat.nml_texture = file_utils.to_relative(tokens[2], True)
                     continue
-                if cmd == "TEXTURE_LIT" and len(tokens) > 1:
+                if cmd == "TEXTURE_LIT":
                     mat.lit_texture = file_utils.to_relative(tokens[1], True)
                     continue
-                if cmd == "TEXTURE_MODULATOR" and len(tokens) > 1:
+                if cmd == "TEXTURE_MODULATOR":
                     mat.mod_texture = file_utils.to_relative(tokens[1], True)
-                    continue
-                if cmd == "LAYER_GROUP" and len(tokens) >= 3:
-                    mat.layer = tokens[1]
-                    mat.layer_offset = int(tokens[2])
                     continue
                 if cmd == "NORMAL_METALNESS":
                     mat.mat_mode = "NORMAL_METALNESS"
@@ -638,17 +608,17 @@ class Forest():
                     continue
 
             # Global forest commands
-            if cmd == "SCALE_X" and len(tokens) >= 2:
+            if cmd == "SCALE_X":
                 self.tex_scale_x = int(float(tokens[1]))
-            elif cmd == "SCALE_Y" and len(tokens) >= 2:
+            elif cmd == "SCALE_Y":
                 self.tex_scale_y = int(float(tokens[1]))
-            elif cmd == "SPACING" and len(tokens) >= 3:
+            elif cmd == "SPACING":
                 self.spacing_x = float(tokens[1])
                 self.spacing_y = float(tokens[2])
-            elif cmd == "RANDOM" and len(tokens) >= 3:
+            elif cmd == "RANDOM":
                 self.random_x = float(tokens[1])
                 self.random_y = float(tokens[2])
-            elif cmd == "DENSITY_PARAMS" and len(tokens) >= 9:
+            elif cmd == "DENSITY_PARAMS":
                 self.density_params = True
                 self.density_wavelength_0 = float(tokens[1])
                 self.density_wavestrength_0 = float(tokens[2])
@@ -658,7 +628,7 @@ class Forest():
                 self.density_wavestrength_2 = float(tokens[6])
                 self.density_wavelength_3 = float(tokens[7])
                 self.density_wavestrength_3 = float(tokens[8])
-            elif cmd == "HEIGHT_PARAMS" and len(tokens) >= 9:
+            elif cmd == "HEIGHT_PARAMS":
                 self.height_params = True
                 self.height_wavelength_0 = float(tokens[1])
                 self.height_wavestrength_0 = float(tokens[2])
@@ -668,7 +638,7 @@ class Forest():
                 self.height_wavestrength_2 = float(tokens[6])
                 self.height_wavelength_3 = float(tokens[7])
                 self.height_wavestrength_3 = float(tokens[8])
-            elif cmd == "CHOICE_PARAMS" and len(tokens) >= 9:
+            elif cmd == "CHOICE_PARAMS":
                 self.choice_params = True
                 self.choice_wavelength_0 = float(tokens[1])
                 self.choice_wavestrength_0 = float(tokens[2])
@@ -680,7 +650,9 @@ class Forest():
                 self.choice_wavestrength_3 = float(tokens[8])
 
             # Mesh definition commands
-            elif cmd == "MESH" and len(tokens) >= 9:
+            elif cmd == "MESH":
+                if current_shader is None:
+                    log_utils.error(f"MESH command before shaders are defined. Is this a pre X-Plane 12 forest?", "Mesh command found outside of shader block")
                 if current_mesh is not None:
                     all_meshes.append(current_mesh)
                 current_mesh = TreeMesh()
@@ -693,7 +665,10 @@ class Forest():
                 current_mesh.max_wind_speed = float(tokens[8])
             elif cmd == "NO_SHADOW" and current_mesh is not None:
                 current_mesh.no_shadow = True
-            elif cmd == "VERTEX" and current_mesh is not None and len(tokens) >= 12:
+            elif cmd == "VERTEX":
+                if current_mesh is None:
+                    log_utils.warning(f"VERTEX command found outside of a MESH block, skipping: '{line}'")
+                    continue
                 # File format: VERTEX loc_x loc_z loc_y normal_x normal_z normal_y uv_x uv_y stiffness edge_stiffness phase
                 vert = forest_geometry_utils.for_xp_vertex(
                     float(tokens[1]), float(tokens[3]), float(tokens[2]),
@@ -704,12 +679,15 @@ class Forest():
                 vert.edge_stiffness = float(tokens[10])
                 vert.phase = float(tokens[11])
                 current_mesh.verticies.append(vert)
-            elif cmd == "IDX" and current_mesh is not None and len(tokens) >= 2:
+            elif cmd == "IDX":
+                if current_mesh is None:
+                    log_utils.warning(f"IDX command found outside of a MESH block, skipping: '{line}'")
+                    continue
                 for i in range(1, len(tokens)):
                     current_mesh.indicies.append(int(float(tokens[i])))
 
             # Tree definition commands
-            elif cmd == "TREE2" and len(tokens) >= 13:
+            elif cmd == "TREE2":
                 if current_mesh is not None:
                     all_meshes.append(current_mesh)
                     current_mesh = None
@@ -730,18 +708,40 @@ class Forest():
                 while len(self.layers) <= current_tree.layer:
                     self.layers.append([])
                 self.layers[current_tree.layer].append(current_tree)
-            elif cmd == "MESH_3D" and current_tree is not None and len(tokens) >= 2:
+            elif cmd == "TREE":
+                if current_mesh is not None:
+                    all_meshes.append(current_mesh)
+                    current_mesh = None
+                current_tree = Tree()
+                current_tree.quad_x = float(tokens[1]) / self.tex_scale_x
+                current_tree.quad_y = float(tokens[2]) / self.tex_scale_y
+                current_tree.quad_width = float(tokens[3]) / self.tex_scale_x
+                current_tree.quad_height = float(tokens[4]) / self.tex_scale_y
+                current_tree.quad_center_offset = float(tokens[5]) / self.tex_scale_x
+                current_tree.frequency = float(tokens[6])
+                current_tree.min_tree_height = float(tokens[7])
+                current_tree.max_tree_height = float(tokens[8])
+                current_tree.quads = 2
+                current_tree.layer = int(float(tokens[9]))
+                current_tree.name = " ".join(tokens[10:]) if len(tokens) >= 11 else "Imported Tree"
+                while len(self.layers) <= current_tree.layer:
+                    self.layers.append([])
+                self.layers[current_tree.layer].append(current_tree)
+            elif cmd == "MESH_3D":
+                if current_tree is None:
+                    log_utils.warning(f"MESH_3D command found outside of a TREE block, skipping: '{line}'", "Mesh command found outside of tree block")
+                    continue
                 mesh_name = tokens[1]
+                found_mesh = False
                 for mesh in all_meshes:
                     if mesh.mesh_name == mesh_name:
+                        found_mesh = True
                         current_tree.meshes.append(mesh)
                         current_tree.mesh_names.append(file_utils.sanitize_path(mesh_name).replace(" ", "_"))
                         break
+                if not found_mesh:
+                    log_utils.warning(f"MESH_3D command references mesh '{mesh_name}' which was not found in the file, skipping this mesh for tree '{current_tree.name}'", f"Mesh '{mesh_name}' not found for tree '{current_tree.name}'")
 
-        # Finalize the last open mesh block
-        if current_mesh is not None:
-            all_meshes.append(current_mesh)
-    
     def write(self, output_path : str):
 
         output_folder = os.path.dirname(output_path)

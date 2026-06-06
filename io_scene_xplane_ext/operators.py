@@ -170,7 +170,7 @@ class IMPORT_agp(bpy.types.Operator, ImportHelper):
 class IMPORT_for(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_for"
     bl_label = "Import X-Plane Forest"
-    filename_ext = ".agp"
+    filename_ext = ".for"
     filter_glob: bpy.props.StringProperty(default="*.for", options={'HIDDEN'}) # type: ignore
     files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
 
@@ -1377,6 +1377,7 @@ def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_fac.bl_idname, text="X-Plane Facade (.fac)")
     self.layout.operator(IMPORT_obj.bl_idname, text="X-Plane Object (.obj)")
     self.layout.operator(IMPORT_agp.bl_idname, text="X-Plane Autogen Point (.agp)")
+    self.layout.operator(IMPORT_for.bl_idname, text="X-Plane Forest (.for)")
     
 def register():
     bpy.utils.register_class(BTN_lin_exporter)

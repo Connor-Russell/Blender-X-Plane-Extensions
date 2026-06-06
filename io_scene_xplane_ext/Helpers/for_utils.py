@@ -164,7 +164,7 @@ def get_forest_quad_from_obj(obj : bpy.types.Object):
 
     # At least, we have all the UVs! Last thing is to get the height and store it in the data structure and export, this is self explanatory
     quad = TreeQuad()
-    quad.bottom_x = min_u
+    quad.left_x = min_u
     quad.bottom_y = min_v
     quad.width = max_u - min_u
     quad.height = max_v - min_v
@@ -178,51 +178,42 @@ def get_forest_quad_from_obj(obj : bpy.types.Object):
 #verts: List of LineVertex objects
 #Returns: The plane object
 def create_obj_from_forest_quad(in_tree_quad : TreeQuad, in_x_to_y_ratio : float):
-    bl = geometery_utils.xp_vertex()
-    br = geometery_utils.xp_vertex()
-    ul = geometery_utils.xp_vertex()
-    ur = geometery_utils.xp_vertex()
-
     #First we need to know the scale of the texture
     tex_height = in_tree_quad.height_meters / in_tree_quad.height
     tex_width = tex_height * in_x_to_y_ratio
 
-    #With this, we can set positions
-    bl.loc_x = -in_tree_quad.offset_to_center * tex_width
-    ul.loc_x = bl.loc_x
-    br.loc_x = bl.loc_x + in_tree_quad.width * tex_width
-    ur.loc_x = br.loc_x
-    #Height is 0-height meters
-    bl.loc_z = 0
-    br.loc_z = 0
-    ul.loc_z = in_tree_quad.height_meters
-    ur.loc_z = in_tree_quad.height_meters
-    #Y is alwas 0
-    bl.loc_y = 0
-    br.loc_y = 0
-    ul.loc_y = 0
-    ur.loc_y = 0
-    #UVs
-    bl.uv_x = in_tree_quad.left_x
-    ul.uv_x = in_tree_quad.left_x
-    br.uv_x = in_tree_quad.left_x + in_tree_quad.width
-    ur.uv_x = in_tree_quad.left_x + in_tree_quad.width
-    bl.uv_y = in_tree_quad.bottom_y
-    br.uv_y = in_tree_quad.bottom_y
-    ul.uv_y = in_tree_quad.bottom_y + in_tree_quad.height
-    ur.uv_y = in_tree_quad.bottom_y + in_tree_quad.height
-    #Normals
-    bl.normal_x = 0
-    bl.normal_y = 1
-    bl.normal_z = 0
-    br.normal_x = 0
-    br.normal_y = 1
-    br.normal_z = 0
-    ul.normal_x = 0
-    ul.normal_y = 1
-    ul.normal_z = 0
-    ur.normal_x = 0
-    ur.normal_y = 1
-    ur.normal_z = 0
+    #Positions
+    bl_loc_x = -in_tree_quad.offset_to_center * tex_width
+    br_loc_x = bl_loc_x + in_tree_quad.width * tex_width
+    ul_loc_x = bl_loc_x
+    ur_loc_x = br_loc_x
 
-    return geometery_utils.create_obj_from_draw_call([bl, br, ur, ul], [0, 1, 3, 1, 2, 3])
+    bl_loc_z = 0
+    br_loc_z = 0
+    ul_loc_z = in_tree_quad.height_meters
+    ur_loc_z = in_tree_quad.height_meters
+
+    #Y is always 0
+    loc_y = 0
+
+    #UVs
+    bl_uv_x = in_tree_quad.left_x
+    br_uv_x = in_tree_quad.left_x + in_tree_quad.width
+    ul_uv_x = bl_uv_x
+    ur_uv_x = br_uv_x
+
+    bl_uv_y = in_tree_quad.bottom_y
+    br_uv_y = in_tree_quad.bottom_y
+    ul_uv_y = in_tree_quad.bottom_y + in_tree_quad.height
+    ur_uv_y = in_tree_quad.bottom_y + in_tree_quad.height
+
+    #Normals (all the same)
+    nx, ny, nz = 0, -1, 0
+
+    #Create xp_vertex instances using the constructor
+    bl = geometery_utils.xp_vertex(bl_loc_x, loc_y, bl_loc_z, nx, ny, nz, bl_uv_x, bl_uv_y)
+    br = geometery_utils.xp_vertex(br_loc_x, loc_y, br_loc_z, nx, ny, nz, br_uv_x, br_uv_y)
+    ur = geometery_utils.xp_vertex(ur_loc_x, loc_y, ur_loc_z, nx, ny, nz, ur_uv_x, ur_uv_y)
+    ul = geometery_utils.xp_vertex(ul_loc_x, loc_y, ul_loc_z, nx, ny, nz, ul_uv_x, ul_uv_y)
+
+    return geometery_utils.create_obj_from_draw_call([bl, br, ur, ul], [0, 1, 3, 1, 2, 3], "Quad")
