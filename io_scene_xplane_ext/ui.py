@@ -81,6 +81,10 @@ def draw_decal_prop(layout, property_item, index, material_name=""):
             row.prop(property_item, "strength2_key_green")
             row.prop(property_item, "strength2_key_blue")
             row.prop(property_item, "strength2_key_alpha")
+        else:
+            box.separator()
+
+            box.prop(property_item, "roughness_boost_factor")
 
 def draw_fac_spelling_entry(layout, entry, collection_name, floor_index, wall_index, spelling_index, entry_index):
     row = layout.row()

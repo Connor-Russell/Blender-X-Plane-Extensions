@@ -406,6 +406,8 @@ class PROP_decal(bpy.types.PropertyGroup):
     strength2_key_blue: bpy.props.FloatProperty(name="Blue key for Alpha Decal", description="The blue key for the alpha decal key", default=0.0)# type: ignore
     strength2_key_alpha: bpy.props.FloatProperty(name="Alpha key for Alpha Decal", description="The alpha key for the alpha decal key", default=0.0)# type: ignore
 
+    roughness_boost_factor: bpy.props.FloatProperty(name="Roughness Boost Factor", description="How much the decal modulator boosts the roughness when the decal is applied. 0 means no boost, 1 means full boost.", default=0.0)# type: ignore
+
     #Internals
     is_ui_expanded: bpy.props.BoolProperty(name="Expanded", description="Whether the decal is expanded in the UI", default=False, update=update_ui) # type: ignore
 
