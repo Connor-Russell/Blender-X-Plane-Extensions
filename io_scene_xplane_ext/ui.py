@@ -274,6 +274,187 @@ def draw_fac_floor(layout, floor, collection_name, floor_index, floor_len=0):
         btn_duplicate.collection_name = collection_name
         btn_duplicate.floor_index = floor_index
 
+class MENU_for_exporter(bpy.types.Panel):
+    bl_label = "X-Plane Forest Exporter"
+    bl_idname = "SCENE_PT_for_exporter"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+
+        #Export button
+        layout.operator("xp_ext.export_forests", text="Export Forests")
+        layout.separator()
+
+        layout.prop(scene.xp_ext, "pol_collection_search")
+
+        if scene.xp_ext.for_collection_search != "":
+            layout.label(text="Filtered Collections")
+
+        # Function to draw all the properties for the collection. Just so we can reuse it for the disabled collections
+        def draw_collection(col : bpy.types.Collection, in_layout : bpy.types.UILayout):
+            fr = col.xp_for
+
+            box = in_layout.box()
+            top_row = box.row()
+            top_row.prop(col.xp_for, "is_ui_expanded", text=col.name, icon='TRIA_DOWN' if col.xp_for.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
+            top_row.prop(col.xp_for, "exportable", text="Export Enabled")
+            if col.xp_for.is_ui_expanded:
+                box.prop(fr, "name")
+
+                box.separator()
+                box.label(text="Spacing")
+                row = box.row()
+                row.prop(fr, "spacing_x")
+                row.prop(fr, "spacing_y")
+                box.label(text="Random")
+                row=box.row()
+                row.prop(fr, "random_x")
+                row.prop(fr, "random_y")
+
+                box.separator()
+                box.prop(fr, "cast_shadow")
+                box.prop(fr, "has_seasons")
+                if fr.has_seasons:
+                    seasons_box = box.box()
+                    seasons_box.label(text="Seasonal Materials")
+                    seasons_box.prop(fr, "spring_material_2d")
+                    seasons_box.prop(fr, "spring_material_3d")
+                    seasons_box.prop(fr, "summer_material_2d")
+                    seasons_box.prop(fr, "summer_material_3d")
+                    seasons_box.prop(fr, "fall_material_2d")
+                    seasons_box.prop(fr, "fall_material_3d")
+                    seasons_box.prop(fr, "winter_material_2d")
+                    seasons_box.prop(fr, "winter_material_3d")
+
+                density_box = box.box()
+                density_box.prop(fr, "density_params")
+                if fr.density_params:
+                    row = density_box.row()
+                    row.prop(fr, "density_0_length")
+                    row.prop(fr, "density_1_length")
+                    row.prop(fr, "density_2_length")
+                    row.prop(fr, "density_3_length")
+                    row = density_box.row()
+                    row.prop(fr, "density_0_value")
+                    row.prop(fr, "density_1_value")
+                    row.prop(fr, "density_2_value")
+                    row.prop(fr, "density_3_value")
+
+                choice_box = box.box()
+                choice_box.prop(fr, "choice_params")
+                if fr.choice_params:
+                    row = choice_box.row()
+                    row.prop(fr, "choice_0_length")
+                    row.prop(fr, "choice_1_length")
+                    row.prop(fr, "choice_2_length")
+                    row.prop(fr, "choice_3_length")
+                    row = choice_box.row()
+                    row.prop(fr, "choice_0_value")
+                    row.prop(fr, "choice_1_value")
+                    row.prop(fr, "choice_2_value")
+                    row.prop(fr, "choice_3_value")
+
+                height_box = box.box()
+                height_box.prop(fr, "height_params")
+                if fr.height_params:
+                    row = height_box.row()
+                    row.prop(fr, "height_0_length")
+                    row.prop(fr, "height_1_length")
+                    row.prop(fr, "height_2_length")
+                    row.prop(fr, "height_3_length")
+                    row = height_box.row()
+                    row.prop(fr, "height_0_value")
+                    row.prop(fr, "height_1_value")
+                    row.prop(fr, "height_2_value")
+                    row.prop(fr, "height_3_value")
+
+                skip_box = box.box()
+                skip_box.label(text="Skip Surfaces")
+                col_1 = skip_box.column()
+                col_2 = skip_box.column()
+                col_1.prop(fr, "skip_asphalt")
+                col_1.prop(fr, "skip_blastpad")
+                col_1.prop(fr, "skip_concrete")
+                col_1.prop(fr, "skip_dirt")
+                col_1.prop(fr, "skip_grass")
+                col_2.prop(fr, "skip_gravel")
+                col_2.prop(fr, "skip_lakebed")
+                col_2.prop(fr, "skip_shoulder")
+                col_2.prop(fr, "skip_snow")
+                col_2.prop(fr, "skip_water")
+
+        # Draw enabled collections
+        for col in bpy.data.collections:
+            if col.xp_for.exportable:
+                if scene.xp_ext.for_collection_search != "" and not (col.name.startswith(scene.xp_ext.for_collection_search) or col.name.endswith(scene.xp_ext.for_collection_search)):
+                    continue
+                draw_collection(col, layout)
+
+        # Draw disabled collections
+        disabled_collections = layout.box()
+        disabled_collections.prop(scene.xp_ext, "for_disabled_collections_expanded", text="Disabled Collections", icon='TRIA_DOWN' if scene.xp_ext.for_disabled_collections_expanded else 'TRIA_RIGHT', emboss=False)
+        if scene.xp_ext.for_disabled_collections_expanded:
+            for col in bpy.data.collections:
+                if not col.xp_for.exportable:
+                    if scene.xp_ext.for_collection_search != "" and not (col.name.startswith(scene.xp_ext.for_collection_search) or col.name.endswith(scene.xp_ext.for_collection_search)):
+                        continue
+                    draw_collection(col, disabled_collections)
+
+class MENU_for_object(bpy.types.Panel):
+    bl_label = "X-Plane Forest Exporter"
+    bl_idname = "SCENE_PT_for_object"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj is None:
+            return False
+        
+        if obj.type != "MESH" and obj.type != "EMPTY":
+            return False
+        
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        obj = context.active_object
+        fr = obj.xp_for
+
+        # Empty (tree) menu
+        if obj.type == "EMPTY":
+            layout.prop(fr, "exportable")
+            layout.prop(fr, "weight_choice")
+            row = layout.row()
+            row.prop(fr, "min_tree_height")
+            row.prop(fr, "max_tree_height")
+
+            row = layout.row()
+            row.prop(fr, "use_custom_lod")
+            if (fr.use_custom_lod):
+                row.prop(fr, "custom_lod")
+
+            layout.prop(fr, "group")
+        elif obj.type == "MESH":
+            row = layout.row()
+            row.prop(fr, "near_lod")
+            row.prop(fr, "far_lod")
+            layout.prop(fr, "no_shadow")
+            
+            box = layout.box()
+            box.label(text="Wind Settings")
+            box.prop(fr, "wind_bend_ratio")
+            row = box.row()
+            row.prop(fr, "branch_bending")
+            row.prop(fr, "max_wind_speed")
+
 class MENU_lin_exporter(bpy.types.Panel):
     bl_label = "X-Plane Line Exporter"
     bl_idname = "SCENE_PT_lin_exporter"
@@ -579,6 +760,8 @@ class MENU_mats(bpy.types.Panel):
 
             box = layout.box()
             box.label(text="Surface Properties")
+
+            box.prop(xp_materials, "material_mode")
 
             box.prop(xp_materials, "blend_mode")
             if xp_materials.blend_mode == "CLIP":
@@ -1063,6 +1246,8 @@ def register():
     bpy.utils.register_class(MENU_fac_mesh)
     bpy.utils.register_class(MENU_pol_exporter)
     bpy.utils.register_class(MENU_agp_obj)
+    bpy.utils.register_class(MENU_for_exporter)
+    bpy.utils.register_class(MENU_for_object)
 
 def unregister():
     bpy.utils.unregister_class(MENU_lin_exporter)
@@ -1075,3 +1260,5 @@ def unregister():
     bpy.utils.unregister_class(MENU_fac_mesh)
     bpy.utils.unregister_class(MENU_pol_exporter)
     bpy.utils.unregister_class(MENU_agp_obj)
+    bpy.utils.unregister_class(MENU_for_exporter)
+    bpy.utils.unregister_class(MENU_for_object)

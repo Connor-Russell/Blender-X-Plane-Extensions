@@ -65,6 +65,20 @@ class BTN_agp_exporter(bpy.types.Operator):
 
         return {'FINISHED'}  
 
+class BTN_for_exporter(bpy.types.Operator):
+    bl_idname = "xp_ext.export_forests"
+    bl_label = "Export X-Plane Forests"
+    bl_description = "Export X-Plane forests from the visible collections."
+
+    def execute(self, context):
+
+        # Iterate through every collection. If it is exportable and visible, export
+        for col in bpy.data.collections:
+            if col.xp_for.exportable and collection_utils.get_collection_is_visible(col):
+                exporter.export_for(col)
+
+        return {'FINISHED'}  
+
 class IMPORT_lin(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.xp_lin"
     bl_label = "Import X-Plane Lines"
@@ -152,6 +166,24 @@ class IMPORT_agp(bpy.types.Operator, ImportHelper):
         for cf in self.files:
             filepath = f"{directory}{os.sep}{cf.name}"
             importer.import_agp(filepath)
+
+        return {'FINISHED'}
+
+class IMPORT_for(bpy.types.Operator, ImportHelper):
+    bl_idname = "import_scene.xp_for"
+    bl_label = "Import X-Plane Forest"
+    filename_ext = ".for"
+    filter_glob: bpy.props.StringProperty(default="*.for", options={'HIDDEN'}) # type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)  # type: ignore To support multiple files
+
+    def execute(self, context):
+        # Implement your import logic here
+        directory = self.filepath
+        directory = directory[:directory.rfind(os.sep)]
+
+        for cf in self.files:
+            filepath = f"{directory}{os.sep}{cf.name}"
+            importer.import_for(filepath)
 
         return {'FINISHED'}
 
@@ -1477,6 +1509,7 @@ def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_fac.bl_idname, text="X-Plane Facade (.fac)")
     self.layout.operator(IMPORT_obj.bl_idname, text="X-Plane Object (.obj)")
     self.layout.operator(IMPORT_agp.bl_idname, text="X-Plane Autogen Point (.agp)")
+    self.layout.operator(IMPORT_for.bl_idname, text="X-Plane Forest (.for)")
     
 def register():
     bpy.utils.register_class(BTN_lin_exporter)
@@ -1486,6 +1519,7 @@ def register():
     bpy.utils.register_class(IMPORT_fac)
     bpy.utils.register_class(IMPORT_obj)
     bpy.utils.register_class(IMPORT_agp)
+    bpy.utils.register_class(IMPORT_for)
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_mats_update_all_mat_nodes)
@@ -1511,6 +1545,7 @@ def register():
     bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.register_class(BTN_find_textures)
     bpy.utils.register_class(BTN_set_all_export_dirs)
+    bpy.utils.register_class(BTN_for_exporter)
     bpy.utils.register_class(BTN_preview_attached_object)
     bpy.utils.register_class(BTN_clear_attached_object_preview)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
@@ -1524,6 +1559,7 @@ def unregister():
     bpy.utils.unregister_class(IMPORT_fac)
     bpy.utils.unregister_class(IMPORT_obj)
     bpy.utils.unregister_class(IMPORT_agp)
+    bpy.utils.unregister_class(IMPORT_for)
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_mats_update_all_mat_nodes)
@@ -1548,6 +1584,7 @@ def unregister():
     bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.unregister_class(BTN_find_textures)
     bpy.utils.unregister_class(BTN_set_all_export_dirs)
+    bpy.utils.unregister_class(BTN_for_exporter)
     bpy.utils.unregister_class(BTN_preview_attached_object)
     bpy.utils.unregister_class(BTN_clear_attached_object_preview)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

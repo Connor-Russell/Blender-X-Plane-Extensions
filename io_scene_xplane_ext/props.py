@@ -124,6 +124,20 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         default=1
     ) #type: ignore
 
+    for_collection_search: bpy.props.StringProperty(
+        name="Search",
+        default="",
+        description="Search for a collection to configure export",
+        update=update_ui
+    ) # type: ignore
+
+    for_disabled_collections_expanded: bpy.props.BoolProperty(
+        name="Exportable Collections Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+
     agp_collection_search: bpy.props.StringProperty(
         name="Search",
         default="",
@@ -412,15 +426,6 @@ class PROP_decal(bpy.types.PropertyGroup):
     is_ui_expanded: bpy.props.BoolProperty(name="Expanded", description="Whether the decal is expanded in the UI", default=False, update=update_ui) # type: ignore
 
 class PROP_mats(bpy.types.PropertyGroup):
-    #Properties for the material:
-    # - Alb texture - String
-    # - Normal texture - String
-    # - Lit textures - String
-    # - Draped - Bool
-    # - Hard - Bool
-    # - Blend alpha - bool
-    # - Polygon offset - int
-
     #Internal state properties
     was_draped_last_update: bpy.props.BoolProperty(
         name="Was Draped Last Update",
@@ -456,6 +461,15 @@ class PROP_mats(bpy.types.PropertyGroup):
     ) # type: ignore
 
     #If calling this from code, always set was_programmatically_updated to True first!!!
+    material_mode: bpy.props.EnumProperty(
+        name="Material Mode",
+        description="The material mode, controlling which shader is used in sim",
+        items=[("LEGACY", "Legacy (XP9/10)", "Legacy (XP9/10)"),
+               ("NORMAL_METALNESS", "Normal Metalness", "Corresponds to Substance Painter"),
+               ("NORMAL_TRANSLUCENCY", "Normal Translucency", "Backlighting also brightens the face, good for foilage")],
+        default="NORMAL_METALNESS"
+    ) # type: ignore
+
     do_separate_material_texture: bpy.props.BoolProperty(
         name="Use separate Material Texture",
         description="Whether to use a separate material texture for the material",
@@ -630,7 +644,8 @@ class PROP_mats(bpy.types.PropertyGroup):
         items=[
             ('CLIP', "Alpha Clip", "Alpha is clipped at the cutoff value"),
             ('BLEND', "Alpha Blend", "Alpha is blended"),
-            ('SHADOW', "Alpha Blend, Shadow Clip", "Alpha is blended, shadows are clipped")
+            ('SHADOW', "Alpha Blend, Shadow Clip", "Alpha is blended, shadows are clipped"),
+            ('HASH', "Alpha Hashed", "Forest exclusive, albedo pixels are clipped but dithered for psuedo blending without culling artifacts")
         ],
         default='BLEND',
         update=material_config.operator_wrapped_update_settings
@@ -730,6 +745,443 @@ class PROP_mats(bpy.types.PropertyGroup):
         name="Decals",
         description="The decals for the material, aka detail textures."
     ) # type: ignore
+
+# Forests
+
+class PROP_for(bpy.types.PropertyGroup):
+    # Empty (tree) properties
+    exportable: bpy.props.BoolProperty(
+        name="Exportable",
+        description="Whether this empty's contents are exportable as a tree",
+        default=True
+    ) #type: ignore
+
+    weight_choice: bpy.props.FloatProperty(
+        name="Weight",
+        description="Frequency relative to other trees in this layer",
+        default=1
+    ) #type: ignore
+
+    min_tree_height: bpy.props.FloatProperty(
+        name="Max Tree height",
+        description="Min height of the tree",
+        default=1
+    ) #type: ignore
+
+    max_tree_height: bpy.props.FloatProperty(
+        name="Max Tree height",
+        description="Max height of the tree",
+        default=1
+    ) #type: ignore
+
+    use_custom_lod: bpy.props.BoolProperty(
+        name="Use Custom LOD",
+        description="Whether to use a custom LOD for this tree",
+        default=False,
+        update=update_ui
+    ) #type: ignore
+
+    custom_lod: bpy.props.FloatProperty(
+        name="Custom LOD",
+        description="Max draw distance of this tree in meters",
+        default=1000
+    ) #type: ignore
+
+    group: bpy.props.IntProperty(
+        name="Group",
+        description="The group this tree is a part of, for use with CHOICE selections",
+        default=0
+    ) #type: ignore
+
+    # Mesh properties
+    near_lod: bpy.props.FloatProperty(
+        name="Near LOD",
+        description="The distance this mesh starts fading away at",
+        default=50
+    ) #type: ignore
+
+    far_lod: bpy.props.FloatProperty(
+        name="Far LOD",
+        description="Maximum distance this mesh will draw at",
+        default=1000
+    ) #type: ignore
+
+    no_shadow: bpy.props.BoolProperty(
+        name="No Shadow",
+        description="Whether to disable shadow casting for this mesh",
+        default=False
+    ) #type: ignore
+
+    wind_bend_ratio: bpy.props.FloatProperty(
+        name="Wind Bend Ratio",
+        description="Multiplicative on the amount of bending of branches",
+        default=1.0
+    ) #type: ignore
+
+    branch_bending: bpy.props.FloatProperty(
+        name="Branch Bending",
+        description="Defines maximum branch displacement in meters at max wind speed",
+        default=1.0
+    ) #type: ignore
+
+    max_wind_speed: bpy.props.FloatProperty(
+        name="Max Wind Speed",
+        description="The speed at which the branches will be deformed to their maximum value",
+        default=10.0
+    ) #type: ignore
+
+class PROP_for_collection(bpy.types.PropertyGroup):
+    is_ui_expanded: bpy.props.BoolProperty(
+        name="UI Expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    exportable: bpy.props.BoolProperty(
+        name="Exportable",
+        default=False,
+        description="Whether or not this layer should be exported",
+        update=update_ui
+    ) # type: ignore
+    
+    name: bpy.props.StringProperty(
+        name="Export Path",
+        default="",
+        subtype="FILE_PATH",
+        description="The path to the file to export to, and name",
+        update=update_ui
+    ) # type: ignore
+
+    spacing_x: bpy.props.FloatProperty(
+        name="Spacing X",
+        description="Spacing between trees on the X axis",
+        default=1
+    ) #type: ignore
+
+    spacing_y: bpy.props.FloatProperty(
+        name="Spacing Y",
+        description="Spacing on the Y axis",
+        default=1
+    ) #type: ignore
+
+    random_x: bpy.props.FloatProperty(
+        name="Random X",
+        description="Random position offset in meters on the X axis",
+        default=1
+    ) #type: ignore
+    
+    random_y: bpy.props.FloatProperty(
+        name="Random Y",
+        description="Random position offset in meters on the Y axis",
+        default=1
+    ) #type: ignore
+
+    cast_shadow: bpy.props.BoolProperty(
+        name="Cast Shadows",
+        description="Whether this forest casts shadows",
+        default=True
+    ) #type: ignore
+
+    has_seasons: bpy.props.BoolProperty(
+        name="Has Seasons",
+        description="Whether this forest has seasons. If so, 4 variants will be exported with the below selected materials for each",
+        default=False,
+        update=update_ui
+    ) #type: ignore
+
+    spring_material_2d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Spring material 2D",
+        description="Material to use for the spring version of the forest for the 2D quads"
+    ) #type: ignore
+
+    summer_material_2d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Summer material 2D",
+        description="Material to use for the summer version of the forest for the 2D quads"
+    ) #type: ignore
+
+    fall_material_2d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Fall material 2D",
+        description="Material to use for the fall version of the forest for the 2D quads"
+    ) #type: ignore
+
+    winter_material_2d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Winter material 2D",
+        description="Material to use for the winter version of the forest for the 2D quads"
+    ) #type: ignore
+
+    spring_material_3d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Spring material 3D",
+        description="Material to use for the spring version of the forest for the 3D mesh"
+    ) #type: ignore
+
+    summer_material_3d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Summer material 3D",
+        description="Material to use for the summer version of the forest for the 3D mesh"
+    ) #type: ignore
+
+    fall_material_3d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Fall material 3D",
+        description="Material to use for the fall version of the forest for the 3D mesh"
+    ) #type: ignore
+
+    winter_material_3d: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Winter material 3D",
+        description="Material to use for the winter version of the forest for the 3D mesh"
+    ) #type: ignore
+
+    density_params: bpy.props.BoolProperty(
+        name="Density Params",
+        description="Whether to use noise to vary the density",
+        default=False
+    ) #type: ignore
+
+    density_0_length: bpy.props.FloatProperty(
+        name="First Wavelength",
+        description="Length in meters of the first perlin noise wave",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_0_value: bpy.props.FloatProperty(
+        name="First Wavelength Density",
+        description="Density of the forst in the first perlin noise wave (multiplies spacing(?))",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_1_length: bpy.props.FloatProperty(
+        name="Second Wavelength",
+        description="Length in meters of the second perlin noise wave",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_1_value: bpy.props.FloatProperty(
+        name="Second Wave Density",
+        description="Density of the forst in the second perlin noise wave (multiplies spacing(?))",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_2_length: bpy.props.FloatProperty(
+        name="Third Wavelength",
+        description="Length in meters of the third perlin noise wave",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_2_value: bpy.props.FloatProperty(
+        name="Third Wave Density",
+        description="Density of the forst in the third perlin noise wave (multiplies spacing(?))",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_3_length: bpy.props.FloatProperty(
+        name="Fourth Wavelength",
+        description="Length in meters of the fourth perlin noise wave",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    density_3_value: bpy.props.FloatProperty(
+        name="Fourth Wave Density",
+        description="Density of the forst in the fourth perlin noise wave (multiplies spacing(?))",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_params: bpy.props.BoolProperty(
+        name="Choice Params",
+        description="Whether to use noise to vary the tree choice selection",
+        default=False
+    ) #type: ignore
+
+    choice_0_length: bpy.props.FloatProperty(
+        name="First Wavelength",
+        description="Length in meters of the first perlin noise wave for choice variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_0_value: bpy.props.FloatProperty(
+        name="First Wave Choice Weight",
+        description="Weighted value for tree choice 1 in the first perlin noise wave (range 1-4)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_1_length: bpy.props.FloatProperty(
+        name="Second Wavelength",
+        description="Length in meters of the second perlin noise wave for choice variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_1_value: bpy.props.FloatProperty(
+        name="Second Wave Choice Weight",
+        description="Weighted value for tree choice 2 in the second perlin noise wave (range 1-4)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_2_length: bpy.props.FloatProperty(
+        name="Third Wavelength",
+        description="Length in meters of the third perlin noise wave for choice variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_2_value: bpy.props.FloatProperty(
+        name="Third Wave Choice Weight",
+        description="Weighted value for tree choice 3 in the third perlin noise wave (range 1-4)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_3_length: bpy.props.FloatProperty(
+        name="Fourth Wavelength",
+        description="Length in meters of the fourth perlin noise wave for choice variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    choice_3_value: bpy.props.FloatProperty(
+        name="Fourth Wave Choice Weight",
+        description="Weighted value for tree choice 4 in the fourth perlin noise wave (range 1-4)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_params: bpy.props.BoolProperty(
+        name="Height Params",
+        description="Whether to use noise to vary the tree height scale",
+        default=False
+    ) #type: ignore
+
+    height_0_length: bpy.props.FloatProperty(
+        name="First Wavelength",
+        description="Length in meters of the first perlin noise wave for height variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_0_value: bpy.props.FloatProperty(
+        name="First Wave Height Scale",
+        description="Scalar multiplier for tree height in the first perlin noise wave (any value > 0)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_1_length: bpy.props.FloatProperty(
+        name="Second Wavelength",
+        description="Length in meters of the second perlin noise wave for height variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_1_value: bpy.props.FloatProperty(
+        name="Second Wave Height Scale",
+        description="Scalar multiplier for tree height in the second perlin noise wave (any value > 0)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_2_length: bpy.props.FloatProperty(
+        name="Third Wavelength",
+        description="Length in meters of the third perlin noise wave for height variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_2_value: bpy.props.FloatProperty(
+        name="Third Wave Height Scale",
+        description="Scalar multiplier for tree height in the third perlin noise wave (any value > 0)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_3_length: bpy.props.FloatProperty(
+        name="Fourth Wavelength",
+        description="Length in meters of the fourth perlin noise wave for height variation",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    height_3_value: bpy.props.FloatProperty(
+        name="Fourth Wave Height Scale",
+        description="Scalar multiplier for tree height in the fourth perlin noise wave (any value > 0)",
+        default=0.0,
+        min=0.0
+    ) #type: ignore
+
+    skip_asphalt: bpy.props.BoolProperty(
+        name="Skip Asphalt",
+        description="Skip placement of trees on asphalt terrain",
+        default=False
+    ) #type: ignore
+
+    skip_blastpad: bpy.props.BoolProperty(
+        name="Skip Blastpad",
+        description="Skip placement of trees on blastpad terrain",
+        default=False
+    ) #type: ignore
+
+    skip_concrete: bpy.props.BoolProperty(
+        name="Skip Concrete",
+        description="Skip placement of trees on concrete terrain",
+        default=False
+    ) #type: ignore
+
+    skip_dirt: bpy.props.BoolProperty(
+        name="Skip Dirt",
+        description="Skip placement of trees on dirt terrain",
+        default=False
+    ) #type: ignore
+
+    skip_grass: bpy.props.BoolProperty(
+        name="Skip Grass",
+        description="Skip placement of trees on grass terrain",
+        default=False
+    ) #type: ignore
+
+    skip_gravel: bpy.props.BoolProperty(
+        name="Skip Gravel",
+        description="Skip placement of trees on gravel terrain",
+        default=False
+    ) #type: ignore
+
+    skip_lakebed: bpy.props.BoolProperty(
+        name="Skip Lakebed",
+        description="Skip placement of trees on lakebed terrain",
+        default=False
+    ) #type: ignore
+
+    skip_shoulder: bpy.props.BoolProperty(
+        name="Skip Shoulder",
+        description="Skip placement of trees on shoulder terrain",
+        default=False
+    ) #type: ignore
+
+    skip_snow: bpy.props.BoolProperty(
+        name="Skip Snow",
+        description="Skip placement of trees on snow terrain",
+        default=False
+    ) #type: ignore
+
+    skip_water: bpy.props.BoolProperty(
+        name="Skip Water",
+        description="Skip placement of trees on water terrain",
+        default=False
+    ) #type: ignore
 
 #Line properties
 
@@ -1014,6 +1466,8 @@ def register():
     
     bpy.utils.register_class(PROP_fac_filtered_spelling_choices)
     bpy.utils.register_class(PROP_pol_collection)
+    bpy.utils.register_class(PROP_for)
+    bpy.utils.register_class(PROP_for_collection)
     bpy.utils.register_class(PROP_lin_layer)
     bpy.utils.register_class(PROP_lin_collection)
     bpy.utils.register_class(PROP_agp_obj)
@@ -1029,10 +1483,12 @@ def register():
     bpy.utils.register_class(PROP_facade)
     
 
+    bpy.types.Object.xp_for = bpy.props.PointerProperty(type=PROP_for)
     bpy.types.Object.xp_lin = bpy.props.PointerProperty(type=PROP_lin_layer)
     bpy.types.Object.xp_attached_obj = bpy.props.PointerProperty(type=PROP_attached_obj)
     bpy.types.Object.xp_agp = bpy.props.PointerProperty(type=PROP_agp_obj)
     bpy.types.Object.xp_fac_mesh = bpy.props.PointerProperty(type=PROP_fac_mesh)
+    bpy.types.Collection.xp_for = bpy.props.PointerProperty(type=PROP_for_collection)
     bpy.types.Collection.xp_pol = bpy.props.PointerProperty(type=PROP_pol_collection)
     bpy.types.Collection.xp_lin = bpy.props.PointerProperty(type=PROP_lin_collection)
     bpy.types.Collection.xp_fac = bpy.props.PointerProperty(type=PROP_facade)
@@ -1049,6 +1505,7 @@ def unregister():
 
     del bpy.types.Material.xp_materials
     del bpy.types.Scene.xp_ext
+    del bpy.types.Collection.xp_for
     del bpy.types.Collection.xp_fac
     del bpy.types.Collection.xp_lin
     del bpy.types.Collection.xp_pol
@@ -1057,6 +1514,7 @@ def unregister():
     del bpy.types.Object.xp_attached_obj
     del bpy.types.Object.xp_lin
     del bpy.types.Object.xp_agp
+    del bpy.types.Object.xp_for
 
     bpy.utils.unregister_class(PROP_facade)
     bpy.utils.unregister_class(PROP_fac_floor)
@@ -1068,8 +1526,10 @@ def unregister():
     bpy.utils.unregister_class(PROP_xp_ext_scene)
     bpy.utils.unregister_class(PROP_pol_collection)
     bpy.utils.unregister_class(PROP_lin_collection)
+    bpy.utils.unregister_class(PROP_for_collection)
     bpy.utils.unregister_class(PROP_agp_obj)
     bpy.utils.unregister_class(PROP_agp_collection)
     bpy.utils.unregister_class(PROP_lin_layer)
+    bpy.utils.unregister_class(PROP_for)
     bpy.utils.unregister_class(PROP_attached_obj)
     bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)
