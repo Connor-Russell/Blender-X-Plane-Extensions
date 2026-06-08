@@ -188,7 +188,7 @@ class polygon():
                 '#subtex': 5,
             }
             if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
-                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
+                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'", f"Command had too few tokens")
                 continue
 
             # Check for material data
@@ -271,7 +271,7 @@ class polygon():
         
         #Make sure there are objects in the collection
         if len(in_collection.objects) == 0:
-            log_utils.error(f"Collection {in_collection.name} has no objects to export as a polygon.")
+            log_utils.error(f"Collection {in_collection.name} has no objects to export as a polygon.", f"Collection {in_collection.name} has no objects to export as a polygon.")
             return
 
         # Set nowrap property
@@ -312,14 +312,14 @@ class polygon():
                     break
 
         if mat is None:
-            log_utils.error(f"Collection {in_collection.name} has no mesh objects with materials to export as a polygon.")
+            log_utils.error(f"Collection {in_collection.name} has no mesh objects with materials to export as a polygon.", f"No material set for collection {in_collection.name}")
             return
 
         # Extract material data
         mat = mat.xp_materials
 
         if mat.do_separate_material_texture:
-            log_utils.error(f"Collection {in_collection.name} has a material with separate textures. This is not supported for polygons.")
+            log_utils.error(f"Collection {in_collection.name} has a material with separate textures. This is not supported for polygons.", "Separate material textures are not supported on polygons")
             return
 
         self.alb_texture = mat.alb_texture
@@ -396,13 +396,13 @@ class polygon():
         for decal in self.imported_decal_commands:
             if decal.startswith("NORMAL"):
                 if decal_nml_index > 3:
-                    log_utils.warning("Error: Too many normal decals! X-Plane only supports 3 decals per material.")
+                    log_utils.warning("Error: Too many normal decals! X-Plane only supports 3 decals per material.", "Too many normal decals in polygon")
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                 decal_nml_index += 1
             else:
                 if decal_alb_index > 2:
-                    log_utils.warning("Error: Too many decals! X-Plane only supports 3 decals per material.")
+                    log_utils.warning("Error: Too many decals! X-Plane only supports 3 decals per material.", "Too many albedo decals in polygon")
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1

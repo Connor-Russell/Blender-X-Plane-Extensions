@@ -135,21 +135,23 @@ def update_xplane_collection_settings(col):
                 #Try to set the layer group. We wrap this in a try because if they are not on the custom branch of XP2B with the new blended layer group, this will fail if they use "blended" as a layer group
                 try:
                     col.xplane.layer.layer_group_draped = xp_props.layer_group.lower()
-                    col.xplane.layer.layer_group_draped_offset = xp_props.layer_group_offset
-                except:
+                    col.xplane.layer.layer_group_offset_draped = xp_props.layer_group_offset
+                except Exception as e:
                     if xp_props.layer_group == 'BLENDED':
-                        log_utils.warning("The 'Blended' layer group is only supported by custom XP2B exporters. There is a pending pull request, so tell your Local X-Plane Representative to merge it ;)")
-                    pass
+                        log_utils.warning("The 'Blended' layer group is only supported by custom XP2B exporters. There is a pending pull request, so tell your Local X-Plane Representative to merge it ;)", "BLENDED layer group not yet supported in official XP2B exporter")
+                    else:
+                        log_utils.warning(f"Unknown error when setting layer group: {e}")
             #If we're not draped, we set our normal layer group
             else:
                 #Try to set the layer group. We wrap this in a try because if they are not on the custom branch of XP2B with the new blended layer group, this will fail if they use "blended" as a layer group
                 try:
                     col.xplane.layer.layer_group = xp_props.layer_group.lower()
                     col.xplane.layer.layer_group_offset = xp_props.layer_group_offset
-                except:
+                except Exception as e:
                     if xp_props.layer_group == 'BLENDED':
-                        log_utils.warning("The 'Blended' layer group is only supported by custom XP2B exporters. There is a pending pull request, so tell your Local X-Plane Representative to merge it ;)")
-                    pass
+                        log_utils.warning("The 'Blended' layer group is only supported by custom XP2B exporters. There is a pending pull request, so tell your Local X-Plane Representative to merge it ;)", "BLENDED layer group not yet supported in official XP2B exporter")
+                    else:
+                        log_utils.warning(f"Unknown error when setting layer group: {e}")
 
             #Set the modulator and decals
             col.xplane.layer.texture_modulator = file_utils.to_relative(xp_props.decal_modulator)

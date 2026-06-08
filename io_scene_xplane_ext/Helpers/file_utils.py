@@ -87,7 +87,7 @@ def sanitize_path(path):
 
     path = path.replace("\\", "/")  # Normalize slashes    
 
-    # Replace invalid characters with dashes. While OSs have different reserved chars, names need to be vlaid on *every* OS, so we deny everything
+    # Replace invalid characters with dashes
     invalid_chars = '<>"|?*\n\r\t\0'
 
     sanitized = []
@@ -325,7 +325,7 @@ def get_or_load_image(image_path, do_reload=False, copy_append_name=""):
                     image.reload()
                     return image
         except Exception as e:
-            log_utils.warning(f"Error checking existing images when trying to find image {image_path}: {e}")
+            log_utils.warning(f"Error checking existing images when trying to find image {image_path}: {e}", f"Unexpected error trying to load {image_path}")
 
     # Load the image
     new_image = bpy.data.images.load(image_path)

@@ -187,7 +187,7 @@ class line():
             }
             # Only check if command is in our map
             if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
-                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'")
+                log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'", f"Too few arguments for '{cmd}'")
                 continue
 
             #Check for material data
@@ -273,7 +273,7 @@ class line():
         if len(exportable_objects) == 0:
             return
         if len([obj for obj in exportable_objects if obj.xp_lin.type == "SEGMENT"]) == 0:
-            log_utils.error("Error: No segment objects found in collection" + in_collection.name)
+            log_utils.error("Error: No segment objects found in collection" + in_collection.name, "Line must have at least segment object")
             return
         
         #Now we want to sort them based on their Z position. While not *necessary*, it makes the output nicer
@@ -290,7 +290,7 @@ class line():
         for obj in exportable_objects:
             local_scale_x, local_scale_y = line_utils.get_scale_from_layer(obj)
             if abs(local_scale_x - scale_x) > max_scale_diff_x or abs(local_scale_y - scale_y) > max_scale_diff_y:
-                log_utils.error("Error: Object " + obj.name + " has a different scale than the rest of the collection. Please make sure all objects share the same UV scale.")
+                log_utils.error("Error: Object " + obj.name + " has a different UV scale than the rest of the collection. Please make sure all objects share the same UV scale.", f"Object {obj.name} has a different UV scale from other objects")
                 return
             break
 
@@ -300,18 +300,18 @@ class line():
         self.mirror = in_collection.xp_lin.mirror
 
         if self.mirror and self.segment_count > 0:
-            log_utils.warning("Warning: Mirror is enabled on a line with a set segment count. Segment count will be ignored as these are mutually exclusive settings.")
+            log_utils.warning("Warning: Mirror is enabled on a line with a set segment count. Segment count will be ignored as these are mutually exclusive settings.", "Mirrior and segment count set, ignoring segment count")
             self.segment_count = 0
 
         #Ensure we have a material. Then we will extract material data from it
         if len(exportable_objects[0].data.materials) == 0:
-            log_utils.error(f"Error: No material found on object! { exportable_objects[0].name } Please configure material with my X-Plane Material Plugin!")
+            log_utils.error(f"Error: No material found on object! { exportable_objects[0].name } Please configure material with my X-Plane Material Plugin!", f"{ exportable_objects[0].name } must have a material")
             return
         
         mat = in_collection.objects[0].data.materials[0].xp_materials
 
         if mat.do_separate_material_texture:
-            log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+            log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.", "Separate material textures are not supported on lines")
             return
 
         self.alb_texture = mat.alb_texture
@@ -358,14 +358,14 @@ class line():
                         closest_idx = i
                 
                 if closest_idx == -1:
-                    log_utils.warning(f"Error: Could not find a parent segment for cap object {obj.name}! Perhaps you have no segments? Skipping this cap.")
+                    log_utils.warning(f"Error: Could not find a parent segment for cap object {obj.name}! Perhaps you have no segments? Skipping this cap.", f"Could not find parent segment for cap {obj.name}")
                     continue
                 
                 seg_layer_z, seg_layer_idx, start_used, end_used = segment_layers[closest_idx]
 
                 if obj.xp_lin.type == "START":
                     if start_used:
-                        log_utils.warning(f"Warning: Multiple start caps found for segment layer at Z {seg_layer_z}. Skipping cap object {obj.name}!")
+                        log_utils.warning(f"Warning: Multiple start caps found for segment layer at Z {seg_layer_z}. Skipping cap object {obj.name}!", f"Multiple start caps found for segment, skipping {obj.name}")
                         continue
                     cap = line_utils.get_layer_from_segment_object(obj, seg_layer_idx, obj.xp_lin.type)
                     self.caps.append(cap)
@@ -373,7 +373,7 @@ class line():
                     segment_layers[closest_idx] = (seg_layer_z, seg_layer_idx, True, end_used)
                 elif obj.xp_lin.type == "END":
                     if end_used:
-                        log_utils.warning(f"Warning: Multiple end caps found for segment layer at Z {seg_layer_z}. Skipping cap object {obj.name}!")
+                        log_utils.warning(f"Warning: Multiple end caps found for segment layer at Z {seg_layer_z}. Skipping cap object {obj.name}!", f"Multiple end caps found for segment, skipping {obj.name}")
                         continue
                     cap = line_utils.get_layer_from_segment_object(obj, seg_layer_idx, obj.xp_lin.type)
                     self.caps.append(cap)
@@ -411,13 +411,13 @@ class line():
         for decal in self.imported_decal_commands:
             if decal.startswith("NORMAL"):
                 if decal_nml_index > 3:
-                    log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.")
+                    log_utils.warning("Error: Too many normal decals! X-Plane only supports 2 normal decals per material.", "Too many normal decals")
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_nml_index])
                 decal_nml_index += 1
             else:
                 if decal_alb_index > 2:
-                    log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.")
+                    log_utils.warning("Error: Too many albedo decals! X-Plane only supports 2 decals per material.", "Too many albedo decals")
                     break
                 decal_utils.get_decal_from_command(decal, mat.xp_materials.decals[decal_alb_index])
                 decal_alb_index += 1

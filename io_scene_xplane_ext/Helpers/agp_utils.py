@@ -312,9 +312,9 @@ def get_tile_bounds_and_transform(obj):
     bottom_vertex_pos = obj.scale * bottom_vertex.co
 
     #Get the UVs for these vertices
-    uv_layer = obj.data.uv_layers.active.data
+    uv_layer = misc_utils.get_uv_layer(obj)
     if uv_layer is None:
-        log_utils.error(f"No UV layer on BASE_TILE object! {obj.name}")
+        log_utils.error(f"No UV layer on BASE_TILE object! {obj.name}", "BASE_TILE is missing UV layer")
         return -1, -1, -1, -1, None
     
     left_u = uv_layer[left_vertex.index].uv.x
@@ -364,7 +364,7 @@ def get_tile_bounds_and_transform(obj):
             break
 
     if not bIsSquareish:
-        log_utils.error(f"BASE_TILE object {obj.name} appears to have non-square geometry! Export cancelled.")
+        log_utils.error(f"BASE_TILE object {obj.name} appears to have non-square geometry! Export cancelled.", "BASE_TILE must be rectangular")
         return -1, -1, -1, -1, None
     
     #Now we do similar, but for the UVs, to make sure they are squareish
@@ -392,7 +392,7 @@ def get_tile_bounds_and_transform(obj):
             break
 
     if not bIsSquareish:
-        log_utils.warning(f"BASE_TILE object {obj.name} appears to have non-square UVs! Annotations should remain correct, however base tile UVs will likely be incorrect.")
+        log_utils.warning(f"BASE_TILE object {obj.name} appears to have non-square UVs! Annotations should remain correct, however base tile UVs will likely be incorrect.", "BASE_TILE has non-square UVs, results may be unexpected")
 
     #Return the UV bounds
     return left_u, bottom_v, right_u, top_v, transform

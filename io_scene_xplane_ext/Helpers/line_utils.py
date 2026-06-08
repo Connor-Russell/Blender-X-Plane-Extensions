@@ -10,6 +10,7 @@ import bmesh # type: ignore
 from ..Types import xp_lin # type: ignore
 from . import geometery_utils
 from . import log_utils
+from . import misc_utils
 
 class lin_vertex:
     """
@@ -59,10 +60,7 @@ def get_layer_from_segment_object(in_object, offset, type):
         return None
 
     #Attempt to get the uv layer. We look for the first layer. 
-    try:
-        uv_layer = in_object.data.uv_layers[0]
-    except (KeyError, TypeError) as e:
-        uv_layer = None
+    uv_layer = misc_utils.get_uv_layer(in_object)
 
     #If we have no uv layer, we will return None
     if uv_layer is None:
@@ -215,7 +213,7 @@ def get_scale_from_layer(in_object):
         #Calculate the height based on the ratio
         y_scale = actual_width * (y_dim / x_dim)
     except Exception as e:
-        log_utils.warning(f"Error getting texture dimensions for {in_object.name}, assuming square texture: {e}")
+        log_utils.warning(f"Error getting texture dimensions for {in_object.name}, assuming square texture: {e}", f"Couldn't get texture dimensions for {in_object.name}, assuming square")
         y_scale = actual_width  # If we can't get the texture dimensions, assume it's square
         pass
 

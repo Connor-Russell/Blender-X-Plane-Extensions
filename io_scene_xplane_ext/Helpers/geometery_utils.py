@@ -159,7 +159,7 @@ def get_draw_call_from_obj(obj):
         #Get our mesh data
         mesh = obj.data
 
-        #Calculate split normals if this mesh has them. Note used in 4.1+ but this property wouldn't exist there soo it should be fine
+        #Calculate split normals if this mesh has them. Not used in 4.1+ but this property wouldn't exist there soo it should be fine
         if hasattr(mesh, "calc_normals_split"):
             mesh.calc_normals_split()
 
@@ -168,10 +168,10 @@ def get_draw_call_from_obj(obj):
         loop_triangles = mesh.loop_triangles
 
         #Attempt to get the uv layer. We look for the first layer. 
-        try:
-            uv_layer = mesh.uv_layers[0]
-        except (KeyError, TypeError) as e:
-            uv_layer = None
+        uv_layer = misc_utils.get_uv_layer(obj)
+
+        if uv_layer is None:
+            raise Exception(f"No UV layer could be found for object {obj.name}")
 
         #Define a temporary data structure to hold our triangle faces.
         XPTriangle = collections.namedtuple(
@@ -273,6 +273,8 @@ def get_draw_call_from_obj(obj):
             v.normal_x = transformed_normal.x
             v.normal_y = transformed_normal.y
             v.normal_z = transformed_normal.z
+    except Exception as e:
+        raise e
 
     finally:
         #If we made a duplicate object, delete it

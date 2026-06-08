@@ -684,9 +684,9 @@ class auto_split_obj:
             if xp2b_log is not None:
                 for line in xp2b_log.lines:
                     if line.body.strip():
-                        log_utils.error(f"X-Plane2Blender Error exporting object {obj.name}: {line.body.strip()}")
+                        log_utils.error(f"X-Plane2Blender Error exporting object {obj.name}: {line.body.strip()}", f"X-Plane2Blender Error exporting object {obj.name}: {line.body.strip()}")
         except Exception as e:
-            log_utils.error(f"Error exporting auto-split object {obj.name}: {e}")
+            log_utils.error(f"Error exporting auto-split object {obj.name}: {e}", f"Error exporting auto-split object {obj.name}: {e}")
             log_utils.error(traceback.format_exc())
             good = False
 
@@ -696,7 +696,7 @@ class auto_split_obj:
                 for col in mat_name_to_collection.values():
                     bpy.data.collections.remove(col, do_unlink=True)
             except Exception as e:
-                log_utils.error(f"Error removing auto-split collections: {e}")
+                log_utils.error(f"Error removing auto-split collections: {e}", "Error on autosplit export cleanup")
                 log_utils.error(traceback.format_exc())
 
             #Now we can remove the duplicate objects
@@ -704,7 +704,7 @@ class auto_split_obj:
                 for split_obj in all_objs:
                     bpy.data.objects.remove(split_obj, do_unlink=True)
             except Exception as e:
-                log_utils.error(f"Error removing duplicate objects: {e}")
+                log_utils.error(f"Error removing duplicate objects: {e}", "Error on autosplit export cleanup")
                 log_utils.error(traceback.format_exc())
 
             #Now we can remove the fake LOD objects
@@ -712,14 +712,14 @@ class auto_split_obj:
                 for fake_lod_obj in fake_lod_objects:
                     bpy.data.objects.remove(fake_lod_obj, do_unlink=True)
             except Exception as e:
-                log_utils.error(f"Error removing fake LOD objects: {e}")
+                log_utils.error(f"Error removing fake LOD objects: {e}", "Error on autosplit export cleanup")
                 log_utils.error(traceback.format_exc())
 
             #Now we can remove the fake lod material
             try:
                 bpy.data.materials.remove(lights_fake_lod_material, do_unlink=True)
             except Exception as e:
-                log_utils.error(f"Error removing fake LOD material: {e}")
+                log_utils.error(f"Error removing fake LOD material: {e}", "Error on autosplit export cleanup")
                 log_utils.error(traceback.format_exc())
 
     def to_commands(self, obj_resource_list, transform: agp_utils.agp_transform):
@@ -1034,14 +1034,14 @@ class agp:
                         break
 
         if mat is None:
-            log_utils.error(f"No material found in the collection {in_collection.name}")
+            log_utils.error(f"No material found in the collection {in_collection.name}", "Material not found")
             return
 
         # Extract material data
         mat = mat.xp_materials
 
         if mat.do_separate_material_texture:
-            log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades/agps. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.")
+            log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades/agps. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.", "Separate material textures are not supported on AGP tiles")
             return
 
         self.alb_texture = mat.alb_texture
@@ -1061,7 +1061,7 @@ class agp:
             if obj.parent == None and obj.xp_agp.type == 'BASE_TILE':
                 #Make sure the scale is 1,1,1
                 if misc_utils.vectors_close(obj.scale, mathutils.Vector((1, 1, 1))) == False:
-                    log_utils.error(f"Error: Tile object {obj.name} has a scale other than 1,1,1. Please apply the scale then reexport!")
+                    log_utils.error(f"Error: Tile object {obj.name} has a scale other than 1,1,1. Please apply the scale then reexport!", "BASE_TILE must have scale of 1")
                     return False
                 new_tile = tile()
                 if not new_tile.from_obj(obj, self.name):
@@ -1133,7 +1133,7 @@ class agp:
         output_folder = os.path.dirname(output_path)
 
         if len(self.tiles) == 0:
-            log_utils.error("Must have at least 1 tile for .agp!")
+            log_utils.error("Must have at least 1 tile for .agp!", "Must have BASE_TILE object in agp")
             return
 
         #Define a string to hold the file contents
