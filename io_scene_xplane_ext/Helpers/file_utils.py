@@ -4,12 +4,74 @@
 #Module:    file_utils.py
 #Purpose:   Provide functions to aid in handling file paths, loading images, and backing up files.
 
-import os
 import bpy
 import sys
+from pathlib import Path
 from . import log_utils
 import datetime
 import time
+
+
+def _lexnorm(path: Path) -> Path:
+    """
+    Lexically normalize a path by collapsing '.' and '..' components.
+    Does not access the filesystem or follow any links (no resolve()).
+    Equivalent to os.path.normpath semantics implemented via path components.
+    """
+    anchor = path.anchor
+    start = 1 if anchor else 0
+    parts = list(path.parts[start:])
+
+    out = []
+    for part in parts:
+        if part == '.':
+            continue
+        if part == '..':
+            if out:
+                out.pop()
+            elif not anchor:
+                out.append('..')  # Preserve leading '..' on relative paths
+        else:
+            out.append(part)
+
+    if anchor:
+        return Path(anchor, *out) if out else Path(anchor)
+    return Path(*out) if out else Path('.')
+
+
+def _pure_relpath(path: Path, base: Path) -> str:
+    """
+    Compute a relative path from base to path using only component manipulation.
+    Does not access the filesystem. Equivalent to os.path.relpath for two absolute paths.
+    On Windows, raises ValueError for cross-drive paths (matching os.path.relpath behaviour).
+    """
+    path_parts = path.parts
+    base_parts = base.parts
+
+    # Case-insensitive comparison on Windows
+    if sys.platform.startswith('win'):
+        def eq(a, b): return a.casefold() == b.casefold()
+    else:
+        def eq(a, b): return a == b
+
+    # Raise on cross-drive paths (Windows only)
+    if path_parts and base_parts and not eq(path_parts[0], base_parts[0]):
+        raise ValueError(f"path is on mount '{path_parts[0]}', start on mount '{base_parts[0]}'")
+
+    common = 0
+    for p, b in zip(path_parts, base_parts):
+        if eq(p, b):
+            common += 1
+        else:
+            break
+
+    up_count = len(base_parts) - common
+    rel_parts = ('..', ) * up_count + path_parts[common:]
+
+    if not rel_parts:
+        return '.'
+    return str(Path(*rel_parts))
+
 
 def sanitize_path(path):
     """
@@ -23,8 +85,7 @@ def sanitize_path(path):
     if not path:
         return ""
 
-    path = path.replace("\\", os.sep)  # Normalize slashes    
-    path = path.replace("/", os.sep)  # Normalize slashes
+    path = path.replace("\\", "/")  # Normalize slashes    
 
     # Replace invalid characters with dashes
     invalid_chars = '<>"|?*\n\r\t\0'
@@ -43,7 +104,7 @@ def sanitize_path(path):
                 char = "-"
         
         # Avoid duplicate separators
-        if prev_char == os.sep and char == os.sep:
+        if prev_char == "/" and char == "/":
             idx += 1
             continue
         sanitized.append(char)
@@ -78,8 +139,7 @@ def _is_relative(in_path):
     if in_path.startswith("//"):
         return True
 
-    # Use os.path.isabs for platform correctness
-    return not os.path.isabs(in_path)
+    return not Path(in_path).is_absolute()
 
 def to_absolute(in_path):
     """
@@ -93,6 +153,9 @@ def to_absolute(in_path):
 
     if in_path == "":
         return ""
+    
+    if in_path == "//":
+        return ""
 
     #We always sanitize the path first
     in_path = remove_blender_prefix(in_path)
@@ -100,10 +163,9 @@ def to_absolute(in_path):
 
     if not _is_relative(in_path) or bpy.data.filepath == "":
         return in_path
-    
-    in_path = os.path.normpath(os.path.join(os.path.dirname(bpy.data.filepath), in_path))
 
-    return in_path
+    result = _lexnorm(Path(bpy.data.filepath).parent / in_path)
+    return str(result)
 
 def to_relative(in_path, include_blend_prefix=False):
     """
@@ -116,6 +178,9 @@ def to_relative(in_path, include_blend_prefix=False):
     """
 
     if in_path == "":
+        return ""
+    
+    if in_path == "//":
         return ""
 
     #We always sanitize the path first
@@ -132,14 +197,24 @@ def to_relative(in_path, include_blend_prefix=False):
     if bpy.data.filepath == "":
         return in_path
     
-    #Otherwise, we need to resolve it. So, since this is an absolute path, we just need to do os.path.relpath
-    in_path = os.path.relpath(in_path, os.path.dirname(bpy.data.filepath))
+    in_path = _pure_relpath(Path(in_path), Path(bpy.data.filepath).parent)
 
     #Add the blender prefix if needed
     if include_blend_prefix and not in_path.startswith("//"):
         in_path = "//" + in_path
 
     return in_path
+
+def is_empty(in_path):
+    """
+    Checks if a given path is empty or just the Blender relative path prefix.
+
+    Args:
+        in_path (str): The path to check.
+    Returns:
+        bool: True if the path is empty or just the Blender prefix, False otherwise.
+    """
+    return in_path == "" or in_path == "//"
 
 def resolve_file_export_path(in_path, col_name, extension):
     """
@@ -162,7 +237,7 @@ def resolve_file_export_path(in_path, col_name, extension):
     if in_path != "":
             #Check if it ends in just a slash, if so we'll treat the name as a relative directory and still use the collection name as the file name
             if in_path.endswith(("/", "\\")):
-                export_path = os.path.join(in_path, col_name + extension)
+                export_path = str(Path(in_path) / (col_name + extension))
             else:
                 export_path = in_path + extension
     else:
@@ -174,9 +249,9 @@ def resolve_file_export_path(in_path, col_name, extension):
 
     #Now we have the user specified path. If this is relative, we need to join it with the blender file path
     if _is_relative(export_path):
-        export_path = os.path.join(os.path.dirname(bpy.data.filepath), export_path)
+        export_path = str(Path(bpy.data.filepath).parent / export_path)
 
-    return os.path.normpath(export_path)
+    return str(_lexnorm(Path(export_path)))
 
 def check_for_dds_or_png(image_path):
     """
@@ -196,15 +271,19 @@ def check_for_dds_or_png(image_path):
         str: The path to the existing image file, or an empty string if none are found.
     """
 
-    path_as_dds = os.path.splitext(image_path)[0] + ".dds"
-    path_as_png = os.path.splitext(image_path)[0] + ".png"
+    if is_empty(image_path):
+        return ""
 
-    if os.path.exists(image_path):
+    p = Path(image_path)
+    path_as_png = p.with_suffix(".png")
+    path_as_dds = p.with_suffix(".dds")
+
+    if p.exists():
         return image_path
-    elif os.path.exists(path_as_png):
-        return path_as_png
-    elif os.path.exists(path_as_dds):
-        return path_as_dds
+    elif path_as_png.exists():
+        return str(path_as_png)
+    elif path_as_dds.exists():
+        return str(path_as_dds)
     
     return ""
         
@@ -225,8 +304,9 @@ def get_or_load_image(image_path, do_reload=False, copy_append_name=""):
     image_path = to_absolute(image_path)
 
     #Get the image extension so that we can append it to the name if needed
-    image_extension = os.path.splitext(image_path)[1]
-    image_base_name = os.path.splitext(os.path.basename(image_path))[0]
+    p = Path(image_path)
+    image_extension = p.suffix
+    image_base_name = p.stem
     image_appended_name = image_base_name + copy_append_name + image_extension
     log_utils.info(f"Loading image {image_appended_name} from path {image_path}")
 
@@ -263,23 +343,23 @@ def backup_file(in_file_path):
         str: The backup file path with a timestamp.
     """
 
+    p = Path(in_file_path)
+
     #If the file doesn't exist, we're done!
-    if os.path.isfile(in_file_path) == False:
+    if not p.is_file():
         return
     
     #We only backup if the preferences say to, so check that
     if not bpy.context.preferences.addons['io_scene_xplane_ext'].preferences.do_backup_on_overwrite:
         return
 
-    #Get the directory and base name
-    dir_name = os.path.dirname(in_file_path)
-    base_name = os.path.basename(in_file_path)
-    name, ext = os.path.splitext(base_name)
+    name = p.stem
+    ext = p.suffix
 
     #Get the file modified time, then create a timestamp from it. If we fail to get modified time, just use the current time.
     timestamp = ""
     try:
-        mtime = os.path.getmtime(in_file_path)
+        mtime = p.stat().st_mtime
         timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime(mtime))
     except:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -288,20 +368,20 @@ def backup_file(in_file_path):
     #If a file exists with this name, we'll append _iter to the name, incrementing iter until we find a name that doesn't exist
 
     iter = 0
-    backup_file_name = ""
+    backup_path = None
     while True:
         if iter == 0:
-            backup_file_name = f"{name}_backup_{timestamp}{ext}"
+            backup_name = f"{name}_backup_{timestamp}{ext}"
         else:
-            backup_file_name = f"{name}_backup_{timestamp}_{iter}{ext}"
-        backup_file_path = os.path.join(dir_name, backup_file_name)
-        if not os.path.exists(backup_file_path):
+            backup_name = f"{name}_backup_{timestamp}_{iter}{ext}"
+        backup_path = p.parent / backup_name
+        if not backup_path.exists():
             break
         iter += 1
 
     #Try to rename the file
     try:
-        os.rename(in_file_path, backup_file_path)
-        log_utils.info(f"Backed up file {in_file_path} to {backup_file_path}")
+        p.rename(backup_path)
+        log_utils.info(f"Backed up file {in_file_path} to {backup_path}")
     except Exception as e:
-        raise RuntimeError(f"Failed to back up file {in_file_path} to {backup_file_path}: {e}")
+        raise RuntimeError(f"Failed to back up file {in_file_path} to {backup_path}: {e}")

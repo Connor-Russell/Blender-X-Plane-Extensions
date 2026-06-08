@@ -40,8 +40,9 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
                 setattr(in_collection.xplane.layer, "file_" + dcl_name, "")
         else:
             if in_material.xp_materials.draped:
-                setattr(in_collection.xplane.layer, "file_draped_" + dcl_name, dcl.texture)
+                setattr(in_collection.xplane.layer, "file_draped_" + dcl_name, file_utils.to_relative(dcl.texture))
                 setattr(in_collection.xplane.layer, "draped_" + dcl_name + "_projected", dcl.projected)
+                setattr(in_collection.xplane.layer, "draped_" + dcl_name + "_dither", dcl.dither_ratio)
 
                 if dcl.projected:
                     setattr(in_collection.xplane.layer, "draped_" + dcl_name + "_x_scale", dcl.scale_x)
@@ -63,7 +64,7 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
                 setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_constant", dcl.strength2_constant)
                 setattr(in_collection.xplane.layer, "draped_alpha_" + dcl_name + "_modulator", dcl.strength2_modulator)
             else:
-                setattr(in_collection.xplane.layer, "file_" + dcl_name, dcl.texture)
+                setattr(in_collection.xplane.layer, "file_" + dcl_name, file_utils.to_relative(dcl.texture))
                 setattr(in_collection.xplane.layer, dcl_name + "_projected", dcl.projected)
 
                 if dcl.projected:
@@ -90,7 +91,7 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
     if not dcl.enabled:
         setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, "")
     else:
-        setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, dcl.texture)
+        setattr(in_collection.xplane.layer, "file_" + dcl_name_nml, file_utils.to_relative(dcl.texture))
         setattr(in_collection.xplane.layer, dcl_name_nml + "_projected", dcl.projected)
 
         if dcl.projected:
@@ -137,10 +138,10 @@ def get_decal_command(in_decal, in_output_folder):
     else:
         if in_decal.projected:
             #Format: NORMAL_DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <file>
-            out_cmd = f"NORMAL_DECAL_PARAMS_PROJ {in_decal.scale_x} {in_decal.scale_y} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {texture_path} {0.30234139}\n"
+            out_cmd = f"NORMAL_DECAL_PARAMS_PROJ {in_decal.scale_x} {in_decal.scale_y} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {texture_path} {1.0 - in_decal.roughness_boost_factor}\n"
         else:
             #Format: NORMAL_DECAL_PARAMS <tile ratio> <dither> <r key> <g key> <b key> <alpha key> <modulator> <constant> <file>
-            out_cmd = f"NORMAL_DECAL_PARAMS {in_decal.tile_ratio} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {texture_path} {0.30234139}\n"
+            out_cmd = f"NORMAL_DECAL_PARAMS {in_decal.tile_ratio} {in_decal.strength_key_red} {in_decal.strength_key_green} {in_decal.strength_key_blue} {in_decal.strength_key_alpha} {in_decal.strength_modulator} {in_decal.strength_constant} {texture_path} {1.0 - in_decal.roughness_boost_factor}\n"
     
     return out_cmd
 
@@ -209,6 +210,8 @@ def get_decal_from_command(in_command, out_decal_prop):
         out_decal_prop.strength_modulator = float(cmd_parts[7])
         out_decal_prop.strength_constant = float(cmd_parts[8])
         out_decal_prop.texture = cmd_parts[9]
+        if len(cmd_parts) > 10:
+            out_decal_prop.roughness_boost_factor = float(cmd_parts[10])
 
     elif cmd_parts[0] == "NORMAL_DECAL_PARAMS":
         out_decal_prop.enabled = True
@@ -222,6 +225,8 @@ def get_decal_from_command(in_command, out_decal_prop):
         out_decal_prop.strength_modulator = float(cmd_parts[6])
         out_decal_prop.strength_constant = float(cmd_parts[7])
         out_decal_prop.texture = cmd_parts[8]
+        if len(cmd_parts) > 9:
+            out_decal_prop.roughness_boost_factor = float(cmd_parts[9])
     elif cmd_parts[0] == "DECAL_LIB":
         log_utils.warning("DECAL_LIB command found, which is not supported in this plugin.", "DECAL_LIB not supported")
     else:
