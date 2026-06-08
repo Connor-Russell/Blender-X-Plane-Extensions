@@ -69,7 +69,7 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
 
         #Now we need to setup the animation. So we need to get the start value, and the end value, then add the animations
         start_dref_value = start_value + value_interval * frame
-        end_dref_value = (start_value + value_interval * (frame + 1)) + (value_interval * 0.1)
+        end_dref_value = (start_value + value_interval * (frame + 1)) + (value_interval * 0.01)
 
         #Add 3 to the dataref collection
         if start_dref_value != start_value:
@@ -90,7 +90,7 @@ def create_flipbook_animation(in_obj, dataref, start_value, end_value, loop_valu
             anim_obj.xplane.datarefs[-1].path = dataref
             anim_obj.xplane.datarefs[-1].anim_type = 'hide'
             anim_obj.xplane.datarefs[-1].show_hide_v1 = end_dref_value
-            anim_obj.xplane.datarefs[-1].show_hide_v2 = end_value + (value_interval * 0.1)
+            anim_obj.xplane.datarefs[-1].show_hide_v2 = end_value + (value_interval * 0.01)
             anim_obj.xplane.datarefs[-1].loop = loop_value
 
 def auto_keyframe(in_obj: bpy.types.Object, dataref, start_value, end_value, loop_value, start_frame, end_frame, keyframe_interval, add_intermediate_keyframes):

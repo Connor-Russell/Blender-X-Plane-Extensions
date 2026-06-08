@@ -20,6 +20,7 @@ from mathutils import Euler
 #Our modules
 from ..Helpers import geometery_utils
 from ..Helpers import misc_utils
+from ..Helpers import file_utils
 
 #Simple container to hold attached object data  
 class xp_attached_obj:
@@ -45,6 +46,8 @@ class xp_attached_obj:
 
         self.valid = False
 
+        self.preview_path = ""
+
     def read_from_obj(self, obj):
         #Make sure this is an empty object, is exportable, and has a resource defined.
         if obj.type != "EMPTY":
@@ -54,6 +57,7 @@ class xp_attached_obj:
 
         self.resource = obj.xp_attached_obj.resource
         self.draped = obj.xp_attached_obj.draped
+        self.preview_path = obj.xp_attached_obj.attached_obj_preview_resource
 
         # Get local transform matrix
         local_matrix = obj.matrix_local.copy()
@@ -80,7 +84,6 @@ class xp_attached_obj:
 
         self.valid = True
 
-    
     def to_obj(self, name):
         obj = bpy.data.objects.new(name, None)
 
@@ -108,6 +111,9 @@ class xp_attached_obj:
         obj.xp_attached_obj.exportable = True
         obj.xp_attached_obj.resource = self.resource
         obj.xp_attached_obj.draped = self.draped
+
+        if self.preview_path != "":
+            obj.xp_attached_obj.attached_obj_preview_resource = file_utils.to_relative(self.preview_path)
 
         return obj
 

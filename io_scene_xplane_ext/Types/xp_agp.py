@@ -368,6 +368,12 @@ class attached_obj:
 
     def from_obj(self, obj):
 
+        attached_obj_file_name = os.path.basename(obj.xp_agp.attached_obj_resource)
+        attached_obj_preview_file_name = os.path.basename(file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource))
+
+        if not attached_obj_file_name == attached_obj_preview_file_name and attached_obj_preview_file_name != "":
+            log_utils.warning(f"Attached object preview resource does not match the main resource, results may be unexpected! {obj.name} Resource Name: {attached_obj_file_name} Preview Name: {attached_obj_preview_file_name}")
+
         parent_scale = mathutils.Vector((1, 1, 1))
         if obj.parent is not None:
             parent_scale = obj.parent.scale
@@ -586,16 +592,18 @@ class auto_split_obj:
                 if len(insert_name_folder) > 0:
                     insert_name_folder += "/"
 
-                obj_name = file_utils.sanitize_path(agp_name + "_PT_" + insert_name + "_" + mat + ".obj")
+                #First get the sanitized name, then make it relative to the .agp
+                obj_name = os.path.splitext(os.path.basename(agp_name))[0] + "_PT_" + file_utils.sanitize_path(insert_name + "_" + mat + ".obj")
                 obj_name = obj_name.replace(" ", "_")  # Replace spaces with underscores
+                obj_name = os.path.dirname(file_utils.to_absolute(agp_name)) + "/" + insert_name_folder + obj_name
 
                 agp_path = file_utils.to_absolute(agp_name)
                 obj_path = file_utils.to_absolute(obj_name)
-                rel_obj_path = os.path.relpath(obj_path, os.path.dirname(agp_path))
+                obj_rel_to_agp_path = os.path.relpath(obj_path, os.path.dirname(agp_path))
 
                 mat_collection = bpy.data.collections.new(obj_name)
-                mat_collection.xplane.layer.name = obj_name
-                self.resources.append(rel_obj_path)
+                mat_collection.xplane.layer.name = file_utils.to_relative(obj_name)
+                self.resources.append(obj_rel_to_agp_path)
                 mat_collection.xplane.is_exportable_collection = True
                 mat_collection.xplane.layer.export_type = 'instanced_scenery'
                 bpy.context.scene.collection.children.link(mat_collection)
@@ -1013,7 +1021,7 @@ class agp:
         self.render_tiles = in_collection.xp_agp.render_tiles
         self.tile_lod = in_collection.xp_agp.tile_lod
         self.vegetation = in_collection.xp_agp.vegetation_asset
-        self.name = in_collection.xp_agp.name if in_collection.xp_agp.name != "" else in_collection.name
+        self.name = file_utils.to_relative(file_utils.resolve_file_export_path(in_collection.xp_agp.name, in_collection.name, ".agp"))
 
         #Get the material from the first mesh object in the collection
         mat = None
@@ -1134,13 +1142,13 @@ class agp:
         #Write the material data
         of += "#Materials\n"
 
-        if self.alb_texture != "":
+        if not file_utils.is_empty(self.alb_texture):
             of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
-        if self.lit_texture != "":
+        if not file_utils.is_empty(self.lit_texture):
             of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
-        if self.nml_texture != "":
+        if not file_utils.is_empty(self.nml_texture):
             of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
-        if self.weather_texture != "":
+        if not file_utils.is_empty(self.weather_texture):
             of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
         else:
             of += "WEATHER_TRANSPARENT\n"
@@ -1164,8 +1172,8 @@ class agp:
         #Write the main polygon params
         of += "LAYER_GROUP " + self.layer_group.lower() + " " + str(self.layer_group_offset) + "\n"
         if self.surface != None:
-            of += "SURFACE " + self.surface + "\n"
-        if self.do_tiling:
+            of += "SURFACE " + self.surface.lower() + "\n"
+        if self.do_tiling and not file_utils.is_empty(self.tiling_map_texture):
             of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
         if not self.render_tiles:
             of += "HIDE_TILES\n"

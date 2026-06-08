@@ -74,25 +74,25 @@ class polygon():
         of += "#Materials\n"
 
         if self.nowrap:
-            if self.alb_texture != "":
+            if not file_utils.is_empty(self.alb_texture):
                 of += "TEXTURE_NOWRAP " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
-            if self.lit_texture != "":
+            if not file_utils.is_empty(self.lit_texture):
                 of += "TEXTURE_LIT_NOWRAP " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
-            if self.nml_texture != "":
+            if not file_utils.is_empty(self.nml_texture):
                 of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
         else:
-            if self.alb_texture != "":
+            if not file_utils.is_empty(self.alb_texture):
                 of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
-            if self.lit_texture != "":
+            if not file_utils.is_empty(self.lit_texture):
                 of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
-            if self.nml_texture != "":
+            if not file_utils.is_empty(self.nml_texture):
                 of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
-            if self.weather_texture != "":
+            if not file_utils.is_empty(self.weather_texture):
                 of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
             else:
                 of += "WEATHER_TRANSPARENT\n"
         
-        if self.mod_texture != "":
+        if not file_utils.is_empty(self.mod_texture):
                 of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder) + "\n"
         
         if self.super_rough:
@@ -118,7 +118,7 @@ class polygon():
         of += "LAYER_GROUP " + self.layer.lower() + " " + str(self.layer_offset) + "\n"
         of += "SCALE " + str(float(self.scale_x)) + " " + str(float(self.scale_y)) + "\n"
         if self.surface != None:
-            of += "SURFACE " + self.surface + "\n"
+            of += "SURFACE " + self.surface.lower() + "\n"
         if self.do_load_center:
             of += "LOAD_CENTER " + misc_utils.ftos(self.load_center_lat, 8) + " " + misc_utils.ftos(self.load_center_lon, 8) + " " + str(int(self.load_center_size)) + " " + str(int(self.load_center_res)) + "\n"
         if self.do_tiling:
