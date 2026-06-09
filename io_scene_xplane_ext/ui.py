@@ -437,9 +437,7 @@ class MENU_for_object(bpy.types.Panel):
             row.prop(fr, "max_tree_height")
 
             row = layout.row()
-            row.prop(fr, "use_custom_lod")
-            if (fr.use_custom_lod):
-                row.prop(fr, "custom_lod")
+            row.prop(fr, "custom_lod")
 
             layout.prop(fr, "group")
         elif obj.type == "MESH":

@@ -774,13 +774,6 @@ class PROP_for(bpy.types.PropertyGroup):
         default=1
     ) #type: ignore
 
-    use_custom_lod: bpy.props.BoolProperty(
-        name="Use Custom LOD",
-        description="Whether to use a custom LOD for this tree",
-        default=False,
-        update=update_ui
-    ) #type: ignore
-
     custom_lod: bpy.props.FloatProperty(
         name="Custom LOD",
         description="Max draw distance of this tree in meters",

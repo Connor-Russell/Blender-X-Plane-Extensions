@@ -77,7 +77,6 @@ class Tree():
         self.normal_height = 0.0
         self.max_tree_height = 1.0
         self.base_height = 1.0
-        self.use_custom_lod = False
         self.custom_lod = 1000
         self.group = 0
 
@@ -104,7 +103,6 @@ class Tree():
         self.frequency = (xp_for.weight_choice / total_weight) * 100
         self.min_tree_height = xp_for.min_tree_height
         self.max_tree_height = xp_for.max_tree_height
-        self.use_custom_lod = xp_for.use_custom_lod
         self.custom_lod = xp_for.custom_lod
         self.group = xp_for.group
         
@@ -142,7 +140,6 @@ class Tree():
         obj.xp_for.weight_choice = self.weight_choice
         obj.xp_for.min_tree_height = self.min_tree_height
         obj.xp_for.max_tree_height = self.max_tree_height
-        obj.xp_for.use_custom_lod = self.use_custom_lod
         obj.xp_for.custom_lod = self.custom_lod
         obj.xp_for.group = self.group
 
