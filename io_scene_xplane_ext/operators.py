@@ -1320,23 +1320,31 @@ class BTN_find_textures(bpy.types.Operator):
         if self.filepath == "":
             return {'CANCELLED'}
         
-        log_utils.new_section("Find Missing Textures")
+        self.filepath = os.path.dirname(self.filepath)
+        
+        log_utils.new_section(f"Find Missing Textures at {self.filepath}")
 
         #Define a small function for resolving paths
         def resolve_path(path: str, base: str) -> str:
 
             cleaned_path = file_utils.to_relative(path, False)  #We do this *just* in case it's an absolute. Plus it removes the blender //
 
-            if cleaned_path == "":
+            if file_utils.is_empty(cleaned_path):
                 return path
 
-            resolved_path = file_utils.check_for_dds_or_png(os.path.join(os.path.dirname(base), cleaned_path))
+            #If the file exists at it's current path, we can just return it
+            if os.path.isfile(file_utils.to_absolute(cleaned_path)):
+                return path
+
+            #Check for this *filename* at the new folder
+            
+            resolved_path = file_utils.check_for_dds_or_png(os.path.join(base, os.path.basename(cleaned_path)))
 
             if os.path.isfile(resolved_path):
                 log_utils.info(f"Resolved path '{path}' to '{resolved_path}'")
                 return file_utils.to_relative(resolved_path, True)
             else:
-                log_utils.info(f"Could not resolve path '{path}' to '{resolved_path}'")
+                log_utils.info(f"Could not resolve path '{path}' to '{os.path.join(base, os.path.basename(cleaned_path))}'")
                 return path
 
         #Get all materials in the project

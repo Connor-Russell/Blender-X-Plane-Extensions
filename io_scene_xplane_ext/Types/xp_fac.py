@@ -108,9 +108,9 @@ class segment:
         # Return the created collection
         return collection
 
-    def append_obj_resources(self, target_list):
+    def append_obj_resources(self, target_list, output_folder):
         for obj in self.attached_objects:
-            target_list.append(obj.resource)
+            target_list.append(file_utils.resolve_lib_or_real(obj.resource, output_folder))
                     
 class spelling:
     def __init__(self):
@@ -230,11 +230,11 @@ class floor:
             #Sort the roof objects by their names
             self.roof_objs.sort(key=lambda x: x.resource)
 
-    def append_obj_resources(self, target_list):
+    def append_obj_resources(self, target_list, output_folder):
         for seg in self.all_segments:
-            seg.append_obj_resources(target_list)
+            seg.append_obj_resources(target_list, output_folder)
         for obj in self.roof_objs:
-            target_list.append(obj.resource)
+            target_list.append(file_utils.resolve_lib_or_real(obj.resource, output_folder))
 
     def to_floor_props(self, in_floor):
         """
@@ -626,13 +626,13 @@ class facade:
 
             #Textures
             if not file_utils.is_empty(mat.alb_texture):
-                output += "TEXTURE " + os.path.relpath(file_utils.to_absolute(mat.alb_texture), output_folder) + "\n"
+                output += "TEXTURE " + file_utils.to_relative(file_utils.to_absolute(mat.alb_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(mat.lit_texture):
-                output += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(mat.lit_texture), output_folder) + "\n"
+                output += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(mat.lit_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(mat.normal_texture):
-                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.to_absolute(mat.normal_texture), output_folder)+ "\n"
+                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + file_utils.to_relative(file_utils.to_absolute(mat.normal_texture), False, output_folder)+ "\n"
             if not file_utils.is_empty(mat.decal_modulator):
-                output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(mat.decal_modulator), output_folder) + "\n"
+                output += "TEXTURE_MODULATOR " + file_utils.to_relative(file_utils.to_absolute(mat.decal_modulator), False, output_folder) + "\n"
 
             #Write the decals
             if len(mat.decals) > 0:
@@ -671,13 +671,13 @@ class facade:
 
             #Textures
             if not file_utils.is_empty(mat.alb_texture):
-                output += "TEXTURE " + os.path.relpath(file_utils.to_absolute(mat.alb_texture), output_folder) + "\n"
+                output += "TEXTURE " + file_utils.to_relative(file_utils.to_absolute(mat.alb_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(mat.lit_texture):
-                output += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(mat.lit_texture), output_folder) + "\n"
+                output += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(mat.lit_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(mat.normal_texture):
-                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + os.path.relpath(file_utils.to_absolute(mat.normal_texture), output_folder)+ "\n"
+                output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + file_utils.to_relative(file_utils.to_absolute(mat.normal_texture), False, output_folder)+ "\n"
             if not file_utils.is_empty(mat.decal_modulator):
-                output += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(mat.decal_modulator), output_folder) + "\n"
+                output += "TEXTURE_MODULATOR " + file_utils.to_relative(file_utils.to_absolute(mat.decal_modulator), False, output_folder) + "\n"
 
             #Write the decals
             if len(mat.decals) > 0:
@@ -716,7 +716,7 @@ class facade:
         #All objects
         all_objects = []
         for cur_floor in self.floors:
-            cur_floor.append_obj_resources(all_objects)
+            cur_floor.append_obj_resources(all_objects, output_folder)
         
         all_objects = list(set(all_objects)) #Dedup the list of objects
         all_objects.sort() #Sort the list of objects. We do this to avoid changes in the order of objects, which would make our output slightly non-deterministic, and therefore invalid for testing
@@ -740,7 +740,7 @@ class facade:
                 output += "ROOF_HEIGHT " + str(level) + "\n"
 
             for obj in cur_floor.roof_objs:
-                obj_index = all_objects.index(obj.resource)
+                obj_index = all_objects.index(file_utils.resolve_lib_or_real(obj.resource, output_folder))
                 output += "ROOF_OBJ_HEADING " + str(obj_index) + " " + misc_utils.ftos(obj.rot_z, 4) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
             
             #Now we need to add all the segment definitions
@@ -781,7 +781,7 @@ class facade:
                 for cur_mesh in target_segment.meshes:
                     output += write_mesh(cur_mesh)
                 for obj in target_segment.attached_objects:
-                    idx = all_objects.index(obj.resource)
+                    idx = all_objects.index(file_utils.resolve_lib_or_real(obj.resource, output_folder))
                     if obj.draped:
                         output += "ATTACH_DRAPED " + str(idx) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + misc_utils.ftos(obj.loc_y, 8) + " " + misc_utils.ftos(misc_utils.resolve_heading(obj.rot_z + 180), 4) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
                     else:
