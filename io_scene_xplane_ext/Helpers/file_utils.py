@@ -10,6 +10,7 @@ from pathlib import Path
 from . import log_utils
 import datetime
 import time
+import os
 
 
 def _lexnorm(path: Path) -> Path:
@@ -167,7 +168,7 @@ def to_absolute(in_path):
     result = _lexnorm(Path(bpy.data.filepath).parent / in_path)
     return str(result)
 
-def to_relative(in_path, include_blend_prefix=False):
+def to_relative(in_path, include_blend_prefix=False, relative_to : str = None):
     """
     Converts an absolute path to a relative path based on the current Blender file location.
 
@@ -197,7 +198,10 @@ def to_relative(in_path, include_blend_prefix=False):
     if bpy.data.filepath == "":
         return in_path
     
-    in_path = _pure_relpath(Path(in_path), Path(bpy.data.filepath).parent)
+    if relative_to is None:
+        in_path = _pure_relpath(Path(in_path), Path(bpy.data.filepath).parent)
+    else:
+        in_path = _pure_relpath(Path(in_path), Path(relative_to))
 
     #Add the blender prefix if needed
     if include_blend_prefix and not in_path.startswith("//"):
@@ -385,3 +389,9 @@ def backup_file(in_file_path):
         log_utils.info(f"Backed up file {in_file_path} to {backup_path}")
     except Exception as e:
         raise RuntimeError(f"Failed to back up file {in_file_path} to {backup_path}: {e}")
+
+def resolve_lib_or_real(in_file_path : str, export_path : str) -> str:
+    if in_file_path.startswith("//"):
+        return to_relative(to_absolute(in_file_path), False, export_path)
+    else:
+        return in_file_path

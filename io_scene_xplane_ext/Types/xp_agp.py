@@ -413,12 +413,12 @@ class attached_obj:
 
         return new_empty
 
-    def to_command(self, obj_resource_list, transform: agp_utils.agp_transform):
+    def to_command(self, obj_resource_list : list[str], transform: agp_utils.agp_transform, export_path : str):
         cmd = ""
 
         x_pixel, y_pixel = agp_utils.blender_to_px(self.x, self.y, transform)
 
-        obj_index = obj_resource_list.index(self.resource)
+        obj_index = obj_resource_list.index(file_utils.resolve_lib_or_real(self.resource, export_path))
 
         if not self.draped:
             cmd = f"OBJ_DELTA {ftos(x_pixel, 8)} {ftos(y_pixel, 8)} {ftos(self.heading, 8)} {ftos(self.z, 8)} {obj_index} {self.show_low} {self.show_high}"
@@ -904,7 +904,7 @@ class tile:
                 self.tree_lines.append(tree_line())
                 self.tree_lines[-1].from_command(cmd, in_transfom)
 
-    def get_resources(self):
+    def get_resources(self, export_folder : str):
         """
         Returns a list of all used .objs and .facs as a tuple
         """
@@ -912,7 +912,7 @@ class tile:
         facs = []
         
         for obj in self.attached_objs:
-            objs.append(obj.resource)
+            objs.append(file_utils.resolve_lib_or_real(obj.resource, export_folder))
 
         for obj in self.auto_split_objs:
             objs.extend(obj.resources)
@@ -922,7 +922,7 @@ class tile:
 
         return objs, facs
 
-    def to_commands(self, fac_resource_list, obj_resource_list):
+    def to_commands(self, fac_resource_list, obj_resource_list, export_path : str):
         commands = []
         
         cur_cmd = ""
@@ -948,7 +948,7 @@ class tile:
             commands.append(cur_cmd)
 
         for obj in self.attached_objs:
-            cur_cmd = obj.to_command(obj_resource_list, self.transform)
+            cur_cmd = obj.to_command(obj_resource_list, self.transform, export_path)
             commands.append(cur_cmd)
 
         for obj in self.auto_split_objs:
@@ -1058,7 +1058,7 @@ class agp:
 
         #Now that we have the material setup, we need to load all the individual tiles and their children
         for obj in in_collection.objects:
-            if obj.parent == None and obj.xp_agp.type == 'BASE_TILE':
+            if obj.parent == None and obj.xp_agp.type == 'BASE_TILE' and obj.xp_agp.exportable:
                 #Make sure the scale is 1,1,1
                 if misc_utils.vectors_close(obj.scale, mathutils.Vector((1, 1, 1))) == False:
                     log_utils.error(f"Error: Tile object {obj.name} has a scale other than 1,1,1. Please apply the scale then reexport!", "BASE_TILE must have scale of 1")
@@ -1143,13 +1143,13 @@ class agp:
         of += "#Materials\n"
 
         if not file_utils.is_empty(self.alb_texture):
-            of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
+            of += "TEXTURE " + file_utils.to_relative(file_utils.to_absolute(self.alb_texture), False, output_folder) + "\n"
         if not file_utils.is_empty(self.lit_texture):
-            of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
+            of += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder) + "\n"
         if not file_utils.is_empty(self.nml_texture):
-            of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
+            of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder) + "\n"
         if not file_utils.is_empty(self.weather_texture):
-            of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
+            of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
         else:
             of += "WEATHER_TRANSPARENT\n"
         
@@ -1196,7 +1196,7 @@ class agp:
 
         #Now we need to get all our resources
         for t in self.tiles:
-            objs, facs = t.get_resources()
+            objs, facs = t.get_resources(output_folder)
             obj_resource_list.extend(objs)
             fac_resource_list.extend(facs)
 
@@ -1216,7 +1216,7 @@ class agp:
         of += "\n#Tile Definitions\n\n"
 
         for t in self.tiles:
-            cmds = t.to_commands(fac_resource_list, obj_resource_list)
+            cmds = t.to_commands(fac_resource_list, obj_resource_list, output_folder)
 
             for c in cmds:
                 of += c + "\n"

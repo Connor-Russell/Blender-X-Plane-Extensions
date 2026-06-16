@@ -1421,6 +1421,10 @@ class BTN_preview_attached_object(bpy.types.Operator):
             resource = ""
             if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
                 resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
+            elif not file_utils.is_empty(obj.xp_agp.attached_obj_resource) and obj.xp_agp.exportable and obj.xp_agp.type == 'ATTACHED_OBJ':
+                resource = file_utils.to_absolute(obj.xp_agp.attached_obj_resource)
+            elif not file_utils.is_empty(obj.xp_attached_obj.resource) and obj.xp_attached_obj.exportable:
+                resource = file_utils.to_absolute(obj.xp_attached_obj.resource)
             else:
                 continue
 

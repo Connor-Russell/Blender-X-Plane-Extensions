@@ -1289,7 +1289,9 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
     attached_obj_resource: bpy.props.StringProperty(
         name="Resource",
         description="The resource for the attached object",
-        default=""
+        default="//",
+        subtype='FILE_PATH',
+        **path_options
     ) # type: ignore
 
     attached_obj_show_between_low: bpy.props.IntProperty(
