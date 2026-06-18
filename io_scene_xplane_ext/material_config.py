@@ -30,6 +30,13 @@ def _is_grayscale_no_alpha_png(path):
     except:
         log_utils.warning(f"Failed to determine if texture {path} is grayscale without alpha for decal textures.")
         return False
+    
+def _is_rgb_no_alpha_png(path):
+    try:
+        return _png_color_type(path) == 2
+    except:
+        log_utils.warning(f"Failed to determine if texture {path} is RGB without alpha for decal textures.")
+        return False
 
 
 def operator_wrapped_update_settings(self = None, context = None):
@@ -516,7 +523,7 @@ def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_
 def update_nodes(material: bpy.types.Material):
     #Check to make sure teh file is saved, otherwise exit and warn the user in the status bar
         if bpy.data.filepath == "":
-            raise Exception("Please save the file before attempting to update materials. Textures are relative to the blender file, so if the file isn't saved I can't find your textures!")
+            log_utils.error("Please save the file before attempting to update materials. Textures are relative to the blender file, so if the file isn't saved I can't find your textures!", "File Not Saved")
             return
         
         #Check to make sure the material is set to use nodes, otherwise exit and warn the user in the status bar
@@ -784,9 +791,11 @@ def update_nodes(material: bpy.types.Material):
                 material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[27])   #Lit color to emission
                 node_principled.inputs[28].default_value = (1) #Set the emission intensity to 1
 
-            #If there is an alb, connect the alpha to it's add so it can impact the alpha
+            #If there is an alb, connect the alpha to it's add so it can impact the alpha, IF the lit has an alpha
             if node_alpha_add_lit != None:
-                material.node_tree.links.new(node_lit.outputs[1], node_alpha_add_lit.inputs[1])
+                if not _is_rgb_no_alpha_png(str_image_lit):
+                    #If it's an RGB only PNG, we treat the entire lit texture as a modulator for the alpha add, rather than just the alpha channel (since there is none). This allows artists to use RGB PNGs for lit textures that only impact alpha, without needing to put the same data in the alpha channel as well.
+                    material.node_tree.links.new(node_lit.outputs[1], node_alpha_add_lit.inputs[1])
 
         # Now we have the absolute joy of setting up decals! By joy I mean utter INSANITY *evil laughter*
         # We can have up to 2 decal sets. Each decal set can have an albedo rgb portion, albedo alpha portion, and a normal map portion.
