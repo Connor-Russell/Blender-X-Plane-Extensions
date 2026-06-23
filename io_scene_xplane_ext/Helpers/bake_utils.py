@@ -508,11 +508,11 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
     nrm_output_path = ""
     mat_output_path = ""
     adjusted_name = parent_collections[0].name
-    base_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_albedo + ".png")
-    nml_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_combined_normal + ".png")
-    lit_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_lit + ".png")
-    nrm_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_normal + ".png")
-    mat_output_path = os.path.join(os.path.dirname(file_path), adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_material + ".png")
+    base_output_path = file_utils.to_absolute(adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_albedo + ".png")
+    nml_output_path = file_utils.to_absolute(adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_combined_normal + ".png")
+    lit_output_path = file_utils.to_absolute(adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_lit + ".png")
+    nrm_output_path = file_utils.to_absolute(adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_normal + ".png")
+    mat_output_path = file_utils.to_absolute(adjusted_name + addon_prefs.suffix_lod_bake + addon_prefs.suffix_material + ".png")
 
     #Save the images
     if did_alb:

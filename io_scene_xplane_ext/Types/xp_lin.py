@@ -68,13 +68,13 @@ class line():
         of += "#Materials\n"
 
         if not file_utils.is_empty(self.alb_texture):
-            of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
+            of += "TEXTURE " + file_utils.to_relative(file_utils.to_absolute(self.alb_texture), False, output_folder) + "\n"
         if not file_utils.is_empty(self.lit_texture):
-            of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
+            of += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder) + "\n"
         if not file_utils.is_empty(self.nml_texture):
-            of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
+            of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder) + "\n"
         if not file_utils.is_empty(self.weather_texture):
-                of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
+                of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
         else:
             of += "WEATHER_TRANSPARENT\n"
         if self.super_rough:
@@ -94,7 +94,7 @@ class line():
             of += "#Decals\n"
             #Write the modulator texture
             if not file_utils.is_empty(self.mod_texture):
-                of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder) + "\n"
+                of += "TEXTURE_MODULATOR " + file_utils.to_relative(file_utils.to_absolute(self.mod_texture), False, output_folder) + "\n"
             for decal in self.decals:
                 #Get the decal command
                 decal_command = decal_utils.get_decal_command(decal, output_folder)

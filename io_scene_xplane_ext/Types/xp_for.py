@@ -208,14 +208,14 @@ class ForestMaterial():
         
         #TODO: When this gets merged into main, change this to use the file_utils.is_empty check
         if self.alb_texture != "":
-            out += f"\tTEXTURE {os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder)}\n"
+            out += f"\tTEXTURE {file_utils.to_relative(file_utils.to_absolute(self.alb_texture), False, output_folder)}\n"
         if self.nml_texture != "":
             #TECHNICALLY we could specify the normal tile ratio, the format allows it... but... *why*??? (the format does it so it's a standard parser, but I can't imagine a reason someone would use it)
-            out += f"\tTEXTURE_NORMAL 1 {os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder)}\n"
+            out += f"\tTEXTURE_NORMAL 1 {file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder)}\n"
         if self.lit_texture != "":
-            out += f"\tTEXTURE_LIT {os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder)}\n"
+            out += f"\tTEXTURE_LIT {file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder)}\n"
         if self.mod_texture != "":
-            out += f"\tTEXTURE_MODULATOR {os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder)}\n"
+            out += f"\tTEXTURE_MODULATOR {file_utils.to_relative(file_utils.to_absolute(self.mod_texture), False, output_folder)}\n"
 
         if self.mat_mode == "NORMAL_METALNESS":
             out += "\tNORMAL_METALNESS\n"

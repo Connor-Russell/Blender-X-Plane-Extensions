@@ -75,25 +75,25 @@ class polygon():
 
         if self.nowrap:
             if not file_utils.is_empty(self.alb_texture):
-                of += "TEXTURE_NOWRAP " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
+                of += "TEXTURE_NOWRAP " + file_utils.to_relative(file_utils.to_absolute(self.alb_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(self.lit_texture):
-                of += "TEXTURE_LIT_NOWRAP " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
+                of += "TEXTURE_LIT_NOWRAP " + file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(self.nml_texture):
-                of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
+                of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder) + "\n"
         else:
             if not file_utils.is_empty(self.alb_texture):
-                of += "TEXTURE " + os.path.relpath(file_utils.to_absolute(self.alb_texture), output_folder) + "\n"
+                of += "TEXTURE " + file_utils.to_relative(file_utils.to_absolute(self.alb_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(self.lit_texture):
-                of += "TEXTURE_LIT " + os.path.relpath(file_utils.to_absolute(self.lit_texture), output_folder) + "\n"
+                of += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(self.nml_texture):
-                of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + os.path.relpath(file_utils.to_absolute(self.nml_texture), output_folder) + "\n"
+                of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder) + "\n"
             if not file_utils.is_empty(self.weather_texture):
-                of += "WEATHER " + os.path.relpath(file_utils.to_absolute(self.weather_texture), output_folder) + "\n"
+                of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
             else:
                 of += "WEATHER_TRANSPARENT\n"
         
         if not file_utils.is_empty(self.mod_texture):
-                of += "TEXTURE_MODULATOR " + os.path.relpath(file_utils.to_absolute(self.mod_texture), output_folder) + "\n"
+                of += "TEXTURE_MODULATOR " + file_utils.to_relative(file_utils.to_absolute(self.mod_texture), False, output_folder) + "\n"
         
         if self.super_rough:
             of += "SUPER_ROUGHNESS\n"
@@ -123,11 +123,11 @@ class polygon():
             of += "LOAD_CENTER " + misc_utils.ftos(self.load_center_lat, 8) + " " + misc_utils.ftos(self.load_center_lon, 8) + " " + str(int(self.load_center_size)) + " " + str(int(self.load_center_res)) + "\n"
         if self.do_tiling:
             if self.do_runway_markings:
-                of += "RUNWAY_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
+                of += "RUNWAY_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + file_utils.to_relative(file_utils.to_absolute(self.tiling_map_texture), False, output_folder) + "\n"
             else:
-                of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
+                of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + file_utils.to_relative(file_utils.to_absolute(self.tiling_map_texture), False, output_folder) + "\n"
         if self.do_runway_markings:
-            of += "RUNWAY_MARKINGS " + misc_utils.ftos(self.runway_r, 4) + " " + misc_utils.ftos(self.runway_g, 4) + " " + misc_utils.ftos(self.runway_b, 4) + " " + misc_utils.ftos(self.runway_a, 4) + " " + os.path.relpath(file_utils.to_absolute(self.runway_marking_texture), output_folder) + "\n"
+            of += "RUNWAY_MARKINGS " + misc_utils.ftos(self.runway_r, 4) + " " + misc_utils.ftos(self.runway_g, 4) + " " + misc_utils.ftos(self.runway_b, 4) + " " + misc_utils.ftos(self.runway_a, 4) + " " + file_utils.to_relative(file_utils.to_absolute(self.runway_marking_texture), False, output_folder) + "\n"
         if self.do_runway_noise:
             #of += "RUNWAY_NOISE\n"
             pass

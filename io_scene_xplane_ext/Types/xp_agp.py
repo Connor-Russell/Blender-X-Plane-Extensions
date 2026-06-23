@@ -599,7 +599,7 @@ class auto_split_obj:
 
                 agp_path = file_utils.to_absolute(agp_name)
                 obj_path = file_utils.to_absolute(obj_name)
-                obj_rel_to_agp_path = os.path.relpath(obj_path, os.path.dirname(agp_path))
+                obj_rel_to_agp_path = file_utils.to_relative(obj_path, False, os.path.dirname(agp_path))
 
                 mat_collection = bpy.data.collections.new(obj_name)
                 mat_collection.xplane.layer.name = file_utils.to_relative(obj_name)
@@ -1174,7 +1174,7 @@ class agp:
         if self.surface != None:
             of += "SURFACE " + self.surface.lower() + "\n"
         if self.do_tiling and not file_utils.is_empty(self.tiling_map_texture):
-            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + os.path.relpath(file_utils.to_absolute(self.tiling_map_texture), output_folder) + "\n"
+            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + file_utils.to_relative(file_utils.to_absolute(self.tiling_map_texture), False, output_folder) + "\n"
         if not self.render_tiles:
             of += "HIDE_TILES\n"
         if self.tile_lod != 20000:
