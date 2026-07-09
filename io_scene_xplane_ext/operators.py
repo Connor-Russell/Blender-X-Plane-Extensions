@@ -21,7 +21,7 @@ from .Types import xp_attached_obj_preview
 from . import anim_actions
 from . import auto_baker
 import os
-
+from .Helpers import collection_utils
 
 class BTN_lin_exporter(bpy.types.Operator):
     bl_idname = "xp_ext.export_lines"
@@ -1515,6 +1515,36 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_set_lods(bpy.types.Operator):
+    """Sets the X-Plane LODs of all visible collections"""
+    bl_idname = "xp_ext.set_lods"
+    bl_label = "Set LODs"
+    bl_description = "Sets the LODs of all visible collections."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        log_utils.new_section("Set LODs")
+
+        xp_ext = context.scene.xp_ext
+
+        # Iterate through all visible collections and set their LODs based on the properties
+        for col in context.scene.collection.children:
+            if collection_utils.get_collection_is_visible(col):
+                col.xplane.layer.lods = str(xp_ext.lod_count)
+                col.xplane.layer.lod[0].near = xp_ext.lod_0_start
+                col.xplane.layer.lod[0].far = xp_ext.lod_0_end
+                col.xplane.layer.lod[1].near = xp_ext.lod_1_start
+                col.xplane.layer.lod[1].far = xp_ext.lod_1_end
+                col.xplane.layer.lod[2].near = xp_ext.lod_2_start
+                col.xplane.layer.lod[2].far = xp_ext.lod_2_end
+                col.xplane.layer.lod[3].near = xp_ext.lod_3_start
+                col.xplane.layer.lod[3].far = xp_ext.lod_3_end
+                col.xplane.layer.lod_draped = max(xp_ext.lod_0_end, xp_ext.lod_1_end, xp_ext.lod_2_end, xp_ext.lod_3_end)
+
+        log_utils.display_messages()
+
+        return {'FINISHED'}
+
 def menu_func_import_options(self, context):
     self.layout.operator(IMPORT_lin.bl_idname, text="X-Plane Lines (.lin)")
     self.layout.operator(IMPORT_pol.bl_idname, text="X-Plane Polygons (.pol)")
@@ -1560,6 +1590,7 @@ def register():
     bpy.utils.register_class(BTN_for_exporter)
     bpy.utils.register_class(BTN_preview_attached_object)
     bpy.utils.register_class(BTN_clear_attached_object_preview)
+    bpy.utils.register_class(BTN_set_lods)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -1599,4 +1630,5 @@ def unregister():
     bpy.utils.unregister_class(BTN_for_exporter)
     bpy.utils.unregister_class(BTN_preview_attached_object)
     bpy.utils.unregister_class(BTN_clear_attached_object_preview)
+    bpy.utils.unregister_class(BTN_set_lods)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

@@ -390,6 +390,77 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
+    menu_bulk_lods_expanded: bpy.props.BoolProperty(
+        name="Bulk LODs Menu Expanded",
+        description="Whether the bulk LODs menu is expanded",
+        default=False,
+        update=update_ui
+    ) # type: ignore
+
+    lod_count: bpy.props.IntProperty(
+        name="LOD Count",
+        description="The number of Levels of Detail (LODs) for objects",
+        default=1,
+        min=1,
+        max=4,
+        update=update_ui
+    ) # type: ignore
+
+    lod_0_start: bpy.props.IntProperty(
+        name="LOD 0 Start",
+        description="The start range for lod 0",
+        default=0,
+        min=0
+    ) # type: ignore
+
+    lod_0_end: bpy.props.IntProperty(
+        name="LOD 0 End",
+        description="The end range for lod 0",
+        default=0,
+        min=0
+    ) # type: ignore
+
+    lod_1_start: bpy.props.IntProperty(
+        name="LOD 1 Start",
+        description="The start range for lod 1",
+        default=0,
+        min=0
+    ) # type: ignore
+
+    lod_1_end: bpy.props.IntProperty(
+        name="LOD 1 End",
+        description="The end range for lod 1",
+        default=0,
+        min=0
+    ) # type: ignore
+
+    lod_2_start: bpy.props.IntProperty(
+        name="LOD 2 Start",
+        description="The start range for lod 2",
+        default=0,
+        min=0
+    ) # type: ignore
+
+    lod_2_end: bpy.props.IntProperty(
+        name="LOD 2 End",
+        description="The end range for lod 2",
+        default=0,
+        min=0
+    ) # type: ignore
+
+    lod_3_start: bpy.props.IntProperty(
+        name="LOD 3 Start",
+        description="The start range for lod 3",
+        default=0,
+        min=0
+    ) # type: ignore
+
+    lod_3_end: bpy.props.IntProperty(
+        name="LOD 3 End",
+        description="The end range for lod 3",
+        default=0,
+        min=0
+    ) # type: ignore
 #Material properties
 
 class PROP_decal(bpy.types.PropertyGroup):

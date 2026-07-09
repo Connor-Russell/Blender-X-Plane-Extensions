@@ -951,6 +951,31 @@ class MENU_operations(bpy.types.Panel):
             box.prop(xp_ext, "lod_distance_preview")
             box.operator("xp_ext.preview_lods_for_distance", text="Preview LODs for Distance")
 
+        layout.separator()
+
+        box = layout.box()
+        box.prop(xp_ext, "menu_bulk_lods_expanded", text="Bulk LODs", icon='TRIA_DOWN' if xp_ext.menu_bulk_lods_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_bulk_lods_expanded:
+            box.prop(xp_ext, "lod_count")
+            lod_count = xp_ext.lod_count
+            if lod_count > 0:
+                row = box.row()
+                row.prop(xp_ext, "lod_0_start")
+                row.prop(xp_ext, "lod_0_end")
+            if lod_count > 1:
+                row = box.row()
+                row.prop(xp_ext, "lod_1_start")
+                row.prop(xp_ext, "lod_1_end")
+            if lod_count > 2:
+                row = box.row()
+                row.prop(xp_ext, "lod_2_start")
+                row.prop(xp_ext, "lod_2_end")
+            if lod_count > 3:
+                row = box.row()
+                row.prop(xp_ext, "lod_3_start")
+                row.prop(xp_ext, "lod_3_end")
+            box.operator("xp_ext.set_lods", text="Set LODs")
+
         do_test_operators = False
         if do_test_operators:
             layout.separator()
