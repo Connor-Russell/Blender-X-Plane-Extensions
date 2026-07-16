@@ -117,11 +117,11 @@ def update_xplane_collection_settings(col):
     for obj in col.objects:
         mat = obj.active_material
 
-        weather_mode = mat.xp_materials.weather_mode
-        weather_texture = file_utils.to_relative(mat.xp_materials.weather_texture)
-        material_mode = mat.xp_materials.material_mode
-
         if mat != None:
+            weather_mode = mat.xp_materials.weather_mode
+            weather_texture = file_utils.to_relative(mat.xp_materials.weather_texture)
+            material_mode = mat.xp_materials.material_mode
+
             xp_props = mat.xp_materials
 
             #If we have a lit texture, and a brightness override, set the brightness override
