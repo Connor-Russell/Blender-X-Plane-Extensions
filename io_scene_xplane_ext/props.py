@@ -583,6 +583,17 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
+    weather_mode: bpy.props.EnumProperty(
+        name="Weather Mode",
+        description="The weather mode, controlling how the weather texture is used in sim",
+        items=[ ("DEFAULT", "Default", "Only albedo based snow effects"),
+                ("NONE", "None", "No weather effects"),
+                ("TRANSPARENT", "Transparent", "The weather effects of what is behind this asset show through"),
+                ("TEXTURE", "Texture", "Weather effects are controlled by the weather texture")],
+        default="DEFAULT",
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
     brightness: bpy.props.FloatProperty(
         name="Brightness",
         description="The brightness of the LIT texture in NITs. -1 to leave default",

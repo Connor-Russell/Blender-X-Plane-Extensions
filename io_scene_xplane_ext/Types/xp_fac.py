@@ -279,6 +279,8 @@ class facade_material:
         self.layer_group_offset = 0
         self.decals = []  # List of decals, each decal is a facade_decal object
         self.imported_decal_commands = []
+        self.weather_mode = "DEFAULT"
+        self.weather_texture = ""
 
 class facade:
     def __init__(self):
@@ -634,6 +636,13 @@ class facade:
             if not file_utils.is_empty(mat.decal_modulator):
                 output += "TEXTURE_MODULATOR " + file_utils.to_relative(file_utils.to_absolute(mat.decal_modulator), False, output_folder) + "\n"
 
+            if mat.weather_mode == "TRANSPARENT":
+                output += "WEATHER_TRANSPARENT\n"
+            elif mat.weather_mode == "NONE":
+                output += "WEATHER_NONE\n"
+            elif mat.weather_mode == "TEXTURE" and not file_utils.is_empty(mat.weather_texture):
+                output += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(mat.weather_texture), False, output_folder) + "\n"
+
             #Write the decals
             if len(mat.decals) > 0:
                 output += "#Decals\n"
@@ -678,6 +687,13 @@ class facade:
                 output += "TEXTURE_NORMAL " + str(mat.normal_tile_ratio) + " " + file_utils.to_relative(file_utils.to_absolute(mat.normal_texture), False, output_folder)+ "\n"
             if not file_utils.is_empty(mat.decal_modulator):
                 output += "TEXTURE_MODULATOR " + file_utils.to_relative(file_utils.to_absolute(mat.decal_modulator), False, output_folder) + "\n"
+
+            if mat.weather_mode == "TRANSPARENT":
+                output += "WEATHER_TRANSPARENT\n"
+            elif mat.weather_mode == "NONE":
+                output += "WEATHER_NONE\n"
+            elif mat.weather_mode == "TEXTURE" and not file_utils.is_empty(mat.weather_texture):
+                output += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(mat.weather_texture), False, output_folder) + "\n"
 
             #Write the decals
             if len(mat.decals) > 0:
@@ -907,6 +923,8 @@ class facade:
             wall_material.xp_materials.cast_shadow = self.import_wall_material.cast_shadow
             wall_material.xp_materials.layer_group = self.import_wall_material.layer_group.upper()
             wall_material.xp_materials.layer_group_offset = self.import_wall_material.layer_group_offset
+            wall_material.xp_materials.weather_mode = self.import_wall_material.weather_mode
+            wall_material.xp_materials.weather_texture = self.import_wall_material.weather_texture
             self.wall_material = wall_material
 
             decal_alb_index = 0
@@ -944,6 +962,8 @@ class facade:
             roof_material.xp_materials.cast_shadow = self.import_roof_material.cast_shadow
             roof_material.xp_materials.layer_group = self.import_roof_material.layer_group.upper()
             roof_material.xp_materials.layer_group_offset = self.import_roof_material.layer_group_offset
+            roof_material.xp_materials.weather_mode = self.import_roof_material.weather_mode
+            roof_material.xp_materials.weather_texture = self.import_roof_material.weather_texture
             self.roof_material = roof_material
 
             decal_alb_index = 0

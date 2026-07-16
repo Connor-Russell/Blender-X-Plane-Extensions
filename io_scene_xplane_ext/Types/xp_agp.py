@@ -979,6 +979,7 @@ class agp:
         self.nml_texture = ""
         self.nml_tile_rat = 1.0
         self.lit_texture = ""
+        self.weather_mode = "DEFAULT"
         self.weather_texture = ""
         self.blend_mode = "BLEND"
         self.blend_cutoff = 0.5
@@ -1047,6 +1048,7 @@ class agp:
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
+        self.weather_mode = mat.weather_mode
         self.weather_texture = mat.weather_texture
         self.do_blend = mat.blend_mode == 'BLEND'
         self.blend_cutoff = mat.blend_cutoff
@@ -1093,6 +1095,8 @@ class agp:
         mat.xp_materials.alb_texture = self.alb_texture
         mat.xp_materials.lit_texture = self.lit_texture
         mat.xp_materials.normal_texture = self.nml_texture
+        mat.xp_materials.weather_mode = self.weather_mode
+        mat.xp_materials.weather_texture = self.weather_texture
         mat.xp_materials.blend_mode = self.blend_mode
         mat.xp_materials.blend_cutoff = self.blend_cutoff
         mat.xp_materials.surface_type = self.surface
@@ -1148,10 +1152,13 @@ class agp:
             of += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder) + "\n"
         if not file_utils.is_empty(self.nml_texture):
             of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder) + "\n"
-        if not file_utils.is_empty(self.weather_texture):
-            of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
-        else:
+        
+        if self.weather_mode == "TRANSPARENT":
             of += "WEATHER_TRANSPARENT\n"
+        elif self.weather_mode == "NONE":
+            of += "WEATHER_NONE\n"
+        elif self.weather_mode == "TEXTURE" and not file_utils.is_empty(self.weather_texture):
+            of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
         
         if not self.do_blend:
             of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"

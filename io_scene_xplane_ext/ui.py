@@ -752,14 +752,20 @@ class MENU_mats(bpy.types.Panel):
             if (xp_materials.lit_texture != ""):
                 box.prop(xp_materials, "brightness", text="Brightness")
 
-            box.prop(xp_materials, "weather_texture", text="Weather Texture")
-
             #---------------------------------Surface Properties---------------------------------
 
             box = layout.box()
             box.label(text="Surface Properties")
 
+            box.prop(xp_materials, "weather_mode")
+            if xp_materials.weather_mode == "TEXTURE":
+                box.prop(xp_materials, "weather_texture", text="Weather Texture")
+            
+            box.separator()
+
             box.prop(xp_materials, "material_mode")
+
+            box.separator()
 
             box.prop(xp_materials, "blend_mode")
             if xp_materials.blend_mode == "CLIP":

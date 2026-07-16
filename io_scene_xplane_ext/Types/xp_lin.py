@@ -39,6 +39,7 @@ class line():
         self.nml_texture = ""
         self.lit_texture = ""
         self.mod_texture = ""
+        self.weather_mode = "DEFAULT"
         self.weather_texture = ""
         self.layer = "MARKINGS"
         self.layer_offset = 0
@@ -73,12 +74,15 @@ class line():
             of += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder) + "\n"
         if not file_utils.is_empty(self.nml_texture):
             of += "TEXTURE_NORMAL " + str(self.normal_scale) + "\t" + file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder) + "\n"
-        if not file_utils.is_empty(self.weather_texture):
-                of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
-        else:
-            of += "WEATHER_TRANSPARENT\n"
         if self.super_rough:
-            of += "SUPER_ROUGHNESS\n"
+            of += "SUPER_ROUGHNESS 1.0\n"
+
+        if self.weather_mode == "TRANSPARENT":
+            of += "WEATHER_TRANSPARENT\n"
+        elif self.weather_mode == "NONE":
+            of += "WEATHER_NONE\n"
+        elif self.weather_mode == "TEXTURE" and not file_utils.is_empty(self.weather_texture):
+            of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
 
         if not self.do_blend:
             of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
@@ -201,6 +205,10 @@ class line():
                 self.mod_texture = tokens[1]
             elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT":
                 self.weather_texture = tokens[1]
+            elif cmd == "WEATHER_TRANSPARENT":
+                self.weather_mode = "TRANSPARENT"
+            elif cmd == "WEATHER_NONE":
+                self.weather_mode = "NONE"
             elif cmd == "SUPER_ROUGHNESS":
                 self.super_rough = True
             elif cmd == "NO_BLEND":
@@ -318,6 +326,7 @@ class line():
         self.lit_texture = mat.lit_texture
         self.nml_texture = mat.normal_texture
         self.mod_texture = mat.decal_modulator
+        self.weather_mode = mat.weather_mode
         self.weather_texture = mat.weather_texture
         self.do_blend = True if mat.blend_mode == 'BLEND' else False
         self.blend_cutoff = mat.blend_cutoff
@@ -392,6 +401,7 @@ class line():
         mat.xp_materials.alb_texture = self.alb_texture
         mat.xp_materials.lit_texture = self.lit_texture
         mat.xp_materials.normal_texture = self.nml_texture
+        mat.xp_materials.weather_mode = self.weather_mode
         mat.xp_materials.weather_texture = self.weather_texture
         mat.xp_materials.decal_modulator = self.mod_texture
         mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'

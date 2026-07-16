@@ -100,11 +100,26 @@ def update_xplane_collection_settings(col):
     col.xplane.layer.texture_modulator = ""
     col.xplane.layer.texture_draped_modulator = ""
 
+    def add_custom_property(name, value):
+        col.xplane.layer.customAttributes.add()
+        col.xplane.layer.customAttributes[-1].name = name
+        col.xplane.layer.customAttributes[-1].value = value
+    
+    #Reset custom attributes
+    col.xplane.layer.customAttributes.clear()
 
+    #We can do these only once at the end because they potentially add custom properties
+    weather_mode = ""
+    weather_texture = ""
+    material_mode = ""
 
     #Get all the objects in the collection
     for obj in col.objects:
         mat = obj.active_material
+
+        weather_mode = mat.xp_materials.weather_mode
+        weather_texture = file_utils.to_relative(mat.xp_materials.weather_texture)
+        material_mode = mat.xp_materials.material_mode
 
         if mat != None:
             xp_props = mat.xp_materials
@@ -115,7 +130,7 @@ def update_xplane_collection_settings(col):
                     col.xplane.layer.luminance_override = True
                     col.xplane.layer.luminance = int(xp_props.brightness)
 
-                col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != ""
+                col.xplane.layer.normal_metalness_draped = xp_props.normal_texture != "" and xp_props.material_mode == "NORMAL_METALNESS"
 
             #Set the textures
             col.xplane.layer.texture = file_utils.to_relative(xp_props.alb_texture)
@@ -127,7 +142,7 @@ def update_xplane_collection_settings(col):
                 col.xplane.layer.texture_normal = file_utils.to_relative(xp_props.normal_texture)
 
             #If we have a normal map, set normal metalness to true
-            if not file_utils.is_empty(xp_props.normal_texture):
+            if not file_utils.is_empty(xp_props.normal_texture) and xp_props.material_mode == "NORMAL_METALNESS":
                 col.xplane.layer.normal_metalness = True
 
             #If we are draped, set the draped textures to our main textures
@@ -136,7 +151,7 @@ def update_xplane_collection_settings(col):
                 col.xplane.layer.texture_draped_normal = file_utils.to_relative(xp_props.normal_texture)
                 
                 #If we have a normal map, set normal metalness to true
-                if not file_utils.is_empty(xp_props.normal_texture):
+                if not file_utils.is_empty(xp_props.normal_texture) and xp_props.material_mode == "NORMAL_METALNESS":
                     col.xplane.layer.normal_metalness_draped = True
 
                 #Try to set the layer group. We wrap this in a try because if they are not on the custom branch of XP2B with the new blended layer group, this will fail if they use "blended" as a layer group
@@ -177,6 +192,16 @@ def update_xplane_collection_settings(col):
             decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
             decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
             decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
+
+    if material_mode == "NORMAL_TRANSLUCENCY":
+        add_custom_property("NORMAL_TRANSLUCENCY", "")
+    
+    if weather_mode == "TRANSPARENT":
+        add_custom_property("WEATHER_TRANSPARENT", "")
+    elif weather_mode == "NONE":
+        add_custom_property("WEATHER_NONE", "")
+    elif weather_mode == "TEXTURE" and not file_utils.is_empty(weather_texture):
+        add_custom_property("WEATHER", weather_texture)
 
     log_utils.display_messages()
 
