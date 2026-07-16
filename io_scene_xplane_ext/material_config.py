@@ -295,10 +295,6 @@ def update_settings(in_material):
     in_material.xplane.surfaceType = xp_mat.surface_type.lower()
     in_material.xplane.deck = xp_mat.surface_is_deck
 
-    #Set camera and aicraft specific properties
-    in_material.xplane.solid_camera = xp_mat.camera_collision_enabled
-    in_material.xplane.draw = xp_mat.drawing_enabled
-
     #Set shadow mode
     in_material.xplane.shadow_local = xp_mat.cast_shadow
 
@@ -321,24 +317,6 @@ def update_settings(in_material):
             in_material.xplane.lightLevel_photometric = xp_mat.light_level_photometric
             in_material.xplane.lightLevel_brightness = xp_mat.light_level_brightness
             in_material.xplane.lightLevel_dataref = xp_mat.light_level_dataref
-
-    #Set cockpit device params
-    if xp_mat.use_2d_panel_texture:
-        in_material.xplane.cockpit_feature = 'panel'
-        in_material.xplane.cockpit_region = str(xp_mat.panel_texture_region)
-    if xp_mat.cockpit_device != "NONE":
-        in_material.xplane.cockpit_feature = 'device'
-        in_material.xplane.device_name = xp_mat.cockpit_device
-        in_material.xplane.plugin_device = xp_mat.custom_cockpit_device
-        in_material.xplane.device_bus_0 = xp_mat.cockpit_device_use_bus_1
-        in_material.xplane.device_bus_1 = xp_mat.cockpit_device_use_bus_2
-        in_material.xplane.device_bus_2 = xp_mat.cockpit_device_use_bus_3
-        in_material.xplane.device_bus_3 = xp_mat.cockpit_device_use_bus_4
-        in_material.xplane.device_bus_4 = xp_mat.cockpit_device_use_bus_5
-        in_material.xplane.device_bus_5 = xp_mat.cockpit_device_use_bus_6
-        in_material.xplane.device_lighting_channel = xp_mat.cockpit_device_lighting_channel
-    elif not xp_mat.use_2d_panel_texture:
-        in_material.xplane.cockpit_feature = 'none'
 
     #Set the correct number of decals
     while len(xp_mat.decals) < 4:
@@ -1295,31 +1273,31 @@ def materials_are_equivalent(mat1, mat2):
         return False
     if xm1.layer_group_offset != xm2.layer_group_offset:
         return False
-    if xm1.camera_collision_enabled != xm2.camera_collision_enabled:
+    if mat1.xplane.solid_camera != mat2.xplane.solid_camera:
         return False
-    if xm1.drawing_enabled != xm2.drawing_enabled:
+    if mat1.xplane.draw != mat2.xplane.draw:
         return False
-    if xm1.use_2d_panel_texture != xm2.use_2d_panel_texture:
+    if mat1.xplane.cockpit_feature != mat2.xplane.cockpit_feature:
         return False
-    if xm1.panel_texture_region != xm2.panel_texture_region:
+    if mat1.xplane.cockpit_region != mat2.xplane.cockpit_region:
         return False
-    if xm1.cockpit_device != xm2.cockpit_device:
+    if mat1.xplane.device_name != mat2.xplane.device_name:
         return False
-    if xm1.custom_cockpit_device != xm2.custom_cockpit_device:
+    if mat1.xplane.plugin_device != mat2.xplane.plugin_device:
         return False
-    if xm1.cockpit_device_use_bus_1 != xm2.cockpit_device_use_bus_1:
+    if mat1.xplane.device_bus_0 != mat2.xplane.device_bus_0:
         return False
-    if xm1.cockpit_device_use_bus_2 != xm2.cockpit_device_use_bus_2:
+    if mat1.xplane.device_bus_1 != mat2.xplane.device_bus_1:
         return False
-    if xm1.cockpit_device_use_bus_3 != xm2.cockpit_device_use_bus_3:
+    if mat1.xplane.device_bus_2 != mat2.xplane.device_bus_2:
         return False
-    if xm1.cockpit_device_use_bus_4 != xm2.cockpit_device_use_bus_4:
+    if mat1.xplane.device_bus_3 != mat2.xplane.device_bus_3:
         return False
-    if xm1.cockpit_device_use_bus_5 != xm2.cockpit_device_use_bus_5:
+    if mat1.xplane.device_bus_4 != mat2.xplane.device_bus_4:
         return False
-    if xm1.cockpit_device_use_bus_6 != xm2.cockpit_device_use_bus_6:
+    if mat1.xplane.device_bus_5 != mat2.xplane.device_bus_5:
         return False
-    if xm1.cockpit_device_lighting_channel != xm2.cockpit_device_lighting_channel:
+    if mat1.xplane.device_lighting_channel != mat2.xplane.device_lighting_channel:
         return False
     if xm1.blend_mode != xm2.blend_mode:
         return False

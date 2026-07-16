@@ -824,40 +824,6 @@ class MENU_mats(bpy.types.Panel):
             for i, decal in enumerate(xp_materials.decals):
                 draw_decal_prop(box, decal, i, material.name)
 
-            box = layout.box()
-
-            #---------------------------------Aircraft Properties---------------------------------
-
-            box.label(text="Aircraft Properties")
-
-            box.prop(xp_materials, "camera_collision_enabled")
-            box.prop(xp_materials, "drawing_enabled")
-
-            box.separator()
-
-            box.prop(xp_materials, "use_2d_panel_texture")
-            if xp_materials.use_2d_panel_texture:
-                box.prop(xp_materials, "panel_texture_region")
-
-            box.separator()
-            box.prop(xp_materials, "cockpit_device")
-            if xp_materials.cockpit_device != "NONE":
-                if xp_materials.cockpit_device == "Plugin Device":
-                    box.prop(xp_materials, "custom_cockpit_device")
-                row = box.row()
-
-                row.prop(xp_materials, "cockpit_device_use_bus_1")
-                row.prop(xp_materials, "cockpit_device_use_bus_2")
-                row.prop(xp_materials, "cockpit_device_use_bus_3")
-
-                row = box.row()
-
-                row.prop(xp_materials, "cockpit_device_use_bus_4")
-                row.prop(xp_materials, "cockpit_device_use_bus_5")
-                row.prop(xp_materials, "cockpit_device_use_bus_6")
-
-                box.prop(xp_materials, "cockpit_device_lighting_channel")
-
             #---------------------------------Conversion Operators---------------------------------
             layout.separator()
             layout.label(text="Conversion Operators")

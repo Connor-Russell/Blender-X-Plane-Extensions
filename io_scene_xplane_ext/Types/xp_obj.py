@@ -917,27 +917,57 @@ class draw_call:
                 xp_props.blend_cutoff == self.state.blend_cutoff and \
                 xp_props.cast_shadow == self.state.cast_shadow and \
                 xp_props.surface_type == self.state.surface_type.upper() and \
-                xp_props.drawing_enabled == self.state.draw and \
-                xp_props.camera_collision_enabled == self.state.hard_camera and \
                 xp_props.light_level_override == self.state.light_level_override and \
                 xp_props.light_level_v1 == self.state.light_level_v1 and \
                 xp_props.light_level_v2 == self.state.light_level_v2 and \
                 xp_props.light_level_photometric == self.state.light_level_photometric and \
                 xp_props.light_level_brightness == self.state.light_level_brightness and \
                 xp_props.light_level_dataref == self.state.light_level_dataref and \
-                xp_props.use_2d_panel_texture == self.state.use_2d_panel and \
-                xp_props.panel_texture_region == self.state.panel_texture_region and \
-                xp_props.cockpit_device.upper() == self.state.cockpit_device and \
-                xp_props.custom_cockpit_device == self.state.custom_cockpit_device and \
-                xp_props.cockpit_device_use_bus_1 == self.state.cockpit_device_use_bus_1 and \
-                xp_props.cockpit_device_use_bus_2 == self.state.cockpit_device_use_bus_2 and \
-                xp_props.cockpit_device_use_bus_3 == self.state.cockpit_device_use_bus_3 and \
-                xp_props.cockpit_device_use_bus_4 == self.state.cockpit_device_use_bus_4 and \
-                xp_props.cockpit_device_use_bus_5 == self.state.cockpit_device_use_bus_5 and \
-                xp_props.cockpit_device_use_bus_6 == self.state.cockpit_device_use_bus_6 and \
-                xp_props.cockpit_device_lighting_channel == self.state.cockpit_device_lighting_channel:
+                mat.xplane.draw == self.state.draw and \
+                mat.xplane.solid_camera == self.state.hard_camera:
+
+                expected_cockpit_feature = 'none'
+                expected_cockpit_region = 0
+                expected_device_name = ""
+                expected_plugin_device = ""
+                expected_bus_0 = False
+                expected_bus_1 = False
+                expected_bus_2 = False
+                expected_bus_3 = False
+                expected_bus_4 = False
+                expected_bus_5 = False
+                expected_lighting_channel = 0
+
+                if self.state.use_2d_panel:
+                    expected_cockpit_feature = 'panel'
+                    expected_cockpit_region = self.state.panel_texture_region
+
+                if self.state.cockpit_device != "NONE":
+                    expected_cockpit_feature = 'device'
+                    expected_device_name = self.state.cockpit_device
+                    expected_plugin_device = self.state.custom_cockpit_device
+                    expected_bus_0 = self.state.cockpit_device_use_bus_1
+                    expected_bus_1 = self.state.cockpit_device_use_bus_2
+                    expected_bus_2 = self.state.cockpit_device_use_bus_3
+                    expected_bus_3 = self.state.cockpit_device_use_bus_4
+                    expected_bus_4 = self.state.cockpit_device_use_bus_5
+                    expected_bus_5 = self.state.cockpit_device_use_bus_6
+                    expected_lighting_channel = self.state.cockpit_device_lighting_channel
+
+                mat_cockpit_region = int(float(mat.xplane.cockpit_region)) if str(mat.xplane.cockpit_region) != "" else 0
+                if mat.xplane.cockpit_feature == expected_cockpit_feature and \
+                    mat_cockpit_region == expected_cockpit_region and \
+                    mat.xplane.device_name == expected_device_name and \
+                    mat.xplane.plugin_device == expected_plugin_device and \
+                    mat.xplane.device_bus_0 == expected_bus_0 and \
+                    mat.xplane.device_bus_1 == expected_bus_1 and \
+                    mat.xplane.device_bus_2 == expected_bus_2 and \
+                    mat.xplane.device_bus_3 == expected_bus_3 and \
+                    mat.xplane.device_bus_4 == expected_bus_4 and \
+                    mat.xplane.device_bus_5 == expected_bus_5 and \
+                    mat.xplane.device_lighting_channel == expected_lighting_channel:
                 
-                matching_mat = mat
+                    matching_mat = mat
 
         if basic_draped_mat == None:
             basic_draped_mat = basic_mat
@@ -957,25 +987,12 @@ class draw_call:
             new_mat.xp_materials.blend_cutoff = self.state.blend_cutoff
             new_mat.xp_materials.cast_shadow = self.state.cast_shadow
             new_mat.xp_materials.surface_type = self.state.surface_type.upper()
-            new_mat.xp_materials.drawing_enabled = self.state.draw
-            new_mat.xp_materials.camera_collision_enabled = self.state.hard_camera
             new_mat.xp_materials.light_level_override = self.state.light_level_override
             new_mat.xp_materials.light_level_v1 = self.state.light_level_v1
             new_mat.xp_materials.light_level_v2 = self.state.light_level_v2
             new_mat.xp_materials.light_level_photometric = self.state.light_level_photometric
             new_mat.xp_materials.light_level_brightness = int(float(self.state.light_level_brightness))
             new_mat.xp_materials.light_level_dataref = self.state.light_level_dataref
-            new_mat.xp_materials.use_2d_panel_texture = self.state.use_2d_panel
-            new_mat.xp_materials.panel_texture_region = self.state.panel_texture_region
-            new_mat.xp_materials.cockpit_device = self.state.cockpit_device
-            new_mat.xp_materials.custom_cockpit_device = self.state.custom_cockpit_device
-            new_mat.xp_materials.cockpit_device_use_bus_1 = self.state.cockpit_device_use_bus_1
-            new_mat.xp_materials.cockpit_device_use_bus_2 = self.state.cockpit_device_use_bus_2
-            new_mat.xp_materials.cockpit_device_use_bus_3 = self.state.cockpit_device_use_bus_3
-            new_mat.xp_materials.cockpit_device_use_bus_4 = self.state.cockpit_device_use_bus_4
-            new_mat.xp_materials.cockpit_device_use_bus_5 = self.state.cockpit_device_use_bus_5
-            new_mat.xp_materials.cockpit_device_use_bus_6 = self.state.cockpit_device_use_bus_6
-            new_mat.xp_materials.cockpit_device_lighting_channel = self.state.cockpit_device_lighting_channel
             if new_mat.xp_materials.draped:
                 new_mat.xp_materials.layer_group = obj_ref.layer_group_draped if obj_ref != None else "OBJECTS"
                 new_mat.xp_materials.layer_group_offset = obj_ref.layer_group_draped_offset if obj_ref != None else 0
@@ -984,6 +1001,28 @@ class draw_call:
                 new_mat.xp_materials.layer_group_offset = obj_ref.layer_group_offset if obj_ref != None else 0
 
             material_config.update_settings(new_mat)
+
+            # These attributes are imported from OBJ draw state and written directly to xplane.
+            new_mat.xplane.draw = self.state.draw
+            new_mat.xplane.solid_camera = self.state.hard_camera
+
+            if self.state.use_2d_panel:
+                new_mat.xplane.cockpit_feature = 'panel'
+                new_mat.xplane.cockpit_region = str(self.state.panel_texture_region)
+
+            if self.state.cockpit_device != "NONE":
+                new_mat.xplane.cockpit_feature = 'device'
+                new_mat.xplane.device_name = self.state.cockpit_device
+                new_mat.xplane.plugin_device = self.state.custom_cockpit_device
+                new_mat.xplane.device_bus_0 = self.state.cockpit_device_use_bus_1
+                new_mat.xplane.device_bus_1 = self.state.cockpit_device_use_bus_2
+                new_mat.xplane.device_bus_2 = self.state.cockpit_device_use_bus_3
+                new_mat.xplane.device_bus_3 = self.state.cockpit_device_use_bus_4
+                new_mat.xplane.device_bus_4 = self.state.cockpit_device_use_bus_5
+                new_mat.xplane.device_bus_5 = self.state.cockpit_device_use_bus_6
+                new_mat.xplane.device_lighting_channel = self.state.cockpit_device_lighting_channel
+            elif not self.state.use_2d_panel:
+                new_mat.xplane.cockpit_feature = 'none'
 
             matching_mat = new_mat
 
