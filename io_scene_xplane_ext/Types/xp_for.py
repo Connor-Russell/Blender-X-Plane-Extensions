@@ -64,7 +64,7 @@ class TreeMesh():
             i += 10
         i = 0
         while i < len(self.indicies) % 10:
-            out += f"IDX {self.indicies[int(len(self.indicies) / 10) + i]}\n"
+            out += f"IDX {self.indicies[int(len(self.indicies) / 10) * 10 + i]}\n"
             i += 1
         return out + "\n"
 
