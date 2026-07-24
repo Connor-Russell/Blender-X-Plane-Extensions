@@ -543,7 +543,11 @@ class auto_split_obj:
                     #Non-mesh objects just get dumped into the first collection
                     continue
                 if len(split_obj.data.materials) > 0:
-                    all_mats.append(split_obj.active_material.name)
+                    if (split_obj.active_material is not None):
+                        all_mats.append(split_obj.active_material.name)
+                    else:
+                        log_utils.warning(f"Object {split_obj.name} has no active material assigned. X-Plane2Blender would throw an error on export!")
+                        raise Exception(f"Object {split_obj.name} has no active material assigned. X-Plane2Blender would throw an error on export!")
                 else:
                     all_objs_have_mats = False
                     log_utils.warning(f"Object {split_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
