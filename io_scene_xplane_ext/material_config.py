@@ -8,6 +8,7 @@ import bpy # type: ignore
 from .Helpers import file_utils
 from .Helpers import decal_utils
 from .Helpers import log_utils
+from .Helpers import misc_utils
 
 import struct
 
@@ -112,6 +113,8 @@ def update_xplane_collection_settings(col):
     weather_mode = ""
     weather_texture = ""
     material_mode = ""
+    blend_mode = ""
+    dither_cutoff = 0.5
 
     #Get all the objects in the collection
     for obj in col.objects:
@@ -181,6 +184,10 @@ def update_xplane_collection_settings(col):
             if xp_props.draped:
                 col.xplane.layer.texture_draped_modulator = file_utils.to_relative(xp_props.decal_modulator)
 
+            if xp_props.blend_mode == "DITHER":
+                blend_mode = "DITHER"
+                dither_cutoff = xp_props.dither_cutoff
+
             #Ensure we have the right number of decals
             if len(xp_props.decals) != 4:
                 while len(xp_props.decals) < 4:
@@ -202,6 +209,10 @@ def update_xplane_collection_settings(col):
         add_custom_property("WEATHER_NONE", "")
     elif weather_mode == "TEXTURE" and not file_utils.is_empty(weather_texture):
         add_custom_property("WEATHER", weather_texture)
+
+    #Dithered alpha, custom blend mode XP2B doesn't support
+    if blend_mode == "DITHER":
+        add_custom_property("DITHER_ALPHA", misc_utils.ftos(dither_cutoff, 2))
 
     log_utils.display_messages()
 
@@ -277,19 +288,20 @@ def update_settings(in_material):
         xp_mat.was_separate_material_texture_last_update = xp_mat.do_separate_material_texture
 
     #Set XP alpha mode based on the blend_alpha property. Alpha Cutoff ("off") or Alpha Blend ("on")
-    if xp_mat.blend_mode == "BLEND":
-        in_material.xplane.blend_v1000 = 'on'
+    if xp_mat.blend_mode == "CLIP":
+        in_material.xplane.blend_v1000 = 'off'
+        in_material.blend_method = 'CLIP'
+        in_material.alpha_threshold = xp_mat.blend_cutoff
         in_material.xplane.blendRatio = xp_mat.blend_cutoff
-        in_material.blend_method = 'BLEND'
     elif xp_mat.blend_mode == "SHADOW":
         in_material.xplane.blend_v1000 = 'shadow'
         in_material.xplane.blendRatio = xp_mat.blend_cutoff
         in_material.blend_method = 'BLEND'
     else:
-        in_material.xplane.blend_v1000 = 'off'
-        in_material.blend_method = 'CLIP'
-        in_material.alpha_threshold = xp_mat.blend_cutoff
+        in_material.xplane.blend_v1000 = 'on'
         in_material.xplane.blendRatio = xp_mat.blend_cutoff
+        in_material.blend_method = 'BLEND'
+        
 
     #Set XP hard mode based on the hard property ("none" or "concrete")
     in_material.xplane.surfaceType = xp_mat.surface_type.lower()

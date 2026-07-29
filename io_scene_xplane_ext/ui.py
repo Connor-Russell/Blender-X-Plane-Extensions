@@ -772,6 +772,8 @@ class MENU_mats(bpy.types.Panel):
                 box.prop(xp_materials, "blend_cutoff")
             elif xp_materials.blend_mode == "SHADOW":
                 box.prop(xp_materials, "blend_cutoff", text="Shadow Cutoff")
+            elif xp_materials.blend_mode == "DITHER":
+                box.prop(xp_materials, "dither_cutoff")
 
             box.separator()
 

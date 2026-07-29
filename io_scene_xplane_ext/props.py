@@ -647,7 +647,8 @@ class PROP_mats(bpy.types.PropertyGroup):
             ('CLIP', "Alpha Clip", "Alpha is clipped at the cutoff value"),
             ('BLEND', "Alpha Blend", "Alpha is blended"),
             ('SHADOW', "Alpha Blend, Shadow Clip", "Alpha is blended, shadows are clipped"),
-            ('HASH', "Alpha Hashed", "Forest exclusive, albedo pixels are clipped but dithered for psuedo blending without culling artifacts")
+            ('HASH', "Alpha Hashed", "Forest exclusive, albedo pixels are clipped but dithered for psuedo blending without culling artifacts"),
+            ('DITHER', "Alpha Dithered", "Draped exclusive, a mix of blend and no blend, with lower values providing sharper cutoffs")
         ],
         default='BLEND',
         update=material_config.operator_wrapped_update_settings
@@ -656,6 +657,15 @@ class PROP_mats(bpy.types.PropertyGroup):
     blend_cutoff: bpy.props.FloatProperty(
         name="Blend Cutoff",
         description="The alpha cutoff value",
+        default=0.5,
+        min=0,
+        max=1,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+    dither_cutoff: bpy.props.FloatProperty(
+        name="Dither Cutoff",
+        description="The alpha cutoff value for dithered materials",
         default=0.5,
         min=0,
         max=1,

@@ -47,6 +47,8 @@ class line():
         self.scale_y = 0
         self.normal_scale = 1
         self.blend_cutoff = 0
+        self.dither_cutoff = 0.5
+        self.alpha_mode = "BLEND"
         self.do_blend = False
         self.mirror = True
         self.segment_count = 1
@@ -84,7 +86,11 @@ class line():
         elif self.weather_mode == "TEXTURE" and not file_utils.is_empty(self.weather_texture):
             of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
 
-        if not self.do_blend:
+        if self.do_blend:
+            pass
+        elif self.alpha_mode == "DITHER":
+            of += "DITHER_ALPHA " + misc_utils.ftos(self.dither_cutoff, 2) + "\n"
+        else:
             of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
         
         of += "\n"
@@ -176,6 +182,7 @@ class line():
                 'TEXTURE_MODULATOR': 2,
                 'WEATHER': 2,
                 'NO_BLEND': 2,
+                'DITHER_ALPHA': 2,
                 'TEX_WIDTH': 2,
                 'TEX_HEIGHT': 2,
                 'DECAL': 1,
@@ -213,6 +220,13 @@ class line():
                 self.super_rough = True
             elif cmd == "NO_BLEND":
                 self.do_blend = False
+                self.alpha_mode = "NO_BLEND"
+                self.blend_cutoff = float(tokens[1])
+                self.dither_cutoff = float(tokens[1])
+            elif cmd == "DITHER_ALPHA":
+                self.do_blend = False
+                self.alpha_mode = "DITHER"
+                self.dither_cutoff = float(tokens[1])
                 self.blend_cutoff = float(tokens[1])
 
             #Check for a texture resolution specifier
@@ -328,8 +342,16 @@ class line():
         self.mod_texture = mat.decal_modulator
         self.weather_mode = mat.weather_mode
         self.weather_texture = mat.weather_texture
-        self.do_blend = True if mat.blend_mode == 'BLEND' else False
-        self.blend_cutoff = mat.blend_cutoff
+        if mat.blend_mode == 'DITHER':
+            self.do_blend = False
+            self.alpha_mode = 'DITHER'
+            self.dither_cutoff = mat.dither_cutoff
+            self.blend_cutoff = mat.dither_cutoff
+        else:
+            self.do_blend = True if mat.blend_mode == 'BLEND' else False
+            self.alpha_mode = 'BLEND' if self.do_blend else 'NO_BLEND'
+            self.blend_cutoff = mat.blend_cutoff
+            self.dither_cutoff = mat.dither_cutoff
         self.surface = mat.surface_type
         self.layer = mat.layer_group
         self.layer_offset = mat.layer_group_offset
@@ -404,8 +426,14 @@ class line():
         mat.xp_materials.weather_mode = self.weather_mode
         mat.xp_materials.weather_texture = self.weather_texture
         mat.xp_materials.decal_modulator = self.mod_texture
-        mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'
-        mat.xp_materials.blend_cutoff = self.blend_cutoff
+        if self.alpha_mode == 'DITHER':
+            mat.xp_materials.blend_mode = 'DITHER'
+            mat.xp_materials.blend_cutoff = self.dither_cutoff
+            mat.xp_materials.dither_cutoff = self.dither_cutoff
+        else:
+            mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'
+            mat.xp_materials.blend_cutoff = self.blend_cutoff
+            mat.xp_materials.dither_cutoff = self.dither_cutoff
         mat.xp_materials.surface_type = self.surface
         mat.xp_materials.layer_group = self.layer.upper()
         mat.xp_materials.layer_group_offset = int(self.layer_offset)
