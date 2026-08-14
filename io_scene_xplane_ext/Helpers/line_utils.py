@@ -195,9 +195,9 @@ def get_scale_from_layer(in_object):
             highest_y = uv.uv.y
     #Now that we have our edge UVs, and X, we can calculate the scale
     uv_width = abs(highest_x - lowest_x)
-    actual_width = x_size / uv_width
+    actual_width = float(x_size) / uv_width
     uv_height = abs(highest_y - lowest_y)
-    actual_height = y_size / uv_height
+    actual_height = float(y_size) / uv_height
 
     return actual_width, actual_height
 

@@ -43,8 +43,8 @@ class line():
         self.weather_texture = ""
         self.layer = "MARKINGS"
         self.layer_offset = 0
-        self.scale_x = 0
-        self.scale_y = 0
+        self.scale_x = 0.0
+        self.scale_y = 0.0
         self.normal_scale = 1
         self.blend_cutoff = 0
         self.dither_cutoff = 0.5
@@ -121,7 +121,7 @@ class line():
             of += "MIRROR\n"
         if self.segment_count != 0:
             of += "ALIGN " + str(self.segment_count) + "\n"
-        of += "SCALE " + str(int(self.scale_x)) + " " + str(int(self.scale_y)) + "\n"
+        of += "SCALE " + str(self.scale_x) + " " + str(self.scale_y) + "\n"
         of += "TEX_WIDTH " + str(4096) + "\n"
         of += "TEX_HEIGHT " + str(4096) + "\n"
 
