@@ -176,48 +176,30 @@ def get_scale_from_layer(in_object):
     
     #Next, get the X size in meters of this object
     x_size = in_object.dimensions.x
+    y_size = in_object.dimensions.y
 
     #Now, get the UVs of this object. We will assume the UVs are square, so we will get the lowest X and highest X and store them
     lowest_x = 1
     highest_x = 0
+    lowest_y = 1
+    highest_y = 0
 
     for uv in in_object.data.uv_layers.active.data:
         if uv.uv.x < lowest_x:
             lowest_x = uv.uv.x
         if uv.uv.x > highest_x:
             highest_x = uv.uv.x
-
+        if uv.uv.y < lowest_y:
+            lowest_y = uv.uv.y
+        if uv.uv.y > highest_y:
+            highest_y = uv.uv.y
     #Now that we have our edge UVs, and X, we can calculate the scale
     uv_width = abs(highest_x - lowest_x)
     actual_width = x_size / uv_width
+    uv_height = abs(highest_y - lowest_y)
+    actual_height = y_size / uv_height
 
-    #If there is no material, we will assume the texture is square
-    if len(in_object.data.materials) == 0:
-        return actual_width, actual_width
-    
-    try:
-        #If there is a material, we will get the texture from the material
-        mat_texture = in_object.data.materials[0].node_tree.nodes.get("Image Texture")
-
-        #Get the X and Y dimensions
-        if mat_texture is None:
-            
-            #Throw an error if there is no texture
-            raise Exception(f"Error: No texture found on object { in_object.name }! Please configure material with my X-Plane Material Plugin!")
-
-            return actual_width, actual_width
-        
-        x_dim = mat_texture.image.size[0]
-        y_dim = mat_texture.image.size[1]
-
-        #Calculate the height based on the ratio
-        y_scale = actual_width * (y_dim / x_dim)
-    except Exception as e:
-        log_utils.warning(f"Error getting texture dimensions for {in_object.name}, assuming square texture: {e}", f"Couldn't get texture dimensions for {in_object.name}, assuming square")
-        y_scale = actual_width  # If we can't get the texture dimensions, assume it's square
-        pass
-
-    return actual_width, y_scale
+    return actual_width, actual_height
 
 #Generates a plane from a list of LineVertex objects
 #Arguments:
