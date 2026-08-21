@@ -1303,6 +1303,7 @@ class BTN_find_textures(bpy.types.Operator):
     bl_label = "Find Missing Textures"
     bl_description = "Search for missing material textures relative to a specified directory. This will only update textures that can be found relative to the specified directory."
     bl_options = {'REGISTER', 'UNDO'}
+    recursive = False
 
     filepath: bpy.props.StringProperty( # type: ignore
         name="Base Path",
@@ -1337,14 +1338,22 @@ class BTN_find_textures(bpy.types.Operator):
                 return path
 
             #Check for this *filename* at the new folder
-            
-            resolved_path = file_utils.check_for_dds_or_png(os.path.join(base, os.path.basename(cleaned_path)))
+            filename = os.path.basename(cleaned_path)
+            resolved_path = ""
+            search_roots = (base,)
+            if self.recursive:
+                search_roots = (root for root, _, _ in os.walk(base))
+
+            for search_root in search_roots:
+                resolved_path = file_utils.check_for_dds_or_png(os.path.join(search_root, filename))
+                if os.path.isfile(resolved_path):
+                    break
 
             if os.path.isfile(resolved_path):
                 log_utils.info(f"Resolved path '{path}' to '{resolved_path}'")
                 return file_utils.to_relative(resolved_path, True)
             else:
-                log_utils.info(f"Could not resolve path '{path}' to '{os.path.join(base, os.path.basename(cleaned_path))}'")
+                log_utils.info(f"Could not resolve path '{path}' to '{os.path.join(base, filename)}'")
                 return path
 
         #Get all materials in the project
@@ -1365,6 +1374,13 @@ class BTN_find_textures(bpy.types.Operator):
         log_utils.display_messages()
 
         return {'FINISHED'}
+
+class BTN_find_textures_recurssive(BTN_find_textures):
+    """Search for missing material textures recursively relative to a directory."""
+    bl_idname = "xp_ext.find_textures_recurssive"
+    bl_label = "Find Missing Textures Recursively"
+    bl_description = "Search for missing material textures recursively relative to a specified directory. This will only update textures that can be found relative to the specified directory."
+    recursive = True
 
 class BTN_set_all_export_dirs(bpy.types.Operator):
     """Sets the export path to the given directory for all exportable X-Plane formats"""
@@ -1586,6 +1602,7 @@ def register():
     bpy.utils.register_class(BTN_convert_combined_xp_nml_to_separate)
     bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.register_class(BTN_find_textures)
+    bpy.utils.register_class(BTN_find_textures_recurssive)
     bpy.utils.register_class(BTN_set_all_export_dirs)
     bpy.utils.register_class(BTN_for_exporter)
     bpy.utils.register_class(BTN_preview_attached_object)
@@ -1626,6 +1643,7 @@ def unregister():
     bpy.utils.unregister_class(BTN_convert_combined_xp_nml_to_separate)
     bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.unregister_class(BTN_find_textures)
+    bpy.utils.unregister_class(BTN_find_textures_recurssive)
     bpy.utils.unregister_class(BTN_set_all_export_dirs)
     bpy.utils.unregister_class(BTN_for_exporter)
     bpy.utils.unregister_class(BTN_preview_attached_object)

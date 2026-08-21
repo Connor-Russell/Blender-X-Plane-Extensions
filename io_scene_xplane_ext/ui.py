@@ -855,6 +855,7 @@ class MENU_operations(bpy.types.Panel):
         layout.operator("xp_ext.update_all_material_nodes", text="Update All Materials")
 
         layout.operator("xp_ext.find_textures", text="Find Missing Textures")
+        layout.operator("xp_ext.find_textures_recurssive", text="Find Missing Textures Recursively")
 
         layout.separator()
 
