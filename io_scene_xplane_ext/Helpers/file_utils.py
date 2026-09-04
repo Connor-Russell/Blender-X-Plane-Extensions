@@ -166,6 +166,7 @@ def to_absolute(in_path):
         return in_path
 
     result = _lexnorm(Path(bpy.data.filepath).parent / in_path)
+    result = str(result).replace("\\", "/")  #We always use / since everyone expects it, and it prevents inconsistencies across platforms
     return str(result)
 
 def to_relative(in_path, include_blend_prefix=False, relative_to : str = None):
@@ -206,6 +207,8 @@ def to_relative(in_path, include_blend_prefix=False, relative_to : str = None):
     #Add the blender prefix if needed
     if include_blend_prefix and not in_path.startswith("//"):
         in_path = "//" + in_path
+
+    result = str(result).replace("\\", "/")  #We always use / since everyone expects it, and it prevents inconsistencies across platforms
 
     return in_path
 
@@ -313,6 +316,9 @@ def get_or_load_image(image_path, do_reload=False, copy_append_name=""):
     image_base_name = p.stem
     image_appended_name = image_base_name + copy_append_name + image_extension
     log_utils.info(f"Loading image {image_appended_name} from path {image_path}")
+    cmp_image_path = to_absolute(image_path)
+
+    
 
     #Iterate through the existing images, get their paths, turn them to absolute, and check if they match the given path
     if not addon_prefs.always_fully_reload_images:
@@ -320,14 +326,21 @@ def get_or_load_image(image_path, do_reload=False, copy_append_name=""):
             for image in bpy.data.images:
                 if image.filepath == "":
                     continue
-                if image.filepath == image_path and (copy_append_name == "" or image.name.startswith(image_appended_name)):
+                if to_absolute(image.filepath) == cmp_image_path and (copy_append_name == "" or image.name.startswith(image_appended_name)):
+                    log_utils.info(f"Using image at {image.filepath} with name {image.name}")
                     # If the image is already loaded and we don't need to reload, return it
                     if not do_reload:
                         return image
-                    
+                                 
                     # If we do need to reload, reload the image
                     image.reload()
                     return image
+                else:
+                    log_utils.info(f"Skipping reloading image at {to_absolute(image.filepath)} with name {image.name}, want name {image_appended_name}")
+                    if to_absolute(image.filepath) != cmp_image_path:
+                        log_utils.info(f"Reason: Path mismatch (expected {cmp_image_path}, got {to_absolute(image.filepath)})")
+                    else:
+                        log_utils.info(f"Reason: Name mismatch (expected {image_appended_name}, got {image.name})")
         except Exception as e:
             log_utils.warning(f"Error checking existing images when trying to find image {image_path}: {e}", f"Unexpected error trying to load {image_path}")
 

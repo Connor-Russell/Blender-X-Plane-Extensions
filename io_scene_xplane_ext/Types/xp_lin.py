@@ -203,6 +203,7 @@ class line():
 
             #Check for material data
             if cmd == "TEXTURE_NORMAL":
+                self.normal_scale = tokens[1]
                 self.nml_texture = tokens[2]
             elif cmd == "TEXTURE_LIT":
                 self.lit_texture = tokens[1]
@@ -338,6 +339,7 @@ class line():
 
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
+        self.normal_scale = mat.normal_tile_ratio
         self.nml_texture = mat.normal_texture
         self.mod_texture = mat.decal_modulator
         self.weather_mode = mat.weather_mode
@@ -422,6 +424,7 @@ class line():
         mat = bpy.data.materials.new(name=in_name)
         mat.xp_materials.alb_texture = self.alb_texture
         mat.xp_materials.lit_texture = self.lit_texture
+        mat.xp_materials.normal_tile_ratio = self.normal_scale
         mat.xp_materials.normal_texture = self.nml_texture
         mat.xp_materials.weather_mode = self.weather_mode
         mat.xp_materials.weather_texture = self.weather_texture

@@ -346,6 +346,7 @@ class polygon():
 
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
+        self.normal_scale = mat.normal_tile_ratio
         self.nml_texture = mat.normal_texture
         self.weather_mode = mat.weather_mode
         self.weather_texture = mat.weather_texture
@@ -412,6 +413,7 @@ class polygon():
         material_config.update_settings(mat)
         mat.xp_materials.alb_texture = self.alb_texture
         mat.xp_materials.lit_texture = self.lit_texture
+        mat.xp_materials.normal_tile_ratio = self.normal_scale
         mat.xp_materials.normal_texture = self.nml_texture
         mat.xp_materials.weather_mode = self.weather_mode
         mat.xp_materials.weather_texture = self.weather_texture
