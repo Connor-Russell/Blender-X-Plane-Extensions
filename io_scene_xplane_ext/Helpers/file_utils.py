@@ -208,7 +208,7 @@ def to_relative(in_path, include_blend_prefix=False, relative_to : str = None):
     if include_blend_prefix and not in_path.startswith("//"):
         in_path = "//" + in_path
 
-    result = str(result).replace("\\", "/")  #We always use / since everyone expects it, and it prevents inconsistencies across platforms
+    in_path = str(in_path).replace("\\", "/")  #We always use / since everyone expects it, and it prevents inconsistencies across platforms
 
     return in_path
 

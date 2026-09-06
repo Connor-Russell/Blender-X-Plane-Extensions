@@ -1303,7 +1303,12 @@ class BTN_find_textures(bpy.types.Operator):
     bl_label = "Find Missing Textures"
     bl_description = "Search for missing material textures relative to a specified directory. This will only update textures that can be found relative to the specified directory."
     bl_options = {'REGISTER', 'UNDO'}
-    recursive = False
+
+    recursive: bpy.props.BoolProperty( # type: ignore
+        name="Recursive",
+        description="Search for missing textures recursively in subdirectories.",
+        default=False
+    )
 
     filepath: bpy.props.StringProperty( # type: ignore
         name="Base Path",
@@ -1374,13 +1379,6 @@ class BTN_find_textures(bpy.types.Operator):
         log_utils.display_messages()
 
         return {'FINISHED'}
-
-class BTN_find_textures_recurssive(BTN_find_textures):
-    """Search for missing material textures recursively relative to a directory."""
-    bl_idname = "xp_ext.find_textures_recurssive"
-    bl_label = "Find Missing Textures Recursively"
-    bl_description = "Search for missing material textures recursively relative to a specified directory. This will only update textures that can be found relative to the specified directory."
-    recursive = True
 
 class BTN_set_all_export_dirs(bpy.types.Operator):
     """Sets the export path to the given directory for all exportable X-Plane formats"""
@@ -1602,7 +1600,6 @@ def register():
     bpy.utils.register_class(BTN_convert_combined_xp_nml_to_separate)
     bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.register_class(BTN_find_textures)
-    bpy.utils.register_class(BTN_find_textures_recurssive)
     bpy.utils.register_class(BTN_set_all_export_dirs)
     bpy.utils.register_class(BTN_for_exporter)
     bpy.utils.register_class(BTN_preview_attached_object)
@@ -1643,7 +1640,6 @@ def unregister():
     bpy.utils.unregister_class(BTN_convert_combined_xp_nml_to_separate)
     bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.unregister_class(BTN_find_textures)
-    bpy.utils.unregister_class(BTN_find_textures_recurssive)
     bpy.utils.unregister_class(BTN_set_all_export_dirs)
     bpy.utils.unregister_class(BTN_for_exporter)
     bpy.utils.unregister_class(BTN_preview_attached_object)
