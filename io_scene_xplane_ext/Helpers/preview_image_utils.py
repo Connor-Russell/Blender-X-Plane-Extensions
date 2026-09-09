@@ -4,7 +4,7 @@
 import bpy
 
 def get_color_grid_image(width, height):
-    image_name = f"_XP_EXT_CG_{width}x{height}"
+    image_name = f"_XP_EXT_COLOGRID_{width}x{height}"
     
     # Check if the image already exists
     if image_name in bpy.data.images:
@@ -23,7 +23,7 @@ def get_color_grid_image(width, height):
     return bpy.data.images.get(image_name)
 
 def get_bake_image(width, height, mat_name):
-    image_name = f"_XP_EXT_BAKE_{mat_name}"
+    image_name = f"{mat_name}_BAKE"
     
     # Check if the image already exists
     if image_name in bpy.data.images:

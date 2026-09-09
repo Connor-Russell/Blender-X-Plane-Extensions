@@ -729,6 +729,10 @@ class MENU_mats(bpy.types.Panel):
             layout.operator("xp_ext.autodetect_texture", text="Autodetect Texture")
             layout.operator("xp_ext.update_material_nodes", text="Update Material")
 
+            layout.prop(xp_materials, "preview_image_mode")
+            if xp_materials.preview_image_mode == 'CUSTOM':
+                layout.prop(xp_materials, "preview_image")
+
             #---------------------------------Texture Properties---------------------------------
 
             box = layout.box()

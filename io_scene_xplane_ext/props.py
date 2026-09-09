@@ -758,11 +758,34 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The decals for the material, aka detail textures."
     ) # type: ignore
 
-    temp_image: bpy.props.PointerProperty(
-        name="Temporary Image",
-        description="The temporary image used for various purposes",
+    def preview_image_mode_update(self, context):
+        if self.preview_image_mode == 'NONE' or self.preview_image_mode == 'CUSTOM':
+            #All the other modes will result in the image changing which calls this, so we don't need to update the nodes here
+            material_config.operator_wrapped_update_nodes(self, context)
+        elif self.preview_image_mode == 'COLORGRID':
+            bpy.ops.xp_ext.set_material_preview_image('INVOKE_DEFAULT', preview_type='COLORGRID')
+        elif self.preview_image_mode == 'BAKE':
+            bpy.ops.xp_ext.set_material_preview_image('INVOKE_DEFAULT', preview_type='BAKE')
+        
+
+    preview_image_mode: bpy.props.EnumProperty(
+        name="Preview Image",
+        description="The mode for the temporary image",
+        items=[
+            ('NONE', "None", "Render the full material"),
+            ('COLORGRID', "Color Grid", "Use a color grid preview image"),
+            ('BAKE', "Bake", "Use a bake preview image"),
+            ('CUSTOM', "Custom", "Use a custom preview image")
+        ],
+        default='NONE',
+        update=preview_image_mode_update
+    ) # type: ignore
+
+    preview_image: bpy.props.PointerProperty(
+        name="Preview Image",
+        description="The preview image used on the material",
         type=bpy.types.Image,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.operator_wrapped_update_nodes
     ) # type: ignore
 
 

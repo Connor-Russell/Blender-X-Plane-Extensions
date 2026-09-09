@@ -22,6 +22,7 @@ from . import anim_actions
 from . import auto_baker
 import os
 from .Helpers import collection_utils
+from .Helpers import preview_image_utils
 
 class BTN_lin_exporter(bpy.types.Operator):
     bl_idname = "xp_ext.export_lines"
@@ -264,6 +265,83 @@ class BTN_mats_update_all_mat_nodes(bpy.types.Operator):
             material_config.update_nodes(mat)
 
         return {'FINISHED'}
+
+class BTN_mats_select_preview_image(bpy.types.Operator):
+    """Sets the material to use a new preview image"""
+    bl_idname = "xp_ext.set_material_preview_image"
+    bl_label = "Set Material Temporary Image"
+    bl_description = "Sets the material to use a new preview image"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    preview_type: bpy.props.EnumProperty(
+        name="Temporary Image Type",
+        description="The type of preview image to use",
+        items=[
+            ('NONE', "None", "Changes the material to normal preview mode"),
+            ('COLORGRID', "Color Grid", "Use a color grid temporary image"),
+            ('BAKE', "Bake Target", "A new blank image for baking")
+        ],
+        default='NONE'
+    ) # type: ignore
+
+    auto_resolution: bpy.props.BoolProperty(
+        name="Auto Resolution",
+        description="Automatically determine the resolution of the temporary image from the existing albedo's resolution",
+        default=True
+    ) # type: ignore
+
+    x_resolution: bpy.props.IntProperty(
+        name="X Resolution",
+        description="The width of the temporary image",
+        default=1024,
+        min=1
+    ) # type: ignore
+
+    y_resolution: bpy.props.IntProperty(
+        name="Y Resolution",
+        description="The height of the temporary image",
+        default=1024,
+        min=1
+    ) # type: ignore
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "auto_resolution")
+        if not self.auto_resolution:
+            layout.prop(self, "x_resolution")
+            layout.prop(self, "y_resolution")
+
+    def invoke(self, context, event):
+        mat = context.object.active_material
+        str_image_alb = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.alb_texture))
+        if (str_image_alb != ""):
+            image_alb = file_utils.get_or_load_image(str_image_alb, True)
+            self.x_resolution = image_alb.size[0]
+            self.y_resolution = image_alb.size[1]
+        return context.window_manager.invoke_props_dialog(self)
+
+    def execute(self, context):
+        mat = context.object.active_material
+        # If auto resolution, determine the resolution from the existing albedo image
+        if self.auto_resolution:
+            str_image_alb = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.alb_texture))
+            if (str_image_alb != ""):
+                image_alb = file_utils.get_or_load_image(str_image_alb, True)
+                self.x_resolution = image_alb.size[0]
+                self.y_resolution = image_alb.size[1]
+
+        if self.preview_type == 'COLORGRID':
+            mat.xp_materials.preview_image = preview_image_utils.get_color_grid_image(self.x_resolution, self.y_resolution)
+        elif self.preview_type == 'BAKE':
+            mat.xp_materials.preview_image = preview_image_utils.get_bake_image(self.x_resolution, self.y_resolution, mat.name)
+
+        return {'FINISHED'}
+
+    def cancel(self, context):
+        mat = context.object.active_material
+        mat.xp_materials.preview_image_mode = 'NONE'
+
+        return {'CANCELLED'}
 
 class BTN_generate_flipbook_animation(bpy.types.Operator):
     """Generates a flipbook animation for the selected object"""
@@ -1579,6 +1657,7 @@ def register():
     bpy.utils.register_class(BTN_mats_autoodetect_textures)
     bpy.utils.register_class(BTN_mats_update_nodes)
     bpy.utils.register_class(BTN_mats_update_all_mat_nodes)
+    bpy.utils.register_class(BTN_mats_select_preview_image)
     bpy.utils.register_class(BTN_generate_flipbook_animation)
     bpy.utils.register_class(BTN_auto_keyframe_animation)
     bpy.utils.register_class(BTN_bake_low_poly)
@@ -1620,6 +1699,7 @@ def unregister():
     bpy.utils.unregister_class(BTN_mats_autoodetect_textures)
     bpy.utils.unregister_class(BTN_mats_update_nodes)
     bpy.utils.unregister_class(BTN_mats_update_all_mat_nodes)
+    bpy.utils.unregister_class(BTN_mats_select_preview_image)
     bpy.utils.unregister_class(BTN_generate_flipbook_animation)
     bpy.utils.unregister_class(BTN_auto_keyframe_animation)
     bpy.utils.unregister_class(BTN_bake_low_poly)
