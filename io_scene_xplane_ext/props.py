@@ -758,6 +758,14 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The decals for the material, aka detail textures."
     ) # type: ignore
 
+    temp_image: bpy.props.PointerProperty(
+        name="Temporary Image",
+        description="The temporary image used for various purposes",
+        type=bpy.types.Image,
+        update=material_config.operator_wrapped_update_settings
+    ) # type: ignore
+
+
 # Forests
 
 class PROP_for(bpy.types.PropertyGroup):
