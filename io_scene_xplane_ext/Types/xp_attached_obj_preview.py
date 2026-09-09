@@ -21,6 +21,7 @@ from ..Helpers import file_utils
 from typing import List
 from .xp_obj import draw_call
 from .xp_obj import draw_call_state
+from bpy.app.handlers import persistent # type: ignore
 
 #Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
 obj_does_use_lods = False
@@ -185,9 +186,6 @@ class attached_object_preview:
             if texture_name == "":
                 return ""
             abs_path = os.path.normpath(os.path.dirname(in_obj_path) + os.path.sep + texture_name)
-            print(f"Obj path: {os.path.dirname(in_obj_path)}")
-            print(f"Joined path: {os.path.join(os.path.dirname(in_obj_path), texture_name)}")
-            print(f"Abs path: {abs_path}")
             return file_utils.to_relative(abs_path)
         
         self.alb_texture = resolve_texture_path(self.alb_texture)
@@ -257,8 +255,6 @@ class attached_object_preview:
                 log_utils.info(f"Using existing material {new_mat.name} instead of {our_mat.name}")
                 new_mats.append(new_mat)
                 bpy.data.materials.remove(our_mat)
-        
-        print(f"Final material list: {[mat.name for mat in new_mats]}")
 
         #For the basic draw calls just add 'em to the scene
         all_objs = []
@@ -274,6 +270,7 @@ class attached_object_preview:
         joined_obj.xp_attached_obj.exportable = False
         joined_obj.xp_agp.exportable = False
         joined_obj.xp_fac_mesh.exportable = False
+        joined_obj['xp_ext_preview_object'] = True
             
         #Link to the collection and set parent
         if not make_real:
@@ -283,3 +280,100 @@ class attached_object_preview:
             joined_obj.matrix_world = target_parent.matrix_world.copy()  #Copy the location/rotation/scale of the parent, but don't parent it, so it can be edited independently
             joined_obj.parent = None
             joined_obj.hide_select = False
+
+
+def process_single_object(obj : bpy.types.Object, make_real):
+    if obj.type != 'EMPTY':
+        return
+
+    log_utils.info(f"Processing object {obj.name}")
+
+    resource = ""
+    if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
+        resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
+    elif not file_utils.is_empty(obj.xp_agp.attached_obj_resource) and obj.xp_agp.exportable and obj.xp_agp.type == 'ATTACHED_OBJ':
+        resource = file_utils.to_absolute(obj.xp_agp.attached_obj_resource)
+    elif not file_utils.is_empty(obj.xp_attached_obj.resource) and obj.xp_attached_obj.exportable:
+        resource = file_utils.to_absolute(obj.xp_attached_obj.resource)
+    else:
+        return
+
+    #Iterate through obj's children. If mesh, and hide_select, delete it
+    for child in obj.children:
+        if child.type == 'MESH' and child.hide_select:
+            log_utils.info(f"Deleting child object '{child.name}' of '{obj.name}' because it is a mesh with hide_select enabled, which indicates it's an old preview object.")
+            bpy.data.objects.remove(child, do_unlink=True)
+
+    #Skip empty. Warn on missing
+    if resource == "":
+        log_utils.info(f"Attached object '{obj.name}' does not have a preview resource specified. {obj.xp_agp.attached_obj_preview_resource}")
+        return
+    if not os.path.isfile(resource):
+        log_utils.warning(f"Attached object preview resource '{resource}' not found.")
+        return
+
+    parent_collection = None
+
+    #Find the parent collection
+    for col in obj.users_collection:
+        parent_collection = col
+        break
+
+    #Read and add
+    log_utils.info(f"Importing attached object preview from resource '{resource}' for object '{obj.name}'")
+    new_obj = attached_object_preview()
+    new_obj.read(resource)
+    new_obj.to_scene(obj, parent_collection, make_real)
+
+existing_objects = set()
+currently_processing = set()
+
+@persistent
+def clear_existing_objects(in_file_path, in_startup_file_path):
+    global existing_objects
+    existing_objects = set(obj.session_uid for obj in bpy.data.objects)
+
+@persistent
+def update_attached_obj_previews(scene, depsgraph):
+    global existing_objects
+    global currently_processing
+    #Short circuit check, if the size of the objects is the same we can just exit
+    if len(bpy.data.objects) == len(existing_objects):
+        print("Got to short circuit!")
+        return
+    print("Not short circuited")
+
+    # Get current objects and diffs
+    current_objects = set(obj.session_uid for obj in bpy.data.objects)
+    removed_objects = existing_objects - current_objects
+    added_objects = current_objects - existing_objects
+
+    # If there were removed objects, we need to check *every* object to look for orphaned attached object previews
+    if len(removed_objects) > 0:
+        for obj in bpy.data.objects:
+            if 'xp_ext_preview_object' in obj:
+                if obj.parent == None:
+                    bpy.data.objects.remove(obj)
+
+    # Store the currently selected and active objects as creating preview objects will shift this around
+    selected_objects = bpy.context.selected_objects
+    original_active_object = bpy.context.active_object
+    # If we have added objects, we need to check every new object to try to set it's previeww object
+    if len(added_objects) > 0:
+        current_objects_to_bpy = {obj.session_uid: obj for obj in bpy.data.objects}
+        for uid in added_objects:
+            
+            obj = current_objects_to_bpy[uid]
+            if obj.session_uid in currently_processing:
+                continue
+            currently_processing.add(obj.session_uid)
+            process_single_object(obj, False)
+            currently_processing.remove(obj.session_uid)
+
+    #Re-select the original active object
+    for obj in selected_objects:
+        obj.select_set(True)
+    if original_active_object is not None:
+        bpy.context.view_layer.objects.active = original_active_object
+
+    existing_objects = current_objects - removed_objects

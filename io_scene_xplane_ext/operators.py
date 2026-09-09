@@ -23,6 +23,7 @@ from . import auto_baker
 import os
 from .Helpers import collection_utils
 from .Helpers import preview_image_utils
+from bpy.app.handlers import persistent # type: ignore
 
 class BTN_lin_exporter(bpy.types.Operator):
     bl_idname = "xp_ext.export_lines"
@@ -363,7 +364,6 @@ class BTN_generate_flipbook_animation(bpy.types.Operator):
 
     def invoke(self, context, event):
         # Set operator properties from scene.xp_ext if available
-        print("Invoking generate flipbook animation operator")
         self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
         self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
         self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
@@ -447,7 +447,6 @@ class BTN_auto_keyframe_animation(bpy.types.Operator):
 
     def invoke(self, context, event):
         # Set operator properties from scene.xp_ext if available
-        print("Invoking auto keyframe animation operator")
         self.autoanim_frame_start = bpy.context.scene.xp_ext.autoanim_frame_start
         self.autoanim_frame_end = bpy.context.scene.xp_ext.autoanim_frame_end
         self.autoanim_keyframe_interval = bpy.context.scene.xp_ext.autoanim_keyframe_interval
@@ -1024,22 +1023,16 @@ class BTN_TEST_config_bake_settings(bpy.types.Operator):
         mats = bake_utils.get_source_materials()
 
         if self.bake_type == "BASE":
-            print("Testing config for base bake settings")
             bake_utils.config_source_materials(bake_utils.BakeType.BASE, mats)
         elif self.bake_type == "NORMAL":
-            print("Testing config for normal bake settings")
             bake_utils.config_source_materials(bake_utils.BakeType.NORMAL, mats)
         elif self.bake_type == "ROUGHNESS":
-            print("Testing config for roughness bake settings")
             bake_utils.config_source_materials(bake_utils.BakeType.ROUGHNESS, mats)
         elif self.bake_type == "METALNESS":
-            print("Testing config for metalness bake settings")
             bake_utils.config_source_materials(bake_utils.BakeType.METALNESS, mats)
         elif self.bake_type == "LIT":
-            print("Testing config for lit bake settings")
             bake_utils.config_source_materials(bake_utils.BakeType.LIT, mats)
         else:
-            print("Resetting material settings")
             bake_utils.reset_source_materials(mats)
 
         return {'FINISHED'}
@@ -1513,47 +1506,7 @@ class BTN_preview_attached_object(bpy.types.Operator):
         original_active_object = context.active_object
 
         for obj in selected_objects:
-            if obj.type != 'EMPTY':
-                continue
-
-            log_utils.info(f"Processing object {obj.name}")
-
-            resource = ""
-            if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
-                resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
-            elif not file_utils.is_empty(obj.xp_agp.attached_obj_resource) and obj.xp_agp.exportable and obj.xp_agp.type == 'ATTACHED_OBJ':
-                resource = file_utils.to_absolute(obj.xp_agp.attached_obj_resource)
-            elif not file_utils.is_empty(obj.xp_attached_obj.resource) and obj.xp_attached_obj.exportable:
-                resource = file_utils.to_absolute(obj.xp_attached_obj.resource)
-            else:
-                continue
-
-            #Iterate through obj's children. If mesh, and hide_select, delete it
-            for child in obj.children:
-                if child.type == 'MESH' and child.hide_select:
-                    log_utils.info(f"Deleting child object '{child.name}' of '{obj.name}' because it is a mesh with hide_select enabled, which indicates it's an old preview object.")
-                    bpy.data.objects.remove(child, do_unlink=True)
-
-            #Skip empty. Warn on missing
-            if resource == "":
-                log_utils.info(f"Attached object '{obj.name}' does not have a preview resource specified. {obj.xp_agp.attached_obj_preview_resource}")
-                continue
-            if not os.path.isfile(resource):
-                log_utils.warning(f"Attached object preview resource '{resource}' not found.")
-                continue
-
-            parent_collection = None
-
-            #Find the parent collection
-            for col in obj.users_collection:
-                parent_collection = col
-                break
-
-            #Read and add
-            log_utils.info(f"Importing attached object preview from resource '{resource}' for object '{obj.name}'")
-            new_obj = xp_attached_obj_preview.attached_object_preview()
-            new_obj.read(resource)
-            new_obj.to_scene(obj, parent_collection, self.make_real)
+            xp_attached_obj_preview.process_single_object(obj, self.make_real)
 
         log_utils.display_messages()
 
@@ -1587,8 +1540,6 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
         for obj in selected_objects:
             if obj.type != 'EMPTY':
                 continue
-
-            print(f"Processing object {obj.name}")
 
             resource = ""
             if obj.xp_attached_obj.exportable:

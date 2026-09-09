@@ -157,11 +157,8 @@ def get_perimeter_from_mesh(obj):
 
         #Get the next edges, and remove the current and non-flat edges
         next_edges = get_edges_for_vertex(obj, next_vertex, vert_to_edge)
-        print(f"Edges for vertex {len(next_edges)}")
         next_edges = remove_non_flat_edges(obj, next_edges)
-        print(f"Edges minus vertical edges {len(next_edges)}")
         next_edges = remove_self_edge(next_edges, cur_edge)
-        print(f"Edges minus self {len(next_edges)}")
 
         #If there are no edges, we've reached an open end, save the last vertex and break
         if len(next_edges) == 0:

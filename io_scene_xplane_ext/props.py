@@ -8,6 +8,9 @@ import bpy # type: ignore
 from . import material_config
 from .Helpers import file_utils
 from bpy.app.handlers import persistent # type: ignore
+from .Helpers import log_utils
+from .Types import xp_attached_obj_preview
+import os
 
 #Enum for types. Can be START END or SEGMENT
 line_type = [
@@ -1474,6 +1477,7 @@ class PROP_facade(bpy.types.PropertyGroup):
     #Eligable spelling choices
     spelling_choices: bpy.props.CollectionProperty(type=PROP_fac_filtered_spelling_choices)# type: ignore
 
+# TODO: We need to reevaluate all this code. Afaik I refactored the wall picking to use strings not enums, so we would only need to update the list of eligable wall names. So this comment is likely wrong, and if the comment is, there's likely some old fragments of code. Yikes.
 #This code is for sad blender reasons. In Blender, Enum properties reference by *index* so if collections are added or removed, then the collection the user has selected changes
 #So we can't used indexes. But we don't want users to have to type collection names. So we have a string property that we add to the UI with a prop_search
 #Prop_serach however needs data. And that data cannot be updated in the UI due to Blender limits. Soo we have to have a handler that gets called *every time the scene changes* *cries in excess code* to keep the list up to date
@@ -1499,7 +1503,7 @@ def update_fac_spelling_choices_depgraph_handler(scene):
 @persistent
 def update_fac_spelling_choices_load_handler(in_file_path, in_startup_file_path):
     update_fac_spelling_choices()
-
+    
 def register():
     
     bpy.utils.register_class(PROP_fac_filtered_spelling_choices)
@@ -1536,10 +1540,14 @@ def register():
 
     bpy.app.handlers.depsgraph_update_pre.append(update_fac_spelling_choices_depgraph_handler)
     bpy.app.handlers.load_post.append(update_fac_spelling_choices_load_handler)
+    bpy.app.handlers.load_post.append(xp_attached_obj_preview.clear_existing_objects)
+    bpy.app.handlers.depsgraph_update_pre.append(xp_attached_obj_preview.update_attached_obj_previews)
 
 def unregister():
     bpy.app.handlers.load_post.remove(update_fac_spelling_choices_load_handler)
     bpy.app.handlers.depsgraph_update_pre.remove(update_fac_spelling_choices_depgraph_handler)
+    bpy.app.handlers.load_post.remove(xp_attached_obj_preview.clear_existing_objects)
+    bpy.app.handlers.depsgraph_update_pre.remove(xp_attached_obj_preview.update_attached_obj_previews)
 
     del bpy.types.Material.xp_materials
     del bpy.types.Scene.xp_ext

@@ -50,7 +50,6 @@ def auto_bake_current_to_active():
     do_bake_lit = False
     do_bake_opacity = False
     for mat in mats:
-        print("Checking ", mat)
         if mat.xp_materials.alb_texture != "":
             do_bake_alb = bpy.context.scene.xp_ext.low_poly_bake_do_alb
             do_bake_opacity = bpy.context.scene.xp_ext.low_poly_bake_do_opacity
@@ -168,7 +167,4 @@ def auto_bake_current_to_active():
     bpy.context.scene.render.bake.margin = original_state_margin
 
     bpy.context.window_manager.progress_end()
-
-    #Done
-    print("Done!")
   

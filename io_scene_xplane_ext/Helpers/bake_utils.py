@@ -13,6 +13,7 @@ import time
 import shutil
 import subprocess
 import numpy as np
+from ..Helpers import log_utils
 
 # This file focuses on functions used in the process of baking a high poly model to a low poly model
 # Process requirements:
@@ -406,7 +407,7 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
     try:
         parent_collections = target_obj.users_collection
     except:
-        print("Parent collection not found for object " + target_obj.name + ". What!?")
+        log_utils.error("Parent collection not found for object " + target_obj.name + ". What!?")
         return
     
     if did_alb:
@@ -531,7 +532,6 @@ def save_baked_textures(target_obj, do_separate_normals=False, did_alb=True, did
         nrm_image.file_format = 'PNG'
         nrm_image.save()
     if do_separate_normals and did_mat:
-        print("Saving mat texture to " + mat_output_path)
         file_utils.backup_file(mat_output_path)
         mat_image.filepath_raw = mat_output_path
         mat_image.file_format = 'PNG'
@@ -590,7 +590,7 @@ def config_target_object_with_new_textures(target_obj, do_separate_normals=False
     try:
         parent_collections = target_obj.users_collection
     except:
-        print("Parent collection not found for object " + target_obj.name + ". What!?")
+        log_utils.error("Parent collection not found for object " + target_obj.name + ". What!?")
         return
     
     #Get our prefs for suffixes

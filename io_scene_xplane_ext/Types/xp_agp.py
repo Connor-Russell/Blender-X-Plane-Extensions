@@ -405,7 +405,6 @@ class attached_obj:
         new_empty.xp_agp.exportable = True
         new_empty.xp_agp.type = 'ATTACHED_OBJ'
 
-        print(f"X: {self.x}, Y: {self.y}")
         new_empty.location.x = self.x
         new_empty.location.y = self.y
         new_empty.location.z = self.z
@@ -489,9 +488,7 @@ class attached_obj:
             return
 
         self.resource = obj_resource_list[obj_index]
-        print(f"X: {x_pixel}, Y: {y_pixel}")
         self.x, self.y = agp_utils.px_to_blender(x_pixel, y_pixel, transform)
-        print(f"Converted X/Y: {self.x}, {self.y}")
 
 class auto_split_obj:
     """
@@ -841,8 +838,6 @@ class tile:
             new_obj = obj.to_obj()
             if new_obj is not None:
                 new_objs.append(new_obj)
-
-        print(target_collection.name)
 
         #Create our tile object
         new_tile_obj = agp_utils.create_tile_obj(self.left_uv, self.bottom_uv, self.right_uv, self.top_uv, self.transform)
@@ -1352,8 +1347,6 @@ class agp:
                     self.transform.y_ratio = 1 / imported_height
                     self.transform.resolution_x = imported_texture_width_px
                     self.transform.resolution_y = imported_texture_height_px
-                    print(f"Transform: {self.transform.x_ratio}, {self.transform.y_ratio}")
-                    print(f"Imported: {imported_width}, {imported_height}, {imported_texture_width_px}, {imported_texture_height_px}")
                     
                     # We have a tile to process
                     new_tile = tile()
@@ -1371,8 +1364,6 @@ class agp:
             self.transform.y_ratio = 1 / imported_height
             self.transform.resolution_x = imported_texture_width_px
             self.transform.resolution_y = imported_texture_height_px
-            print(f"Transform: {self.transform.x_ratio}, {self.transform.y_ratio}")
-            print(f"Imported: {imported_width}, {imported_height}, {imported_texture_width_px}, {imported_texture_height_px}")
             
             # We have a tile to process
             new_tile = tile()

@@ -41,7 +41,6 @@ class TreeMesh():
         self.mesh_name = file_utils.sanitize_path(in_obj.name).replace(" ", "_")
 
     def to_obj(self, in_name : str, in_mat : bpy.types.Material):
-        print("Creating mesh " + self.mesh_name + " with " + str(len(self.verticies)) + " verticies and " + str(len(self.indicies)) + " indicies")
         obj = forest_geometry_utils.create_for_obj_from_draw_call(self.verticies, self.indicies, in_name)
         obj.xp_for.near_lod = self.near_lod
         obj.xp_for.far_lod = self.far_lod
@@ -127,7 +126,6 @@ class Tree():
                     log_utils.info("Added mesh " + child.name + " to tree " + in_obj.name)
 
     def to_obj(self, target_collection : bpy.types.Collection, in_mat_2d : bpy.types.Material, in_mat_3d : bpy.types.Material):
-        print("Creating tree " + self.name + " with " + str(len(self.meshes)) + " meshes")
         obj = bpy.data.objects.new(self.name, None)
         obj.empty_display_type = "ARROWS"
 
