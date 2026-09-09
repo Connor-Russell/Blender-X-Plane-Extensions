@@ -39,7 +39,6 @@ def _is_rgb_no_alpha_png(path):
         log_utils.warning(f"Failed to determine if texture {path} is RGB without alpha for decal textures.")
         return False
 
-
 def operator_wrapped_update_settings(self = None, context = None):
     if bpy.context.active_object == None:
         return
@@ -547,6 +546,22 @@ def update_nodes(material: bpy.types.Material):
             #raise Exception("Please set the material to use nodes before attempting to update materials.")
             #return
         
+        # Check if it is in temp image mode
+        if material.xp_materials.preview_image is not None and material.xp_materials.preview_image_mode != 'NONE':
+            for node in material.node_tree.nodes:
+                material.node_tree.nodes.remove(node)
+            print("Material is in preview image mode")
+            node_output = material.node_tree.nodes.new(type="ShaderNodeOutputMaterial")
+            node_output.location = (0, 0)
+            node_principled = material.node_tree.nodes.new(type="ShaderNodeBsdfPrincipled")
+            node_principled.location = (-500, 0)
+            node_alb = material.node_tree.nodes.new(type="ShaderNodeTexImage")
+            node_alb.label = "Albedo Texture"
+            node_alb.image = material.xp_materials.preview_image
+            material.node_tree.links.new(node_principled.outputs[0], node_output.inputs[0])
+            material.node_tree.links.new(node_alb.outputs[0], node_principled.inputs[0])
+            return
+
         #Define variables to hold the imagese
         image_alb = None
         image_alb_linear = None
