@@ -25,6 +25,8 @@ from bpy.app.handlers import persistent # type: ignore
 
 #Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
 obj_does_use_lods = False
+existing_objects = set()
+currently_processing = set()
 
 class attached_object_preview:
     """
@@ -51,11 +53,14 @@ class attached_object_preview:
         self.draped_nml_texture = ""
         self.draped_lit_texture = ""
 
+        self.filepath = ""
+
     def read(self, in_obj_path):
 
         log_utils.new_section(f"Read attached .obj {in_obj_path}")
 
         self.name = os.path.basename(in_obj_path)
+        self.filepath = file_utils.to_relative(in_obj_path).replace("\\", "/")
 
         trans_matrix = [1, -1, 1]
 
@@ -271,6 +276,7 @@ class attached_object_preview:
         joined_obj.xp_agp.exportable = False
         joined_obj.xp_fac_mesh.exportable = False
         joined_obj['xp_ext_preview_object'] = True
+        joined_obj['xp_ext_preview_filepath'] = self.filepath
             
         #Link to the collection and set parent
         if not make_real:
@@ -281,13 +287,21 @@ class attached_object_preview:
             joined_obj.parent = None
             joined_obj.hide_select = False
 
+def _get_existing_instance(in_path : str):
+    for obj in bpy.data.objects:
+        if 'xp_ext_preview_filepath' in obj and obj['xp_ext_preview_filepath'] == in_path:
+            return obj
+    return None
 
 def process_single_object(obj : bpy.types.Object, make_real):
     if obj.type != 'EMPTY':
         return
 
-    log_utils.info(f"Processing object {obj.name}")
+    log_utils.info(f"Processing preview objecs for {obj.name}")
 
+    for child in obj.children:
+        if 'xp_ext_preview_filepath' in child:
+            bpy.data.objects.remove(child, do_unlink=True)
     resource = ""
     if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
         resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
@@ -297,12 +311,6 @@ def process_single_object(obj : bpy.types.Object, make_real):
         resource = file_utils.to_absolute(obj.xp_attached_obj.resource)
     else:
         return
-
-    #Iterate through obj's children. If mesh, and hide_select, delete it
-    for child in obj.children:
-        if child.type == 'MESH' and child.hide_select:
-            log_utils.info(f"Deleting child object '{child.name}' of '{obj.name}' because it is a mesh with hide_select enabled, which indicates it's an old preview object.")
-            bpy.data.objects.remove(child, do_unlink=True)
 
     #Skip empty. Warn on missing
     if resource == "":
@@ -319,14 +327,22 @@ def process_single_object(obj : bpy.types.Object, make_real):
         parent_collection = col
         break
 
-    #Read and add
-    log_utils.info(f"Importing attached object preview from resource '{resource}' for object '{obj.name}'")
-    new_obj = attached_object_preview()
-    new_obj.read(resource)
-    new_obj.to_scene(obj, parent_collection, make_real)
+    existing_inst = _get_existing_instance(file_utils.to_relative(resource).replace("\\", "/"))
 
-existing_objects = set()
-currently_processing = set()
+    if existing_inst is not None:
+        #Create a new object based on the existing instance, set hide_select, and parent it
+        new_obj = bpy.data.objects.new(name=f"{obj.name}_preview", object_data=existing_inst.data)
+        new_obj.hide_select = True
+        new_obj.parent = obj
+        if parent_collection is not None:
+            parent_collection.objects.link(new_obj)
+        new_obj['xp_ext_preview_filepath'] = file_utils.to_relative(resource).replace("\\", "/")
+    if existing_inst is None:
+        #Read and add
+        log_utils.info(f"Importing attached object preview from resource '{resource}' for object '{obj.name}'")
+        new_obj = attached_object_preview()
+        new_obj.read(resource)
+        new_obj.to_scene(obj, parent_collection, make_real)
 
 @persistent
 def clear_existing_objects(in_file_path, in_startup_file_path):
@@ -339,9 +355,7 @@ def update_attached_obj_previews(scene, depsgraph):
     global currently_processing
     #Short circuit check, if the size of the objects is the same we can just exit
     if len(bpy.data.objects) == len(existing_objects):
-        print("Got to short circuit!")
         return
-    print("Not short circuited")
 
     # Get current objects and diffs
     current_objects = set(obj.session_uid for obj in bpy.data.objects)
@@ -353,6 +367,7 @@ def update_attached_obj_previews(scene, depsgraph):
         for obj in bpy.data.objects:
             if 'xp_ext_preview_object' in obj:
                 if obj.parent == None:
+                    existing_objects.discard(obj.session_uid)
                     bpy.data.objects.remove(obj)
 
     # Store the currently selected and active objects as creating preview objects will shift this around

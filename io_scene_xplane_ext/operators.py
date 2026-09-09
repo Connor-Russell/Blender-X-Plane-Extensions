@@ -203,7 +203,7 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         name = material.name
 
         #Get our prefs for suffixes
-        addon_prefs = bpy.context.preferences.addons["io_scene_xplane_ext"].preferences
+        addon_prefs = bpy.context.preferences.addons[__package__].preferences
 
         #If the material has an albedo texture, use that as our name
         if not file_utils.is_empty(material.xp_materials.alb_texture):
@@ -212,17 +212,18 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         #Remove the extension from the name
         name = name.replace(".png", "")
         name = name.replace(".dds", "")
+        name = name.replace(addon_prefs.suffix_albedo, "")
         
-        alb_check_path = file_utils.to_absolute(name + addon_prefs.suffix_albedo + ".png")
+        alb_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_albedo + ".png")
         
         #Define the paths for the NML, and LIT
-        nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_combined_normal + ".png")
-        lit_check_path = file_utils.to_absolute(name + addon_prefs.suffix_lit + ".png")
+        nml_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_combined_normal + ".png")
+        lit_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_lit + ".png")
         mat_check_path = ""
 
         if material.xp_materials.do_separate_material_texture:
-            nml_check_path = file_utils.to_absolute(name + addon_prefs.suffix_normal + ".png")
-            mat_check_path = file_utils.to_absolute(name + addon_prefs.suffix_material + ".png")
+            nml_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_normal + ".png")
+            mat_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_material + ".png")
 
         print(f"Checking for textures at {alb_check_path}, {nml_check_path}, {lit_check_path}, {mat_check_path}")
 
@@ -1496,6 +1497,18 @@ class BTN_preview_attached_object(bpy.types.Operator):
         default=False
     )
 
+    do_all_objects: bpy.props.BoolProperty( # type: ignore
+        name="Do All Objects",
+        description="Whether to update previews for all objects or just selected.",
+        default=False
+    )
+
+    reload: bpy.props.BoolProperty( # type: ignore
+        name="Reload",
+        description="Whether to reload the attached object preview if it already exists.",
+        default=True
+    )
+
     def execute(self, context):
         log_utils.new_section("Preview attached object")
 
@@ -1505,8 +1518,18 @@ class BTN_preview_attached_object(bpy.types.Operator):
         selected_objects = context.selected_objects
         original_active_object = context.active_object
 
-        for obj in selected_objects:
-            xp_attached_obj_preview.process_single_object(obj, self.make_real)
+        if self.do_all_objects:
+            for obj in context.scene.objects:
+                if not self.reload:
+                    if len(obj.children) > 0:
+                        continue
+                xp_attached_obj_preview.process_single_object(obj, self.make_real)
+        else:
+            for obj in selected_objects:
+                if not self.reload:
+                    if len(obj.children) > 0:
+                        continue
+                xp_attached_obj_preview.process_single_object(obj, self.make_real)
 
         log_utils.display_messages()
 
@@ -1529,6 +1552,12 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
     bl_description = "Clears the preview of an attached object that was previously imported for previewing."
     bl_options = {'REGISTER', 'UNDO'}
 
+    do_all_objects: bpy.props.BoolProperty( # type: ignore
+            name="Do All Objects",
+            description="Whether to update previews for all objects or just selected.",
+            default=False
+        )
+
     def execute(self, context):
         log_utils.new_section("Clear attached object preview")
 
@@ -1537,9 +1566,18 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
         # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
         selected_objects = context.selected_objects
 
-        for obj in selected_objects:
+        target_objects = selected_objects
+
+        if self.do_all_objects:
+            target_objects = context.scene.objects
+
+        for obj in target_objects:
             if obj.type != 'EMPTY':
                 continue
+
+            for child in obj.children:
+                if 'xp_ext_preview_filepath' in child:
+                    bpy.data.objects.remove(child, do_unlink=True)
 
             resource = ""
             if obj.xp_attached_obj.exportable:
