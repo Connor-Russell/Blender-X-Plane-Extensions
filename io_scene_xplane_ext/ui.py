@@ -956,6 +956,18 @@ class MENU_operations(bpy.types.Panel):
                 row.prop(xp_ext, "lod_3_end")
             box.operator("xp_ext.set_lods", text="Set LODs")
 
+        layout.separator()
+        box = layout.box()
+        box.prop(xp_ext, "preview_objects_expanded", text="Preview Objects", icon='TRIA_DOWN' if xp_ext.preview_objects_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.preview_objects_expanded:
+            clear_all = box.operator("xp_ext.clear_attached_object_preview", text="Clear All Attached Object Previews")
+            clear_all.do_all_objects = True
+            update_all = box.operator("xp_ext.preview_attached_object", text="Update All Attached Object Previews")
+            update_all.do_all_objects = True
+            update_all_missing = box.operator("xp_ext.preview_attached_object", text="Update All Missing Attached Object Previews")
+            update_all_missing.do_all_objects = True
+            update_all_missing.reload = False
+
         do_test_operators = False
         if do_test_operators:
             layout.separator()

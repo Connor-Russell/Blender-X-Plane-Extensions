@@ -55,7 +55,6 @@ def get_collection_is_visible(in_collection):
     #Iterate through the collections, check if it's name matches the input collection
     for col in collections:
         if col.name == in_collection.name:
-            print(col.name + " " + str(col.hide_viewport))
             return not col.hide_viewport
         
     return False

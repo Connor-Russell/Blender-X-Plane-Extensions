@@ -11,6 +11,9 @@ warning_count = 0
 error_count = 0
 summaries = []
 
+#Debug check for when I'm looking for something very specific
+disable_logging = False
+
 log_file_name = "X-Plane Extensions Log.txt"
 
 def get_log_file():
@@ -32,6 +35,9 @@ def info(message):
     Args:
         message (str): The message to log.
     """
+    global disable_logging
+    if disable_logging:
+        return
     log = get_log_file()
 
     now = datetime.now()
@@ -49,6 +55,9 @@ def warning(message, summary = None):
     Args:
         message (str): The warning message to log.
     """
+    global disable_logging
+    if disable_logging:
+        return
     global warning_count
     warning_count += 1
     log = get_log_file()
@@ -71,6 +80,9 @@ def error(message, summary = None):
     Args:
         message (str): The error message to log.
     """
+    global disable_logging
+    if disable_logging:
+        return
     global error_count
     error_count += 1
     log = get_log_file()
@@ -93,6 +105,9 @@ def new_section(name):
     Args:
         name (str): The name of the new log section.
     """
+    global disable_logging
+    if disable_logging:
+        return
     log = get_log_file()
 
     now = datetime.now()
@@ -111,6 +126,9 @@ def display_messages():
     Display a popup message in Blender if there are any warnings or errors logged.
     This function is typically called after logging operations to inform the user.
     """
+    global disable_logging
+    if disable_logging:
+        return
     global warning_count
     global error_count
     global summaries

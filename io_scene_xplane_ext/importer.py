@@ -34,7 +34,6 @@ def import_pol(in_path):
 
     #Read it
     pol = xp_pol.polygon()
-    print(f"Importing {in_name}...")
     pol.read(in_path)
     pol.to_scene()
 
@@ -47,7 +46,6 @@ def import_fac(in_path):
 
     #Read it
     fac = xp_fac.facade()
-    print(f"Importing {in_name}...")
     fac.read(in_path)
     fac.to_scene()
 
@@ -60,7 +58,6 @@ def import_obj(in_path):
 
     #Read it
     obj = xp_obj.object()
-    print(f"Importing {in_name}...")
     obj.read(in_path)
     obj.to_scene()
 
@@ -73,7 +70,6 @@ def import_agp(in_path):
 
     #Read it
     agp = xp_agp.agp()
-    print(f"Importing {in_name}...")
     agp.read(in_path)
     agp.to_collection()
 
@@ -86,7 +82,6 @@ def import_for(in_path):
 
     #Read it
     agp = xp_for.Forest()
-    print(f"Importing {in_name}...")
     agp.read(in_path)
     agp.to_collection()
 

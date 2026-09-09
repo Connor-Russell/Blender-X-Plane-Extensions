@@ -8,6 +8,9 @@ import bpy # type: ignore
 from . import material_config
 from .Helpers import file_utils
 from bpy.app.handlers import persistent # type: ignore
+from .Helpers import log_utils
+from . import handler_callbacks
+import os
 
 #Enum for types. Can be START END or SEGMENT
 line_type = [
@@ -78,7 +81,8 @@ def sanitize_prop_path(in_path):
             return file_utils.to_relative(in_path, True)
 
 last_update_was_programmatic = False
-def sanitize_file_path(self, context):
+
+def update_attached_obj_preview_fac(self, context):
     global last_update_was_programmatic
     if last_update_was_programmatic:
         last_update_was_programmatic = False
@@ -86,8 +90,120 @@ def sanitize_file_path(self, context):
     last_update_was_programmatic = True
     self.attached_obj_preview_resource = sanitize_prop_path(self.attached_obj_preview_resource)
     update_ui(self, context)
+    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
+        bpy.ops.xp_ext.preview_attached_object()
+
+def update_attached_obj_preview_agp(self, context):
+    global last_update_was_programmatic
+    if last_update_was_programmatic:
+        last_update_was_programmatic = False
+        return
+    last_update_was_programmatic = True
+    self.attached_obj_resource = sanitize_prop_path(self.attached_obj_resource)
+    update_ui(self, context)
+    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
+        bpy.ops.xp_ext.preview_attached_object()
 
 #General properties
+
+class XP_EXT_prefs(bpy.types.AddonPreferences):
+    bl_idname = __package__
+
+    #Suffixes for various file types
+
+    def update_base_texture_search_path(self, context):
+        global last_update_was_programmatic
+        if last_update_was_programmatic:
+            last_update_was_programmatic = False
+            return
+        last_update_was_programmatic = True
+        self.base_texture_search_path = sanitize_prop_path(self.base_texture_search_path)
+
+    base_texture_search_path: bpy.props.StringProperty(
+        name="Base Texture Search Path",
+        description="Base path for searching textures",
+        default="//",
+        update=update_base_texture_search_path,
+        **path_options
+    ) #type: ignore
+
+    suffix_combined_normal: bpy.props.StringProperty(
+        name="Suffic Combined Normal",
+        description="Suffix for combined normal maps",
+        default="_NML",
+    ) #type: ignore
+
+    suffix_albedo: bpy.props.StringProperty(
+        name="Suffix Albedo",
+        description="Suffix for albedo maps",
+        default="",
+    ) #type: ignore
+
+    suffix_lit: bpy.props.StringProperty(
+        name="Suffix Lit",
+        description="Suffix for lit maps",
+        default="_LIT",
+    ) #type: ignore
+
+    suffix_normal: bpy.props.StringProperty(
+        name="Suffix Normal",
+        description="Suffix for normal maps",
+        default="_NRM",
+    ) #type: ignore
+
+    suffix_material: bpy.props.StringProperty(
+        name="Suffix Material",
+        description="Suffix for material files",
+        default="_MAT",
+    ) #type: ignore
+
+    suffix_lod_bake: bpy.props.StringProperty(
+        name="Suffix LOD Bake",
+        description="Suffix for baked LOD textures",
+        default="_LOD",
+    ) #type: ignore
+
+    #General Settings
+
+    show_only_relevant_settings: bpy.props.BoolProperty(
+        name="Show Only Relevant Settings",
+        description="Only show settings that are relevant to the current collection. I.e. facade settigns will not be shown for an object in a collection that is not enabled to export as a facade.",
+        default=True,
+    ) #type: ignore
+
+    do_backup_on_overwrite: bpy.props.BoolProperty(
+        name="Backup Files on Overwrite",
+        description="When overwriting files (such as when baking or converting textures), create a backup of the existing file first. Backups will be of the form filename_YYYYMMDD_HHMMSS.ext",
+        default=True,
+    ) #type: ignore
+
+    do_automanage_preview_objects: bpy.props.BoolProperty(
+        name="Automanage Preview Objects",
+        description="Automatically manage preview objects for attached objects. EXPERIMENTAL, USE WITH CAUTION",
+        default=False,
+        update=handler_callbacks.update_optional_registrations,
+    ) #type: ignore
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="X-Plane Extensions Preferences")
+
+        #General Settings
+        layout.prop(self, "show_only_relevant_settings")
+        layout.prop(self, "do_backup_on_overwrite")
+        layout.prop(self, "do_automanage_preview_objects")
+
+        layout.separator()
+
+        #Suffixes
+        layout.label(text="Paths for texture autodetecting and baking:")
+        layout.prop(self, "base_texture_search_path")
+        layout.prop(self, "suffix_albedo")
+        layout.prop(self, "suffix_lit")
+        layout.prop(self, "suffix_combined_normal")
+        layout.prop(self, "suffix_normal")
+        layout.prop(self, "suffix_material")
+        layout.prop(self, "suffix_lod_bake")
 
 class PROP_attached_obj(bpy.types.PropertyGroup):
     exportable: bpy.props.BoolProperty(
@@ -113,8 +229,8 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
         name="Preview Resource",
         description="The preview resource for the attached object",
         default="//",
-        update=sanitize_file_path,
         subtype="FILE_PATH",
+        update=update_attached_obj_preview_fac,
         **path_options
     ) # type: ignore
 
@@ -461,6 +577,13 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         default=0,
         min=0
     ) # type: ignore
+
+    preview_objects_expanded: bpy.props.BoolProperty(
+        name="Preview Objects Expanded",
+        description="Whether the preview objects section is expanded in the UI",
+        default=False
+    ) # type: ignore
+
 #Material properties
 
 class PROP_decal(bpy.types.PropertyGroup):
@@ -787,7 +910,6 @@ class PROP_mats(bpy.types.PropertyGroup):
         type=bpy.types.Image,
         update=material_config.operator_wrapped_update_nodes
     ) # type: ignore
-
 
 # Forests
 
@@ -1334,6 +1456,7 @@ class PROP_agp_obj(bpy.types.PropertyGroup):
         description="The resource for the attached object",
         default="//",
         subtype='FILE_PATH',
+        update=update_attached_obj_preview_agp,
         **path_options
     ) # type: ignore
 
@@ -1474,10 +1597,8 @@ class PROP_facade(bpy.types.PropertyGroup):
     #Eligable spelling choices
     spelling_choices: bpy.props.CollectionProperty(type=PROP_fac_filtered_spelling_choices)# type: ignore
 
-#This code is for sad blender reasons. In Blender, Enum properties reference by *index* so if collections are added or removed, then the collection the user has selected changes
-#So we can't used indexes. But we don't want users to have to type collection names. So we have a string property that we add to the UI with a prop_search
-#Prop_serach however needs data. And that data cannot be updated in the UI due to Blender limits. Soo we have to have a handler that gets called *every time the scene changes* *cries in excess code* to keep the list up to date
-#And that is what this code is. @persistent is a decorator that makes Blender keep the function even after a file is loaded/closed or whatever vs just that session.
+# Facade spellings are made of collections. These collections are referenced by string names. Some collections however should not be eligable for spelling choices, i.e. those ending in _Curved.
+# This function takes all collections in the Blender file, filters their names, and builds a list attached to each xp_fac (top level structure stored on the collection), which spellings can then use as a set of dropdown choices for their string property
 @persistent
 def update_fac_spelling_choices():
     for col in bpy.data.collections:
@@ -1499,9 +1620,9 @@ def update_fac_spelling_choices_depgraph_handler(scene):
 @persistent
 def update_fac_spelling_choices_load_handler(in_file_path, in_startup_file_path):
     update_fac_spelling_choices()
-
-def register():
     
+def register():
+    bpy.utils.register_class(XP_EXT_prefs)
     bpy.utils.register_class(PROP_fac_filtered_spelling_choices)
     bpy.utils.register_class(PROP_pol_collection)
     bpy.utils.register_class(PROP_for)
@@ -1534,13 +1655,7 @@ def register():
     bpy.types.Scene.xp_ext = bpy.props.PointerProperty(type=PROP_xp_ext_scene)
     bpy.types.Material.xp_materials = bpy.props.PointerProperty(type=PROP_mats)
 
-    bpy.app.handlers.depsgraph_update_pre.append(update_fac_spelling_choices_depgraph_handler)
-    bpy.app.handlers.load_post.append(update_fac_spelling_choices_load_handler)
-
 def unregister():
-    bpy.app.handlers.load_post.remove(update_fac_spelling_choices_load_handler)
-    bpy.app.handlers.depsgraph_update_pre.remove(update_fac_spelling_choices_depgraph_handler)
-
     del bpy.types.Material.xp_materials
     del bpy.types.Scene.xp_ext
     del bpy.types.Collection.xp_for
@@ -1554,6 +1669,7 @@ def unregister():
     del bpy.types.Object.xp_agp
     del bpy.types.Object.xp_for
 
+    bpy.utils.unregister_class(XP_EXT_prefs)
     bpy.utils.unregister_class(PROP_facade)
     bpy.utils.unregister_class(PROP_fac_floor)
     bpy.utils.unregister_class(PROP_fac_wall)

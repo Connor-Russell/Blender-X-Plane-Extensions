@@ -550,7 +550,6 @@ def update_nodes(material: bpy.types.Material):
         if material.xp_materials.preview_image is not None and material.xp_materials.preview_image_mode != 'NONE':
             for node in material.node_tree.nodes:
                 material.node_tree.nodes.remove(node)
-            print("Material is in preview image mode")
             node_output = material.node_tree.nodes.new(type="ShaderNodeOutputMaterial")
             node_output.location = (0, 0)
             node_principled = material.node_tree.nodes.new(type="ShaderNodeBsdfPrincipled")

@@ -25,8 +25,6 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
     dcl_name = "decal" + str(index)
     dcl_name_nml = "normal_" + dcl_name
 
-    print("file_" + dcl_name)
-
     #If we are draped, we need to alter the names
     if in_material.xp_materials.draped:
         dcl_name_nml = "draped_" + dcl_name_nml
