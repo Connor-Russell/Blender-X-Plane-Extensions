@@ -28,6 +28,7 @@ def get_uv_bounds(obj):
         raise ValueError("Object must have exactly 4 vertices.")
 
     uv_layer = misc_utils.get_uv_layer(obj)
+    print(uv_layer)
 
     if uv_layer is None:
         raise ValueError("Object is missing UVs.")
@@ -37,7 +38,7 @@ def get_uv_bounds(obj):
     min_v, max_v = float('inf'), float('-inf')
 
     for loop in obj.data.loops:
-        uv = uv_layer[loop.index].uv
+        uv = uv_layer.data[loop.index].uv
         min_u = min(min_u, uv.x)
         max_u = max(max_u, uv.x)
         min_v = min(min_v, uv.y)

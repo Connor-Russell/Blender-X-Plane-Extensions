@@ -1,21 +1,22 @@
-2025-10-23 16-37-22
+2026-09-14 14-22-41
 Test Name,Result,Percentage,Message
-2.93 Tests
+Blender 4.5 Tests
 Export Tests:
-Asphalt_Striped_Dark:,PASS,98.21%,"Different line count 0"
+TestFacade:,PASS,99.76%,"Different line count 0"
+Asphalt_Striped_Dark:,FAIL,15.64%,"Different line count 1"
+PolygonExporter:,FAIL,23.46%,"Different line count 2"
 Enhanced_Center_B:,PASS,100.00%,"Different line count 0"
-LineExporter:,PASS,100.00%,"Different line count 0"
-PolygonExporter:,PASS,99.12%,"Different line count 0"
-TestFacade:,PASS,99.99%,"Different line count 0"
-Export Test Summary:,PASS,100.00%,"Total tests: 5, Failed: 0"
+MyConcrete:,FAIL,N/A,Error exporting MyConcrete: Collection name 'MyConcrete' does not contain a valid extension. Expected format: 'name.extension'.
+LineExporter:,FAIL,10.74%,"Different line count 1"
+Export Test Summary:,FAIL,33.33%,"Total tests: 6, Failed: 4"
 Import Tests:
-Asphalt_Striped_Dark:,PASS,100.00%,"Differences: "
-Enhanced_Center_B:,PASS,100.00%,"Differences: "
-MIRL_End_PCL:,PASS,100.00%,"Differences: "
-MyConcrete:,PASS,100.00%,"Differences: "
-MyLine:,PASS,100.00%,"Differences: "
-XCD_Jetway:,PASS,100.00%,"Differences: "
-Import Test Summary:,PASS,100.00%,"Total tests: 6, Failed: 0"
+XCD_Jetway:,FAIL,0.00%,"Differences: Collection: 1 ;Collection: XCD_Jetway.obj, XCD_Jetway.obj.001, object count difference: 157 vs 234 "
+Asphalt_Striped_Dark:,FAIL,0.00%,"Differences: Property: 3 ;Property: weather_texture (value //Asphalt_Striped_Weather.png != //) dither_cutoff (value 0.5 != 0.0) One or both properties for preview_image are None "
+MyLine:,FAIL,0.00%,"Differences: Property: 18 ;Property: weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None "
+MIRL_End_PCL:,FAIL,0.00%,"Differences: Property: 5 ;Property: One or both properties for preview_image are None One or both properties for preview_image are None One or both properties for preview_image are None One or both properties for preview_image are None One or both properties for preview_image are None "
+Enhanced_Center_B:,FAIL,0.00%,"Differences: Property: 6 ;Property: weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.25) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.25) One or both properties for preview_image are None "
+MyConcrete:,FAIL,0.00%,"Differences: Property: 3 ;Property: One or both properties for preview_image are None One or both properties for preview_image are None One or both properties for preview_image are None "
+Import Test Summary:,FAIL,0.00%,"Total tests: 6, Failed: 6"
 Bake Tests:
 Bake Test Albedo:,PASS,100.00%,""
 Bake Test Combined Normal:,PASS,100.00%,""
@@ -23,5 +24,31 @@ Bake Test Lit:,PASS,100.00%,""
 Bake Test Normal:,PASS,100.00%,""
 Bake Test Material:,PASS,100.00%,""
 test_name: Flipbook Test:,PASS,100.00%,""
-test_name: Auto Keyframe Test:,PASS,100.00%,""
+test_name: Auto Keyframe Test:,FAIL,N/A,Error: Python: Traceback (most recent call last):
+  File "/home/connor/Desktop/Blender-4.5/scripts/addons/io_scene_xplane_ext/operators.py", line 499, in execute
+    anim_actions.auto_keyframe(
+  File "/home/connor/Desktop/Blender-4.5/scripts/addons/io_scene_xplane_ext/anim_actions.py", line 129, in auto_keyframe
+    if fcurve.data_path in {'location', 'rotation_euler', 'rotation_quaternion'}:
+       ^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'data_path'
+Location: /home/connor/Desktop/Blender-4.5/4.5/scripts/modules/bpy/ops.py:109
+
+Traceback (most recent call last):
+  File "/home/connor/Desktop/Code/Blender-X-Plane-Extensions/Tests/in_app_tests.py", line 57, in run_inapp_test
+    test_func(start_col)
+  File "/home/connor/Desktop/Code/Blender-X-Plane-Extensions/Tests/in_app_anim_tool_test.py", line 45, in inapp_autokeyframe_test
+    bpy.ops.xp_ext.auto_keyframe_animation()
+  File "/home/connor/Desktop/Blender-4.5/4.5/scripts/modules/bpy/ops.py", line 109, in __call__
+    ret = _op_call(self.idname_py(), kw)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Error: Python: Traceback (most recent call last):
+  File "/home/connor/Desktop/Blender-4.5/scripts/addons/io_scene_xplane_ext/operators.py", line 499, in execute
+    anim_actions.auto_keyframe(
+  File "/home/connor/Desktop/Blender-4.5/scripts/addons/io_scene_xplane_ext/anim_actions.py", line 129, in auto_keyframe
+    if fcurve.data_path in {'location', 'rotation_euler', 'rotation_quaternion'}:
+       ^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'data_path'
+Location: /home/connor/Desktop/Blender-4.5/4.5/scripts/modules/bpy/ops.py:109
+
+
 Normal Map Conversion Test:,PASS,100.00%,""

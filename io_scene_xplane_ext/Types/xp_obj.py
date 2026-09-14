@@ -2539,7 +2539,7 @@ class object:
             xp_draped_mat.blend_cutoff = self.blend_cutoff
             xp_draped_mat.cast_shadow = self.cast_shadow
             xp_draped_mat.draped = True
-            xp_draped_mat.draped_nml_tile_rat = self.draped_nml_tile_rat
+            xp_draped_mat.normal_tile_ratio = float(self.draped_nml_tile_rat)
             draped_mat.name = self.name + "_draped"
 
             decal_alb_index = 0

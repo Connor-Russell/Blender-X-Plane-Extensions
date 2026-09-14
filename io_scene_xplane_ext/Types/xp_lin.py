@@ -424,7 +424,7 @@ class line():
         mat = bpy.data.materials.new(name=in_name)
         mat.xp_materials.alb_texture = self.alb_texture
         mat.xp_materials.lit_texture = self.lit_texture
-        mat.xp_materials.normal_tile_ratio = self.normal_scale
+        mat.xp_materials.normal_tile_ratio = float(self.normal_scale)
         mat.xp_materials.normal_texture = self.nml_texture
         mat.xp_materials.weather_mode = self.weather_mode
         mat.xp_materials.weather_texture = self.weather_texture

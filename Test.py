@@ -8,6 +8,13 @@ TestDir = os.path.join(cd, "Tests")
 OutputTestDir = os.path.join(cd, "Tests")
 DateAndTime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
+py_command = 'python'
+
+if os.name == "nt":
+    py_command = 'python'
+else:
+    py_command = 'python3'
+
 #If quick test, only the first version will be used
 QuickTest = True
 
@@ -19,11 +26,12 @@ TestInApp =             True
 TestNormalConversion =  True
 
 def run_blender(blender_exe, script):
+    print(f"{blender_exe} --background --python {script}")
     subprocess.run([
         blender_exe,
         "--background",
         "--python", script
-    ], shell=True, cwd=TestDir)
+    ], cwd=TestDir)
 
 def test_all(blender_exe):
     if TestExport:
@@ -40,7 +48,7 @@ def test_all(blender_exe):
         run_blender(blender_exe, os.path.join(TestDir, "normal_conversion.py"))
 
 #Run python build.py (same dir as this)
-subprocess.run(["python", "build.py"], cwd=cd)
+subprocess.run([py_command, "Build.py"], cwd=cd)
 
 # Remove old result file
 results_path = os.path.join(OutputTestDir, "Test Results.csv")

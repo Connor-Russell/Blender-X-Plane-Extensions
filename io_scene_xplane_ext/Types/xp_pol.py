@@ -346,7 +346,7 @@ class polygon():
 
         self.alb_texture = mat.alb_texture
         self.lit_texture = mat.lit_texture
-        self.normal_scale = mat.normal_tile_ratio
+        self.normal_scale = float(mat.normal_tile_ratio)
         self.nml_texture = mat.normal_texture
         self.weather_mode = mat.weather_mode
         self.weather_texture = mat.weather_texture

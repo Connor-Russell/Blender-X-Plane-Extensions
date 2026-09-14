@@ -916,6 +916,7 @@ class facade:
             wall_material.use_nodes = True
             wall_material.xp_materials.alb_texture = self.import_wall_material.alb_texture
             wall_material.xp_materials.normal_texture = self.import_wall_material.nml_texture
+            wall_material.xp_materials.normal_tile_ratio = float(self.import_wall_material.nml_tile_rat)
             wall_material.xp_materials.lit_texture = self.import_wall_material.lit_texture
             wall_material.xp_materials.decal_modulator = self.import_wall_material.mod_texture
             wall_material.xp_materials.blend_mode = 'BLEND' if self.import_wall_material.do_blend_alpha else 'CLIP'
@@ -955,6 +956,7 @@ class facade:
             roof_material.use_nodes = True
             roof_material.xp_materials.alb_texture = self.import_roof_material.alb_texture
             roof_material.xp_materials.normal_texture = self.import_roof_material.nml_texture
+            roof_material.xp_materials.normal_tile_ratio = float(self.import_roof_material.nml_tile_rat)
             roof_material.xp_materials.lit_texture = self.import_roof_material.lit_texture
             roof_material.xp_materials.decal_modulator = self.import_roof_material.mod_texture
             roof_material.xp_materials.blend_mode = 'BLEND' if self.import_roof_material.do_blend_alpha else 'CLIP'
