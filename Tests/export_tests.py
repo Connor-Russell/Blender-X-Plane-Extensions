@@ -99,6 +99,7 @@ def test(test_dir):
             bpy.ops.xp_ext.export_polygons()
             bpy.ops.xp_ext.export_facades()
             bpy.ops.xp_ext.export_agps()
+            bpy.ops.xp_ext.export_fors()
 
             #Define the "good" file to compare to
             good_file = os.path.join(test_dir, relative_test_dir, f"{col_name_base}.good.{col_name_ext}")

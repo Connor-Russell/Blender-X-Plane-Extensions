@@ -67,7 +67,7 @@ class BTN_agp_exporter(bpy.types.Operator):
         return {'FINISHED'}  
 
 class BTN_for_exporter(bpy.types.Operator):
-    bl_idname = "xp_ext.export_forests"
+    bl_idname = "xp_ext.export_fors"
     bl_label = "Export X-Plane Forests"
     bl_description = "Export X-Plane forests from the visible collections."
 

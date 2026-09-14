@@ -322,6 +322,13 @@ def compare_files(file1, file2):
         good_lines = f_good.splitlines()
 
         for i in range(min(len(new_lines), len(good_lines))):
+            # Normalize newlines by removing CR/LF characters
+            new_lines[i] = new_lines[i].replace('\r', '')
+            good_lines[i] = good_lines[i].replace('\r', '')
+            # Remove any remaining newline characters for consistency
+            new_lines[i] = new_lines[i].replace('\n', '')
+            good_lines[i] = good_lines[i].replace('\n', '')
+
             new_line_len = len(new_lines[i])
             good_line_len = len(good_lines[i])
 

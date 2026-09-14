@@ -1,17 +1,16 @@
-2026-09-14 14-22-41
+2026-09-14 14-44-35
 Test Name,Result,Percentage,Message
 Blender 4.5 Tests
 Export Tests:
 TestFacade:,PASS,99.76%,"Different line count 0"
-Asphalt_Striped_Dark:,FAIL,15.64%,"Different line count 1"
-PolygonExporter:,FAIL,23.46%,"Different line count 2"
-Enhanced_Center_B:,PASS,100.00%,"Different line count 0"
-MyConcrete:,FAIL,N/A,Error exporting MyConcrete: Collection name 'MyConcrete' does not contain a valid extension. Expected format: 'name.extension'.
-LineExporter:,FAIL,10.74%,"Different line count 1"
-Export Test Summary:,FAIL,33.33%,"Total tests: 6, Failed: 4"
+Asphalt_Striped_Dark:,FAIL,85.79%,"Different line count 0"
+PolygonExporter:,FAIL,80.48%,"Different line count 1"
+Enhanced_Center_B:,FAIL,67.15%,"Different line count 1"
+LineExporter:,FAIL,92.63%,"Different line count 0"
+Export Test Summary:,FAIL,20.00%,"Total tests: 5, Failed: 4"
 Import Tests:
 XCD_Jetway:,FAIL,0.00%,"Differences: Collection: 1 ;Collection: XCD_Jetway.obj, XCD_Jetway.obj.001, object count difference: 157 vs 234 "
-Asphalt_Striped_Dark:,FAIL,0.00%,"Differences: Property: 3 ;Property: weather_texture (value //Asphalt_Striped_Weather.png != //) dither_cutoff (value 0.5 != 0.0) One or both properties for preview_image are None "
+Asphalt_Striped_Dark:,FAIL,0.00%,"Differences: Property: 1 ;Property: One or both properties for preview_image are None "
 MyLine:,FAIL,0.00%,"Differences: Property: 18 ;Property: weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.10000000149011612) One or both properties for preview_image are None "
 MIRL_End_PCL:,FAIL,0.00%,"Differences: Property: 5 ;Property: One or both properties for preview_image are None One or both properties for preview_image are None One or both properties for preview_image are None One or both properties for preview_image are None One or both properties for preview_image are None "
 Enhanced_Center_B:,FAIL,0.00%,"Differences: Property: 6 ;Property: weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.25) One or both properties for preview_image are None weather_mode (value DEFAULT != TRANSPARENT) dither_cutoff (value 0.5 != 0.25) One or both properties for preview_image are None "

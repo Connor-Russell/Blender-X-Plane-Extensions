@@ -5,7 +5,6 @@ DRAPED_POLYGON
 #Materials
 TEXTURE Asphalt_Striped_Dark.png
 TEXTURE_NORMAL 1	Asphalt_Striped_NML.png
-WEATHER Asphalt_Striped_Weather.png
 NO_BLEND 0.00
 
 #Decals

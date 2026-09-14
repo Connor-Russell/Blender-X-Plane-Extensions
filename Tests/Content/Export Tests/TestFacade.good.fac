@@ -7,7 +7,7 @@ RING 1
 
 SHADER_WALL
 NORMAL_METALNESS
-TEXTURE ..\Content\TestAlb.png
+TEXTURE ../Content/TestAlb.png
 TEXTURE_LIT TestLIT.png
 TEXTURE_NORMAL 1.0 wall_nml.png
 #Decals
@@ -23,7 +23,7 @@ SHADER_ROOF
 NORMAL_METALNESS
 TEXTURE TestRoofAlb.png
 TEXTURE_LIT TestRoofLIT.png
-TEXTURE_NORMAL 1.0 ..\Content\TestRoofNML.png
+TEXTURE_NORMAL 1.0 ../Content/TestRoofNML.png
 #Decals
 DECAL_PARAMS_PROJ 1.0 2.0 3.0 6.0 7.0 8.0 9.0 5.0 4.0 12.0 13.0 14.0 15.0 11.0 10.0 TestWallDcl1.png
 DECAL_PARAMS_PROJ 16.0 17.0 18.0 21.0 22.0 23.0 24.0 20.0 19.0 27.0 28.0 29.0 30.0 26.0 25.0 TestWallDcl2.png

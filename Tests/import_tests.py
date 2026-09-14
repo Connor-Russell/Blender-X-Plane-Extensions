@@ -130,6 +130,18 @@ def test(test_dir):
                     filepath=filepath,
                     files=files
                 )
+            elif asset_extension == '.for':
+                filepath = asset_import_path
+                directory = os.path.dirname(asset_import_path)
+                filename = os.path.basename(asset_import_path)
+
+                files = [{"name": filename}]
+
+                bpy.ops.import_scene.xp_for(
+                    'EXEC_DEFAULT',
+                    filepath=filepath,
+                    files=files
+                )
             
             #Now we will get the two collections
             col1 = None

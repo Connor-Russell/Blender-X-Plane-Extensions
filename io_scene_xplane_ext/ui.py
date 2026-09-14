@@ -286,7 +286,7 @@ class MENU_for_exporter(bpy.types.Panel):
         scene = context.scene
 
         #Export button
-        layout.operator("xp_ext.export_forests", text="Export Forests")
+        layout.operator("xp_ext.export_fors", text="Export Forests")
         layout.separator()
 
         layout.prop(scene.xp_ext, "pol_collection_search")
