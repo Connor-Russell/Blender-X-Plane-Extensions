@@ -205,25 +205,31 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         #Get our prefs for suffixes
         addon_prefs = bpy.context.preferences.addons[__package__].preferences
 
+        base_search_path = addon_prefs.base_texture_search_path + '/'
+
         #If the material has an albedo texture, use that as our name
         if not file_utils.is_empty(material.xp_materials.alb_texture):
             name = material.xp_materials.alb_texture
+            name = name.replace("//", "")
+            base_search_path = "//"
 
         #Remove the extension from the name
         name = name.replace(".png", "")
         name = name.replace(".dds", "")
         name = name.replace(addon_prefs.suffix_albedo, "")
+
+        print(f"Relative ALB is {base_search_path + name + addon_prefs.suffix_albedo + '.png'}" )
         
-        alb_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_albedo + ".png")
+        alb_check_path = file_utils.to_absolute(base_search_path + name + addon_prefs.suffix_albedo + ".png")
         
         #Define the paths for the NML, and LIT
-        nml_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_combined_normal + ".png")
-        lit_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_lit + ".png")
+        nml_check_path = file_utils.to_absolute(base_search_path + name + addon_prefs.suffix_combined_normal + ".png")
+        lit_check_path = file_utils.to_absolute(base_search_path + name + addon_prefs.suffix_lit + ".png")
         mat_check_path = ""
 
         if material.xp_materials.do_separate_material_texture:
-            nml_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_normal + ".png")
-            mat_check_path = file_utils.to_absolute(addon_prefs.base_texture_search_path + '/' + name + addon_prefs.suffix_material + ".png")
+            nml_check_path = file_utils.to_absolute(base_search_path + name + addon_prefs.suffix_normal + ".png")
+            mat_check_path = file_utils.to_absolute(base_search_path + name + addon_prefs.suffix_material + ".png")
 
         print(f"Checking for textures at {alb_check_path}, {nml_check_path}, {lit_check_path}, {mat_check_path}")
 
@@ -1484,6 +1490,77 @@ class BTN_set_all_export_dirs(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_replace_object_names(bpy.types.Operator):
+    """Replaces text in attached object resource paths on selected objects."""
+    bl_idname = "xp_ext.replace_object_names"
+    bl_label = "Replace Object Names"
+    bl_description = "Replace text in the attached object resource paths of the selected objects."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    search_text: bpy.props.StringProperty(
+        name="Search Text",
+        description="Text to search for in the object resource paths",
+        default=""
+    ) # type: ignore
+
+    replace_text: bpy.props.StringProperty(
+        name="Replace Text",
+        description="Text to replace the search text with",
+        default=""
+    ) # type: ignore
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def execute(self, context):
+        if self.search_text == "":
+            self.report({'ERROR'}, "Search text cannot be empty.")
+            return {'CANCELLED'}
+
+        for obj in context.selected_objects:
+            obj.xp_attached_obj.resource = obj.xp_attached_obj.resource.replace(self.search_text, self.replace_text)
+            obj.xp_agp.attached_obj_resource = obj.xp_agp.attached_obj_resource.replace(self.search_text, self.replace_text)
+
+        return {'FINISHED'}
+
+class BTN_select_by_object_names(bpy.types.Operator):
+    """Selects objects whose names match the supplied names."""
+    bl_idname = "xp_ext.select_by_object_names"
+    bl_label = "Select By Object Names"
+    bl_description = "Select objects by their exact names. Separate multiple names with commas or new lines."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    object_names: bpy.props.StringProperty(
+        name="Object Names",
+        description="Text an object resource must contain to be selectedd",
+        default=""
+    ) # type: ignore
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def execute(self, context):
+        if self.object_names == "":
+            self.report({'ERROR'}, "Object names cannot be empty.")
+            return {'CANCELLED'}
+
+        matched_objects = []
+        for obj in context.view_layer.objects:
+            if self.object_names in obj.xp_attached_obj.resource or self.object_names in obj.xp_agp.attached_obj_resource:
+                matched_objects.append(obj)
+        if not matched_objects:
+            self.report({'ERROR'}, "No objects matched the supplied names.")
+            return {'CANCELLED'}
+
+        for obj in context.view_layer.objects:
+            obj.select_set(False)
+        for obj in matched_objects:
+            obj.select_set(True)
+
+        context.view_layer.objects.active = matched_objects[0]
+        self.report({'INFO'}, f"Selected {len(matched_objects)} object(s).")
+        return {'FINISHED'}
+
 class BTN_preview_attached_object(bpy.types.Operator):
     """Imports for preview an object that is attached to a facade or .agp"""
     bl_idname = "xp_ext.preview_attached_object"
@@ -1669,6 +1746,8 @@ def register():
     bpy.utils.register_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.register_class(BTN_find_textures)
     bpy.utils.register_class(BTN_set_all_export_dirs)
+    bpy.utils.register_class(BTN_replace_object_names)
+    bpy.utils.register_class(BTN_select_by_object_names)
     bpy.utils.register_class(BTN_for_exporter)
     bpy.utils.register_class(BTN_preview_attached_object)
     bpy.utils.register_class(BTN_clear_attached_object_preview)
@@ -1710,6 +1789,8 @@ def unregister():
     bpy.utils.unregister_class(BTN_convert_separate_maps_to_combined_xp_nml)
     bpy.utils.unregister_class(BTN_find_textures)
     bpy.utils.unregister_class(BTN_set_all_export_dirs)
+    bpy.utils.unregister_class(BTN_replace_object_names)
+    bpy.utils.unregister_class(BTN_select_by_object_names)
     bpy.utils.unregister_class(BTN_for_exporter)
     bpy.utils.unregister_class(BTN_preview_attached_object)
     bpy.utils.unregister_class(BTN_clear_attached_object_preview)

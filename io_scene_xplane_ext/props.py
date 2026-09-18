@@ -584,6 +584,12 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         default=False
     ) # type: ignore
 
+    utilities_expanded: bpy.props.BoolProperty(
+        name="Utilities Expanded",
+        description="Whether the utilities section is expanded in the UI",
+        default=False
+    ) # type: ignore
+
 #Material properties
 
 class PROP_decal(bpy.types.PropertyGroup):

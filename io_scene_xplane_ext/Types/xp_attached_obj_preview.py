@@ -248,16 +248,13 @@ class attached_object_preview:
             new_mat = None
             for other_mat in bpy.data.materials:
                 if material_config.materials_are_equivalent(our_mat, other_mat) and other_mat != our_mat:
-                    log_utils.info(f"Found matching material for {our_mat.name}, reusing {other_mat.name}")
                     new_mat = other_mat
                     break
             #If we end up using our material, we'll update the nodes. Otherwise we swap our material for the existing
             if new_mat is None:
-                log_utils.info(f"No match found for material {our_mat.name}, using it as is")
                 new_mats.append(our_mat)
                 material_config.update_nodes(our_mat)
             else:
-                log_utils.info(f"Using existing material {new_mat.name} instead of {our_mat.name}")
                 new_mats.append(new_mat)
                 bpy.data.materials.remove(our_mat)
 
@@ -297,24 +294,28 @@ def process_single_object(obj : bpy.types.Object, make_real):
     if obj.type != 'EMPTY':
         return
 
-    log_utils.info(f"Processing preview objecs for {obj.name}")
-
     for child in obj.children:
         if 'xp_ext_preview_filepath' in child:
             bpy.data.objects.remove(child, do_unlink=True)
     resource = ""
+    is_relative = False
     if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
+        if obj.xp_attached_obj.attached_obj_preview_resource.starts_with("//"):
+            is_relative = True
         resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
     elif not file_utils.is_empty(obj.xp_agp.attached_obj_resource) and obj.xp_agp.exportable and obj.xp_agp.type == 'ATTACHED_OBJ':
+        if obj.xp_agp.attached_obj_resource.starts_with("//"):
+            is_relative = True
         resource = file_utils.to_absolute(obj.xp_agp.attached_obj_resource)
     elif not file_utils.is_empty(obj.xp_attached_obj.resource) and obj.xp_attached_obj.exportable:
+        if obj.xp_attached_obj.resource.starts_with("//"):
+            is_relative = True
         resource = file_utils.to_absolute(obj.xp_attached_obj.resource)
     else:
         return
 
     #Skip empty. Warn on missing
-    if resource == "":
-        log_utils.info(f"Attached object '{obj.name}' does not have a preview resource specified. {obj.xp_agp.attached_obj_preview_resource}")
+    if resource == "" or resource == "//" or not is_relative:
         return
     if not os.path.isfile(resource):
         log_utils.warning(f"Attached object preview resource '{resource}' not found.")
@@ -334,15 +335,16 @@ def process_single_object(obj : bpy.types.Object, make_real):
         new_obj = bpy.data.objects.new(name=f"{obj.name}_preview", object_data=existing_inst.data)
         new_obj.hide_select = True
         new_obj.parent = obj
+        new_obj.xp_fac_mesh.exportable = False
         if parent_collection is not None:
             parent_collection.objects.link(new_obj)
         new_obj['xp_ext_preview_filepath'] = file_utils.to_relative(resource).replace("\\", "/")
     if existing_inst is None:
         #Read and add
-        log_utils.info(f"Importing attached object preview from resource '{resource}' for object '{obj.name}'")
         new_obj = attached_object_preview()
         new_obj.read(resource)
         new_obj.to_scene(obj, parent_collection, make_real)
+
 
 @persistent
 def clear_existing_objects(in_file_path, in_startup_file_path):

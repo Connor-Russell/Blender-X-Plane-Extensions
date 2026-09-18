@@ -968,6 +968,13 @@ class MENU_operations(bpy.types.Panel):
             update_all_missing.do_all_objects = True
             update_all_missing.reload = False
 
+        layout.separator()
+        box = layout.box()
+        box.prop(xp_ext, "utilities_expanded", text="Utilities", icon='TRIA_DOWN' if xp_ext.utilities_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.utilities_expanded:
+            box.operator("xp_ext.replace_object_names", text="Batch Replace Attached Object Resources")
+            box.operator("xp_ext.select_by_object_names", text="Select Attached Objects by Resoucre")
+
         do_test_operators = False
         if do_test_operators:
             layout.separator()
