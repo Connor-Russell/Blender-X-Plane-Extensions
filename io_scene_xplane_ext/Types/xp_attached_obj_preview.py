@@ -300,15 +300,15 @@ def process_single_object(obj : bpy.types.Object, make_real):
     resource = ""
     is_relative = False
     if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
-        if obj.xp_attached_obj.attached_obj_preview_resource.starts_with("//"):
+        if obj.xp_attached_obj.attached_obj_preview_resource.startswith("//"):
             is_relative = True
         resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
     elif not file_utils.is_empty(obj.xp_agp.attached_obj_resource) and obj.xp_agp.exportable and obj.xp_agp.type == 'ATTACHED_OBJ':
-        if obj.xp_agp.attached_obj_resource.starts_with("//"):
+        if obj.xp_agp.attached_obj_resource.startswith("//"):
             is_relative = True
         resource = file_utils.to_absolute(obj.xp_agp.attached_obj_resource)
     elif not file_utils.is_empty(obj.xp_attached_obj.resource) and obj.xp_attached_obj.exportable:
-        if obj.xp_attached_obj.resource.starts_with("//"):
+        if obj.xp_attached_obj.resource.startswith("//"):
             is_relative = True
         resource = file_utils.to_absolute(obj.xp_attached_obj.resource)
     else:

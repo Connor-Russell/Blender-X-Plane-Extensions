@@ -80,6 +80,17 @@ def sanitize_prop_path(in_path):
         else:
             return file_utils.to_relative(in_path, True)
 
+def sanitize_prop_path_or_lib_path(in_path):
+        if in_path == "":
+            return "//"
+        if in_path == "//":
+            return in_path
+        if in_path.startswith("//"):
+            return file_utils.to_relative(in_path, True)
+        else:
+            return in_path
+            
+
 last_update_was_programmatic = False
 
 def update_attached_obj_preview_fac(self, context):
@@ -88,7 +99,7 @@ def update_attached_obj_preview_fac(self, context):
         last_update_was_programmatic = False
         return
     last_update_was_programmatic = True
-    self.attached_obj_preview_resource = sanitize_prop_path(self.attached_obj_preview_resource)
+    self.attached_obj_preview_resource = sanitize_prop_path_or_lib_path(self.attached_obj_preview_resource)
     update_ui(self, context)
     if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
         bpy.ops.xp_ext.preview_attached_object()
@@ -99,7 +110,7 @@ def update_attached_obj_preview_agp(self, context):
         last_update_was_programmatic = False
         return
     last_update_was_programmatic = True
-    self.attached_obj_resource = sanitize_prop_path(self.attached_obj_resource)
+    self.attached_obj_resource = sanitize_prop_path_or_lib_path(self.attached_obj_resource)
     update_ui(self, context)
     if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
         bpy.ops.xp_ext.preview_attached_object()
