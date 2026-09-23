@@ -800,8 +800,9 @@ class MENU_mats(bpy.types.Panel):
             box = layout.box()
 
             box.label(text="Lighting Properties")
-            box.prop(xp_materials, "local_no_lit")
-            if not xp_materials.local_no_lit:
+            box.prop(xp_materials, "max_brightness", text="Texture Max Brightness")
+            box.prop(xp_materials, "local_max_brightness", text="Local Max Brightness")
+            if xp_materials.local_max_brightness == -1:
                 box.prop(xp_materials, "light_level_override")
                 if xp_materials.light_level_override:
                     box.prop(xp_materials, "light_level_v1")
@@ -814,6 +815,7 @@ class MENU_mats(bpy.types.Panel):
                 row = box.row()
                 row.prop(xp_materials, "light_level_override")
                 row.enabled = False
+            
 
             #---------------------------------Decal Properties---------------------------------
 

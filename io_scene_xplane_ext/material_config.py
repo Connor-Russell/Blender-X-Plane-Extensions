@@ -99,6 +99,8 @@ def update_xplane_collection_settings(col):
     col.xplane.layer.file_draped_normal_decal2 = ""
     col.xplane.layer.texture_modulator = ""
     col.xplane.layer.texture_draped_modulator = ""
+    col.xplane.layer.luminance_override = False
+    col.xplane.layer.luminance = int(1000)
 
     def add_custom_property(name, value):
         col.xplane.layer.customAttributes.add()
@@ -142,6 +144,11 @@ def update_xplane_collection_settings(col):
                 col.xplane.layer.texture_map_material_gloss = file_utils.to_relative(xp_props.material_texture)
             else:
                 col.xplane.layer.texture_normal = file_utils.to_relative(xp_props.normal_texture)
+
+            # If we have a max brightness set, apply it
+            if xp_props.max_brightness > 0:
+                col.xplane.layer.luminance_override = True
+                col.xplane.layer.luminance = int(xp_props.max_brightness)
 
             #If we have a normal map, set normal metalness to true
             if not file_utils.is_empty(xp_props.normal_texture) and xp_props.material_mode == "NORMAL_METALNESS":
@@ -198,6 +205,10 @@ def update_xplane_collection_settings(col):
             decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[1], 2)
             decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[2], 1)
             decal_utils.set_xp_decal_prop(col, mat, xp_props.decals[3], 2)
+
+            #If this is an instanced_scenery, we need to change to scenery is we override the light level
+            if col.xplane.layer.export_type == 'instanced_scenery' and (xp_props.light_level_override or xp_props.local_max_brightness > -1):
+                col.xplane.layer.export_type = 'scenery'
 
     if material_mode == "NORMAL_TRANSLUCENCY":
         add_custom_property("NORMAL_TRANSLUCENCY", "")
@@ -314,13 +325,13 @@ def update_settings(in_material):
 
     #Set light level override
     if in_material.xplane:
-        if xp_mat.local_no_lit:
+        if xp_mat.local_max_brightness > -1:
             in_material.xplane.lightLevel = True
             in_material.xplane.lightLevel_v1 = 0
-            in_material.xplane.lightLevel_v2 = 10000
+            in_material.xplane.lightLevel_v2 = 1
             in_material.xplane.lightLevel_photometric = True
-            in_material.xplane.lightLevel_brightness = 0
-            in_material.xplane.lightLevel_dataref = ""
+            in_material.xplane.lightLevel_brightness = xp_mat.local_max_brightness
+            in_material.xplane.lightLevel_dataref = "sim/graphics/animation/draw_light_level"
         else:
             in_material.xplane.lightLevel = xp_mat.light_level_override
             in_material.xplane.lightLevel_v1 = xp_mat.light_level_v1
@@ -1333,7 +1344,9 @@ def materials_are_equivalent(mat1, mat2):
         return False
     if xm1.polygon_offset != xm2.polygon_offset:
         return False
-    if xm1.local_no_lit != xm2.local_no_lit:
+    if xm1.local_max_brightness != xm2.local_max_brightness:
+        return False
+    if xm1.max_brightness == xm2.max_brightness:
         return False
     if xm1.light_level_override != xm2.light_level_override:
         return False

@@ -741,6 +741,20 @@ class PROP_mats(bpy.types.PropertyGroup):
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
+    max_brightness: bpy.props.IntProperty(
+            name="Max Brightness",
+            description="The maximum brightness of the LIT texture in NITs. -1 to leave default. Applies to the entire object",
+            default=-1,
+            update=material_config.operator_wrapped_update_settings
+        ) # type: ignore
+
+    local_max_brightness: bpy.props.IntProperty(
+                name="Max Brightness",
+                description="The maximum brightness of this material's LIT texture in NITs. -1 to leave default.",
+                default=-1,
+                update=material_config.operator_wrapped_update_settings
+            ) # type: ignore
+
     draped: bpy.props.BoolProperty(
         name="Draped",
         description="Is the material draped?",
@@ -825,13 +839,6 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0,
         min=0,
         max=3,
-        update=material_config.operator_wrapped_update_settings
-    ) # type: ignore
-
-    local_no_lit: bpy.props.BoolProperty(
-        name="Local No Lit",
-        description="Whether the material is unaffected by the LIT texture and global lighting. Uses light level override settings to dim lits to an invisible level.",
-        default=False,
         update=material_config.operator_wrapped_update_settings
     ) # type: ignore
 
