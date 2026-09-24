@@ -6,6 +6,7 @@
 #3.41,C:\Tools\Blender\3.41\blender.exe
 #3.51,C:\Tools\Blender\3.51\blender.exe
 #3.69,C:\Tools\Blender\3.69\blender.exe
+4.5,C:\Tools\Blender\4.5\blender.exe
 4.02,C:\Tools\Blender\4.02\blender.exe
 4.11,C:\Tools\Blender\4.11\blender.exe
 4.23,C:\Tools\Blender\4.23\blender.exe
