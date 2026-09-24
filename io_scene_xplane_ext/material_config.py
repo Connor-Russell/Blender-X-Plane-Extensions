@@ -1268,6 +1268,55 @@ def update_nodes(material: bpy.types.Material):
             else:
                 material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
 
+def decals_are_equivalent(dcl1, dcl2):
+    if (not dcl1.enabled and not dcl2.enabled):
+        return True
+    if dcl1.enabled != dcl2.enabled:
+        return False
+    if dcl1.texture != dcl2.texture:
+        return False
+    if dcl1.is_normal != dcl2.is_normal:
+        return False
+    if dcl1.projected != dcl2.projected:
+        return False
+    if dcl1.tile_ratio != dcl2.tile_ratio:
+        return False
+    if dcl1.scale_x != dcl2.scale_x:
+        return False
+    if dcl1.scale_y != dcl2.scale_y:
+        return False
+    if dcl1.dither_ratio != dcl2.dither_ratio:
+        return False
+    if dcl1.strength_constant != dcl2.strength_constant:
+        return False
+    if dcl1.strength_modulator != dcl2.strength_modulator:
+        return False
+    if dcl1.strength_key_red != dcl2.strength_key_red:
+        return False
+    if dcl1.strength_key_green != dcl2.strength_key_green:
+        return False
+    if dcl1.strength_key_blue != dcl2.strength_key_blue:
+        return False
+    if dcl1.strength_key_alpha != dcl2.strength_key_alpha:
+        return False
+    if dcl1.strength2_constant != dcl2.strength2_constant:
+        return False
+    if dcl1.strength2_modulator != dcl2.strength2_modulator:
+        return False
+    if dcl1.strength2_key_red != dcl2.strength2_key_red:
+        return False
+    if dcl1.strength2_key_green != dcl2.strength2_key_green:
+        return False
+    if dcl1.strength2_key_blue != dcl2.strength2_key_blue:
+        return False
+    if dcl1.strength2_key_alpha != dcl2.strength2_key_alpha:
+        return False
+    if dcl1.roughness_boost_factor != dcl2.roughness_boost_factor:
+        return False
+    if dcl1.is_ui_expanded != dcl2.is_ui_expanded:
+        return False
+    return True
+
 def materials_are_equivalent(mat1, mat2):
     """
     Compare two materials' xp_materials properties for equivalence.
@@ -1296,6 +1345,8 @@ def materials_are_equivalent(mat1, mat2):
         return False
     if xm1.lit_texture != xm2.lit_texture:
         return False
+    if xm1.weather_mode != xm2.weather_mode:
+            return False
     if xm1.weather_texture != xm2.weather_texture:
         return False
     if xm1.brightness != xm2.brightness:
@@ -1346,7 +1397,7 @@ def materials_are_equivalent(mat1, mat2):
         return False
     if xm1.local_max_brightness != xm2.local_max_brightness:
         return False
-    if xm1.max_brightness == xm2.max_brightness:
+    if xm1.max_brightness != xm2.max_brightness:
         return False
     if xm1.light_level_override != xm2.light_level_override:
         return False
@@ -1362,6 +1413,53 @@ def materials_are_equivalent(mat1, mat2):
         return False
     if xm1.decal_modulator != xm2.decal_modulator:
         return False
-    #TODO: Compare decals, but they need a helper function
+    for decal1, decal2 in zip(xm1.decals, xm2.decals):
+        if decal1 != decal2:
+            return False
     return True
 
+def materials_are_compatible(mat1, mat2):
+    """
+    This function checks if two materials are compatible for being in the same object. This means checking the textures, max brightness, decal settings, alpha settings, weather settings, and layer group settings. If any differ, we return false
+    """
+
+    if mat1 is None or mat2 is None:
+            return mat1 is mat2
+        
+    xm1 = mat1.xp_materials
+    xm2 = mat2.xp_materials
+    if xm1.alb_texture != xm2.alb_texture:
+        return False
+    if xm1.material_texture != xm2.material_texture:
+        return False
+    if xm1.do_separate_material_texture != xm2.do_separate_material_texture:
+        return False
+    if xm1.normal_texture != xm2.normal_texture:
+        return False
+    if xm1.normal_tile_ratio != xm2.normal_tile_ratio:
+        return False
+    if xm1.lit_texture != xm2.lit_texture:
+        return False
+    if xm1.weather_mode != xm2.weather_mode:
+        return False
+    if xm1.weather_texture != xm2.weather_texture:
+        return False
+    if xm1.brightness != xm2.brightness:
+        return False
+    if xm1.layer_group != xm2.layer_group:
+        return False
+    if xm1.layer_group_offset != xm2.layer_group_offset:
+        return False
+    if xm1.blend_mode != xm2.blend_mode:
+        return False
+    if xm1.blend_cutoff != xm2.blend_cutoff:
+        return False
+    if xm1.max_brightness != xm2.max_brightness:
+        return False
+    if xm1.decal_modulator != xm2.decal_modulator:
+        return False
+    for decal1, decal2 in zip(xm1.decals, xm2.decals):
+        if decal1 != decal2:
+            return False
+    return True
+    
