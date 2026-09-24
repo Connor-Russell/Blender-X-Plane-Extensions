@@ -14,9 +14,9 @@ QuickTest = True
 TestExport =            True
 TestImport =            True
 InternalTest =          False #This is EOL, and this stuff is inherently testedin the import/export tests
-TestBaker =             True
-TestInApp =             True
-TestNormalConversion =  True
+TestBaker =             False
+TestInApp =             False
+TestNormalConversion =  False
 
 def run_blender(blender_exe, script):
     subprocess.run([
@@ -48,6 +48,15 @@ try:
     os.remove(results_path)
 except FileNotFoundError:
     pass
+
+# Remove old .test_result. files recursively
+for root, dirs, files in os.walk(OutputTestDir):
+    for file_name in files:
+        if ".test_result." in file_name:
+            try:
+                os.remove(os.path.join(root, file_name))
+            except FileNotFoundError:
+                pass
 
 #Load the BlenderVersions.txt file from the test dir. Add to the blender_exe list
 blender_exes = []

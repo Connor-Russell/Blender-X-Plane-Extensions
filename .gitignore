@@ -1,5 +1,6 @@
 #Test files
 *.test_result.*
+*_backup_*
 *.blend1
 
 #Zip files

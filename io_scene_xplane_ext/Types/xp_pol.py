@@ -29,7 +29,7 @@ class polygon():
         self.layer_offset = 0
         self.scale_x = 0.0
         self.scale_y = 0.0
-        self.normal_scale = 1
+        self.normal_scale = 1.0
         self.blend_cutoff = 0
         self.dither_cutoff = 0.5
         self.alpha_mode = "BLEND"
@@ -218,7 +218,8 @@ class polygon():
                 self.lit_texture = tokens[1]
             elif cmd == "TEXTURE_MODULATOR":
                 self.mod_texture = tokens[1]
-            elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT":
+            elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT" and cmd != "WEATHER_NONE":
+                self.weather_mode = "TEXTURE"
                 self.weather_texture = tokens[1]
             elif cmd == "WEATHER_TRANSPARENT":
                 self.weather_mode = "TRANSPARENT"

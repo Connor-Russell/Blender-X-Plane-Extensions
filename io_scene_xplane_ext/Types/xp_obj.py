@@ -707,10 +707,10 @@ class draw_call_state:
         self.light_level_override = False
         self.draw = True
         self.hard_camera = False
-        self.light_level_v1 = 0
-        self.light_level_v2 = 0
+        self.light_level_v1 = 0.0
+        self.light_level_v2 = 0.0
         self.light_level_photometric = False
-        self.light_level_brightness = 1
+        self.light_level_brightness = 1.0
         self.light_level_dataref = ""
         self.is_hud = False
 
@@ -2275,7 +2275,7 @@ class object:
                 cur_state.light_level_v2 = 0.0
                 cur_state.light_level_dataref = ""
                 cur_state.light_level_photometric = False
-                cur_state.light_level_brightness = 0.0
+                cur_state.light_level_brightness = 1.0
 
             elif tokens[0] == "ATTR_manip_wheel":
                 cur_manipulator.wheel_delta = float(tokens[1]) if len(tokens) > 1 else 0

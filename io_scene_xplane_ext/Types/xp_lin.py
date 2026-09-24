@@ -45,7 +45,7 @@ class line():
         self.layer_offset = 0
         self.scale_x = 0.0
         self.scale_y = 0.0
-        self.normal_scale = 1
+        self.normal_scale = 1.0
         self.blend_cutoff = 0
         self.dither_cutoff = 0.5
         self.alpha_mode = "BLEND"
@@ -203,7 +203,10 @@ class line():
 
             #Check for material data
             if cmd == "TEXTURE_NORMAL":
-                self.normal_scale = tokens[1]
+                try:
+                    self.normal_scale = float(tokens[1])
+                except ValueError:
+                    log_utils.warning(f"Invalid value for normal scale: '{tokens[1]}'", "Invalid normal scale")
                 self.nml_texture = tokens[2]
             elif cmd == "TEXTURE_LIT":
                 self.lit_texture = tokens[1]
@@ -212,6 +215,7 @@ class line():
             elif cmd == "TEXTURE_MODULATOR":
                 self.mod_texture = tokens[1]
             elif cmd == "WEATHER" and cmd != "WEATHER_TRANSPARENT":
+                self.weather_mode = "TEXTURE"
                 self.weather_texture = tokens[1]
             elif cmd == "WEATHER_TRANSPARENT":
                 self.weather_mode = "TRANSPARENT"
@@ -222,19 +226,31 @@ class line():
             elif cmd == "NO_BLEND":
                 self.do_blend = False
                 self.alpha_mode = "NO_BLEND"
-                self.blend_cutoff = float(tokens[1])
-                self.dither_cutoff = float(tokens[1])
+                try:
+                    self.blend_cutoff = float(tokens[1])
+                    self.dither_cutoff = float(tokens[1])
+                except ValueError:
+                    log_utils.warning(f"Invalid value for NO_BLEND '{tokens[1]}'", "Invalid NO_BLEND value")
             elif cmd == "DITHER_ALPHA":
                 self.do_blend = False
                 self.alpha_mode = "DITHER"
-                self.dither_cutoff = float(tokens[1])
-                self.blend_cutoff = float(tokens[1])
+                try:
+                    self.dither_cutoff = float(tokens[1])
+                    self.blend_cutoff = float(tokens[1])
+                except ValueError:
+                    log_utils.warning(f"Invalid value for DITHER_ALPHA: '{tokens[1]}'", "Invalid DITHER_ALPHA value")
 
             #Check for a texture resolution specifier
             if cmd == "TEX_WIDTH":
-                uv_scalar_x = int(tokens[1])
+                try:
+                    uv_scalar_x = int(tokens[1])
+                except ValueError:
+                    log_utils.warning(f"Invalid value for TEX_WIDTH: '{tokens[1]}'", "Invalid TEX_WIDTH value")
             if cmd == "TEX_HEIGHT":
-                uv_scalar_y = int(tokens[1])
+                try:
+                    uv_scalar_y = int(tokens[1])
+                except ValueError:
+                    log_utils.warning(f"Invalid value for TEX_HEIGHT: '{tokens[1]}'", "Invalid TEX_HEIGHT value")
 
             #Check for decals
             if cmd.startswith("DECAL") or cmd.startswith("NORMAL_DECAL"):

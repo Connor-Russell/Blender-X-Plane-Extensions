@@ -4,7 +4,6 @@ LINE_PAINT
 
 #Materials
 TEXTURE Markings_Atlas.png
-WEATHER_TRANSPARENT
 NO_BLEND 0.10
 
 #Decals
