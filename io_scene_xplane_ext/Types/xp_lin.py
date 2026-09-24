@@ -46,7 +46,7 @@ class line():
         self.scale_x = 0.0
         self.scale_y = 0.0
         self.normal_scale = 1.0
-        self.blend_cutoff = 0
+        self.blend_cutoff = 0.5
         self.dither_cutoff = 0.5
         self.alpha_mode = "BLEND"
         self.do_blend = False
@@ -228,7 +228,6 @@ class line():
                 self.alpha_mode = "NO_BLEND"
                 try:
                     self.blend_cutoff = float(tokens[1])
-                    self.dither_cutoff = float(tokens[1])
                 except ValueError:
                     log_utils.warning(f"Invalid value for NO_BLEND '{tokens[1]}'", "Invalid NO_BLEND value")
             elif cmd == "DITHER_ALPHA":
@@ -236,7 +235,6 @@ class line():
                 self.alpha_mode = "DITHER"
                 try:
                     self.dither_cutoff = float(tokens[1])
-                    self.blend_cutoff = float(tokens[1])
                 except ValueError:
                     log_utils.warning(f"Invalid value for DITHER_ALPHA: '{tokens[1]}'", "Invalid DITHER_ALPHA value")
 
@@ -364,7 +362,7 @@ class line():
             self.do_blend = False
             self.alpha_mode = 'DITHER'
             self.dither_cutoff = mat.dither_cutoff
-            self.blend_cutoff = mat.dither_cutoff
+            self.blend_cutoff = mat.blend_cutoff
         else:
             self.do_blend = True if mat.blend_mode == 'BLEND' else False
             self.alpha_mode = 'BLEND' if self.do_blend else 'NO_BLEND'
@@ -447,7 +445,7 @@ class line():
         mat.xp_materials.decal_modulator = self.mod_texture
         if self.alpha_mode == 'DITHER':
             mat.xp_materials.blend_mode = 'DITHER'
-            mat.xp_materials.blend_cutoff = self.dither_cutoff
+            mat.xp_materials.blend_cutoff = self.blend_cutoff
             mat.xp_materials.dither_cutoff = self.dither_cutoff
         else:
             mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'

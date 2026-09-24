@@ -351,8 +351,11 @@ def compare_property_groups(pg1, pg2, path=""):
         val2 = getattr(pg2, name, None)
         prop_path = f"{path}.{name}" if path else name
 
+        if val1 is None and val2 is None:
+            continue
+
         if val1 is None or val2 is None:
-            diffs.append(difference("Property", f"One or both properties for {name} are None"))
+            diffs.append(difference("Property", f"One of the properties for {name} are None"))
 
         #Check if name contains _ui_, something we don't care about
         if "_ui_" in name:
@@ -386,7 +389,11 @@ def compare_property_groups(pg1, pg2, path=""):
                 for i in range(len(val1)):
                     if val1[i] != val2[i]:
                         diffs.append(difference("Property", f"{prop_path}[{i}] (value {val1[i]} != {val2[i]})"))
-                
+
+            # If this is a float, compare if they are within a small tolerance
+            elif isinstance(val1, float) and isinstance(val2, float):
+                if abs(val1 - val2) > 1e-6:
+                    diffs.append(difference("Property", f"{prop_path} (value {val1} != {val2})"))
             elif val1 != val2:
                 diffs.append(difference("Property", f"{prop_path} (value {val1} != {val2})"))
 

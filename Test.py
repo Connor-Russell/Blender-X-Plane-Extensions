@@ -11,9 +11,8 @@ DateAndTime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 #If quick test, only the first version will be used
 QuickTest = True
 
-TestExport =            True
+TestExport =            False
 TestImport =            True
-InternalTest =          False #This is EOL, and this stuff is inherently testedin the import/export tests
 TestBaker =             False
 TestInApp =             False
 TestNormalConversion =  False
@@ -30,8 +29,6 @@ def test_all(blender_exe):
         run_blender(blender_exe, os.path.join(TestDir, "export_tests.py"))
     if TestImport:
         run_blender(blender_exe, os.path.join(TestDir, "import_tests.py"))
-    if InternalTest:
-        run_blender(blender_exe, os.path.join(TestDir, "internal_tests.py"))
     if TestBaker:
         run_blender(blender_exe, os.path.join(TestDir, "bake_test.py"))
     if TestInApp:

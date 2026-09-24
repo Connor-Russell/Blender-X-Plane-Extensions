@@ -5,7 +5,7 @@ DRAPED_POLYGON
 #Materials
 TEXTURE Concrete_Dirty.png
 TEXTURE_NORMAL 1.0	Concrete_All_NML.png
-DITHER_ALPHA 0.46
+DITHER_ALPHA 0.456
 
 #Decals
 DECAL_PARAMS 6.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 1.0 Concrete_Detail.png

@@ -30,7 +30,7 @@ class polygon():
         self.scale_x = 0.0
         self.scale_y = 0.0
         self.normal_scale = 1.0
-        self.blend_cutoff = 0
+        self.blend_cutoff = 0.5
         self.dither_cutoff = 0.5
         self.alpha_mode = "BLEND"
         self.do_blend = False
@@ -231,12 +231,10 @@ class polygon():
                 self.do_blend = False
                 self.alpha_mode = "NO_BLEND"
                 self.blend_cutoff = float(tokens[1])
-                self.dither_cutoff = float(tokens[1])
             elif cmd == "DITHER_ALPHA":
                 self.do_blend = False
                 self.alpha_mode = "DITHER"
                 self.dither_cutoff = float(tokens[1])
-                self.blend_cutoff = float(tokens[1])
 
             #Check for decals
             if cmd.startswith("DECAL") or cmd.startswith("NORMAL_DECAL"):
@@ -356,7 +354,7 @@ class polygon():
             self.do_blend = False
             self.alpha_mode = 'DITHER'
             self.dither_cutoff = mat.dither_cutoff
-            self.blend_cutoff = mat.dither_cutoff
+            self.blend_cutoff = mat.blend_cutoff
         else:
             self.do_blend = mat.blend_mode == 'BLEND'
             self.alpha_mode = 'BLEND' if self.do_blend else 'NO_BLEND'
@@ -421,7 +419,7 @@ class polygon():
         mat.xp_materials.decal_modulator = self.mod_texture
         if self.alpha_mode == 'DITHER':
             mat.xp_materials.blend_mode = 'DITHER'
-            mat.xp_materials.blend_cutoff = self.dither_cutoff
+            mat.xp_materials.blend_cutoff = self.blend_cutoff
             mat.xp_materials.dither_cutoff = self.dither_cutoff
         else:
             mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'
