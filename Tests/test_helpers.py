@@ -587,6 +587,7 @@ def append_test_results(b_did_pass, percentage, message):
     str_b_did_pass = "PASS" if b_did_pass else "FAIL"
     str_percentage = f"{percentage:.2f}%" if percentage is not None else "N/A"
     str_message = message.replace('\n', ';')  # Replace newlines to avoid CSV issues
+    str_message = str_message.replace('\r', ';')  # Replace carriage returns to avoid CSV issues
     str_message = str_message.replace('\"', '\"\"')  # Replace quotes to avoid CSV issues
     str_message = f'"{str_message}"'  # Enclose in quotes to handle commas
 
@@ -612,7 +613,11 @@ def append_test_fail(message):
 
     #Open the text file in append mode and write the failure message
     with open(txt_file_path, 'a') as txtfile:
-        txtfile.write(",FAIL,N/A," + message + '\n')
+        str_message = message.replace('\n', ';')  # Replace newlines to avoid CSV issues
+        str_message = str_message.replace('\r', ';')  # Replace carriage returns to avoid CSV issues
+        str_message = str_message.replace('\"', '\"\"')  # Replace quotes to avoid CSV issues
+        str_message = f'"{str_message}"'  # Enclose in quotes to handle commas
+        txtfile.write(",FAIL,N/A," + str_message + '\n')
 
 def add_test_name(test_name):
     """
