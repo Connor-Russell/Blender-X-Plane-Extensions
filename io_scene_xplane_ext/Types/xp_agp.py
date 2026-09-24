@@ -521,10 +521,10 @@ class auto_split_obj:
         self.show_low = 0
         self.show_high = 0
 
-        mat_name_to_collection = {}  # Maps material names to collections
-        all_objs = []
-        fake_lod_objects = []
-        lights_fake_lod_material = bpy.data.materials.new("XP2B_Light_Fake_LOD_Material")
+        mat_name_to_collection : dict[str, bpy.types.Collection] = {}  # Maps material names to collections
+        all_objs : list[bpy.types.Object] = []
+        fake_lod_objects : list[bpy.types.Object] = []
+        lights_fake_lod_material : bpy.types.Material = bpy.data.materials.new("XP2B_Light_Fake_LOD_Material")
 
         try:
             #Duplicate and split all the objects by material
@@ -534,17 +534,14 @@ class auto_split_obj:
             all_objs_have_mats = True
 
             #Get a list of all materials
-            all_mats = []
+            all_mats = set()
             for split_obj in all_objs:
                 if split_obj.type != 'MESH':
                     #Non-mesh objects just get dumped into the first collection
                     continue
                 if len(split_obj.data.materials) > 0:
-                    if (split_obj.active_material is not None):
-                        all_mats.append(split_obj.active_material.name)
-                    else:
-                        log_utils.warning(f"Object {split_obj.name} has no active material assigned. X-Plane2Blender would throw an error on export!")
-                        raise Exception(f"Object {split_obj.name} has no active material assigned. X-Plane2Blender would throw an error on export!")
+                    for mat in split_obj.data.materials:
+                        all_mats.add(mat.name)
                 else:
                     all_objs_have_mats = False
                     log_utils.warning(f"Object {split_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
@@ -559,7 +556,7 @@ class auto_split_obj:
                     break
 
             #Now we need to check the parents for materials
-            objects_with_no_mats = []
+            objects_with_no_mats : list[str] = []
             for root_obj in obj.children:
                 cur_obj = root_obj
                 while cur_obj != None:
@@ -576,8 +573,31 @@ class auto_split_obj:
             if not all_objs_have_mats:
                 raise Exception(f"Some objects have no materials assigned. X-Plane2Blender would throw an error on export! Skipping export of autosplit object {obj.name}")
 
-            self.resoures = []
+            # Sort the materials alphabetically for consistency
+            all_mats.sort()
+            
+            # Now comes the fun part. A material does NOT necessarily need a unique object! Say we have a bridge material, and a bridge hard material. While two different materials, they could be identical other than the solid param, which is done on a per-draw call basis.
+            # So, we need to use material_config.materials_are_compatible to determine if two materials can share the same object.
+            # We will then map every material name to the name of the material COLLECTION it belongs to.
+
+            exportable_mats : set[str] = set()    # Set of material names that will be exported
+            mat_to_exportable: dict[str, str] = dict()  # Dict of material names that map to the name of the material they are exporting under in exportable_mats
+
+            # Check each mat against every mat in the exportable_mats set to see if it's compatible
             for mat in all_mats:
+                this_material = bpy.data.materials[mat]
+                for exportable_mat in exportable_mats:
+                    other_material = bpy.data.materials[exportable_mat]
+                    if material_config.materials_are_compatible(this_material, other_material):
+                        mat_to_exportable[mat] = exportable_mat
+                        break
+                else:
+                    exportable_mats.add(mat)
+                    mat_to_exportable[mat] = mat
+
+            # Configure a collection for each material
+            self.resoures = []
+            for mat in exportable_mats:
                 #Create a new collection for this material
 
                 #Get the name for the object. This is made by combining the agp name, the relative folder from the specified name (if included), _PT_, the specified name (without the folder), the material, and .obj
@@ -645,7 +665,7 @@ class auto_split_obj:
 
                 if obj_material is not None:
                     #Find the collection for this material
-                    target_col = mat_name_to_collection[obj_material.name]
+                    target_col = mat_name_to_collection[mat_to_exportable[obj_material.name]]
                     target_col.objects.link(split_obj)
 
             #Now we need to configure the settings for each collection

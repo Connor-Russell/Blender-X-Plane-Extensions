@@ -1269,6 +1269,8 @@ def update_nodes(material: bpy.types.Material):
                 material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
 
 def decals_are_equivalent(dcl1, dcl2):
+    if (not dcl1.enabled and not dcl2.enabled):
+        return True
     if dcl1.enabled != dcl2.enabled:
         return False
     if dcl1.texture != dcl2.texture:
@@ -1395,7 +1397,7 @@ def materials_are_equivalent(mat1, mat2):
         return False
     if xm1.local_max_brightness != xm2.local_max_brightness:
         return False
-    if xm1.max_brightness == xm2.max_brightness:
+    if xm1.max_brightness != xm2.max_brightness:
         return False
     if xm1.light_level_override != xm2.light_level_override:
         return False
@@ -1452,11 +1454,12 @@ def materials_are_compatible(mat1, mat2):
         return False
     if xm1.blend_cutoff != xm2.blend_cutoff:
         return False
-    if xm1.max_brightness == xm2.max_brightness:
+    if xm1.max_brightness != xm2.max_brightness:
         return False
     if xm1.decal_modulator != xm2.decal_modulator:
         return False
     for decal1, decal2 in zip(xm1.decals, xm2.decals):
         if decal1 != decal2:
             return False
+    return True
     
