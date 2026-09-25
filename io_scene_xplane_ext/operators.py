@@ -526,7 +526,7 @@ class BTN_update_xp_export_settings(bpy.types.Operator):
         # get all the objects in that collection
         # for each object, get the material
         # IF that material has textures set, update that collection, set flag that that collection has been updated. Keep looping through the object, if we find one that is draped, update with that material
-        for col in bpy.context.scene.collection.children:
+        for col in bpy.data.collections:
             material_config.update_xplane_collection_settings(col)
 
         return {'FINISHED'}
@@ -1686,7 +1686,7 @@ class BTN_set_lods(bpy.types.Operator):
         xp_ext = context.scene.xp_ext
 
         # Iterate through all visible collections and set their LODs based on the properties
-        for col in context.scene.collection.children:
+        for col in bpy.data.collections:
             if collection_utils.get_collection_is_visible(col):
                 col.xplane.layer.lods = str(xp_ext.lod_count)
                 col.xplane.layer.lod[0].near = xp_ext.lod_0_start
