@@ -104,6 +104,9 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
         setattr(in_collection.xplane.layer, dcl_name_nml + "_alpha_key", dcl.strength_key_alpha)
         setattr(in_collection.xplane.layer, dcl_name_nml + "_constant", dcl.strength_constant)
         setattr(in_collection.xplane.layer, dcl_name_nml + "_modulator", dcl.strength_modulator)
+        effective_gloss_prop = dcl_name_nml + "_effective_gloss"
+        if hasattr(in_collection.xplane.layer, effective_gloss_prop):
+            setattr(in_collection.xplane.layer, effective_gloss_prop, 1 - dcl.roughness_boost_factor)
             
 def get_decal_command(in_decal, in_output_folder):
     """
