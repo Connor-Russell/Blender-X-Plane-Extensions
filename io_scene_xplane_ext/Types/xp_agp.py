@@ -546,14 +546,15 @@ class auto_split_obj:
                     all_objs_have_mats = False
                     log_utils.warning(f"Object {split_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
             all_mats = list(set(all_mats))  # Dedupe
-            
-            #Go through all our objects and check if we have any lights. If so, we'll add a lights collection
-            for split_obj in all_objs:
-                if split_obj.type != 'MESH':    #Technically this should only be lights. But to be safe we'll just say "not mesh"
-                    #Add a collection for lights
-                    if "Lights" not in all_mats:
-                        all_mats.append("Lights")
-                    break
+
+            #If we have no materials this could be a light only collection (why are you autosplitting this then??? but not my problem), so we'll need to make a collection for them
+            if len(all_mats) == 0:
+                for split_obj in all_objs:
+                    if split_obj.type != 'MESH':    #Technically this should only be lights. But to be safe we'll just say "not mesh"
+                        #Add a collection for lights
+                        if "Lights" not in all_mats:
+                            all_mats.append("Lights")
+                        break
 
             #Now we need to check the parents for materials
             objects_with_no_mats : list[str] = []
@@ -586,8 +587,15 @@ class auto_split_obj:
             # Check each mat against every mat in the exportable_mats set to see if it's compatible
             for mat in all_mats:
                 this_material = bpy.data.materials[mat]
+                #If no material is found, it's probably the light collection, so we'll just add it anyway
+                if this_material is None:
+                    exportable_mats.add(mat)
+                    mat_to_exportable[mat] = mat
+                    continue
                 for exportable_mat in exportable_mats:
                     other_material = bpy.data.materials[exportable_mat]
+                    if other_material is None:
+                        continue
                     if material_config.materials_are_compatible(this_material, other_material):
                         mat_to_exportable[mat] = exportable_mat
                         break
@@ -655,9 +663,9 @@ class auto_split_obj:
             #Now we need to move our new objects into the correct collections
             for split_obj in all_objs:
                 if split_obj.type != 'MESH':
-                    #Non-mesh objects go into "Light"
-                    target_collection = mat_name_to_collection["Lights"]
-                    target_collection.objects.link(split_obj)
+                    #Drop it in the first collection (since they're all meant to be be the same and lights are stateless (other than anims but that's from parents not from col properties)/not loded they can go anywhere)
+                    first_col = next(iter(mat_name_to_collection.values()))
+                    first_col.objects.link(split_obj)
                     continue
 
                 #Find the material for this object
