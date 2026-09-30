@@ -32,7 +32,7 @@ class polygon():
         self.normal_scale = 1.0
         self.blend_cutoff = 0.5
         self.dither_cutoff = 0.5
-        self.alpha_mode = "BLEND"
+        self.blend_mode = "BLEND"
         self.do_blend = False
         self.super_rough = False
         self.decals = []
@@ -104,9 +104,9 @@ class polygon():
         if self.super_rough:
             of += "SUPER_ROUGHNESS\n"
 
-        if self.do_blend:
+        if self.blend_mode == "BLEND":
             pass
-        elif self.alpha_mode == "DITHER":
+        elif self.blend_mode == "DITHER":
             of += "DITHER_ALPHA " + misc_utils.ftos(self.dither_cutoff, 2) + "\n"
         else:
             of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
@@ -228,12 +228,10 @@ class polygon():
             elif cmd == "SUPER_ROUGHNESS":
                 self.super_rough = True
             elif cmd == "NO_BLEND":
-                self.do_blend = False
-                self.alpha_mode = "NO_BLEND"
+                self.blend_mode = "NO_BLEND"
                 self.blend_cutoff = float(tokens[1])
             elif cmd == "DITHER_ALPHA":
-                self.do_blend = False
-                self.alpha_mode = "DITHER"
+                self.blend_mode = "DITHER"
                 self.dither_cutoff = float(tokens[1])
 
             #Check for decals
@@ -350,14 +348,11 @@ class polygon():
         self.weather_mode = mat.weather_mode
         self.weather_texture = mat.weather_texture
         self.mod_texture = mat.decal_modulator
+        self.blend_mode = mat.blend_mode
         if mat.blend_mode == 'DITHER':
-            self.do_blend = False
-            self.alpha_mode = 'DITHER'
             self.dither_cutoff = mat.dither_cutoff
             self.blend_cutoff = mat.blend_cutoff
         else:
-            self.do_blend = mat.blend_mode == 'BLEND'
-            self.alpha_mode = 'BLEND' if self.do_blend else 'NO_BLEND'
             self.blend_cutoff = mat.blend_cutoff
             self.dither_cutoff = mat.dither_cutoff
         for decal in mat.decals:
@@ -417,12 +412,11 @@ class polygon():
         mat.xp_materials.weather_mode = self.weather_mode
         mat.xp_materials.weather_texture = self.weather_texture
         mat.xp_materials.decal_modulator = self.mod_texture
-        if self.alpha_mode == 'DITHER':
-            mat.xp_materials.blend_mode = 'DITHER'
+        mat.xp_materials.blend_mode = self.blend_mode
+        if self.blend_mode == 'DITHER':
             mat.xp_materials.blend_cutoff = self.blend_cutoff
             mat.xp_materials.dither_cutoff = self.dither_cutoff
         else:
-            mat.xp_materials.blend_mode = 'BLEND' if self.do_blend else 'CLIP'
             mat.xp_materials.blend_cutoff = self.blend_cutoff
             mat.xp_materials.dither_cutoff = self.dither_cutoff
         mat.xp_materials.surface_type = self.surface
