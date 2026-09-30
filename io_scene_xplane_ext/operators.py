@@ -1513,13 +1513,20 @@ class BTN_replace_object_names(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
+        log_utils.new_section("Replace Object Names")
         if self.search_text == "":
             self.report({'ERROR'}, "Search text cannot be empty.")
             return {'CANCELLED'}
 
         for obj in context.selected_objects:
-            obj.xp_attached_obj.resource = obj.xp_attached_obj.resource.replace(self.search_text, self.replace_text)
-            obj.xp_agp.attached_obj_resource = obj.xp_agp.attached_obj_resource.replace(self.search_text, self.replace_text)
+            new_attached_resource = obj.xp_attached_obj.resource.replace(self.search_text, self.replace_text)
+            new_agp_resource = obj.xp_agp.attached_obj_resource.replace(self.search_text, self.replace_text)
+            if new_attached_resource != obj.xp_attached_obj.resource:
+                obj.xp_attached_obj.resource = new_attached_resource
+            if new_agp_resource != obj.xp_agp.attached_obj_resource:
+                obj.xp_agp.attached_obj_resource = new_agp_resource
+
+        log_utils.display_messages()
 
         return {'FINISHED'}
 
@@ -1592,21 +1599,36 @@ class BTN_preview_attached_object(bpy.types.Operator):
         # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
         # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
         # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
-        selected_objects = context.selected_objects
+        selected_objects = list(context.selected_objects)
         original_active_object = context.active_object
 
+        target_objects = []
+
+        # Determine the scope
         if self.do_all_objects:
-            for obj in context.scene.objects:
-                if not self.reload:
-                    if len(obj.children) > 0:
-                        continue
-                xp_attached_obj_preview.process_single_object(obj, self.make_real)
+            target_objects = list(bpy.data.objects)
         else:
-            for obj in selected_objects:
-                if not self.reload:
-                    if len(obj.children) > 0:
-                        continue
-                xp_attached_obj_preview.process_single_object(obj, self.make_real)
+            target_objects = selected_objects
+
+        # Get a list of objects that need to be cleared (for reload)
+        reload_resources = set()
+        if self.reload:
+            for obj in target_objects:
+                resource = xp_attached_obj_preview.get_effective_preview_resource(obj)
+                if resource != "":
+                    reload_resources.add(resource)
+            xp_attached_obj_preview.update_previews_for_resources(reload_resources, self.make_real)
+        else:
+            for obj in target_objects:
+                try:
+                    if not self.reload:
+                        if len(obj.children) > 0:
+                            continue
+                    print(f"Processing object: {obj.name}")
+                    xp_attached_obj_preview.process_single_object(obj, self.make_real)
+                    print(f"Finished processing object: {obj.name}")
+                except Exception as e:
+                    pass
 
         log_utils.display_messages()
 
@@ -1646,29 +1668,33 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
         target_objects = selected_objects
 
         if self.do_all_objects:
-            target_objects = context.scene.objects
+            target_objects = bpy.data.objects
 
         for obj in target_objects:
-            if obj.type != 'EMPTY':
-                continue
+            try:
+                if not obj or not obj.type:
+                    continue
+                if obj.type != 'EMPTY':
+                    continue
 
-            for child in obj.children:
-                if 'xp_ext_preview_filepath' in child:
-                    bpy.data.objects.remove(child, do_unlink=True)
+                for child in obj.children:
+                    if 'xp_ext_preview_filepath' in child:
+                        bpy.data.objects.remove(child, do_unlink=True)
 
-            resource = ""
-            if obj.xp_attached_obj.exportable:
-                resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
-            elif obj.xp_agp.type == 'ATTACHED_OBJ':
-                resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
-            else:
-                continue
+                resource = ""
+                if obj.xp_attached_obj.exportable:
+                    resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
+                elif obj.xp_agp.type == 'ATTACHED_OBJ':
+                    resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
+                else:
+                    continue
 
-            #Iterate through obj's children. If mesh, and hide_select, delete it
-            for child in obj.children:
-                if child.type == 'MESH' and child.hide_select:
-                    bpy.data.objects.remove(child, do_unlink=True)
-
+                #Iterate through obj's children. If mesh, and hide_select, delete it
+                for child in obj.children:
+                    if child.type == 'MESH' and child.hide_select:
+                        bpy.data.objects.remove(child, do_unlink=True)
+            except Exception as e:
+                log_utils.warning(f"Failed to clear attached object preview for {obj.name}: {e}")
         log_utils.display_messages()
 
         return {'FINISHED'}

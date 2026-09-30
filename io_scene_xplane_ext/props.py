@@ -10,6 +10,7 @@ from .Helpers import file_utils
 from bpy.app.handlers import persistent # type: ignore
 from .Helpers import log_utils
 from . import handler_callbacks
+from .Types import xp_attached_obj_preview
 import os
 
 #Enum for types. Can be START END or SEGMENT
@@ -102,7 +103,13 @@ def update_attached_obj_preview_fac(self, context):
     self.attached_obj_preview_resource = sanitize_prop_path_or_lib_path(self.attached_obj_preview_resource)
     update_ui(self, context)
     if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
-        bpy.ops.xp_ext.preview_attached_object()
+        xp_attached_obj_preview.lock_preview_obj_update()
+        try:
+            xp_attached_obj_preview.process_single_object(self.id_data, False)
+        except Exception as e:
+            pass
+        xp_attached_obj_preview.unlock_preview_obj_update()
+
 
 def update_attached_obj_preview_agp(self, context):
     global last_update_was_programmatic
@@ -113,7 +120,28 @@ def update_attached_obj_preview_agp(self, context):
     self.attached_obj_resource = sanitize_prop_path_or_lib_path(self.attached_obj_resource)
     update_ui(self, context)
     if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
-        bpy.ops.xp_ext.preview_attached_object()
+        xp_attached_obj_preview.lock_preview_obj_update()
+        try:
+            xp_attached_obj_preview.process_single_object(self.id_data, False)
+        except Exception as e:
+            pass
+        xp_attached_obj_preview.unlock_preview_obj_update()
+
+def update_attached_obj_preview(self, context):
+    global last_update_was_programmatic
+    if last_update_was_programmatic:
+        last_update_was_programmatic = False
+        return
+    last_update_was_programmatic = True
+    self.attached_obj_preview_resource = sanitize_prop_path(self.attached_obj_preview_resource)
+    update_ui(self, context)
+    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
+        xp_attached_obj_preview.lock_preview_obj_update()
+        try:
+            xp_attached_obj_preview.process_single_object(self.id_data, False)
+        except Exception as e:
+            pass
+        xp_attached_obj_preview.unlock_preview_obj_update()
 
 #General properties
 
@@ -233,6 +261,7 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
         name="Resource",
         description="The resource for the object",
         subtype="FILE_PATH",
+        update=update_attached_obj_preview_fac,
         **path_options
     ) # type: ignore
 
@@ -241,7 +270,7 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
         description="The preview resource for the attached object",
         default="//",
         subtype="FILE_PATH",
-        update=update_attached_obj_preview_fac,
+        update=update_attached_obj_preview,
         **path_options
     ) # type: ignore
 

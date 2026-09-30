@@ -18,6 +18,7 @@ from ..Helpers import light_data    #These are defines for the parameter layout 
 from ..Helpers import decal_utils
 from ..Helpers import log_utils
 from ..Helpers import file_utils
+from ..Helpers import collection_utils
 from typing import List
 from .xp_obj import draw_call
 from .xp_obj import draw_call_state
@@ -27,6 +28,54 @@ from bpy.app.handlers import persistent # type: ignore
 obj_does_use_lods = False
 existing_objects = set()
 currently_processing = set()
+collection_children_lengths : dict[str, int] = {}
+locked_preview_obj_update = False
+
+def lock_preview_obj_update():
+    """
+    If updating preview objects is being done elsewhere, call this first to prevent the depsgraph updater from doing it again do to your changes. Must always be followed by unlock_preview_obj_update().
+    """
+    global locked_preview_obj_update
+    locked_preview_obj_update = True
+
+def unlock_preview_obj_update():
+    global locked_preview_obj_update
+    locked_preview_obj_update = False
+
+    #Update the state since the updater wouldn't have done this while we had the update code locked
+    global existing_objects
+    existing_objects = set(obj.session_uid for obj in bpy.data.objects)
+
+    global collection_children_lengths
+    for col in bpy.data.collections:
+        collection_children_lengths[col.name] = len(col.objects)
+    
+
+def get_effective_preview_resource(obj : bpy.types.Object) -> str:
+    resource = ""
+    is_relative = False
+    if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
+        if obj.xp_attached_obj.attached_obj_preview_resource.startswith("//"):
+            is_relative = True
+        resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
+    elif not file_utils.is_empty(obj.xp_agp.attached_obj_resource) and obj.xp_agp.exportable and obj.xp_agp.type == 'ATTACHED_OBJ':
+        if obj.xp_agp.attached_obj_resource.startswith("//"):
+            is_relative = True
+        resource = file_utils.to_absolute(obj.xp_agp.attached_obj_resource)
+    elif not file_utils.is_empty(obj.xp_attached_obj.resource) and obj.xp_attached_obj.exportable:
+        if obj.xp_attached_obj.resource.startswith("//"):
+            is_relative = True
+        resource = file_utils.to_absolute(obj.xp_attached_obj.resource)
+    else:
+        resource = ""
+
+    #Skip empty
+    if resource == "" or resource == "//" or not is_relative:
+        resource = ""
+
+    resource = file_utils.to_relative(resource).replace("\\", "/")
+
+    return resource
 
 class attached_object_preview:
     """
@@ -60,14 +109,14 @@ class attached_object_preview:
         log_utils.new_section(f"Read attached .obj {in_obj_path}")
 
         self.name = os.path.basename(in_obj_path)
-        self.filepath = file_utils.to_relative(in_obj_path).replace("\\", "/")
+        self.filepath = in_obj_path
 
         trans_matrix = [1, -1, 1]
 
         cur_start_lod = 0
         cur_is_draped_tris = False
 
-        with open(in_obj_path, "r") as f:
+        with open(file_utils.to_absolute(in_obj_path), "r") as f:
             lines = f.readlines()
         
         for line in lines:
@@ -291,33 +340,17 @@ def _get_existing_instance(in_path : str):
     return None
 
 def process_single_object(obj : bpy.types.Object, make_real):
+
     if obj.type != 'EMPTY':
         return
 
     for child in obj.children:
         if 'xp_ext_preview_filepath' in child:
             bpy.data.objects.remove(child, do_unlink=True)
-    resource = ""
-    is_relative = False
-    if not file_utils.is_empty(obj.xp_attached_obj.attached_obj_preview_resource):
-        if obj.xp_attached_obj.attached_obj_preview_resource.startswith("//"):
-            is_relative = True
-        resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
-    elif not file_utils.is_empty(obj.xp_agp.attached_obj_resource) and obj.xp_agp.exportable and obj.xp_agp.type == 'ATTACHED_OBJ':
-        if obj.xp_agp.attached_obj_resource.startswith("//"):
-            is_relative = True
-        resource = file_utils.to_absolute(obj.xp_agp.attached_obj_resource)
-    elif not file_utils.is_empty(obj.xp_attached_obj.resource) and obj.xp_attached_obj.exportable:
-        if obj.xp_attached_obj.resource.startswith("//"):
-            is_relative = True
-        resource = file_utils.to_absolute(obj.xp_attached_obj.resource)
-    else:
-        return
 
-    #Skip empty. Warn on missing
-    if resource == "" or resource == "//" or not is_relative:
-        return
-    if not os.path.isfile(resource):
+    resource = get_effective_preview_resource(obj)
+    
+    if not os.path.isfile(file_utils.to_absolute(resource)):
         log_utils.warning(f"Attached object preview resource '{resource}' not found.")
         return
 
@@ -328,34 +361,83 @@ def process_single_object(obj : bpy.types.Object, make_real):
         parent_collection = col
         break
 
-    existing_inst = _get_existing_instance(file_utils.to_relative(resource).replace("\\", "/"))
+    existing_inst = _get_existing_instance(resource)
 
     if existing_inst is not None:
         #Create a new object based on the existing instance, set hide_select, and parent it
-        new_obj = bpy.data.objects.new(name=f"{obj.name}_preview", object_data=existing_inst.data)
+        new_obj = bpy.data.objects.new(name=os.path.basename(resource), object_data=existing_inst.data)
         new_obj.hide_select = True
         new_obj.parent = obj
+        new_obj.xp_attached_obj.exportable = False
+        new_obj.xp_agp.exportable = False
         new_obj.xp_fac_mesh.exportable = False
+        new_obj['xp_ext_preview_object'] = True
+        new_obj['xp_ext_preview_filepath'] = resource
         if parent_collection is not None:
             parent_collection.objects.link(new_obj)
-        new_obj['xp_ext_preview_filepath'] = file_utils.to_relative(resource).replace("\\", "/")
     if existing_inst is None:
         #Read and add
         new_obj = attached_object_preview()
         new_obj.read(resource)
         new_obj.to_scene(obj, parent_collection, make_real)
 
-
+def update_previews_for_resources(resources: set[str], make_real):
+    print(f"Updating previews for resources: {resources}")
+    for obj in list(bpy.data.objects):
+        if 'xp_ext_preview_filepath' in obj:
+            if obj['xp_ext_preview_filepath'] in resources:
+                bpy.data.objects.remove(obj, do_unlink=True)
+    for obj in list(bpy.data.objects):
+        try:
+            res = get_effective_preview_resource(obj)
+            if res in resources:
+                process_single_object(obj, make_real)
+        except Exception as e:
+            pass
+        
 @persistent
-def clear_existing_objects(in_file_path, in_startup_file_path):
+def reset_scene_tracking_cache(in_file_path, in_startup_file_path):
+    """
+    Resets globals used to track the scene state. These are used to determine changes to speed up the attached object preview updates.
+    """
     global existing_objects
     existing_objects = set(obj.session_uid for obj in bpy.data.objects)
 
+    global collection_children_lengths
+    for col in bpy.data.collections:
+        collection_children_lengths[col.name] = len(col.objects)
+
 @persistent
 def update_attached_obj_previews(scene, depsgraph):
+    global locked_preview_obj_update
+    if locked_preview_obj_update:
+        print("Skipping depsgraph update due to lock")
+        return
+    
     global existing_objects
     global currently_processing
-    #Short circuit check, if the size of the objects is the same we can just exit
+
+    print("Starting update of attached object previews.")
+
+    # We need to check if the user moved a preview object *parent* to a different collection. The quickest way (well, probably better ways but I like simple, especially here) is just check if there is a different length of objects in any of the collections. If so, *something* moved, so we'll check everyone
+    global collection_children_lengths
+    local_collection_children_lengths = {}
+    for col in bpy.data.collections:
+        local_collection_children_lengths[col.name] = len(col.objects)
+
+    # Get the collections that have changed in terms of children count
+    changed_collections = [col_name for col_name, length in local_collection_children_lengths.items() if collection_children_lengths.get(col_name, 0) != length]
+
+
+    for col_name in changed_collections:
+        for obj in bpy.data.collections[col_name].objects:
+            if 'xp_ext_preview_object' in obj and obj.parent is not None:
+                collection_utils.move_obj_to_same_collection(obj, obj.parent)
+
+    # Update the global collection children lengths to the new state
+    collection_children_lengths = local_collection_children_lengths.copy()
+
+    #Short circuit check, if the size of the objects is the same we can just exit. *technical?* plausible this false positives, but the perf benefits outweigh the cost. If the scene gets messy the user can just clear all then update all
     if len(bpy.data.objects) == len(existing_objects):
         return
 
@@ -363,6 +445,10 @@ def update_attached_obj_previews(scene, depsgraph):
     current_objects = set(obj.session_uid for obj in bpy.data.objects)
     removed_objects = existing_objects - current_objects
     added_objects = current_objects - existing_objects
+
+    print(f"Changed collections: {changed_collections}")
+    print(f"Removed objects: {removed_objects}")
+    print(f"Added objects: {added_objects}")
 
     # If there were removed objects, we need to check *every* object to look for orphaned attached object previews
     if len(removed_objects) > 0:

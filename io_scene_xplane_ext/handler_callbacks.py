@@ -15,13 +15,13 @@ def update_optional_registrations(self=None, context=None):
     if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
         if xp_attached_obj_preview.update_attached_obj_previews not in bpy.app.handlers.depsgraph_update_pre:
             bpy.app.handlers.depsgraph_update_pre.append(xp_attached_obj_preview.update_attached_obj_previews)
-        if xp_attached_obj_preview.clear_existing_objects not in bpy.app.handlers.load_post:
-            bpy.app.handlers.load_post.append(xp_attached_obj_preview.clear_existing_objects)
+        if xp_attached_obj_preview.reset_scene_tracking_cache not in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.append(xp_attached_obj_preview.reset_scene_tracking_cache)
     else:
         if xp_attached_obj_preview.update_attached_obj_previews in bpy.app.handlers.depsgraph_update_pre:
             bpy.app.handlers.depsgraph_update_pre.remove(xp_attached_obj_preview.update_attached_obj_previews)
-        if xp_attached_obj_preview.clear_existing_objects in bpy.app.handlers.load_post:
-            bpy.app.handlers.load_post.remove(xp_attached_obj_preview.clear_existing_objects)
+        if xp_attached_obj_preview.reset_scene_tracking_cache in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.remove(xp_attached_obj_preview.reset_scene_tracking_cache)
 
 
 def register():
@@ -33,8 +33,8 @@ def register():
     if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
         if xp_attached_obj_preview.update_attached_obj_previews not in bpy.app.handlers.depsgraph_update_pre:
             bpy.app.handlers.depsgraph_update_pre.append(xp_attached_obj_preview.update_attached_obj_previews)
-        if xp_attached_obj_preview.clear_existing_objects not in bpy.app.handlers.load_post:
-            bpy.app.handlers.load_post.append(xp_attached_obj_preview.clear_existing_objects)
+        if xp_attached_obj_preview.reset_scene_tracking_cache not in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.append(xp_attached_obj_preview.reset_scene_tracking_cache)
 
 def unregister():
     bpy.app.handlers.load_post.remove(props.update_fac_spelling_choices_load_handler)
@@ -43,8 +43,8 @@ def unregister():
     # Unregister optional registrations
     if xp_attached_obj_preview.update_attached_obj_previews in bpy.app.handlers.depsgraph_update_pre:
         bpy.app.handlers.depsgraph_update_pre.remove(xp_attached_obj_preview.update_attached_obj_previews)
-    if xp_attached_obj_preview.clear_existing_objects in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(xp_attached_obj_preview.clear_existing_objects)
+    if xp_attached_obj_preview.reset_scene_tracking_cache in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(xp_attached_obj_preview.reset_scene_tracking_cache)
 
 
     

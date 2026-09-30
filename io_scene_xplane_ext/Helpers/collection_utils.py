@@ -58,3 +58,38 @@ def get_collection_is_visible(in_collection):
             return not col.hide_viewport
         
     return False
+
+def get_parent_collection(in_object: bpy.types.Object):
+    """
+    Returns the name of the parent collection for a given object
+    """
+    # Objects may belong to multiple collections; use the first membership
+    # reported by Blender rather than scanning all collections in the scene.
+    collections = in_object.users_collection
+    if collections:
+        return collections[0].name
+    return None
+
+def move_obj_to_same_collection(in_target: bpy.types.Object, in_parent: bpy.types.Object):
+    """
+    Moves the target object so it is in the same collection as the parent object
+    """
+    if in_target is in_parent:
+        return
+
+    # Objects may belong to multiple collections; use the parent's first
+    # collection, consistent with get_parent_collection().
+    parent_collections = in_parent.users_collection
+    if not parent_collections:
+        return
+
+    destination = parent_collections[0]
+    target_collections = list(in_target.users_collection)
+
+    # Link before unlinking so the target remains in a collection throughout.
+    if destination not in target_collections:
+        destination.objects.link(in_target)
+
+    for collection in target_collections:
+        if collection != destination:
+            collection.objects.unlink(in_target)
