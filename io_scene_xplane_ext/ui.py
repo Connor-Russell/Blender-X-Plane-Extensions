@@ -590,10 +590,12 @@ class MENU_agp_obj(bpy.types.Panel):
                     box.label(text="WARNING: Preview resource does not match the main resource.")
                 box.prop(context.object.xp_attached_obj, "attached_obj_preview_resource")
                 row = box.row()
-                row.operator("xp_ext.preview_attached_object", text="Preview Resource")
+                btn_preview = row.operator("xp_ext.preview_attached_object", text="Preview Resource")
+                btn_preview.reload = True
                 row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
                 btn_real_preview = row.operator("xp_ext.preview_attached_object", text="Preview as Real Objects")
                 btn_real_preview.make_real = True
+                btn_real_preview.reload = True
             elif agp_obj.type == "AUTO_SPLIT_OBJ":
                 layout.separator()
                 layout.label(text="DISCLAIMER:")
@@ -962,11 +964,12 @@ class MENU_operations(bpy.types.Panel):
         box = layout.box()
         box.prop(xp_ext, "preview_objects_expanded", text="Preview Objects", icon='TRIA_DOWN' if xp_ext.preview_objects_expanded else 'TRIA_RIGHT', emboss=False)
         if xp_ext.preview_objects_expanded:
-            clear_all = box.operator("xp_ext.clear_attached_object_preview", text="Clear All Attached Object Previews")
+            clear_all = box.operator("xp_ext.clear_attached_object_preview", text="Clear Attached Obj Previews")
             clear_all.do_all_objects = True
-            update_all = box.operator("xp_ext.preview_attached_object", text="Update All Attached Object Previews")
+            update_all = box.operator("xp_ext.preview_attached_object", text="Reload Attached Obj Previews")
             update_all.do_all_objects = True
-            update_all_missing = box.operator("xp_ext.preview_attached_object", text="Update All Missing Attached Object Previews")
+            update_all.reload = True
+            update_all_missing = box.operator("xp_ext.preview_attached_object", text="Load Missing Attached Obj Previews")
             update_all_missing.do_all_objects = True
             update_all_missing.reload = False
 
@@ -1134,10 +1137,12 @@ class MENU_attached_object(bpy.types.Panel):
                 box.label(text="WARNING: Preview resource does not match the main resource.")
             box.prop(attached_obj, "attached_obj_preview_resource")
             row = box.row()
-            row.operator("xp_ext.preview_attached_object", text="Preview Resource")
+            btn_preview = row.operator("xp_ext.preview_attached_object", text="Preview Resource")
+            btn_preview.reload = True
             row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
             btn_real_preview = row.operator("xp_ext.preview_attached_object", text="Preview as Real Objects")
             btn_real_preview.make_real = True
+            btn_real_preview.reload = True
 
 class MENU_fac_mesh(bpy.types.Panel):
     """Creates a Panel in the object properties window"""
