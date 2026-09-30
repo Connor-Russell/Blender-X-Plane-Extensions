@@ -33,7 +33,7 @@ def auto_bake_current_to_active():
 
     #Do initial bake settings
     bpy.context.scene.render.bake.use_selected_to_active = True
-    bpy.context.scene.render.bake.use_clear = False
+    bpy.context.scene.render.bake.use_clear = True
     bpy.context.scene.cycles.samples = 1
     bpy.context.scene.render.engine = 'CYCLES'
     bpy.context.scene.render.bake.cage_extrusion = bpy.context.scene.xp_ext.low_poly_bake_extrusion_distance
@@ -82,11 +82,20 @@ def auto_bake_current_to_active():
     bpy.context.window_manager.progress_update(15)
 
     if do_bake_opacity:
+        log_utils.info("Baking opacity margin")
+        bake_utils.config_source_materials(bake_utils.BakeType.OPACITY_MARGIN, mats)
+        bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.OPACITY_MARGIN, bpy.context.scene.xp_ext.low_poly_bake_resolution * bpy.context.scene.xp_ext.low_poly_bake_ss_factor)
+        bake_utils.config_bake_settings(bake_utils.BakeType.OPACITY_MARGIN)
+        bpy.ops.object.bake(type=bpy.context.scene.cycles.bake_type)
+        log_utils.info("Opacity margin baked")
+
         log_utils.info("Baking opacity")
         bake_utils.config_source_materials(bake_utils.BakeType.OPACITY, mats)
         bake_utils.config_target_bake_texture(bpy.context.view_layer.objects.active, bake_utils.BakeType.OPACITY, bpy.context.scene.xp_ext.low_poly_bake_resolution * bpy.context.scene.xp_ext.low_poly_bake_ss_factor)
         bake_utils.config_bake_settings(bake_utils.BakeType.OPACITY)
+        bpy.context.scene.render.bake.use_clear = False
         bpy.ops.object.bake(type=bpy.context.scene.cycles.bake_type)
+        bpy.context.scene.render.bake.use_clear = True
         log_utils.info("Opacity baked")
 
     bpy.context.window_manager.progress_update(30)

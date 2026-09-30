@@ -55,7 +55,8 @@ class BakeType(Enum):
     ROUGHNESS = 2
     METALNESS = 3
     LIT = 4
-    OPACITY = 5
+    OPACITY_MARGIN = 5
+    OPACITY = 6
 
 def get_source_materials():
     """
@@ -258,7 +259,7 @@ def config_source_materials(type, mats):
                 diffuse_node.inputs[0].default_value = (0, 0, 0, 1)
                 mat.node_tree.links.new(diffuse_node.outputs[0], output_node.inputs[0])
 
-        elif type == BakeType.OPACITY:
+        elif type == BakeType.OPACITY_MARGIN or type == BakeType.OPACITY:
             #This is literally just diffuse but we plug in the alpha of the texture instead. If there is no texture we use white (fully opaque. Why would there be no alb though???)
             if not file_utils.is_empty(mat.xp_materials.alb_texture):
                 str_resolve_path = file_utils.check_for_dds_or_png(file_utils.to_absolute(mat.xp_materials.alb_texture))
@@ -283,7 +284,7 @@ def config_bake_settings(type):
     """
 
     #Base lit roughness and metalness all just bake from diffuse channel to diffuse
-    if type == BakeType.BASE or type == BakeType.LIT or type == BakeType.ROUGHNESS or type == BakeType.METALNESS or type == BakeType.OPACITY:
+    if type == BakeType.BASE or type == BakeType.LIT or type == BakeType.ROUGHNESS or type == BakeType.METALNESS or type == BakeType.OPACITY_MARGIN or type == BakeType.OPACITY:
         bpy.context.scene.cycles.bake_type = 'EMIT'
         bpy.context.scene.render.bake.use_pass_direct = False
         bpy.context.scene.render.bake.use_pass_indirect = False
@@ -308,16 +309,25 @@ def config_target_bake_texture(target_obj, type, resolution):
     create_name = ""
     if type == BakeType.BASE:
         create_name = "BAKE_BUFFER_Base"
+        bpy.context.scene.render.bake.margin = bpy.context.scene.xp_ext.low_poly_bake_margin
     elif type == BakeType.NORMAL:
         create_name = "BAKE_BUFFER_Normal"
+        bpy.context.scene.render.bake.margin = bpy.context.scene.xp_ext.low_poly_bake_margin
     elif type == BakeType.ROUGHNESS:
         create_name = "BAKE_BUFFER_Roughness"
+        bpy.context.scene.render.bake.margin = bpy.context.scene.xp_ext.low_poly_bake_margin
     elif type == BakeType.METALNESS:
         create_name = "BAKE_BUFFER_Metalness"
+        bpy.context.scene.render.bake.margin = bpy.context.scene.xp_ext.low_poly_bake_margin
     elif type == BakeType.LIT:
         create_name = "BAKE_BUFFER_Lit"
+        bpy.context.scene.render.bake.margin = bpy.context.scene.xp_ext.low_poly_bake_margin
+    elif type == BakeType.OPACITY_MARGIN:
+        create_name = "BAKE_BUFFER_Opacity"
+        bpy.context.scene.render.bake.margin = bpy.context.scene.xp_ext.low_poly_bake_margin
     elif type == BakeType.OPACITY:
         create_name = "BAKE_BUFFER_Opacity"
+        bpy.context.scene.render.bake.margin = 0
 
     #If there is already a texture, use it (this allows us to sequentially bake textures for different textures that use the same sheet, without post bake merging)
     new_image = None
@@ -332,7 +342,7 @@ def config_target_bake_texture(target_obj, type, resolution):
         new_image = bpy.data.images.new(name=create_name, width=int(resolution), height=int(resolution), alpha=True)
 
     #Set color space settings
-    if type == BakeType.ROUGHNESS or type == BakeType.METALNESS or type == BakeType.OPACITY:
+    if type == BakeType.ROUGHNESS or type == BakeType.METALNESS or type == BakeType.OPACITY_MARGIN or type == BakeType.OPACITY:
         new_image.colorspace_settings.name = 'Non-Color'
     else:
         new_image.colorspace_settings.name = 'sRGB'
