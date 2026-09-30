@@ -731,7 +731,7 @@ class MENU_mats(bpy.types.Panel):
 
             layout.prop(xp_materials, "preview_image_mode")
             if xp_materials.preview_image_mode == 'CUSTOM':
-                layout.prop(xp_materials, "preview_image")
+                layout.template_ID(xp_materials, "preview_image", open="image.open")
 
             #---------------------------------Texture Properties---------------------------------
 
