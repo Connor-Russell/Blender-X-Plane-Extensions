@@ -16,6 +16,10 @@ disable_logging = False
 
 log_file_name = "X-Plane Extensions Log.txt"
 
+def get_callstack():
+    import traceback
+    return traceback.format_stack()
+
 def get_log_file():
     """
     Retrieve the Blender internal text block used for logging. If it does not exist, create it.
@@ -43,11 +47,11 @@ def info(message):
     now = datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    msg = current_time + " [VERBOSE] " + message + "\n"
+    msg = current_time + " [VERBOSE] " + message
 
     print(msg)  # Print to console for immediate feedback
 
-    log.write(msg)
+    log.write(msg + "\n")
 
 def warning(message, summary = None):
     """
@@ -65,14 +69,14 @@ def warning(message, summary = None):
     now = datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    msg = current_time + " [WARNING] " + message + "\n"
+    msg = current_time + " [WARNING] " + message
 
     if summary is not None:
         summaries.append(" [WARNING] " + summary)
 
     print(msg)
 
-    log.write(msg)
+    log.write(msg + "\n")
 
 def error(message, summary = None):
     """
@@ -90,18 +94,18 @@ def error(message, summary = None):
     now = datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    msg = current_time + " [ERROR] " + message + "\n"
+    msg = current_time + " [ERROR] " + message
 
     if summary is not None:
         summaries.append(" [ERROR] " + summary)
 
     print(msg)
 
-    log.write(msg)
+    log.write(msg + "\n")
 
 def new_section(name):
     """
-    Write a new section header to the Blender internal log text block, with a timestamp.
+    Write a new section header to the Blender internal log text block, with a timestamp. Also resets error and warning count
     Args:
         name (str): The name of the new log section.
     """
@@ -115,11 +119,16 @@ def new_section(name):
 
     sides = "--------------------"
 
-    msg = current_time + " " + sides + " " + name + " " + sides + "\n"
+    msg = current_time + " " + sides + " " + name + " " + sides
 
     print(msg)  # Print to console for immediate feedback
 
-    log.write(msg)
+    global error_count
+    global warning_count
+    error_count = 0
+    warning_count = 0
+
+    log.write(msg + "\n")
 
 def display_messages():
     """
