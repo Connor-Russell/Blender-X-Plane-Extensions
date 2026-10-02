@@ -966,6 +966,20 @@ class PROP_mats(bpy.types.PropertyGroup):
 
 # Forests
 
+class PROP_for_group(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(
+        name="Name",
+        description="The name used by trees to select this group",
+        default="Group"
+    ) #type: ignore
+
+    weight: bpy.props.FloatProperty(
+        name="Weight",
+        description="Relative probability for this group within each forest layer",
+        default=1.0,
+        min=0.0
+    ) #type: ignore
+
 class PROP_for(bpy.types.PropertyGroup):
     # Empty (tree) properties
     exportable: bpy.props.BoolProperty(
@@ -981,7 +995,7 @@ class PROP_for(bpy.types.PropertyGroup):
     ) #type: ignore
 
     min_tree_height: bpy.props.FloatProperty(
-        name="Max Tree height",
+        name="Min Tree height",
         description="Min height of the tree",
         default=1
     ) #type: ignore
@@ -998,10 +1012,10 @@ class PROP_for(bpy.types.PropertyGroup):
         default=1000
     ) #type: ignore
 
-    group: bpy.props.IntProperty(
+    group_name: bpy.props.StringProperty(
         name="Group",
-        description="The group this tree is a part of, for use with CHOICE selections",
-        default=0
+        description="The forest group this tree is a part of, for use with CHOICE selections",
+        default=""
     ) #type: ignore
 
     # Mesh properties
@@ -1062,6 +1076,10 @@ class PROP_for_collection(bpy.types.PropertyGroup):
         description="The path to the file to export to, and name",
         update=update_ui
     ) # type: ignore
+
+    groups: bpy.props.CollectionProperty(
+        type=PROP_for_group
+    ) #type: ignore
 
     spacing_x: bpy.props.FloatProperty(
         name="Spacing X",
@@ -1678,6 +1696,7 @@ def register():
     bpy.utils.register_class(XP_EXT_prefs)
     bpy.utils.register_class(PROP_fac_filtered_spelling_choices)
     bpy.utils.register_class(PROP_pol_collection)
+    bpy.utils.register_class(PROP_for_group)
     bpy.utils.register_class(PROP_for)
     bpy.utils.register_class(PROP_for_collection)
     bpy.utils.register_class(PROP_lin_layer)
@@ -1738,5 +1757,6 @@ def unregister():
     bpy.utils.unregister_class(PROP_agp_collection)
     bpy.utils.unregister_class(PROP_lin_layer)
     bpy.utils.unregister_class(PROP_for)
+    bpy.utils.unregister_class(PROP_for_group)
     bpy.utils.unregister_class(PROP_attached_obj)
     bpy.utils.unregister_class(PROP_fac_filtered_spelling_choices)

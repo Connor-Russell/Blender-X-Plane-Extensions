@@ -1705,8 +1705,8 @@ class object:
                 'LIGHT_PARAM': 6, # variable, but 6 is minimum
                 'ATTR_hard': 2,
                 'ATTR_hard_deck': 2,
-                'ATTR_layer_group': 3,
-                'ATTR_draped_layer_group': 3,
+                'ATTR_layer_group': 2,
+                'ATTR_draped_layer_group': 2,
                 'ATTR_cockpit_device': 5,
                 'ATTR_cockpit_region': 2,
                 'THERMAL_source': 3,

@@ -110,6 +110,16 @@ def draw_fac_spelling_entry(layout, entry, collection_name, floor_index, wall_in
     btn_rem.level = "spelling_entry"
     btn_rem.add = False
 
+def get_forest_collection_for_object(obj: bpy.types.Object):
+    object_collections = obj.users_collection
+    for collection in bpy.data.collections:
+        if not collection.xp_for.exportable:
+            continue
+        for child_collection in collection.children_recursive:
+            if child_collection in object_collections:
+                return collection
+    return None
+
 def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index, spelling_index, spelling_len=0):
     box = layout.box()
     row = box.row()
@@ -219,7 +229,7 @@ def draw_fac_wall(layout, wall, collection_name, floor_index, wall_index, wall_l
         btn_duplicate.floor_index = floor_index
         btn_duplicate.wall_index = wall_index
 
-def draw_fac_floor(layout, floor, collection_name, floor_index, floor_len=0):
+def draw_fac_floor(layout, floor, collection_name, floor_index, floor_len=0, do_render_roof=False):
     #Get the collection from the collection name
     col = None
     for collection in bpy.data.collections:
@@ -252,7 +262,9 @@ def draw_fac_floor(layout, floor, collection_name, floor_index, floor_len=0):
     if floor.is_ui_expanded:
         box.label(text=f"Floor")
         box.prop(floor, "name", text="Name")
-        box.prop_search(floor, "roof_collection", col.xp_fac, "spelling_choices", text="Roof Collection")
+        if do_render_roof:
+            box.prop_search(floor, "roof_collection", col.xp_fac, "spelling_choices", text="Roof Collection")
+            box.prop(floor, "roof_two_sided")
         box.separator()
         box.label(text="Wall Rules:")
 
@@ -329,6 +341,20 @@ class MENU_for_exporter(bpy.types.Panel):
                     seasons_box.prop(fr, "fall_material_3d")
                     seasons_box.prop(fr, "winter_material_2d")
                     seasons_box.prop(fr, "winter_material_3d")
+
+                groups_box = box.box()
+                groups_box.label(text="Groups")
+                for group_index, group in enumerate(fr.groups):
+                    row = groups_box.row(align=True)
+                    row.prop(group, "name", text="")
+                    row.prop(group, "weight", text="")
+                    btn_remove = row.operator("xp_ext.add_rem_for_group", text="", icon='X')
+                    btn_remove.collection_name = col.name
+                    btn_remove.group_index = group_index
+                    btn_remove.add = False
+                btn_add = groups_box.operator("xp_ext.add_rem_for_group", text="Add Group", icon='ADD')
+                btn_add.collection_name = col.name
+                btn_add.add = True
 
                 density_box = box.box()
                 density_box.prop(fr, "density_params")
@@ -439,7 +465,11 @@ class MENU_for_object(bpy.types.Panel):
             row = layout.row()
             row.prop(fr, "custom_lod")
 
-            layout.prop(fr, "group")
+            forest_collection = get_forest_collection_for_object(obj)
+            if forest_collection is None:
+                layout.label(text="Tree is not in an exportable forest", icon='INFO')
+            else:
+                layout.prop_search(fr, "group_name", forest_collection.xp_for, "groups", text="Group")
         elif obj.type == "MESH":
             row = layout.row()
             row.prop(fr, "near_lod")
@@ -1059,6 +1089,7 @@ class MENU_facade(bpy.types.Panel):
                 roof_box.prop(fac, "render_roof")
                 if fac.render_roof:
                     roof_box.prop(fac, "roof_material")
+                    
 
                 box.separator()
 
@@ -1069,7 +1100,7 @@ class MENU_facade(bpy.types.Panel):
                 for i, floor in enumerate(fac.floors):
                     if floor.name == "":
                         floor.name = f"Floor {i}"
-                    draw_fac_floor(spelling_box, floor, col.name, i, len(fac.floors))
+                    draw_fac_floor(spelling_box, floor, col.name, i, len(fac.floors), fac.render_roof)
                 
                 btn_add = spelling_box.operator("xp_ext.add_rem_fac", text="Add Floor", icon='ADD')
                 btn_add.collection_name = col.name

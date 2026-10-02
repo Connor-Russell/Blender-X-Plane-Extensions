@@ -49,7 +49,7 @@ class line():
         self.blend_cutoff = 0.5
         self.dither_cutoff = 0.5
         self.blend_mode = "BLEND"
-        self.mirror = True
+        self.mirror = False
         self.segment_count = 0
         self.super_rough = False
         self.decals = []
@@ -200,6 +200,28 @@ class line():
                 log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'", f"Too few arguments for '{cmd}'")
                 continue
 
+            numeric_tokens = {
+                'TEXTURE_NORMAL': (1,),
+                'NO_BLEND': (1,),
+                'DITHER_ALPHA': (1,),
+                'TEX_WIDTH': (1,),
+                'TEX_HEIGHT': (1,),
+                'LAYER_GROUP': (2,),
+                'ALIGN': (1,),
+                'SCALE': (1, 2),
+                'S_OFFSET': (1, 2, 3, 4),
+                'START_CAP': (1, 2, 3, 4, 5, 6),
+                'END_CAP': (1, 2, 3, 4, 5, 6),
+            }
+            if cmd in numeric_tokens:
+                try:
+                    for index in numeric_tokens[cmd]:
+                        if index < len(tokens):
+                            float(tokens[index])
+                except ValueError:
+                    log_utils.warning(f"Invalid numeric value in command '{cmd}', skipping line: '{line}'", f"Invalid numeric value for '{cmd}'")
+                    continue
+
             #Check for material data
             if cmd == "TEXTURE_NORMAL":
                 try:
@@ -224,28 +246,22 @@ class line():
                 self.super_rough = True
             elif cmd == "NO_BLEND":
                 self.blend_mode = "CLIP"
-                try:
-                    self.blend_cutoff = float(tokens[1])
-                except ValueError:
-                    log_utils.warning(f"Invalid value for NO_BLEND '{tokens[1]}'", "Invalid NO_BLEND value")
+                self.blend_cutoff = float(tokens[1])
             elif cmd == "DITHER_ALPHA":
                 self.blend_mode = "DITHER"
-                try:
-                    self.dither_cutoff = float(tokens[1])
-                except ValueError:
-                    log_utils.warning(f"Invalid value for DITHER_ALPHA: '{tokens[1]}'", "Invalid DITHER_ALPHA value")
+                self.dither_cutoff = float(tokens[1])
 
             #Check for a texture resolution specifier
             if cmd == "TEX_WIDTH":
-                try:
-                    uv_scalar_x = int(tokens[1])
-                except ValueError:
-                    log_utils.warning(f"Invalid value for TEX_WIDTH: '{tokens[1]}'", "Invalid TEX_WIDTH value")
+                uv_scalar_x = int(float(tokens[1]))
+                if uv_scalar_x == 0:
+                    log_utils.warning(f"Invalid value for TEX_WIDTH: '{tokens[1]}', using 4096", "Invalid TEX_WIDTH value")
+                    uv_scalar_x = 4096
             if cmd == "TEX_HEIGHT":
-                try:
-                    uv_scalar_y = int(tokens[1])
-                except ValueError:
-                    log_utils.warning(f"Invalid value for TEX_HEIGHT: '{tokens[1]}'", "Invalid TEX_HEIGHT value")
+                uv_scalar_y = int(float(tokens[1]))
+                if uv_scalar_y == 0:
+                    log_utils.warning(f"Invalid value for TEX_HEIGHT: '{tokens[1]}', using 4096", "Invalid TEX_HEIGHT value")
+                    uv_scalar_y = 4096
 
             #Check for decals
             if cmd.startswith("DECAL") or cmd.startswith("NORMAL_DECAL"):
@@ -254,12 +270,11 @@ class line():
             #Check for position params
             if cmd == "LAYER_GROUP":
                 self.layer = tokens[1]
-                if len(tokens) > 2:
-                    self.layer_offset = float(tokens[2])
+                self.layer_offset = int(float(tokens[2])) if len(tokens) > 2 else 0
             if cmd == "MIRROR":
                 self.mirror = True
             if cmd == "ALIGN":
-                self.segment_count = int(tokens[1])
+                self.segment_count = int(float(tokens[1]))
             if cmd == "SCALE":
                 self.scale_x = float(tokens[1])
                 if len(tokens) > 2:
@@ -270,7 +285,7 @@ class line():
             #Check for segments
             if cmd == "S_OFFSET":
                 cur_seg = segment()
-                cur_seg.layer = int(tokens[1])
+                cur_seg.layer = int(float(tokens[1]))
                 cur_seg.l = float(tokens[2]) / uv_scalar_x
                 cur_seg.c = float(tokens[3]) / uv_scalar_x
                 cur_seg.r = float(tokens[4]) / uv_scalar_x
@@ -283,7 +298,7 @@ class line():
                     cur_cap.type = "START"
                 else:
                     cur_cap.type = "END"
-                cur_cap.layer = int(tokens[1])
+                cur_cap.layer = int(float(tokens[1]))
                 cur_cap.l = float(tokens[2]) / uv_scalar_x
                 cur_cap.c = float(tokens[3]) / uv_scalar_x
                 cur_cap.r = float(tokens[4]) / uv_scalar_x

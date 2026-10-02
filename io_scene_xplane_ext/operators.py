@@ -700,6 +700,42 @@ class MENU_BT_fac_add_or_rem_in_fac(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class MENU_BT_for_add_or_rem_group(bpy.types.Operator):
+    bl_idname = "xp_ext.add_rem_for_group"
+    bl_label = "Forest Group Operation"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    collection_name: bpy.props.StringProperty() # type: ignore
+    group_index: bpy.props.IntProperty() # type: ignore
+    add: bpy.props.BoolProperty() # type: ignore
+
+    def execute(self, context):
+        collection = bpy.data.collections.get(self.collection_name)
+        if collection is None:
+            self.report({'ERROR'}, "Forest collection not found")
+            return {'CANCELLED'}
+
+        groups = collection.xp_for.groups
+        if self.add:
+            existing_names = {group.name for group in groups}
+            group_number = 1
+            group_name = f"Group {group_number}"
+            while group_name in existing_names:
+                group_number += 1
+                group_name = f"Group {group_number}"
+
+            group = groups.add()
+            group.name = group_name
+            group.weight = 1.0
+            return {'FINISHED'}
+
+        if self.group_index < 0 or self.group_index >= len(groups):
+            self.report({'ERROR'}, "Forest group not found")
+            return {'CANCELLED'}
+
+        groups.remove(self.group_index)
+        return {'FINISHED'}
+
 class MENU_BT_fac_swap_floors(bpy.types.Operator):
     bl_idname = "xp_ext.fac_swap_floors"
     bl_label = "Spelling Operation"
@@ -1755,6 +1791,7 @@ def register():
     bpy.utils.register_class(BTN_bake_low_poly)
     bpy.utils.register_class(BTN_update_xp_export_settings)
     bpy.utils.register_class(MENU_BT_fac_add_or_rem_in_fac)
+    bpy.utils.register_class(MENU_BT_for_add_or_rem_group)
     bpy.utils.register_class(MENU_BT_fac_swap_floors)
     bpy.utils.register_class(MENU_BT_fac_swap_walls)
     bpy.utils.register_class(MENU_BT_fac_swap_spellings)
@@ -1799,6 +1836,7 @@ def unregister():
     bpy.utils.unregister_class(BTN_bake_low_poly)
     bpy.utils.unregister_class(BTN_update_xp_export_settings)
     bpy.utils.unregister_class(MENU_BT_fac_add_or_rem_in_fac)
+    bpy.utils.unregister_class(MENU_BT_for_add_or_rem_group)
     bpy.utils.unregister_class(MENU_BT_fac_swap_floors)
     bpy.utils.unregister_class(MENU_BT_fac_swap_walls)
     bpy.utils.unregister_class(MENU_BT_fac_swap_spellings)

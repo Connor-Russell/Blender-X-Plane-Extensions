@@ -77,7 +77,7 @@ class Tree():
         self.max_tree_height = 1.0
         self.base_height = 1.0
         self.custom_lod = 1000
-        self.group = 0
+        self.group_name = ""
 
         self.quad_x = 0.0
         self.quad_y = 0.0
@@ -103,7 +103,7 @@ class Tree():
         self.min_tree_height = xp_for.min_tree_height
         self.max_tree_height = xp_for.max_tree_height
         self.custom_lod = xp_for.custom_lod
-        self.group = xp_for.group
+        self.group_name = xp_for.group_name
         
         
         for child in in_obj.children:
@@ -139,7 +139,7 @@ class Tree():
         obj.xp_for.min_tree_height = self.min_tree_height
         obj.xp_for.max_tree_height = self.max_tree_height
         obj.xp_for.custom_lod = self.custom_lod
-        obj.xp_for.group = self.group
+        obj.xp_for.group_name = self.group_name
 
         #Create the mesh objects
         for mesh in self.meshes:
@@ -257,7 +257,7 @@ class Forest():
         self.random_x = 1.0
         self.random_y = 1.0
 
-        self.cast_shadws = True
+        self.cast_shadows = True
         
         self.density_params = False
         self.density_wavelength_0 = 0
@@ -289,7 +289,27 @@ class Forest():
         self.height_wavelength_3 = 0
         self.height_wavestrength_3 = 0
 
+        self.group_weights: dict[str, float] = {}
         self.layers : list[list[Tree]] = []
+
+    def get_default_group_name(self):
+        if self.group_weights:
+            return next(iter(self.group_weights))
+
+        group_name = "Group 1"
+        self.group_weights[group_name] = 1.0
+        return group_name
+
+    def resolve_tree_group_name(self, tree: Tree):
+        if tree.group_name in self.group_weights:
+            return tree.group_name
+
+        default_group_name = self.get_default_group_name()
+        log_utils.warning(
+            f"Tree '{tree.name}' references forest group '{tree.group_name}' which was not found, using '{default_group_name}'",
+            f"Forest group '{tree.group_name}' not found"
+        )
+        return default_group_name
 
     def from_collection(self, in_collection : bpy.types.Collection):
         #Copy the properties from the collections .xp_for property group into our local copy
@@ -302,8 +322,17 @@ class Forest():
         self.spacing_y = props.spacing_y
         self.random_x = props.random_x
         self.random_y = props.random_y
-        self.cast_shadws = props.cast_shadow
+        self.cast_shadows = props.cast_shadow
         self.do_seasons = props.has_seasons
+
+        self.group_weights = {}
+        for group in props.groups:
+            if group.name == "":
+                log_utils.warning("Forest group has no name, skipping it", "Forest group has no name")
+            elif group.name in self.group_weights:
+                log_utils.warning(f"Duplicate forest group name '{group.name}', skipping duplicate", f"Duplicate forest group name '{group.name}'")
+            else:
+                self.group_weights[group.name] = group.weight
         
         # Handle 2D and 3D materials
         if props.has_seasons:
@@ -440,8 +469,14 @@ class Forest():
         props.spacing_y = self.spacing_y
         props.random_x = self.random_x
         props.random_y = self.random_y
-        props.cast_shadow = self.cast_shadws
+        props.cast_shadow = self.cast_shadows
         props.has_seasons = self.do_seasons
+
+        props.groups.clear()
+        for group_name, group_weight in self.group_weights.items():
+            group = props.groups.add()
+            group.name = group_name
+            group.weight = group_weight
 
         
         
@@ -529,6 +564,7 @@ class Forest():
             "VERTEX": 12,
             "TREE2": 13,
             "TREE": 11,
+            "GROUP": 3,
             "IDX": 2,
             "MESH_3D": 2
         }
@@ -541,6 +577,8 @@ class Forest():
         self.mat_2d = ForestMaterial()
         self.mat_3d = ForestMaterial()
 
+        current_group_name = None
+        current_group_layer = None
         current_shader = None
         current_mesh = None
         current_tree = None
@@ -558,6 +596,30 @@ class Forest():
             if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
                 log_utils.warning(f"Line '{line}' does not have enough tokens for command {cmd}, skipping", f"Command {cmd} doesn't have enough tokens")
                 continue
+
+            numeric_tokens = {
+                'GROUP': (1, 2),
+                'NO_BLEND': (1,),
+                'SCALE_X': (1,),
+                'SCALE_Y': (1,),
+                'SPACING': (1, 2),
+                'RANDOM': (1, 2),
+                'DENSITY_PARAMS': (1, 2, 3, 4, 5, 6, 7, 8),
+                'HEIGHT_PARAMS': (1, 2, 3, 4, 5, 6, 7, 8),
+                'CHOICE_PARAMS': (1, 2, 3, 4, 5, 6, 7, 8),
+                'MESH': (2, 3, 6, 7, 8),
+                'VERTEX': (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                'IDX': tuple(range(1, len(tokens))),
+                'TREE2': (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12),
+                'TREE': (1, 2, 3, 4, 5, 6, 7, 8, 9),
+            }
+            if cmd in numeric_tokens:
+                try:
+                    for index in numeric_tokens[cmd]:
+                        float(tokens[index])
+                except ValueError:
+                    log_utils.warning(f"Invalid numeric value in command '{cmd}', skipping line: '{line}'", f"Invalid numeric value for '{cmd}'")
+                    continue
 
             # When in a mesh, if we get a command other than a vertex or idx, we need to end the mesh
             if current_mesh is not None and cmd not in ["VERTEX", "IDX"]:
@@ -605,8 +667,14 @@ class Forest():
             # Global forest commands
             if cmd == "SCALE_X":
                 self.tex_scale_x = int(float(tokens[1]))
+                if self.tex_scale_x == 0:
+                    log_utils.warning(f"Invalid SCALE_X value '{tokens[1]}', using 1", "Invalid SCALE_X value")
+                    self.tex_scale_x = 1
             elif cmd == "SCALE_Y":
                 self.tex_scale_y = int(float(tokens[1]))
+                if self.tex_scale_y == 0:
+                    log_utils.warning(f"Invalid SCALE_Y value '{tokens[1]}', using 1", "Invalid SCALE_Y value")
+                    self.tex_scale_y = 1
             elif cmd == "SPACING":
                 self.spacing_x = float(tokens[1])
                 self.spacing_y = float(tokens[2])
@@ -614,6 +682,7 @@ class Forest():
                 self.random_x = float(tokens[1])
                 self.random_y = float(tokens[2])
             elif cmd == "DENSITY_PARAMS":
+                #TODO: Is it dist-amp like the other params, or amp-dist like the docs say?
                 self.density_params = True
                 self.density_wavelength_0 = float(tokens[1])
                 self.density_wavestrength_0 = float(tokens[2])
@@ -644,6 +713,16 @@ class Forest():
                 self.choice_wavelength_3 = float(tokens[7])
                 self.choice_wavestrength_3 = float(tokens[8])
 
+            # Group
+            if cmd == "GROUP":
+                current_group_layer = int(float(tokens[1]))
+                if current_group_layer < 0:
+                    log_utils.warning(f"Invalid GROUP layer '{tokens[1]}', using 0", "Invalid group layer")
+                    current_group_layer = 0
+
+                current_group_name = f"Group {len(self.group_weights) + 1}"
+                self.group_weights[current_group_name] = max(0.0, float(tokens[2]))
+
             # Mesh definition commands
             elif cmd == "MESH":
                 if current_shader is None:
@@ -658,8 +737,11 @@ class Forest():
                 current_mesh.wind_bend_ratio = float(tokens[6])
                 current_mesh.branch_bending = float(tokens[7])
                 current_mesh.max_wind_speed = float(tokens[8])
-            elif cmd == "NO_SHADOW" and current_mesh is not None:
-                current_mesh.no_shadow = True
+            elif cmd == "NO_SHADOW":
+                if current_mesh is not None:
+                    current_mesh.no_shadow = True
+                else:
+                    self.cast_shadows = False
             elif cmd == "VERTEX":
                 if current_mesh is None:
                     log_utils.warning(f"VERTEX command found outside of a MESH block, skipping: '{line}'")
@@ -699,6 +781,16 @@ class Forest():
                 current_tree.custom_lod = float(tokens[10])
                 current_tree.quads = 2
                 current_tree.layer = int(float(tokens[12]))
+                if current_tree.layer < 0:
+                    log_utils.warning(f"Invalid TREE2 layer '{tokens[12]}', using 0", "Invalid tree layer")
+                    current_tree.layer = 0
+                if current_group_name is None:
+                    current_tree.group_name = self.get_default_group_name()
+                    log_utils.warning(f"TREE2 command found outside of a GROUP block, using '{current_tree.group_name}'", "Tree command found outside of group block")
+                else:
+                    current_tree.group_name = current_group_name
+                    if current_tree.layer != current_group_layer:
+                        log_utils.warning(f"TREE2 layer {current_tree.layer} does not match GROUP layer {current_group_layer}", "Tree layer does not match group layer")
                 current_tree.name = " ".join(tokens[13:]) if len(tokens) >= 14 else "Imported Tree"
                 while len(self.layers) <= current_tree.layer:
                     self.layers.append([])
@@ -718,6 +810,16 @@ class Forest():
                 current_tree.max_tree_height = float(tokens[8])
                 current_tree.quads = 2
                 current_tree.layer = int(float(tokens[9]))
+                if current_tree.layer < 0:
+                    log_utils.warning(f"Invalid TREE layer '{tokens[9]}', using 0", "Invalid tree layer")
+                    current_tree.layer = 0
+                if current_group_name is None:
+                    current_tree.group_name = self.get_default_group_name()
+                    log_utils.warning(f"TREE command found outside of a GROUP block, using '{current_tree.group_name}'", "Tree command found outside of group block")
+                else:
+                    current_tree.group_name = current_group_name
+                    if current_tree.layer != current_group_layer:
+                        log_utils.warning(f"TREE layer {current_tree.layer} does not match GROUP layer {current_group_layer}", "Tree layer does not match group layer")
                 current_tree.name = " ".join(tokens[10:]) if len(tokens) >= 11 else "Imported Tree"
                 while len(self.layers) <= current_tree.layer:
                     self.layers.append([])
@@ -747,6 +849,9 @@ class Forest():
 
         header += "A\n1200\nFOREST\n\n"
 
+        if not self.cast_shadows:
+            header += "NO_SHADOW\n"
+
         #Write the 2D and 3D materials
         base_material = "SHADER_2D\n"
         
@@ -769,11 +874,11 @@ class Forest():
         body += f"RANDOM {self.random_x} {self.random_y}\n"
 
         if self.density_params:
-            body += f"DENSITY_PARAMS {self.density_wavelength_0} {self.density_wavestrength_0} {self.density_wavelength_1} {self.density_wavestrength_1} {self.density_wavelength_2} {self.density_wavestrength_2} {self.density_wavelength_3} {self.density_wavestrength_3}"
+            body += f"DENSITY_PARAMS {self.density_wavelength_0} {self.density_wavestrength_0} {self.density_wavelength_1} {self.density_wavestrength_1} {self.density_wavelength_2} {self.density_wavestrength_2} {self.density_wavelength_3} {self.density_wavestrength_3}\n"
         if self.height_params:
-            body += f"HEIGHT_PARAMS {self.height_wavelength_0} {self.height_wavestrength_0} {self.height_wavelength_1} {self.height_wavestrength_1} {self.height_wavelength_2} {self.height_wavestrength_2} {self.height_wavelength_3} {self.height_wavestrength_3}"
+            body += f"HEIGHT_PARAMS {self.height_wavelength_0} {self.height_wavestrength_0} {self.height_wavelength_1} {self.height_wavestrength_1} {self.height_wavelength_2} {self.height_wavestrength_2} {self.height_wavelength_3} {self.height_wavestrength_3}\n"
         if self.choice_params:
-            body += f"CHOICE_PARAMS {self.choice_wavelength_0} {self.choice_wavestrength_0} {self.choice_wavelength_1} {self.choice_wavestrength_1} {self.choice_wavelength_2} {self.choice_wavestrength_2} {self.choice_wavelength_3} {self.choice_wavestrength_3}"
+            body += f"CHOICE_PARAMS {self.choice_wavelength_0} {self.choice_wavestrength_0} {self.choice_wavelength_1} {self.choice_wavestrength_1} {self.choice_wavelength_2} {self.choice_wavestrength_2} {self.choice_wavelength_3} {self.choice_wavestrength_3}\n"
         
         body += "\n"
 
@@ -783,27 +888,30 @@ class Forest():
                 for mesh in tree.meshes:
                     body += mesh.to_string() + "\n"
 
-        #Now, we sort the trees by their group variable, and write them!
-        for layer in self.layers:
+        # Write tree groups in the forest's configured order for each layer.
+        for layer_index, layer in enumerate(self.layers):
             if len(layer) < 1:
                 continue
 
-            #Sort
-            layer.sort(key=lambda x: x.group)
-
-            different_groups = set()
+            trees_by_group: dict[str, list[Tree]] = {}
             for tree in layer:
-                different_groups.add(tree.group)
-            different_group_count = len(different_groups)
+                group_name = self.resolve_tree_group_name(tree)
+                if group_name not in trees_by_group:
+                    trees_by_group[group_name] = []
+                trees_by_group[group_name].append(tree)
 
-            #Track the group because we'll need to write a command every time the group changes
-            last_group = layer[0].group
-            
-            for tree in layer:
-                if tree.group != last_group:
-                    last_group = tree.group
-                    body += f"GROUP {last_group} {1.0 / different_group_count}"
-                body += tree.to_string(self.tex_scale_x, self.tex_scale_y)
+            group_names = [group_name for group_name in self.group_weights if group_name in trees_by_group]
+            total_weight = sum(self.group_weights[group_name] for group_name in group_names)
+            if total_weight == 0:
+                log_utils.warning(f"Forest layer {layer_index} has no group weight, using equal group percentages", "Forest layer group weights total zero")
+                group_percentages = {group_name: 1.0 / len(group_names) for group_name in group_names}
+            else:
+                group_percentages = {group_name: self.group_weights[group_name] / total_weight for group_name in group_names}
+
+            for group_name in group_names:
+                body += f"GROUP {layer_index} {group_percentages[group_name]}\n"
+                for tree in trees_by_group[group_name]:
+                    body += tree.to_string(self.tex_scale_x, self.tex_scale_y)
         
         # At this point, we have the header, the body, and the material section.
         # If we are in season mode, we just need to get the different paths and the different headrees

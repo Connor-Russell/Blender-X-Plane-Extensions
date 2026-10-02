@@ -127,7 +127,7 @@ class polygon():
         #Write the main polygon params
         of += "LAYER_GROUP " + self.layer.lower() + " " + str(self.layer_offset) + "\n"
         of += "SCALE " + str(float(self.scale_x)) + " " + str(float(self.scale_y)) + "\n"
-        if self.surface != None:
+        if self.surface != "NONE":
             of += "SURFACE " + self.surface.lower() + "\n"
         if self.do_load_center:
             of += "LOAD_CENTER " + misc_utils.ftos(self.load_center_lat, 8) + " " + misc_utils.ftos(self.load_center_lon, 8) + " " + str(int(self.load_center_size)) + " " + str(int(self.load_center_res)) + "\n"
@@ -194,6 +194,7 @@ class polygon():
                 'SURFACE': 2,
                 'LOAD_CENTER': 5,
                 'TEXTURE_TILE': 6,
+                'RUNWAY_TILE': 6,
                 'RUNWAY_MARKINGS': 6,
                 'RUNWAY_NOISE': 1,
                 '#subtex': 5,
@@ -201,6 +202,25 @@ class polygon():
             if cmd in min_tokens and len(tokens) < min_tokens[cmd]:
                 log_utils.warning(f"Not enough tokens for command '{cmd}'! Expected at least {min_tokens[cmd]}, got {len(tokens)}. Line: '{line}'", f"Command had too few tokens")
                 continue
+
+            numeric_tokens = {
+                'TEXTURE_NORMAL': (1,),
+                'NO_BLEND': (1,),
+                'DITHER_ALPHA': (1,),
+                'SCALE': (1, 2),
+                'LOAD_CENTER': (1, 2, 3, 4),
+                'TEXTURE_TILE': (1, 2, 3, 4),
+                'RUNWAY_TILE': (1, 2, 3, 4),
+                'RUNWAY_MARKINGS': (1, 2, 3, 4),
+                '#subtex': (1, 2, 3, 4),
+            }
+            if cmd in numeric_tokens:
+                try:
+                    for index in numeric_tokens[cmd]:
+                        float(tokens[index])
+                except ValueError:
+                    log_utils.warning(f"Invalid numeric value in command '{cmd}', skipping line: '{line}'", f"Invalid numeric value for '{cmd}'")
+                    continue
 
             # Check for material data
             if cmd == "TEXTURE_NOWRAP":
@@ -241,8 +261,7 @@ class polygon():
             # Check for main polygon params
             elif cmd == "LAYER_GROUP":
                 self.layer = tokens[1].upper()
-                if len(tokens) > 2:
-                    self.layer_offset = tokens[2]
+                self.layer_offset = int(float(tokens[2])) if len(tokens) > 2 else 0
             elif cmd == "SCALE":
                 self.scale_x = float(tokens[1])
                 self.scale_y = float(tokens[2])
@@ -262,6 +281,13 @@ class polygon():
                 self.tiling_map_x_res = float(tokens[3])
                 self.tiling_map_y_res = float(tokens[4])
                 self.tiling_map_texture = tokens[5]
+            elif cmd == "RUNWAY_TILE":
+                self.do_runway_markings = True
+                self.runway_tile_r = float(tokens[1])
+                self.runway_tile_g = float(tokens[2])
+                self.runway_tile_b = float(tokens[3])
+                self.runway_tile_a = float(tokens[4])
+                self.runway_tile_texture = tokens[5]
             elif cmd == "RUNWAY_MARKINGS":
                 self.do_runway_markings = True
                 self.runway_r = float(tokens[1])
