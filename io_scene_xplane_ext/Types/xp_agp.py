@@ -608,6 +608,8 @@ class auto_split_obj:
             for mat in exportable_mats:
                 #Create a new collection for this material
 
+                this_material = bpy.data.materials[mat]
+
                 #Get the name for the object. This is made by combining the agp name, the relative folder from the specified name (if included), _PT_, the specified name (without the folder), the material, and .obj
                 #Then we need to get that path *relative* to the .agp so that the .agp can reference it properly
                 obj_name = ""
@@ -639,15 +641,19 @@ class auto_split_obj:
                 mat_name_to_collection[mat] = mat_collection
 
                 #Set the LODs
-                mat_collection.xplane.layer.lods = str(obj.xp_agp.autosplit_lod_count)
-                mat_collection.xplane.layer.lod[0].near =   int(obj.xp_agp.autosplit_lod_1_min)
-                mat_collection.xplane.layer.lod[0].far =    int(obj.xp_agp.autosplit_lod_1_max)
-                mat_collection.xplane.layer.lod[1].near =   int(obj.xp_agp.autosplit_lod_2_min)
-                mat_collection.xplane.layer.lod[1].far =    int(obj.xp_agp.autosplit_lod_2_max)
-                mat_collection.xplane.layer.lod[2].near =   int(obj.xp_agp.autosplit_lod_3_min)
-                mat_collection.xplane.layer.lod[2].far =    int(obj.xp_agp.autosplit_lod_3_max)
-                mat_collection.xplane.layer.lod[3].near =   int(obj.xp_agp.autosplit_lod_4_min)
-                mat_collection.xplane.layer.lod[3].far =    int(obj.xp_agp.autosplit_lod_4_max)
+                if not this_material.xp_materials.layer_group == 'BLENDED':
+                    mat_collection.xplane.layer.lods = str(obj.xp_agp.autosplit_lod_count)
+                    mat_collection.xplane.layer.lod[0].near =   int(obj.xp_agp.autosplit_lod_1_min)
+                    mat_collection.xplane.layer.lod[0].far =    int(obj.xp_agp.autosplit_lod_1_max)
+                    mat_collection.xplane.layer.lod[1].near =   int(obj.xp_agp.autosplit_lod_2_min)
+                    mat_collection.xplane.layer.lod[1].far =    int(obj.xp_agp.autosplit_lod_2_max)
+                    mat_collection.xplane.layer.lod[2].near =   int(obj.xp_agp.autosplit_lod_3_min)
+                    mat_collection.xplane.layer.lod[2].far =    int(obj.xp_agp.autosplit_lod_3_max)
+                    mat_collection.xplane.layer.lod[3].near =   int(obj.xp_agp.autosplit_lod_4_min)
+                    mat_collection.xplane.layer.lod[3].far =    int(obj.xp_agp.autosplit_lod_4_max)
+                else:
+                    # We cannot have LODs in blended layer groups due to an X-Plane bug
+                    mat_collection.xplane.layer.lods = "0"
 
                 #Add our fake LODs if desired
                 if obj.xp_agp.autosplit_do_fake_lods:
@@ -675,6 +681,10 @@ class auto_split_obj:
                     #Find the collection for this material
                     target_col = mat_name_to_collection[mat_to_exportable[obj_material.name]]
                     target_col.objects.link(split_obj)
+
+                    # If the material for this object is blended, turn off it's override LODs property
+                    if obj_material.xp_materials.layer_group == 'BLENDED':
+                        target_col.xplane.override_lods = False
 
             #Now we need to configure the settings for each collection
             for col in mat_name_to_collection.values():
