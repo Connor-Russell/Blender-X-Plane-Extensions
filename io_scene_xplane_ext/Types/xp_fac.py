@@ -277,6 +277,8 @@ class facade_material:
         self.cast_shadow = True
         self.layer_group = "OBJECTS"
         self.layer_group_offset = 0
+        self.layer_group_draped = "OBJECTS"
+        self.layer_group_draped_offset = 0
         self.decals = []  # List of decals, each decal is a facade_decal object
         self.imported_decal_commands = []
         self.weather_mode = "DEFAULT"
@@ -345,11 +347,12 @@ class facade:
                 'SHADER_ROOF': 1,
                 'TEXTURE': 2,
                 'TEXTURE_LIT': 2,
-                'TEXTURE_NORMAL': 2,
+                'TEXTURE_NORMAL': 3,
                 'TEXTURE_MODULATOR': 2,
                 'NO_BLEND': 2,
                 'NO_SHADOW': 1,
-                'LAYER_GROUP': 3,
+                'LAYER_GROUP': 2,
+                'LAYER_GROUP_DRAPED': 2,
                 'DECAL': 1,
                 'NORMAL_DECAL': 1,
                 'ROOF_SCALE': 3,
@@ -376,15 +379,32 @@ class facade:
                     log_utils.warning(f"Not enough tokens for command '{command}'! Expected at least {min_tokens[command]}, got {len(tokens)}. Line: '{line}'", f"Not enough arguments for command {command}")
                     continue
 
-            if command == "I":
-                # Header line, skip
-                continue
+            numeric_tokens = {
+                'LAYER_GROUP': (2,),
+                'LAYER_GROUP_DRAPED': (2,),
+                'ROOF_OBJ_HEADING': (1, 2, 3, 4, 5, 6),
+                'IDX': tuple(range(1, len(tokens))),
+                'SPELLING': tuple(range(1, len(tokens))),
+                'ATTACH_DRAPED': (1, 2, 3, 4, 5, 6, 7),
+                'ATTACH_GRADED': (1, 2, 3, 4, 5, 6, 7),
+                'TEXTURE_NORMAL': (1,),
+                'NO_BLEND': (1,),
+                'ROOF_SCALE': (1, 2),
+                'ROOF_HEIGHT': (1,),
+                'MESH': (1, 2, 3) if len(tokens) > 5 else (1, 2),
+                'VERTEX': (1, 2, 3, 4, 5, 6, 7, 8),
+                'WALL': (1, 2, 3, 4),
+            }
+            if command in numeric_tokens:
+                try:
+                    for index in numeric_tokens[command]:
+                        if index < len(tokens):
+                            float(tokens[index])
+                except ValueError:
+                    log_utils.warning(f"Invalid numeric value in command '{command}', skipping line: '{line}'", f"Invalid numeric value for '{command}'")
+                    continue
 
-            elif command == "FACADE":
-                # Start of a facade definition, skip
-                continue
-
-            elif command.startswith("#"):
+            if command.startswith("#"):
                 #Join the tokens, remove the first char, and we have the last comment name
                 last_comment_name = (" ".join(tokens))[1:]
 
@@ -393,6 +413,12 @@ class facade:
 
             elif command == "DRAPED":
                 self.graded = False
+
+            elif command == "NO_WALL_MESH":
+                self.do_wall_mesh = False
+
+            elif command == "NO_ROOF_MESH":
+                self.do_roof_mesh = False
 
             elif command == "RING":
                 self.ring = tokens[1] == "1"
@@ -438,7 +464,12 @@ class facade:
             elif command == "LAYER_GROUP":
                 if current_material:
                     current_material.layer_group = tokens[1]
-                    current_material.layer_group_offset = int(tokens[2])
+                    current_material.layer_group_offset = int(float(tokens[2])) if len(tokens) > 2 else 0
+
+            elif command == "LAYER_GROUP_DRAPED":
+                if current_material:
+                    current_material.layer_group = tokens[1]
+                    current_material.layer_group_offset = int(float(tokens[2])) if len(tokens) > 2 else 0
 
             elif command.startswith("DECAL") or command.startswith("NORMAL_DECAL"):
                 if current_material:
@@ -466,13 +497,16 @@ class facade:
 
             elif command == "ROOF_OBJ_HEADING":
                 if current_floor:
-                    obj_index = int(tokens[1])
+                    obj_index = int(float(tokens[1]))
+                    if obj_index < 0 or obj_index >= len(self.all_objects):
+                        log_utils.warning(f"ROOF_OBJ_HEADING references missing OBJ index {obj_index}, skipping line: '{line}'", "Invalid facade object reference")
+                        continue
                     obj_resource = self.all_objects[obj_index]
                     attached_obj = xp_attached_obj.xp_attached_obj()
                     attached_obj.resource = obj_resource
-                    attached_obj.rot_z = float(tokens[2])
-                    attached_obj.loc_x = float(tokens[3])
-                    attached_obj.loc_z = float(tokens[4])
+                    attached_obj.loc_x = float(tokens[2])
+                    attached_obj.loc_z = float(tokens[3])
+                    attached_obj.rot_z = float(tokens[4])
                     attached_obj.min_draw = float(tokens[5])
                     attached_obj.max_draw = float(tokens[6])
                     current_floor.roof_objs.append(attached_obj)
@@ -520,7 +554,7 @@ class facade:
 
             elif command == "IDX":
                 if current_mesh:
-                    current_mesh.indices.extend(map(int, tokens[1:]))
+                    current_mesh.indices.extend(int(float(index)) for index in tokens[1:])
 
             elif command == "WALL":
                 current_wall = wall()
@@ -534,16 +568,22 @@ class facade:
 
             elif command == "SPELLING":
                 current_spelling = spelling()
-                if current_wall:
+                if current_wall and current_floor:
                     current_wall.spellings.append(current_spelling)
+                else:
+                    log_utils.warning(f"SPELLING command found without an active wall and floor, skipping: '{line}'", "Spelling command outside wall")
+                    continue
                 for seg_idx in tokens[1:]:
-                    seg_idx = int(seg_idx)
+                    seg_idx = int(float(seg_idx))
                     if seg_idx < len(current_floor.all_segments):
                         segment_name = current_floor.all_segments[seg_idx].name
                         current_spelling.segment_names.append(segment_name)
             elif command == "ATTACH_DRAPED":
                 if current_segment:
-                    obj_index = int(tokens[1])
+                    obj_index = int(float(tokens[1]))
+                    if obj_index < 0 or obj_index >= len(self.all_objects):
+                        log_utils.warning(f"ATTACH_DRAPED references missing OBJ index {obj_index}, skipping line: '{line}'", "Invalid facade object reference")
+                        continue
                     obj_resource = self.all_objects[obj_index]
                     attached_obj = xp_attached_obj.xp_attached_obj()
                     attached_obj.resource = obj_resource
@@ -551,7 +591,7 @@ class facade:
                     attached_obj.loc_z = float(tokens[3])
                     attached_obj.loc_y = float(tokens[4])
                     attached_obj.rot_z = misc_utils.resolve_heading(float(tokens[5]) + 180)
-                    if len(tokens) > 6:
+                    if len(tokens) >= 8:
                         attached_obj.min_draw = float(tokens[6])
                         attached_obj.max_draw = float(tokens[7])
                     attached_obj.draped = True
@@ -564,7 +604,10 @@ class facade:
 
             elif command == "ATTACH_GRADED":
                 if current_segment:
-                    obj_index = int(tokens[1])
+                    obj_index = int(float(tokens[1]))
+                    if obj_index < 0 or obj_index >= len(self.all_objects):
+                        log_utils.warning(f"ATTACH_GRADED references missing OBJ index {obj_index}, skipping line: '{line}'", "Invalid facade object reference")
+                        continue
                     obj_resource = self.all_objects[obj_index]
                     attached_obj = xp_attached_obj.xp_attached_obj()
                     attached_obj.resource = obj_resource
@@ -572,7 +615,7 @@ class facade:
                     attached_obj.loc_z = float(tokens[3])
                     attached_obj.loc_y = float(tokens[4])
                     attached_obj.rot_z = misc_utils.resolve_heading(float(tokens[5]) + 180)
-                    if len(tokens) > 6:
+                    if len(tokens) >= 8:
                         attached_obj.min_draw = float(tokens[6])
                         attached_obj.max_draw = float(tokens[7])
                     attached_obj.draped = False
@@ -717,9 +760,8 @@ class facade:
             #Layer group
             output += "LAYER_GROUP " + str(self.export_roof_layer_group) + " " + str(self.export_roof_layer_group_offset) + "\n"
             
-            #Draped layer group. We only do this if draped
-            if not self.graded:
-                output += "LAYER_GROUP_DRAPED " + str(self.export_roof_layer_group) + " " + str(self.export_roof_layer_group_offset) + "\n"
+            # TODO: We need to allow for roofs to have multiple materials, and if one is draped, we use this for the draped layer group
+            output += "LAYER_GROUP_DRAPED " + str(self.export_roof_layer_group) + " " + str(self.export_roof_layer_group_offset) + "\n"
 
             #Hard
             if mat.surface_type != "NONE":
@@ -757,7 +799,7 @@ class facade:
 
             for obj in cur_floor.roof_objs:
                 obj_index = all_objects.index(file_utils.resolve_lib_or_real(obj.resource, output_folder))
-                output += "ROOF_OBJ_HEADING " + str(obj_index) + " " + misc_utils.ftos(obj.rot_z, 4) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
+                output += "ROOF_OBJ_HEADING " + str(obj_index) + " " + misc_utils.ftos(obj.loc_x, 8) + " " + misc_utils.ftos(obj.loc_z, 8) + " " + " " + misc_utils.ftos(obj.rot_z, 4) + str(obj.min_draw) + " " + str(obj.max_draw) + "\n"
             
             #Now we need to add all the segment definitions
             def write_mesh(target_mesh):
