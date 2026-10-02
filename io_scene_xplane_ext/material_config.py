@@ -243,6 +243,11 @@ def update_settings(in_material):
     if xp_mat.was_programmatically_updated:
         xp_mat.was_programmatically_updated = False
         return
+
+    #If this is blended layer group, set the blend mode to blend
+    if xp_mat.layer_group == 'BLENDED':
+        xp_mat.was_programmatically_updated = True
+        xp_mat.blend_mode = 'BLEND'
     
     #Sanitize all paths to be relative first
     def sanitize(in_path):
