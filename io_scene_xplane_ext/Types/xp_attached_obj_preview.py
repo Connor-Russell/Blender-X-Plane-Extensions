@@ -382,7 +382,6 @@ def process_single_object(obj : bpy.types.Object, make_real):
         new_obj.to_scene(obj, parent_collection, make_real)
 
 def update_previews_for_resources(resources: set[str], make_real):
-    print(f"Updating previews for resources: {resources}")
     for obj in list(bpy.data.objects):
         if 'xp_ext_preview_filepath' in obj:
             if obj['xp_ext_preview_filepath'] in resources:
@@ -411,13 +410,10 @@ def reset_scene_tracking_cache(in_file_path, in_startup_file_path):
 def update_attached_obj_previews(scene, depsgraph):
     global locked_preview_obj_update
     if locked_preview_obj_update:
-        print("Skipping depsgraph update due to lock")
         return
     
     global existing_objects
     global currently_processing
-
-    print("Starting update of attached object previews.")
 
     # We need to check if the user moved a preview object *parent* to a different collection. The quickest way (well, probably better ways but I like simple, especially here) is just check if there is a different length of objects in any of the collections. If so, *something* moved, so we'll check everyone
     global collection_children_lengths
@@ -427,7 +423,6 @@ def update_attached_obj_previews(scene, depsgraph):
 
     # Get the collections that have changed in terms of children count
     changed_collections = [col_name for col_name, length in local_collection_children_lengths.items() if collection_children_lengths.get(col_name, 0) != length]
-
 
     for col_name in changed_collections:
         for obj in bpy.data.collections[col_name].objects:
@@ -445,10 +440,6 @@ def update_attached_obj_previews(scene, depsgraph):
     current_objects = set(obj.session_uid for obj in bpy.data.objects)
     removed_objects = existing_objects - current_objects
     added_objects = current_objects - existing_objects
-
-    print(f"Changed collections: {changed_collections}")
-    print(f"Removed objects: {removed_objects}")
-    print(f"Added objects: {added_objects}")
 
     # If there were removed objects, we need to check *every* object to look for orphaned attached object previews
     if len(removed_objects) > 0:

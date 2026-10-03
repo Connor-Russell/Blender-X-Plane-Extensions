@@ -13,76 +13,107 @@ from .Types import xp_obj
 from .Types import xp_pol
 from .Types import xp_agp
 from .Types import xp_for
+from .Types import xp_attached_obj_preview
 import os
 
 def import_lin(in_path):
-    #Define just the file name from the path
-    in_name = in_path
-    in_name = in_path.split(os.sep)[-1]
+    xp_attached_obj_preview.lock_preview_obj_update()
+    try:
+        #Define just the file name from the path
+        in_name = in_path
+        in_name = in_path.split(os.sep)[-1]
 
-    #Read it
-    lin = xp_lin.line()
-    lin.read(in_path)
-    lin.to_collection(in_name)
+        #Read it
+        lin = xp_lin.line()
+        lin.read(in_path)
+        lin.to_collection(in_name)
+    except Exception as e:
+        log_utils.error(f"Failed to export FAC: {e}")
+    xp_attached_obj_preview.unlock_preview_obj_update()
     
     log_utils.display_messages()
 
 def import_pol(in_path):
-    #Define just the file name from the path
-    in_name = in_path
-    in_name = in_path.split(os.sep)[-1]
+    xp_attached_obj_preview.lock_preview_obj_update()
+    try:
+        #Define just the file name from the path
+        in_name = in_path
+        in_name = in_path.split(os.sep)[-1]
 
-    #Read it
-    pol = xp_pol.polygon()
-    pol.read(in_path)
-    pol.to_scene()
+        #Read it
+        pol = xp_pol.polygon()
+        pol.read(in_path)
+        pol.to_scene()
+    except Exception as e:
+        log_utils.error(f"Failed to export FAC: {e}")
+    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def import_fac(in_path):
-    #Define just the file name from the path
-    in_name = in_path
-    in_name = in_path.split(os.sep)[-1]
+    xp_attached_obj_preview.lock_preview_obj_update()
+    try:
+        #Define just the file name from the path
+        in_name = in_path
+        in_name = in_path.split(os.sep)[-1]
 
-    #Read it
-    fac = xp_fac.facade()
-    fac.read(in_path)
-    fac.to_scene()
+        #Read it
+        fac = xp_fac.facade()
+        fac.read(in_path)
+        fac.to_scene()
+    except Exception as e:
+        log_utils.error(f"Failed to export FAC: {e}")
+    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def import_obj(in_path):
-    #Define just the file name from the path
-    in_name = in_path
-    in_name = in_path.split(os.sep)[-1]
+    xp_attached_obj_preview.lock_preview_obj_update()
+    try:
+        #Define just the file name from the path
+        in_name = in_path
+        in_name = in_path.split(os.sep)[-1]
 
-    #Read it
-    obj = xp_obj.object()
-    obj.read(in_path)
-    obj.to_scene()
+        #Read it
+        obj = xp_obj.object()
+        obj.read(in_path)
+        obj.to_scene()
+    except Exception as e:
+        log_utils.error(f"Failed to export FAC: {e}")
+    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
     
 def import_agp(in_path):
-    #Define just the file name from the path
-    in_name = in_path
-    in_name = in_path.split(os.sep)[-1]
+    xp_attached_obj_preview.lock_preview_obj_update()
+    try:
+        #Define just the file name from the path
+        in_name = in_path
+        in_name = in_path.split(os.sep)[-1]
 
-    #Read it
-    agp = xp_agp.agp()
-    agp.read(in_path)
-    agp.to_collection()
+        #Read it
+        agp = xp_agp.agp()
+        agp.read(in_path)
+        agp.to_collection()
+    except Exception as e:
+        log_utils.error(f"Failed to export FAC: {e}")
+    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def import_for(in_path):
-    #Define just the file name from the path
-    in_name = in_path
-    in_name = in_path.split(os.sep)[-1]
+    xp_attached_obj_preview.lock_preview_obj_update()
+    try:
+        #Define just the file name from the path
+        in_name = in_path
+        in_name = in_path.split(os.sep)[-1]
 
-    #Read it
-    agp = xp_for.Forest()
-    agp.read(in_path)
-    agp.to_collection()
+        #Read it
+        agp = xp_for.Forest()
+        agp.read(in_path)
+        agp.to_collection()
+    except Exception as e:
+        log_utils.error(f"Failed to export FAC: {e}")
+    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()

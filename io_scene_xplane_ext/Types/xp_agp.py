@@ -109,6 +109,14 @@ class facade:
         self.perimeter = [] #List of mathutils.Vector. Stored in world coordinates
         self.valid = True
 
+    def get_furthest_coordinates(self):
+        furthest_x = 0
+        furthest_y = 0
+        for vert in self.perimeter:
+            furthest_x = max(furthest_x, vert.x)
+            furthest_y = max(furthest_y, vert.y)
+        return furthest_x, furthest_y
+
     def from_obj(self, obj):
         self.resource = obj.xp_agp.facade_resource
         self.height = obj.xp_agp.facade_height
@@ -199,6 +207,14 @@ class tree_line:
         self.layer = 0
         self.perimeter = [] #List of mathutils.Vector. Stored in world coordinates
         self.valid = True
+
+    def get_furthest_coordinates(self):
+        furthest_x = 0
+        furthest_y = 0
+        for vert in self.perimeter:
+            furthest_x = max(furthest_x, vert.x)
+            furthest_y = max(furthest_y, vert.y)
+        return furthest_x, furthest_y
 
     def from_obj(self, obj):
         self.layer = obj.xp_agp.tree_layer
@@ -814,39 +830,137 @@ class tile:
             self.rotation_n = 1
         
         #Now that we have the transform, we can get the child data
-        for obj in in_obj.children:
-            if not obj.xp_agp.exportable:
-                continue
+        def process_obj(obj):
+            
+            if obj.xp_agp.exportable:
+                if obj.xp_agp.type == 'ATTACHED_OBJ':
+                    new_obj = attached_obj()
+                    new_obj.from_obj(obj)
+                    self.attached_objs.append(new_obj)
 
-            if obj.xp_agp.type == 'ATTACHED_OBJ':
-                new_obj = attached_obj()
-                new_obj.from_obj(obj)
-                self.attached_objs.append(new_obj)
+                elif obj.xp_agp.type == 'AUTO_SPLIT_OBJ':
+                    new_obj = auto_split_obj()
+                    new_obj.export(obj, agp_name)
+                    self.auto_split_objs.append(new_obj)
 
-            elif obj.xp_agp.type == 'AUTO_SPLIT_OBJ':
-                new_obj = auto_split_obj()
-                new_obj.export(obj, agp_name)
-                self.auto_split_objs.append(new_obj)
+                elif obj.xp_agp.type == 'FACADE':
+                    new_fac = facade()
+                    new_fac.from_obj(obj)
+                    self.facades.append(new_fac)
 
-            elif obj.xp_agp.type == 'FACADE':
-                new_fac = facade()
-                new_fac.from_obj(obj)
-                self.facades.append(new_fac)
+                elif obj.xp_agp.type == 'TREE':
+                    new_tree = tree()
+                    new_tree.from_obj(obj)
+                    self.trees.append(new_tree)
 
-            elif obj.xp_agp.type == 'TREE':
-                new_tree = tree()
-                new_tree.from_obj(obj)
-                self.trees.append(new_tree)
+                elif obj.xp_agp.type == 'TREE_LINE':
+                    new_tree_line = tree_line()
+                    new_tree_line.from_obj(obj)
+                    self.tree_lines.append(new_tree_line)
 
-            elif obj.xp_agp.type == 'TREE_LINE':
-                new_tree_line = tree_line()
-                new_tree_line.from_obj(obj)
-                self.tree_lines.append(new_tree_line)
+                elif obj.xp_agp.type == 'CROP_POLY':
+                    new_crop_poly = crop_polygon()
+                    new_crop_poly.from_obj(obj)
+                    self.crop_poly = new_crop_poly
 
-            elif obj.xp_agp.type == 'CROP_POLY':
-                new_crop_poly = crop_polygon()
-                new_crop_poly.from_obj(obj)
-                self.crop_poly = new_crop_poly
+                for child in obj.children:
+                    process_obj(child)
+
+        #Process the children of this object recursively
+        process_obj(in_obj)
+
+        return True
+
+    def from_collection(self, in_collection, agp_name):
+        """
+        Agps require a base tile. HOWEVER, often times the use case for agps in Blender is simply to be a collection of objects, and the tile is hidden
+        This function allows us to skip the base tile entirely and simply use the collection of objects, and we create a fake tile that is big enough to fit them all
+        """
+
+        bounds = [None, None, None, None]
+
+        def include_point(x, y):
+            if bounds[0] is None:
+                bounds[:] = [x, y, x, y]
+                return
+
+            bounds[0] = min(bounds[0], x)
+            bounds[1] = min(bounds[1], y)
+            bounds[2] = max(bounds[2], x)
+            bounds[3] = max(bounds[3], y)
+
+        def process_obj(obj):
+            try:
+                if obj.xp_agp.exportable:
+                    if obj.xp_agp.type == 'ATTACHED_OBJ':
+                        new_obj = attached_obj()
+                        new_obj.from_obj(obj)
+                        self.attached_objs.append(new_obj)
+                        include_point(new_obj.x, new_obj.y)
+
+                    elif obj.xp_agp.type == 'AUTO_SPLIT_OBJ':
+                        new_obj = auto_split_obj()
+                        new_obj.export(obj, agp_name)
+                        self.auto_split_objs.append(new_obj)
+                        include_point(new_obj.x, new_obj.y)
+
+                    elif obj.xp_agp.type == 'FACADE':
+                        new_fac = facade()
+                        new_fac.from_obj(obj)
+                        self.facades.append(new_fac)
+                        for vert in new_fac.perimeter:
+                            include_point(vert.x, vert.y)
+
+                    elif obj.xp_agp.type == 'CROP_POLY':
+                        new_crop_poly = crop_polygon()
+                        new_crop_poly.from_obj(obj)
+                        self.crop_poly = new_crop_poly
+                        for vert in new_crop_poly.perimeter:
+                            include_point(vert.x, vert.y)
+
+                    elif obj.xp_agp.type == 'TREE':
+                        new_tree = tree()
+                        new_tree.from_obj(obj)
+                        self.trees.append(new_tree)
+                        include_point(new_tree.x, new_tree.y)
+
+                    elif obj.xp_agp.type == 'TREE_LINE':
+                        new_tree_line = tree_line()
+                        new_tree_line.from_obj(obj)
+                        self.tree_lines.append(new_tree_line)
+                        for vert in new_tree_line.perimeter:
+                            include_point(vert.x, vert.y)
+            except Exception as e:
+                log_utils.warning(f"Error processing child object: {e}")
+
+            for child in obj.children:
+                process_obj(child)
+
+        for obj in in_collection.objects:
+            process_obj(obj)
+
+        if bounds[0] is not None:
+            self.left_x, self.bottom_y, self.right_x, self.top_y = bounds
+
+            width = self.right_x - self.left_x
+            height = self.top_y - self.bottom_y
+            if math.isclose(width, 0.0, abs_tol=1e-6):
+                self.left_x -= 0.5
+                self.right_x += 0.5
+                width = 1.0
+            if math.isclose(height, 0.0, abs_tol=1e-6):
+                self.bottom_y -= 0.5
+                self.top_y += 0.5
+                height = 1.0
+
+            self.left_uv = 0.0
+            self.bottom_uv = 0.0
+            self.right_uv = 1.0
+            self.top_uv = 1.0
+            self.transform.x_ratio = 1.0 / width
+            self.transform.y_ratio = 1.0 / height
+            self.transform.anchor_x = -self.left_x * self.transform.x_ratio
+            self.transform.anchor_y = -self.bottom_y * self.transform.y_ratio
 
         return True
 
@@ -1062,48 +1176,57 @@ class agp:
         self.name = file_utils.to_relative(file_utils.resolve_file_export_path(in_collection.xp_agp.name, in_collection.name, ".agp"))
 
         #Get the material from the first mesh object in the collection
-        mat = None
-        for obj in in_collection.objects:
-            if obj.type == 'MESH':
-                #Check if it is the base tile. That is what we care about
-                if obj.xp_agp.type == 'BASE_TILE' and obj.xp_agp.exportable:
-                    if len(obj.data.materials) > 0:
-                        mat = obj.data.materials[0]
-                        break
+        if self.render_tiles:
+            mat = None
+            for obj in in_collection.objects:
+                if obj.type == 'MESH':
+                    #Check if it is the base tile. That is what we care about
+                    if obj.xp_agp.type == 'BASE_TILE' and obj.xp_agp.exportable:
+                        if len(obj.data.materials) > 0:
+                            mat = obj.data.materials[0]
+                            break
 
-        if mat is None:
-            log_utils.error(f"No material found in the collection {in_collection.name}", "Material not found")
-            return
+            if mat is None:
+                log_utils.error(f"No material found in the collection {in_collection.name}", "Material not found")
+                return
 
-        # Extract material data
-        mat = mat.xp_materials
+            # Extract material data
+            mat = mat.xp_materials
 
-        if mat.do_separate_material_texture:
-            log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades/agps. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.", "Separate material textures are not supported on AGP tiles")
-            return
+            if mat.do_separate_material_texture:
+                log_utils.error("Error: X-Plane does not support separate material textures on lines/polygons/facades/agps. Please use a normal map with the metalness and glossyness in the blue and alpha channels respectively.", "Separate material textures are not supported on AGP tiles")
+                return
 
-        self.alb_texture = mat.alb_texture
-        self.lit_texture = mat.lit_texture
-        self.nml_texture = mat.normal_texture
-        self.weather_mode = mat.weather_mode
-        self.weather_texture = mat.weather_texture
-        self.do_blend = mat.blend_mode == 'BLEND'
-        self.blend_cutoff = mat.blend_cutoff
-        for decal in mat.decals:
-            self.decals.append(decal)
-        self.surface = mat.surface_type
-        self.layer_group = mat.layer_group
-        self.layer_group_offset = mat.layer_group_offset
+            self.alb_texture = mat.alb_texture
+            self.lit_texture = mat.lit_texture
+            self.nml_texture = mat.normal_texture
+            self.weather_mode = mat.weather_mode
+            self.weather_texture = mat.weather_texture
+            self.do_blend = mat.blend_mode == 'BLEND'
+            self.blend_cutoff = mat.blend_cutoff
+            for decal in mat.decals:
+                self.decals.append(decal)
+            self.surface = mat.surface_type
+            self.layer_group = mat.layer_group
+            self.layer_group_offset = mat.layer_group_offset
 
         #Now that we have the material setup, we need to load all the individual tiles and their children
-        for obj in in_collection.objects:
-            if obj.parent == None and obj.xp_agp.type == 'BASE_TILE' and obj.xp_agp.exportable:
-                #Make sure the scale is 1,1,1
-                if misc_utils.vectors_close(obj.scale, mathutils.Vector((1, 1, 1))) == False:
-                    log_utils.error(f"Error: Tile object {obj.name} has a scale other than 1,1,1. Please apply the scale then reexport!", "BASE_TILE must have scale of 1")
-                    return False
+        if self.render_tiles:
+            for obj in in_collection.objects:
+                if obj.parent == None and obj.xp_agp.type == 'BASE_TILE' and obj.xp_agp.exportable:
+                    #Make sure the scale is 1,1,1
+                    if misc_utils.vectors_close(obj.scale, mathutils.Vector((1, 1, 1))) == False:
+                        log_utils.error(f"Error: Tile object {obj.name} has a scale other than 1,1,1. Please apply the scale then reexport!", "BASE_TILE must have scale of 1")
+                        return False
+                    new_tile = tile()
+                    if not new_tile.from_obj(obj, self.name):
+                        return False
+                    self.tiles.append(new_tile)
+        else:
+            if len(self.tiles) == 0:
                 new_tile = tile()
-                if not new_tile.from_obj(obj, self.name):
+                if not new_tile.from_collection(in_collection, self.name):
+                    log_utils.error("Error: Failed to load collection level tile", "Collection level tile loading failed")
                     return False
                 self.tiles.append(new_tile)
 
@@ -1180,49 +1303,51 @@ class agp:
         #Define a string to hold the file contents
         of = "A\n1000\nAG_POINT\n\n"
 
-        #Write the material data
-        of += "#Materials\n"
+        if self.render_tiles:
+            #Write the material data
+            of += "#Materials\n"
 
-        if not file_utils.is_empty(self.alb_texture):
-            of += "TEXTURE " + file_utils.to_relative(file_utils.to_absolute(self.alb_texture), False, output_folder) + "\n"
-        if not file_utils.is_empty(self.lit_texture):
-            of += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder) + "\n"
-        if not file_utils.is_empty(self.nml_texture):
-            of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder) + "\n"
-        
-        if self.weather_mode == "TRANSPARENT":
-            of += "WEATHER_TRANSPARENT\n"
-        elif self.weather_mode == "NONE":
-            of += "WEATHER_NONE\n"
-        elif self.weather_mode == "TEXTURE" and not file_utils.is_empty(self.weather_texture):
-            of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
-        
-        if not self.do_blend:
-            of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
-        
-        of += "\n"
-
-        #Write the decals
-        if len(self.decals) > 0:
-            of += "#Decals\n"
-            for decal in self.decals:
-                #Get the decal command
-                decal_command = decal_utils.get_decal_command(decal, output_folder)
-                if decal_command:
-                    of += decal_command
-
+            if not file_utils.is_empty(self.alb_texture):
+                of += "TEXTURE " + file_utils.to_relative(file_utils.to_absolute(self.alb_texture), False, output_folder) + "\n"
+            if not file_utils.is_empty(self.lit_texture):
+                of += "TEXTURE_LIT " + file_utils.to_relative(file_utils.to_absolute(self.lit_texture), False, output_folder) + "\n"
+            if not file_utils.is_empty(self.nml_texture):
+                of += "TEXTURE_NORMAL " + str(self.nml_tile_rat) + "\t" + file_utils.to_relative(file_utils.to_absolute(self.nml_texture), False, output_folder) + "\n"
+            
+            if self.weather_mode == "TRANSPARENT":
+                of += "WEATHER_TRANSPARENT\n"
+            elif self.weather_mode == "NONE":
+                of += "WEATHER_NONE\n"
+            elif self.weather_mode == "TEXTURE" and not file_utils.is_empty(self.weather_texture):
+                of += "WEATHER " + file_utils.to_relative(file_utils.to_absolute(self.weather_texture), False, output_folder) + "\n"
+            
+            if not self.do_blend:
+                of += "NO_BLEND " + misc_utils.ftos(self.blend_cutoff, 2) + "\n"
+            
             of += "\n"
 
-        #Write the main polygon params
-        of += "LAYER_GROUP " + self.layer_group.lower() + " " + str(self.layer_group_offset) + "\n"
-        if self.surface != None:
-            of += "SURFACE " + self.surface.lower() + "\n"
-        if self.do_tiling and not file_utils.is_empty(self.tiling_map_texture):
-            of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + file_utils.to_relative(file_utils.to_absolute(self.tiling_map_texture), False, output_folder) + "\n"
-        if not self.render_tiles:
+            #Write the decals
+            if len(self.decals) > 0:
+                of += "#Decals\n"
+                for decal in self.decals:
+                    #Get the decal command
+                    decal_command = decal_utils.get_decal_command(decal, output_folder)
+                    if decal_command:
+                        of += decal_command
+
+                of += "\n"
+
+            #Write the main polygon params
+            of += "LAYER_GROUP " + self.layer_group.lower() + " " + str(self.layer_group_offset) + "\n"
+            if self.surface != "NONE":
+                of += "SURFACE " + self.surface.lower() + "\n"
+            if self.do_tiling and not file_utils.is_empty(self.tiling_map_texture):
+                of += "TEXTURE_TILE " + str(int(self.tiling_x_pages)) + " " + str(int(self.tiling_y_pages)) + " " + str(int(self.tiling_map_x_res)) + " " + str(int(self.tiling_map_y_res)) + " " + file_utils.to_relative(file_utils.to_absolute(self.tiling_map_texture), False, output_folder) + "\n"
+            if self.tile_lod != 20000:
+                of += "TILE_LOD " + str(self.tile_lod) + "\n"
+        else:
             of += "HIDE_TILES\n"
-        if self.tile_lod != 20000:
-            of += "TILE_LOD " + str(self.tile_lod) + "\n"
+        
 
         self.transform = self.tiles[0].transform
 
