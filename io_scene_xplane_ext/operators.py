@@ -1680,6 +1680,44 @@ class BTN_preview_attached_object(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class BTN_make_only_attached_selectable(bpy.types.Operator):
+    """Makes only attached objects selectable"""
+    bl_idname = "xp_ext.make_only_attached_selectable"
+    bl_label = "Make Only Attached Selectable"
+    bl_description = "Makes only attached objects selectable, hiding selection for all others."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        selected_objects = context.selected_objects
+        for obj in bpy.data.objects:
+            if obj.hide_select or obj.hide_viewport:
+                continue
+            elif obj.type == 'LIGHT':
+                obj.hide_viewport = True
+                obj['xp_ext_hidden_for_make_only_attached_selectable'] = True
+            elif obj.type == 'EMPTY' and (obj.xp_attached_obj.exportable or obj.xp_agp.type == 'ATTACHED_OBJ'):
+                obj.hide_select = False
+            else:
+                obj.hide_select = True
+                obj['xp_ext_hidden_for_make_only_attached_selectable'] = True
+        return {'FINISHED'}
+
+class BTN_restore_selectability(bpy.types.Operator):
+    """Restores the selectability of objects hidden by 'Make Only Attached Selectable'"""
+    bl_idname = "xp_ext.restore_selectability"
+    bl_label = "Restore Selectability"
+    bl_description = "Restores the selectability of objects hidden by 'Make Only Attached Selectable'."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for obj in bpy.data.objects:
+            if 'xp_ext_hidden_for_make_only_attached_selectable' in obj:
+                obj.hide_select = False
+                del obj['xp_ext_hidden_for_make_only_attached_selectable']
+                if obj.type == 'LIGHT':
+                    obj.hide_viewport = False
+        return {'FINISHED'}
+
 class BTN_clear_attached_object_preview(bpy.types.Operator):
     """Clears the preview of an attached object"""
     bl_idname = "xp_ext.clear_attached_object_preview"
@@ -1815,6 +1853,9 @@ def register():
     bpy.utils.register_class(BTN_preview_attached_object)
     bpy.utils.register_class(BTN_clear_attached_object_preview)
     bpy.utils.register_class(BTN_set_lods)
+    bpy.utils.register_class(BTN_make_only_attached_selectable)
+    bpy.utils.register_class(BTN_restore_selectability)
+    
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
@@ -1859,4 +1900,6 @@ def unregister():
     bpy.utils.unregister_class(BTN_preview_attached_object)
     bpy.utils.unregister_class(BTN_clear_attached_object_preview)
     bpy.utils.unregister_class(BTN_set_lods)
+    bpy.utils.unregister_class(BTN_make_only_attached_selectable)
+    bpy.utils.unregister_class(BTN_restore_selectability)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

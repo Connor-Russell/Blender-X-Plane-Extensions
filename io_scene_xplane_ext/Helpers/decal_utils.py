@@ -64,10 +64,11 @@ def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
             else:
                 setattr(in_collection.xplane.layer, "file_" + dcl_name, file_utils.to_relative(dcl.texture))
                 setattr(in_collection.xplane.layer, dcl_name + "_projected", dcl.projected)
+                setattr(in_collection.xplane.layer, dcl_name + "_projected", dcl.projected)
 
                 if dcl.projected:
                     setattr(in_collection.xplane.layer, dcl_name + "_x_scale", dcl.scale_x)
-                    setattr(in_collection.xplane.layer, dcl_name + "_y_scale", dcl.scale_y)
+                    setattr(in_collection.xplane.layer, dcl_name + "_dither", dcl.dither_ratio)
                 else:
                     setattr(in_collection.xplane.layer, dcl_name + "_scale", dcl.tile_ratio)
 

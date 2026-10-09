@@ -619,6 +619,16 @@ class auto_split_obj:
                     exportable_mats.add(mat)
                     mat_to_exportable[mat] = mat
 
+            # XP2B will fail if we use a light level on an instanced_scenery type, but it checks *every* material int he hierarchy. So, if any of our materials use that, we need to use scenery instead of instanced_scenery for all our objectss
+            need_scenery_mode = False
+            for mat in all_mats:
+                this_material = bpy.data.materials[mat]
+                if this_material is None:
+                    continue
+                if this_material.xp_materials.light_level_override or this_material.xp_materials.local_max_brightness > -1:
+                    need_scenery_mode = True
+                    break
+
             # Configure a collection for each material
             self.resoures = []
             for mat in exportable_mats:
@@ -652,7 +662,10 @@ class auto_split_obj:
                 mat_collection.xplane.layer.name = file_utils.to_relative(obj_name)
                 self.resources.append(obj_rel_to_agp_path)
                 mat_collection.xplane.is_exportable_collection = True
-                mat_collection.xplane.layer.export_type = 'instanced_scenery'
+                if not need_scenery_mode:
+                    mat_collection.xplane.layer.export_type = 'instanced_scenery'
+                else:
+                    mat_collection.xplane.layer.export_type = 'scenery'
                 bpy.context.scene.collection.children.link(mat_collection)
                 mat_name_to_collection[mat] = mat_collection
 

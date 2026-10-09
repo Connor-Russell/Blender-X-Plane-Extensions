@@ -897,12 +897,69 @@ class MENU_operations(bpy.types.Panel):
         btn_find_textures_recursive.recursive = True
 
         layout.separator()
-
+        
         box = layout.box()
         box.prop(xp_ext, "menu_export_path_expanded", text="Export Path", icon='TRIA_DOWN' if xp_ext.menu_export_path_expanded else 'TRIA_RIGHT', emboss=False)
         if xp_ext.menu_export_path_expanded:
             box.prop(xp_ext, "export_path")
             box.operator("xp_ext.set_export_paths", text="Set All Export Paths")
+
+        layout.separator()
+
+        box = layout.box()
+        box.prop(xp_ext, "menu_bulk_lods_expanded", text="Bulk LODs", icon='TRIA_DOWN' if xp_ext.menu_bulk_lods_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_bulk_lods_expanded:
+            box.prop(xp_ext, "lod_count")
+            lod_count = xp_ext.lod_count
+            if lod_count > 0:
+                row = box.row()
+                row.prop(xp_ext, "lod_0_start")
+                row.prop(xp_ext, "lod_0_end")
+            if lod_count > 1:
+                row = box.row()
+                row.prop(xp_ext, "lod_1_start")
+                row.prop(xp_ext, "lod_1_end")
+            if lod_count > 2:
+                row = box.row()
+                row.prop(xp_ext, "lod_2_start")
+                row.prop(xp_ext, "lod_2_end")
+            if lod_count > 3:
+                row = box.row()
+                row.prop(xp_ext, "lod_3_start")
+                row.prop(xp_ext, "lod_3_end")
+            box.operator("xp_ext.set_lods", text="Set LODs")
+
+        layout.separator()
+        box = layout.box()
+        box.prop(xp_ext, "attached_objects_expanded", text="Attached Objects", icon='TRIA_DOWN' if xp_ext.attached_objects_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.attached_objects_expanded:
+            box.operator("xp_ext.replace_object_names", text="Batch Replace Attached Object Resources")
+            box.operator("xp_ext.select_by_object_names", text="Select Attached Objects by Resoucre")
+            box.label(text="Attached Object Selectability")
+            row = box.row()
+            row.operator("xp_ext.make_only_attached_selectable", text="Only Attached")
+            row.operator("xp_ext.restore_selectability", text="All")
+
+        layout.separator()
+        box = layout.box()
+        box.prop(xp_ext, "preview_objects_expanded", text="Preview Objects", icon='TRIA_DOWN' if xp_ext.preview_objects_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.preview_objects_expanded:
+            clear_all = box.operator("xp_ext.clear_attached_object_preview", text="Clear Attached Obj Previews")
+            clear_all.do_all_objects = True
+            update_all = box.operator("xp_ext.preview_attached_object", text="Reload Attached Obj Previews")
+            update_all.do_all_objects = True
+            update_all.reload = True
+            update_all_missing = box.operator("xp_ext.preview_attached_object", text="Load Missing Attached Obj Previews")
+            update_all_missing.do_all_objects = True
+            update_all_missing.reload = False
+
+        layout.separator()
+        
+        box = layout.box()
+        box.prop(xp_ext, "menu_lod_preview_expanded", text="LOD Preview", icon='TRIA_DOWN' if xp_ext.menu_lod_preview_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_lod_preview_expanded:
+            box.prop(xp_ext, "lod_distance_preview")
+            box.operator("xp_ext.preview_lods_for_distance", text="Preview LODs for Distance")
 
         layout.separator()
         
@@ -956,59 +1013,6 @@ class MENU_operations(bpy.types.Panel):
             box.separator()
             box.operator("xp_ext.generate_flipbook_animation")
             box.operator("xp_ext.auto_keyframe_animation")
-
-        layout.separator()
-
-        box = layout.box()
-        box.prop(xp_ext, "menu_lod_preview_expanded", text="Level of Detail (LOD) Preview", icon='TRIA_DOWN' if xp_ext.menu_lod_preview_expanded else 'TRIA_RIGHT', emboss=False)
-        if xp_ext.menu_lod_preview_expanded:
-            box.prop(xp_ext, "lod_distance_preview")
-            box.operator("xp_ext.preview_lods_for_distance", text="Preview LODs for Distance")
-
-        layout.separator()
-
-        box = layout.box()
-        box.prop(xp_ext, "menu_bulk_lods_expanded", text="Bulk LODs", icon='TRIA_DOWN' if xp_ext.menu_bulk_lods_expanded else 'TRIA_RIGHT', emboss=False)
-        if xp_ext.menu_bulk_lods_expanded:
-            box.prop(xp_ext, "lod_count")
-            lod_count = xp_ext.lod_count
-            if lod_count > 0:
-                row = box.row()
-                row.prop(xp_ext, "lod_0_start")
-                row.prop(xp_ext, "lod_0_end")
-            if lod_count > 1:
-                row = box.row()
-                row.prop(xp_ext, "lod_1_start")
-                row.prop(xp_ext, "lod_1_end")
-            if lod_count > 2:
-                row = box.row()
-                row.prop(xp_ext, "lod_2_start")
-                row.prop(xp_ext, "lod_2_end")
-            if lod_count > 3:
-                row = box.row()
-                row.prop(xp_ext, "lod_3_start")
-                row.prop(xp_ext, "lod_3_end")
-            box.operator("xp_ext.set_lods", text="Set LODs")
-
-        layout.separator()
-        box = layout.box()
-        box.prop(xp_ext, "preview_objects_expanded", text="Preview Objects", icon='TRIA_DOWN' if xp_ext.preview_objects_expanded else 'TRIA_RIGHT', emboss=False)
-        if xp_ext.preview_objects_expanded:
-            clear_all = box.operator("xp_ext.clear_attached_object_preview", text="Clear Attached Obj Previews")
-            clear_all.do_all_objects = True
-            update_all = box.operator("xp_ext.preview_attached_object", text="Reload Attached Obj Previews")
-            update_all.do_all_objects = True
-            update_all.reload = True
-            update_all_missing = box.operator("xp_ext.preview_attached_object", text="Load Missing Attached Obj Previews")
-            update_all_missing.do_all_objects = True
-            update_all_missing.reload = False
-
-        layout.separator()
-        box = layout.box()
-        box.prop(xp_ext, "utilities_expanded", text="Utilities", icon='TRIA_DOWN' if xp_ext.utilities_expanded else 'TRIA_RIGHT', emboss=False)
-        if xp_ext.utilities_expanded:
-            box.operator("xp_ext.replace_object_names", text="Batch Replace Attached Object Resources")
-            box.operator("xp_ext.select_by_object_names", text="Select Attached Objects by Resoucre")
 
         do_test_operators = False
         if do_test_operators:

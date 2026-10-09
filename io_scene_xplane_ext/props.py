@@ -624,9 +624,9 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         default=False
     ) # type: ignore
 
-    utilities_expanded: bpy.props.BoolProperty(
-        name="Utilities Expanded",
-        description="Whether the utilities section is expanded in the UI",
+    attached_objects_expanded: bpy.props.BoolProperty(
+        name="Attached Objects Expanded",
+        description="Whether the attached objects section is expanded in the UI",
         default=False
     ) # type: ignore
 
