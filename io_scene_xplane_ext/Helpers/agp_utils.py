@@ -483,7 +483,7 @@ def create_obj_from_perimeter(perimeter, extrude_height=0.0):
 
     return new_obj
 
-def recursively_split_objects(in_object:bpy.types.Object):
+def recursively_split_objects(in_object: bpy.types.Object, include_self: bool = True):
     """
     Duplicates and splits the current object by material
     Parent and animation data automatically copy to the new objects in the duplicate and split operators
@@ -491,66 +491,50 @@ def recursively_split_objects(in_object:bpy.types.Object):
     If the object is a light it will still be duplicated and put in the return list
     Args:
         in_object (bpy.types.Object): The object to split.
+        include_self (bool): Whether to split the input object as well as its descendants.
     Returns:
         list: A list of newly created objects that are split by material.
     """
 
     resulting_objects = []
+    objects_to_process = [in_object]
+    selection_cleared = False
 
-    #Split mesh objects by material
-    if in_object.type == 'MESH' and not in_object.hide_get() and not in_object.hide_select:
-        #Deselect all in obj mode
-        bpy.context.view_layer.objects.active = in_object
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.select_all(action='DESELECT')
+    while objects_to_process:
+        current_object = objects_to_process.pop()
+        objects_to_process.extend(reversed(current_object.children))
 
-        #Select and duplicate the object
-        bpy.context.view_layer.objects.active = in_object
-        in_object.select_set(True)
+        if current_object == in_object and not include_self:
+            continue
+
+        if current_object.type not in {'MESH', 'LIGHT'} or current_object.hide_get() or current_object.hide_select:
+            continue
+
+        bpy.context.view_layer.objects.active = current_object
+        if bpy.context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        if not selection_cleared:
+            bpy.ops.object.select_all(action='DESELECT')
+            selection_cleared = True
+
+        current_object.select_set(True)
         bpy.ops.object.duplicate(linked=False)
-        obj = bpy.context.active_object
-        in_object.select_set(False)
-        obj.select_set(True)
+        duplicate = bpy.context.active_object
+        current_object.select_set(False)
 
-        # If there are multiple materials, split the object
-        if len(obj.data.materials) > 1:
-            
-            # Enter edit mode, select all, split by material, return to obj mode
+        if current_object.type == 'MESH' and len(duplicate.data.materials) > 1:
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.separate(type='MATERIAL')
             bpy.ops.object.mode_set(mode='OBJECT')
-            
-            # Get the newly created objects
-            resulting_objects.extend(bpy.context.selected_objects)
-            
-            # Deselect all objects
-            bpy.ops.object.select_all(action='DESELECT')
-        else:
-            #Safety check to ensure we never add the original object, resulting in data loss
-            if obj != in_object:
-                resulting_objects.append(obj)
-    elif in_object.type == 'LIGHT' and not in_object.hide_get() and not in_object.hide_select:
-        # If the object is a light, just duplicate it
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.select_all(action='DESELECT')
 
-        #Select and duplicate the object
-        bpy.context.view_layer.objects.active = in_object
-        in_object.select_set(True)
-        bpy.ops.object.duplicate(linked=False)
-        obj = bpy.context.active_object
-        in_object.select_set(False)
-        obj.select_set(True)
-
-        # Add the duplicated light to the resulting objects
-        # Safety check to ensure we never add the original object, resulting in data loss
-        if obj != in_object:
-            resulting_objects.append(obj)
-
-    # Recurse on children
-    for child in in_object.children:
-        resulting_objects.extend(recursively_split_objects(child))
+            for split_object in list(bpy.context.selected_objects):
+                resulting_objects.append(split_object)
+                split_object.select_set(False)
+        elif duplicate != current_object:
+            resulting_objects.append(duplicate)
+            duplicate.select_set(False)
 
     return resulting_objects
 

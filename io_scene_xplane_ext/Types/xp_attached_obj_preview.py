@@ -27,7 +27,6 @@ from bpy.app.handlers import persistent # type: ignore
 #Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
 obj_does_use_lods = False
 existing_objects = set()
-currently_processing = set()
 collection_children_lengths : dict[str, int] = {}
 locked_preview_obj_update = False
 
@@ -318,20 +317,22 @@ class attached_object_preview:
         
         #Join all objects into one
         joined_obj = geometery_utils.join_objects(all_objs, self.name)
-        joined_obj.xp_attached_obj.exportable = False
-        joined_obj.xp_agp.exportable = False
-        joined_obj.xp_fac_mesh.exportable = False
-        joined_obj['xp_ext_preview_object'] = True
-        joined_obj['xp_ext_preview_filepath'] = self.filepath
-            
+
         #Link to the collection and set parent
         if not make_real:
+            joined_obj.xp_attached_obj.exportable = False
+            joined_obj.xp_agp.exportable = False
+            joined_obj.xp_fac_mesh.exportable = False
+            joined_obj['xp_ext_preview_object'] = True
+            joined_obj['xp_ext_preview_filepath'] = self.filepath
             joined_obj.parent = target_parent
             joined_obj.hide_select = True
         else:
             joined_obj.matrix_world = target_parent.matrix_world.copy()  #Copy the location/rotation/scale of the parent, but don't parent it, so it can be edited independently
             joined_obj.parent = None
             joined_obj.hide_select = False
+
+        return joined_obj
 
 def _get_existing_instance(in_path : str):
     for obj in bpy.data.objects:
@@ -340,8 +341,9 @@ def _get_existing_instance(in_path : str):
     return None
 
 def process_single_object(obj : bpy.types.Object, make_real):
-
+    lock_preview_obj_update()
     if obj.type != 'EMPTY':
+        unlock_preview_obj_update()
         return
 
     for child in obj.children:
@@ -349,9 +351,14 @@ def process_single_object(obj : bpy.types.Object, make_real):
             bpy.data.objects.remove(child, do_unlink=True)
 
     resource = get_effective_preview_resource(obj)
+
+    if file_utils.is_empty(resource):
+        unlock_preview_obj_update()
+        return
     
     if not os.path.isfile(file_utils.to_absolute(resource)):
         log_utils.warning(f"Attached object preview resource '{resource}' not found.")
+        unlock_preview_obj_update()
         return
 
     parent_collection = None
@@ -363,7 +370,12 @@ def process_single_object(obj : bpy.types.Object, make_real):
 
     existing_inst = _get_existing_instance(resource)
 
-    if existing_inst is not None:
+    #Get a list of selected objects and the active object so that we can restore them after
+    selected_objects = list(bpy.context.selected_objects)
+    active_object = bpy.context.view_layer.objects.active
+
+    new_obj = None
+    if existing_inst is not None and not make_real:
         #Create a new object based on the existing instance, set hide_select, and parent it
         new_obj = bpy.data.objects.new(name=os.path.basename(resource), object_data=existing_inst.data)
         new_obj.hide_select = True
@@ -375,22 +387,40 @@ def process_single_object(obj : bpy.types.Object, make_real):
         new_obj['xp_ext_preview_filepath'] = resource
         if parent_collection is not None:
             parent_collection.objects.link(new_obj)
-    if existing_inst is None:
+    else:
         #Read and add
-        new_obj = attached_object_preview()
-        new_obj.read(resource)
-        new_obj.to_scene(obj, parent_collection, make_real)
+        new_obj_loader = attached_object_preview()
+        new_obj_loader.read(resource)
+        new_obj = new_obj_loader.to_scene(obj, parent_collection, make_real)
 
-def update_previews_for_resources(resources: set[str], make_real):
+    if make_real and new_obj is not None:
+        #Make the object data single user, and make the object selectable
+        if new_obj.data is not None:
+            new_obj.data = new_obj.data.copy()
+        new_obj.hide_select = False
+
+    #Restore the selection and active object
+    bpy.ops.object.select_all(action='DESELECT')
+    for sel_obj in selected_objects:
+        sel_obj.select_set(True)
+    bpy.context.view_layer.objects.active = active_object
+
+    unlock_preview_obj_update()
+
+def update_previews_for_resources(resources: set[str]):
+    parents_to_update = set()
     for obj in list(bpy.data.objects):
         if 'xp_ext_preview_filepath' in obj:
             if obj['xp_ext_preview_filepath'] in resources:
+                # We don't need to check the resource here since we check it later
+                if obj.parent is not None and obj.parent.xp_agp.exportable and obj.parent.xp_agp.type == "ATTACHED_OBJ":
+                    parents_to_update.add(obj.parent)
                 bpy.data.objects.remove(obj, do_unlink=True)
-    for obj in list(bpy.data.objects):
+    for obj in parents_to_update:
         try:
             res = get_effective_preview_resource(obj)
             if res in resources:
-                process_single_object(obj, make_real)
+                process_single_object(obj, False)
         except Exception as e:
             pass
         
@@ -413,7 +443,6 @@ def update_attached_obj_previews(scene, depsgraph):
         return
     
     global existing_objects
-    global currently_processing
 
     # We need to check if the user moved a preview object *parent* to a different collection. The quickest way (well, probably better ways but I like simple, especially here) is just check if there is a different length of objects in any of the collections. If so, *something* moved, so we'll check everyone
     global collection_children_lengths
@@ -458,11 +487,7 @@ def update_attached_obj_previews(scene, depsgraph):
         for uid in added_objects:
             
             obj = current_objects_to_bpy[uid]
-            if obj.session_uid in currently_processing:
-                continue
-            currently_processing.add(obj.session_uid)
             process_single_object(obj, False)
-            currently_processing.remove(obj.session_uid)
 
     #Re-select the original active object
     for obj in selected_objects:

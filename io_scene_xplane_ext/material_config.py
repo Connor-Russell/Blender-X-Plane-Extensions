@@ -575,6 +575,13 @@ def update_nodes(material: bpy.types.Material):
             node_alb.image = material.xp_materials.preview_image
             material.node_tree.links.new(node_principled.outputs[0], node_output.inputs[0])
             material.node_tree.links.new(node_alb.outputs[0], node_principled.inputs[0])
+            material.node_tree.links.new(node_alb.outputs["Alpha"], node_principled.inputs["Alpha"])
+            if bpy.app.version < (3, 0, 0):
+                material.node_tree.links.new(node_alb.outputs[1], node_principled.inputs[19])
+            elif bpy.app.version < (4, 0, 0):
+                material.node_tree.links.new(node_alb.outputs[1], node_principled.inputs[21])
+            else:
+                material.node_tree.links.new(node_alb.outputs[1], node_principled.inputs[4])
             return
 
         #Define variables to hold the imagese
@@ -1423,48 +1430,79 @@ def materials_are_equivalent(mat1, mat2):
             return False
     return True
 
+def decals_are_compatible(dcl1, dcl2):
+    if not dcl1.enabled and not dcl2.enabled:
+        return True
+
+    properties = (
+        "enabled",
+        "texture",
+        "is_normal",
+        "projected",
+        "tile_ratio",
+        "scale_x",
+        "scale_y",
+        "dither_ratio",
+        "strength_constant",
+        "strength_modulator",
+        "strength_key_red",
+        "strength_key_green",
+        "strength_key_blue",
+        "strength_key_alpha",
+        "strength2_constant",
+        "strength2_modulator",
+        "strength2_key_red",
+        "strength2_key_green",
+        "strength2_key_blue",
+        "strength2_key_alpha",
+        "roughness_boost_factor",
+    )
+    for property_name in properties:
+        value_1 = getattr(dcl1, property_name)
+        value_2 = getattr(dcl2, property_name)
+        if value_1 != value_2:
+            return False
+    return True
+
 def materials_are_compatible(mat1, mat2):
     """
     This function checks if two materials are compatible for being in the same object. This means checking the textures, max brightness, decal settings, alpha settings, weather settings, and layer group settings. If any differ, we return false
     """
 
     if mat1 is None or mat2 is None:
-            return mat1 is mat2
+        compatible = mat1 is mat2
+        if not compatible:
+            print("Materials are incompatible: one material is not assigned")
+        return compatible
         
     xm1 = mat1.xp_materials
     xm2 = mat2.xp_materials
-    if xm1.alb_texture != xm2.alb_texture:
+    properties = (
+        "alb_texture",
+        "material_texture",
+        "do_separate_material_texture",
+        "normal_texture",
+        "normal_tile_ratio",
+        "lit_texture",
+        "weather_mode",
+        "weather_texture",
+        "brightness",
+        "layer_group",
+        "layer_group_offset",
+        "blend_mode",
+        "blend_cutoff",
+        "max_brightness",
+        "decal_modulator",
+    )
+    for property_name in properties:
+        if getattr(xm1, property_name) != getattr(xm2, property_name):
+            return False
+
+    if len(xm1.decals) != len(xm2.decals):
         return False
-    if xm1.material_texture != xm2.material_texture:
-        return False
-    if xm1.do_separate_material_texture != xm2.do_separate_material_texture:
-        return False
-    if xm1.normal_texture != xm2.normal_texture:
-        return False
-    if xm1.normal_tile_ratio != xm2.normal_tile_ratio:
-        return False
-    if xm1.lit_texture != xm2.lit_texture:
-        return False
-    if xm1.weather_mode != xm2.weather_mode:
-        return False
-    if xm1.weather_texture != xm2.weather_texture:
-        return False
-    if xm1.brightness != xm2.brightness:
-        return False
-    if xm1.layer_group != xm2.layer_group:
-        return False
-    if xm1.layer_group_offset != xm2.layer_group_offset:
-        return False
-    if xm1.blend_mode != xm2.blend_mode:
-        return False
-    if xm1.blend_cutoff != xm2.blend_cutoff:
-        return False
-    if xm1.max_brightness != xm2.max_brightness:
-        return False
-    if xm1.decal_modulator != xm2.decal_modulator:
-        return False
-    for decal1, decal2 in zip(xm1.decals, xm2.decals):
-        if decal1 != decal2:
+
+    for decal_index, (decal1, decal2) in enumerate(zip(xm1.decals, xm2.decals)):
+        if not decals_are_compatible(decal1, decal2):
             return False
     return True
     

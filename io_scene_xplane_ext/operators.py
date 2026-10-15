@@ -210,8 +210,7 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         #If the material has an albedo texture, use that as our name
         if not file_utils.is_empty(material.xp_materials.alb_texture):
             name = material.xp_materials.alb_texture
-            name = name.replace("//", "")
-            base_search_path = "//"
+            base_search_path = ""
 
         #Remove the extension from the name
         name = name.replace(".png", "")
@@ -1630,53 +1629,77 @@ class BTN_preview_attached_object(bpy.types.Operator):
     )
 
     def execute(self, context):
-        log_utils.new_section("Preview attached object")
+        xp_attached_obj_preview.lock_preview_obj_update()
+        try:
+            log_utils.new_section("Preview attached object")
 
-        # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
-        # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
-        # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
-        selected_objects = list(context.selected_objects)
-        original_active_object = context.active_object
+            # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
+            # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
+            # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
+            selected_objects = list(context.selected_objects)
+            original_active_object = context.active_object
 
-        target_objects = []
+            target_objects = []
 
-        # Determine the scope
-        if self.do_all_objects:
-            target_objects = list(bpy.data.objects)
-        else:
-            target_objects = selected_objects
+            # Determine the scope
+            if self.do_all_objects:
+                target_objects = list(bpy.data.objects)
+            else:
+                target_objects = selected_objects
 
-        # Get a list of objects that need to be cleared (for reload)
-        reload_resources = set()
-        if self.reload:
-            for obj in target_objects:
-                resource = xp_attached_obj_preview.get_effective_preview_resource(obj)
-                if resource != "":
-                    reload_resources.add(resource)
-            xp_attached_obj_preview.update_previews_for_resources(reload_resources, self.make_real)
-        else:
-            for obj in target_objects:
-                try:
-                    if not self.reload:
-                        if len(obj.children) > 0:
-                            continue
-                    print(f"Processing object: {obj.name}")
-                    xp_attached_obj_preview.process_single_object(obj, self.make_real)
-                    print(f"Finished processing object: {obj.name}")
-                except Exception as e:
-                    pass
+            # Get a list of objects that need to be cleared (for reload)
+            reload_resources = set()
+            if self.reload and not self.make_real:
+                for obj in target_objects:
+                    resource = xp_attached_obj_preview.get_effective_preview_resource(obj)
+                    if resource != "":
+                        reload_resources.add(resource)
+                # Update the previews for any objects already loaded
+                xp_attached_obj_preview.update_previews_for_resources(reload_resources)
 
-        log_utils.display_messages()
+                # Now load the previews for us. If other instances of this object were loaded this will end up linking to their object data, hence why we needed to reload them first
+                for obj in target_objects:
+                    try:
+                        xp_attached_obj_preview.process_single_object(obj, self.make_real)
+                    except Exception as e:
+                        # Try to log it, but if this is an error that the object no longer exists the logging will fail! SO we have to try block that
+                        try:
+                            log_utils.warning(f"Failed to process object {obj.name}: {e}")
+                        except:
+                            pass
+                        pass
+            else:
+                for obj in target_objects:
+                    try:
+                        if not self.reload:
+                            if len(obj.children) > 0:
+                                continue
+                        print(f"Processing object: {obj.name}")
+                        xp_attached_obj_preview.process_single_object(obj, self.make_real)
+                        print(f"Finished processing object: {obj.name}")
+                    except Exception as e:
+                        log_utils.warning(f"Failed to process object {obj.name}: {e}")
+                        # Log teh callstack
+                        import traceback
+                        traceback.print_exc()
+                        pass
 
-        #Deselect all objects
-        for obj in context.scene.objects:
-            obj.select_set(False)
+            log_utils.display_messages()
 
-        #Re-select the original active object
-        for obj in selected_objects:
-            obj.select_set(True)
-        if original_active_object is not None:
-            context.view_layer.objects.active = original_active_object
+            #Deselect all objects
+            for obj in context.scene.objects:
+                obj.select_set(False)
+
+            #Re-select the original active object
+            for obj in selected_objects:
+                obj.select_set(True)
+            if original_active_object is not None:
+                context.view_layer.objects.active = original_active_object
+        except Exception as e:
+            raise e
+        finally:
+            xp_attached_obj_preview.unlock_preview_obj_update()
+            pass
 
         return {'FINISHED'}
 
@@ -1732,44 +1755,51 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
         )
 
     def execute(self, context):
-        log_utils.new_section("Clear attached object preview")
+        xp_attached_obj_preview.lock_preview_obj_update()
+        try:
+            log_utils.new_section("Clear attached object preview")
 
-        # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
-        # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
-        # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
-        selected_objects = context.selected_objects
+            # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
+            # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
+            # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
+            selected_objects = context.selected_objects
 
-        target_objects = selected_objects
+            target_objects = selected_objects
 
-        if self.do_all_objects:
-            target_objects = bpy.data.objects
+            if self.do_all_objects:
+                target_objects = bpy.data.objects
 
-        for obj in target_objects:
-            try:
-                if not obj or not obj.type:
-                    continue
-                if obj.type != 'EMPTY':
-                    continue
+            for obj in target_objects:
+                try:
+                    if not obj or not obj.type:
+                        continue
+                    if obj.type != 'EMPTY':
+                        continue
 
-                for child in obj.children:
-                    if 'xp_ext_preview_filepath' in child:
-                        bpy.data.objects.remove(child, do_unlink=True)
+                    for child in obj.children:
+                        if 'xp_ext_preview_filepath' in child:
+                            bpy.data.objects.remove(child, do_unlink=True)
 
-                resource = ""
-                if obj.xp_attached_obj.exportable:
-                    resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
-                elif obj.xp_agp.type == 'ATTACHED_OBJ':
-                    resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
-                else:
-                    continue
+                    resource = ""
+                    if obj.xp_attached_obj.exportable:
+                        resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
+                    elif obj.xp_agp.type == 'ATTACHED_OBJ':
+                        resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
+                    else:
+                        continue
 
-                #Iterate through obj's children. If mesh, and hide_select, delete it
-                for child in obj.children:
-                    if child.type == 'MESH' and child.hide_select:
-                        bpy.data.objects.remove(child, do_unlink=True)
-            except Exception as e:
-                log_utils.warning(f"Failed to clear attached object preview for {obj.name}: {e}")
-        log_utils.display_messages()
+                    #Iterate through obj's children. If mesh, and hide_select, delete it
+                    for child in obj.children:
+                        if child.type == 'MESH' and child.hide_select:
+                            bpy.data.objects.remove(child, do_unlink=True)
+                except Exception as e:
+                    log_utils.warning(f"Failed to clear attached object preview for {obj.name}: {e}")
+            log_utils.display_messages()
+        except Exception as e:
+            raise e
+        finally:
+            xp_attached_obj_preview.unlock_preview_obj_update()
+            pass
 
         return {'FINISHED'}
 

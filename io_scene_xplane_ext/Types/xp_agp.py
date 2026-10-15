@@ -544,8 +544,9 @@ class auto_split_obj:
 
         try:
             #Duplicate and split all the objects by material
-            for child in obj.children:
-                all_objs.extend(agp_utils.recursively_split_objects(child))
+            log_utils.info(f"Starting auto-split export for object {obj.name}")
+            all_objs.extend(agp_utils.recursively_split_objects(obj, include_self=False))
+            log_utils.info(f"Finished splitting got {len(all_objs)} objects")
 
             all_objs_have_mats = True
 
@@ -563,6 +564,8 @@ class auto_split_obj:
                     log_utils.warning(f"Object {split_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
             all_mats = list(set(all_mats))  # Dedupe
 
+            log_utils.info(f"All materials found, got {len(all_mats)} materials")
+
             #If we have no materials this could be a light only collection (why are you autosplitting this then??? but not my problem), so we'll need to make a collection for them
             if len(all_mats) == 0:
                 for split_obj in all_objs:
@@ -574,18 +577,15 @@ class auto_split_obj:
 
             #Now we need to check the parents for materials
             objects_with_no_mats : list[str] = []
-            for root_obj in obj.children:
-                cur_obj = root_obj
-                while cur_obj != None:
-                    if cur_obj.type == 'MESH':
-                        if len(cur_obj.data.materials) == 0:
-                            #Save this object name and only log it once
-                            objects_with_no_mats.append(cur_obj.name)
-                            if not cur_obj.name in objects_with_no_mats:
-                                log_utils.warning(f"Object {cur_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
+            for cur_obj in all_objs:
+                if cur_obj.type == 'MESH':
+                    if len(cur_obj.data.materials) == 0:
+                        #Save this object name and only log it once
+                        objects_with_no_mats.append(cur_obj.name)
+                        if not cur_obj.name in objects_with_no_mats:
+                            log_utils.warning(f"Object {cur_obj.name} has no materials assigned. X-Plane2Blender would throw an error on export!")
 
-                            all_objs_have_mats = False
-                    cur_obj = cur_obj.parent
+                        all_objs_have_mats = False
             
             if not all_objs_have_mats:
                 raise Exception(f"Some objects have no materials assigned. X-Plane2Blender would throw an error on export! Skipping export of autosplit object {obj.name}")
@@ -619,15 +619,11 @@ class auto_split_obj:
                     exportable_mats.add(mat)
                     mat_to_exportable[mat] = mat
 
-            # XP2B will fail if we use a light level on an instanced_scenery type, but it checks *every* material int he hierarchy. So, if any of our materials use that, we need to use scenery instead of instanced_scenery for all our objectss
-            need_scenery_mode = False
-            for mat in all_mats:
-                this_material = bpy.data.materials[mat]
-                if this_material is None:
-                    continue
-                if this_material.xp_materials.light_level_override or this_material.xp_materials.local_max_brightness > -1:
-                    need_scenery_mode = True
-                    break
+            log_utils.info(f"Determined exportable materials, got {len(exportable_mats)} materials")
+            mapping_message = f"Exporting {len(all_mats)} materials in {len(exportable_mats)} objects. Grouped as:"
+            for mat, exportable_mat in mat_to_exportable.items():
+                mapping_message += f"\n  {mat} -> {exportable_mat}"
+            log_utils.info(mapping_message)
 
             # Configure a collection for each material
             self.resoures = []
@@ -662,10 +658,7 @@ class auto_split_obj:
                 mat_collection.xplane.layer.name = file_utils.to_relative(obj_name)
                 self.resources.append(obj_rel_to_agp_path)
                 mat_collection.xplane.is_exportable_collection = True
-                if not need_scenery_mode:
-                    mat_collection.xplane.layer.export_type = 'instanced_scenery'
-                else:
-                    mat_collection.xplane.layer.export_type = 'scenery'
+                mat_collection.xplane.layer.export_type = 'instanced_scenery'
                 bpy.context.scene.collection.children.link(mat_collection)
                 mat_name_to_collection[mat] = mat_collection
 
@@ -1224,18 +1217,18 @@ class agp:
             self.layer_group_offset = mat.layer_group_offset
 
         #Now that we have the material setup, we need to load all the individual tiles and their children
-        if self.render_tiles:
-            for obj in in_collection.objects:
-                if obj.parent == None and obj.xp_agp.type == 'BASE_TILE' and obj.xp_agp.exportable:
-                    #Make sure the scale is 1,1,1
-                    if misc_utils.vectors_close(obj.scale, mathutils.Vector((1, 1, 1))) == False:
-                        log_utils.error(f"Error: Tile object {obj.name} has a scale other than 1,1,1. Please apply the scale then reexport!", "BASE_TILE must have scale of 1")
-                        return False
-                    new_tile = tile()
-                    if not new_tile.from_obj(obj, self.name):
-                        return False
-                    self.tiles.append(new_tile)
-        else:
+        for obj in in_collection.objects:
+            if obj.parent == None and obj.xp_agp.type == 'BASE_TILE' and obj.xp_agp.exportable:
+                #Make sure the scale is 1,1,1
+                if misc_utils.vectors_close(obj.scale, mathutils.Vector((1, 1, 1))) == False:
+                    log_utils.error(f"Error: Tile object {obj.name} has a scale other than 1,1,1. Please apply the scale then reexport!", "BASE_TILE must have scale of 1")
+                    return False
+                new_tile = tile()
+                if not new_tile.from_obj(obj, self.name):
+                    return False
+                self.tiles.append(new_tile)
+
+        if not self.render_tiles:
             if len(self.tiles) == 0:
                 new_tile = tile()
                 if not new_tile.from_collection(in_collection, self.name):

@@ -622,6 +622,7 @@ class MENU_agp_obj(bpy.types.Panel):
                 row = box.row()
                 btn_preview = row.operator("xp_ext.preview_attached_object", text="Preview Resource")
                 btn_preview.reload = True
+                btn_preview.make_real = False
                 row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
                 btn_real_preview = row.operator("xp_ext.preview_attached_object", text="Preview as Real Objects")
                 btn_real_preview.make_real = True
@@ -1174,6 +1175,7 @@ class MENU_attached_object(bpy.types.Panel):
             row = box.row()
             btn_preview = row.operator("xp_ext.preview_attached_object", text="Preview Resource")
             btn_preview.reload = True
+            btn_preview.make_real = False
             row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
             btn_real_preview = row.operator("xp_ext.preview_attached_object", text="Preview as Real Objects")
             btn_real_preview.make_real = True
