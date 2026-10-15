@@ -280,7 +280,7 @@ class line():
                 if len(tokens) > 2:
                     self.scale_y = float(tokens[2])
             if cmd == "SURFACE":
-                self.surface = tokens[1]
+                self.surface = tokens[1].upper()
 
             #Check for segments
             if cmd == "S_OFFSET":
