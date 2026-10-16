@@ -1626,6 +1626,7 @@ class PROP_fac_filtered_spelling_choices(bpy.types.PropertyGroup):
 class PROP_fac_spelling(bpy.types.PropertyGroup):
     is_ui_expanded: bpy.props.BoolProperty(name="UI Expanded", description="Whether the spelling is expanded in the UI", default=False, update=update_ui)# type: ignore
     entries: bpy.props.CollectionProperty(type=PROP_fac_filtered_spelling_choices)# type: ignore
+    repeat_core_count: bpy.props.IntProperty(name="Repeat Core Count", description="The number of times the core segments are repeated", default=0, min=0) # type: ignore
 
 class PROP_fac_wall(bpy.types.PropertyGroup):
     min_length: bpy.props.FloatProperty(name="Min Length", description="The minimum length of the wall", default=0, min=0, max=10000)# type: ignore

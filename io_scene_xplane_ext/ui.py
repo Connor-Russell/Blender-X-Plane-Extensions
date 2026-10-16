@@ -151,6 +151,8 @@ def draw_fac_spelling(layout, spelling, collection_name, floor_index, wall_index
     btn_rem.add = False
     
     if spelling.is_ui_expanded:
+        box.prop(spelling, "repeat_core_count", text="Repeat Core Count")
+
         for i, entry in enumerate(spelling.entries):
             draw_fac_spelling_entry(box, entry, collection_name, floor_index, wall_index, spelling_index, i)
 
