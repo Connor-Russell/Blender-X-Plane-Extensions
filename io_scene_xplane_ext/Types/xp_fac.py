@@ -111,9 +111,10 @@ class segment:
     def append_obj_resources(self, target_list, output_folder):
         for obj in self.attached_objects:
             target_list.append(file_utils.resolve_lib_or_real(obj.resource, output_folder))
-                    
+
 class spelling:
     def __init__(self):
+        self.repeat_core_count = 0  # If > 0 then all the core segments will be repeated this number of times in different wall segments so as to keep the ends at the ends
         self.segment_names = []  #List of all segment names in this spelling
 
 class wall:
@@ -158,6 +159,7 @@ class floor:
             #Load all the spelling params into this wall, and load all the names of the segments the spellings map to into our list of all segment names
             for cur_spelling in wall_rule.spellings:
                 new_spelling = spelling()
+                new_spelling.repeat_core_count = wall_rule.repeat_core_count
                 for entry in cur_spelling.entries:
                     all_segments_names.append(entry.collection)
                     new_spelling.segment_names.append(entry.collection)
@@ -867,21 +869,87 @@ class facade:
 
                 for cur_spelling in cur_wall.spellings:
 
-                    output += "SPELLING "
-                    for seg_name in cur_spelling.segment_names:
+                    repeat_count = cur_spelling.repeat_core_count
 
+                    def get_wall_idx_for_seg(seg_name):
                         idx_cur_wall = -1
                         for possible_idx, possible_wall in enumerate(cur_floor.all_segments):
                             if possible_wall.name == seg_name:
                                 idx_cur_wall = possible_idx
                                 break
+                        return idx_cur_wall
 
-                        if idx_cur_wall == -1:
-                            log_utils.error("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?", f"Collection {seg_name} could not be found")
-                            return
+                    if repeat_count >= 0 and len(cur_spelling.segment_names) > 2:
+                        output += "SPELLING "
+                        for seg_name in cur_spelling.segment_names:
 
-                        output += str(idx_cur_wall) + " "
-                    output += "\n"
+                            idx_cur_wall = get_wall_idx_for_seg(seg_name)
+
+                            if idx_cur_wall == -1:
+                                log_utils.error("Could not find wall: " + seg_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?", f"Collection {seg_name} could not be found")
+                                return
+
+                            output += str(idx_cur_wall) + " "
+                        output += "\n"
+                    # Segments with repeating cores
+                    else:
+                        #TODO: Test this logic
+                        # X-Plane repeats SPELLINGs to fill the distance of a wall in a facade placement
+                        # Often however we want a unique wall at the start and end, but having to make repeating spelling segments by hand is a pain
+                        # So users can specify a repeat count. This means the *entire* core segment is repeated this many times
+                        # Within each repetition, we will have a series of SPELLINGs with a growing number of core segmens, prefixed by the prior core segments
+                        # So if we have a segment with 2 core segments, and we repeat the whole thing twice, we will get
+                        # SPELLING 0 3
+                        # SPELLING 0 1 3
+                        # SPELLING 0 1 2 3
+                        # SPELLING 0 1 2 1 3
+                        # SPELLING 0 1 2 1 2 3
+                        for repeat in range(repeat_count):
+
+                            def add_core_segments(max_core_segments):
+                                for j in range(1, max_core_segments + 1):
+                                    segment_name = cur_spelling.segment_names[repeat]
+
+                                    idx_cur_wall = get_wall_idx_for_seg(segment_name)
+
+                                    if idx_cur_wall == -1:
+                                        log_utils.error("Could not find wall: " + segment_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?", f"Collection {segment_name} could not be found")
+                                        return
+
+                                    output += str(idx_cur_wall) + " "
+
+                            for sub_repeat in range(0, len(cur_spelling.segment_names) - 2):
+                                output += "SPELLING "
+
+                                # First wall
+                                segment_name = cur_spelling.segment_names[0]
+
+                                idx_cur_wall = get_wall_idx_for_seg(segment_name)
+
+                                if idx_cur_wall == -1:
+                                    log_utils.error("Could not find wall: " + segment_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?", f"Collection {segment_name} could not be found")
+                                    return
+
+                                output += str(idx_cur_wall) + " "
+
+                                for core_repeat in range(0, repeat):
+                                    output += add_core_segments(core_repeat)
+
+                                add_core_segments(sub_repeat)
+
+                                # Last wall
+                                segment_name = cur_spelling.segment_names[-1]
+
+                                idx_cur_wall = get_wall_idx_for_seg(segment_name)
+
+                                if idx_cur_wall == -1:
+                                    log_utils.error("Could not find wall: " + segment_name + " in spelling for wall: " + cur_wall.name + ". Maybe it was deleted?", f"Collection {segment_name} could not be found")
+                                    return
+
+                                output += str(idx_cur_wall) + " "
+
+                                output += "\n"
+                        
 
                 output += "\n"
 
