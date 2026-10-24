@@ -65,7 +65,7 @@ def create_obj_from_draw_call(vertices, indicies, name):
     bm.verts.ensure_lookup_table()
 
     #Create a uv layer
-    uv_layer = bm.loops.layers.uv.new()
+    uv_layer = bm.loops.layers.uv.new("UVMap")
 
     #Iterate through the indicies, 3 at a time, and create a face with the vertices at specified indicies
     i = 0
