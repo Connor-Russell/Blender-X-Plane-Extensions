@@ -532,9 +532,9 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         update=update_ui
     ) # type: ignore
 
-    menu_lod_preview_expanded: bpy.props.BoolProperty(
-        name="LOD Preview Menu Expanded",
-        description="Whether the LOD preview menu is expanded",
+    menu_preview_settings_expanded: bpy.props.BoolProperty(
+        name="Preview Settings Menu Expanded",
+        description="Whether the preview settings menu is expanded",
         default=False,
         update=update_ui
     ) # type: ignore
@@ -616,12 +616,6 @@ class PROP_xp_ext_scene(bpy.types.PropertyGroup):
         description="The end range for lod 3",
         default=0,
         min=0
-    ) # type: ignore
-
-    preview_objects_expanded: bpy.props.BoolProperty(
-        name="Preview Objects Expanded",
-        description="Whether the preview objects section is expanded in the UI",
-        default=False
     ) # type: ignore
 
     attached_objects_expanded: bpy.props.BoolProperty(

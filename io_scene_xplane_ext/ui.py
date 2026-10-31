@@ -910,7 +910,7 @@ class MENU_operations(bpy.types.Panel):
         layout.separator()
 
         box = layout.box()
-        box.prop(xp_ext, "menu_bulk_lods_expanded", text="Bulk LODs", icon='TRIA_DOWN' if xp_ext.menu_bulk_lods_expanded else 'TRIA_RIGHT', emboss=False)
+        box.prop(xp_ext, "menu_bulk_lods_expanded", text="Bulk Obj LODs", icon='TRIA_DOWN' if xp_ext.menu_bulk_lods_expanded else 'TRIA_RIGHT', emboss=False)
         if xp_ext.menu_bulk_lods_expanded:
             box.prop(xp_ext, "lod_count")
             lod_count = xp_ext.lod_count
@@ -934,7 +934,7 @@ class MENU_operations(bpy.types.Panel):
 
         layout.separator()
         box = layout.box()
-        box.prop(xp_ext, "attached_objects_expanded", text="Attached Objects", icon='TRIA_DOWN' if xp_ext.attached_objects_expanded else 'TRIA_RIGHT', emboss=False)
+        box.prop(xp_ext, "attached_objects_expanded", text="Attached .obj Operations", icon='TRIA_DOWN' if xp_ext.attached_objects_expanded else 'TRIA_RIGHT', emboss=False)
         if xp_ext.attached_objects_expanded:
             box.operator("xp_ext.replace_object_names", text="Batch Replace Attached Object Resources")
             box.operator("xp_ext.select_by_object_names", text="Select Attached Objects by Resoucre")
@@ -944,23 +944,21 @@ class MENU_operations(bpy.types.Panel):
             row.operator("xp_ext.restore_selectability", text="All")
 
         layout.separator()
-        box = layout.box()
-        box.prop(xp_ext, "preview_objects_expanded", text="Preview Objects", icon='TRIA_DOWN' if xp_ext.preview_objects_expanded else 'TRIA_RIGHT', emboss=False)
-        if xp_ext.preview_objects_expanded:
-            clear_all = box.operator("xp_ext.clear_attached_object_preview", text="Clear Attached Obj Previews")
-            clear_all.do_all_objects = True
-            update_all = box.operator("xp_ext.preview_attached_object", text="Reload Attached Obj Previews")
-            update_all.do_all_objects = True
-            update_all.reload = True
-            update_all_missing = box.operator("xp_ext.preview_attached_object", text="Load Missing Attached Obj Previews")
-            update_all_missing.do_all_objects = True
-            update_all_missing.reload = False
-
-        layout.separator()
         
         box = layout.box()
-        box.prop(xp_ext, "menu_lod_preview_expanded", text="LOD Preview", icon='TRIA_DOWN' if xp_ext.menu_lod_preview_expanded else 'TRIA_RIGHT', emboss=False)
-        if xp_ext.menu_lod_preview_expanded:
+        box.prop(xp_ext, "menu_preview_settings_expanded", text="Preview Settings", icon='TRIA_DOWN' if xp_ext.menu_preview_settings_expanded else 'TRIA_RIGHT', emboss=False)
+        if xp_ext.menu_preview_settings_expanded:
+            box.label(text="Attached Objects")
+            row = box.row()
+            clear_all = row.operator("xp_ext.clear_attached_object_preview", text="Clear Attached Obj Previews")
+            clear_all.do_all_objects = True
+            update_all = row.operator("xp_ext.preview_attached_object", text="Reload Attached Obj Previews")
+            update_all.do_all_objects = True
+            update_all.reload = True
+            update_all_missing = row.operator("xp_ext.preview_attached_object", text="Load Missing Attached Obj Previews")
+            update_all_missing.do_all_objects = True
+            update_all_missing.reload = False
+            box.label(text="LODs")
             box.prop(xp_ext, "lod_distance_preview")
             box.operator("xp_ext.preview_lods_for_distance", text="Preview LODs for Distance")
 

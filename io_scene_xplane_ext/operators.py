@@ -1779,19 +1779,7 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
                     for child in obj.children:
                         if 'xp_ext_preview_filepath' in child:
                             bpy.data.objects.remove(child, do_unlink=True)
-
-                    resource = ""
-                    if obj.xp_attached_obj.exportable:
-                        resource = file_utils.to_absolute(obj.xp_attached_obj.attached_obj_preview_resource)
-                    elif obj.xp_agp.type == 'ATTACHED_OBJ':
-                        resource = file_utils.to_absolute(obj.xp_agp.attached_obj_preview_resource)
-                    else:
-                        continue
-
-                    #Iterate through obj's children. If mesh, and hide_select, delete it
-                    for child in obj.children:
-                        if child.type == 'MESH' and child.hide_select:
-                            bpy.data.objects.remove(child, do_unlink=True)
+                   
                 except Exception as e:
                     log_utils.warning(f"Failed to clear attached object preview for {obj.name}: {e}")
             log_utils.display_messages()
