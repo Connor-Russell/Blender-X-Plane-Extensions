@@ -196,6 +196,12 @@ class XP_EXT_prefs(bpy.types.AddonPreferences):
         default="_MAT",
     ) #type: ignore
 
+    suffix_control: bpy.props.StringProperty(
+            name="Suffix Control",
+            description="Suffix for control files",
+            default="_CTL",
+        ) #type: ignore
+
     suffix_lod_bake: bpy.props.StringProperty(
         name="Suffix LOD Bake",
         description="Suffix for baked LOD textures",

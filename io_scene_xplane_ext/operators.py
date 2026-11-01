@@ -230,13 +230,14 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
             nml_check_path = file_utils.to_absolute(base_search_path + name + addon_prefs.suffix_normal + ".png")
             mat_check_path = file_utils.to_absolute(base_search_path + name + addon_prefs.suffix_material + ".png")
 
-        print(f"Checking for textures at {alb_check_path}, {nml_check_path}, {lit_check_path}, {mat_check_path}")
+        ctl_check_path = file_utils.to_absolute(base_search_path + name + addon_prefs.suffix_control + ".png")
 
         #Set properties if the paths exist
         material.xp_materials.alb_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(alb_check_path))
         material.xp_materials.normal_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(nml_check_path))
         material.xp_materials.lit_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(lit_check_path))
         material.xp_materials.material_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(mat_check_path))
+        material.xp_materials.control_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(ctl_check_path))
 
 
         #Return success
