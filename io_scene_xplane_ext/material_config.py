@@ -40,16 +40,16 @@ def _is_rgb_no_alpha_png(path):
         return False
 
 def operator_wrapped_update_settings(self = None, context = None):
-    if bpy.context.active_object == None:
-        return
-    
     if context != None and context.area != None:
         #Force a UI update
         context.area.tag_redraw()
 
+    if context == None:
+        context = bpy.context
+
     #This function is called when the user updates a property in the UI. It will call the update_settings function to update the material settings.
     #Get the material from the context
-    in_material = bpy.context.active_object.active_material
+    in_material = context.material
 
     #Check to make sure the material is not None
     if in_material == None:
@@ -59,16 +59,16 @@ def operator_wrapped_update_settings(self = None, context = None):
     update_settings(in_material)
 
 def operator_wrapped_update_nodes(self = None, context = None):
-    if bpy.context.active_object == None:
-        return
-
     if context != None and context.area != None:
         #Force a UI update
         context.area.tag_redraw()
+
+    if context == None:
+            context = bpy.context
     
     #This function is called when the user updates a property in the UI. It will call the update_nodes function to update the material nodes.
     #Get the material from the context
-    in_material = bpy.context.active_object.active_material
+    in_material = context.material
 
     #Check to make sure the material is not None
     if in_material == None:
@@ -357,6 +357,10 @@ def update_settings(in_material):
     xp_mat.decals[1].is_normal = False
     xp_mat.decals[2].is_normal = True
     xp_mat.decals[3].is_normal = True
+    xp_mat.decals[0].index = 0
+    xp_mat.decals[1].index = 1
+    xp_mat.decals[2].index = 2
+    xp_mat.decals[3].index = 3
 
     #Finally
     xp_mat.was_programmatically_updated = False

@@ -11,6 +11,7 @@ from bpy.app.handlers import persistent # type: ignore
 from .Helpers import log_utils
 from . import handler_callbacks
 from .Types import xp_attached_obj_preview
+from .Helpers import decal_utils
 import os
 
 #Enum for types. Can be START END or SEGMENT
@@ -90,9 +91,9 @@ def sanitize_prop_path_or_lib_path(in_path):
             return file_utils.to_relative(in_path, True)
         else:
             return in_path
-            
 
 last_update_was_programmatic = False
+updating_linked_decals = False
 
 def update_attached_obj_preview_fac(self, context):
     global last_update_was_programmatic
@@ -109,7 +110,6 @@ def update_attached_obj_preview_fac(self, context):
         except Exception as e:
             pass
         xp_attached_obj_preview.unlock_preview_obj_update()
-
 
 def update_attached_obj_preview_agp(self, context):
     global last_update_was_programmatic
@@ -142,6 +142,60 @@ def update_attached_obj_preview(self, context):
         except Exception as e:
             pass
         xp_attached_obj_preview.unlock_preview_obj_update()
+
+def update_linked_decals(self, context):
+    global updating_linked_decals
+    if updating_linked_decals:
+        return
+    updating_linked_decals = True
+
+    # Safety check
+    mat = context.material
+    if not mat:
+        updating_linked_decals = False
+        return
+
+    # Get reference to decals
+    dcl0 = mat.xp_materials.decals[0]
+    dcl1 = mat.xp_materials.decals[1]
+    dcl2 = mat.xp_materials.decals[2]
+    dcl3 = mat.xp_materials.decals[3]
+
+    # Determine the source and target
+    idx = self.index
+
+    src = None
+    tgt = None
+
+    if idx == 0:
+        src = dcl0
+        tgt = dcl2
+    elif idx == 1:
+        src = dcl1
+        tgt = dcl3
+    elif idx == 2:
+        src = dcl2
+        tgt = dcl0
+    elif idx == 3:
+        src = dcl3
+        tgt = dcl1
+
+    if not src or not tgt:
+        updating_linked_decals = False
+        return
+
+    # Sync the decal link states
+    tgt.linked = src.linked
+
+    update_ui(self, context)
+
+    # If linked, sync the keying
+    if not self.linked:
+        updating_linked_decals = False
+        return
+    
+    decal_utils.sync_decal_keying(src, tgt)
+    updating_linked_decals = False
 
 #General properties
 
@@ -248,6 +302,7 @@ class XP_EXT_prefs(bpy.types.AddonPreferences):
         layout.prop(self, "suffix_combined_normal")
         layout.prop(self, "suffix_normal")
         layout.prop(self, "suffix_material")
+        layout.prop(self, "suffix_control")
         layout.prop(self, "suffix_lod_bake")
 
 class PROP_attached_obj(bpy.types.PropertyGroup):
@@ -637,28 +692,31 @@ class PROP_decal(bpy.types.PropertyGroup):
     texture: bpy.props.StringProperty(name="Texture", description="The texture for the decal", default="", subtype='FILE_PATH', **path_options, update=update_ui)# type: ignore
     is_normal: bpy.props.BoolProperty(name="Normal", description="Whether the decal is a normal map decal", default=False, update=update_ui)# type: ignore
 
-    projected: bpy.props.BoolProperty(name="Projected", description="Whether the decal's UVs are projected, independant of the base UVs'", update=update_ui)# type: ignore
-    tile_ratio: bpy.props.FloatProperty(name="Tile Ratio", description="The ratio of the decal's tiling to the base texture's tiling", default=1.0)# type: ignore
-    scale_x: bpy.props.FloatProperty(name="Scale X", description="The scale of the decal in the x direction", default=1.0)# type: ignore
-    scale_y: bpy.props.FloatProperty(name="Scale Y", description="The scale of the decal in the y direction", default=1.0)# type: ignore
+    linked: bpy.props.BoolProperty(name="Linked", description="Whether this decal is linked to it's albedo or normal counterpart", default=False, update=update_linked_decals)# type: ignore
+    index: bpy.props.IntProperty(name="Index", description="Internal flag used for linkage of properties", default=0)# type: ignore
 
-    dither_ratio: bpy.props.FloatProperty(name="Dither Ratio", description="How much the alpha of the decal modulates the alpha of the base. Probably want this at 0 in a facade...")# type: ignore
+    projected: bpy.props.BoolProperty(name="Projected", description="Whether the decal's UVs are projected, independant of the base UVs'", update=update_linked_decals)# type: ignore
+    tile_ratio: bpy.props.FloatProperty(name="Tile Ratio", description="The ratio of the decal's tiling to the base texture's tiling", default=1.0, update=update_linked_decals)# type: ignore
+    scale_x: bpy.props.FloatProperty(name="Scale X", description="The scale of the decal in the x direction", default=1.0, update=update_linked_decals)# type: ignore
+    scale_y: bpy.props.FloatProperty(name="Scale Y", description="The scale of the decal in the y direction", default=1.0, update=update_linked_decals)# type: ignore
 
-    strength_constant: bpy.props.FloatProperty(name="RGB Strength Constant", description="How strong the RGB decal always is", default=1.0)# type: ignore
-    strength_modulator: bpy.props.FloatProperty(name="RGB Strength Modulator", description="How strong the effect of the keying or modulator texture is on RGB decal's application", default=0.0)# type: ignore
+    dither_ratio: bpy.props.FloatProperty(name="Dither Ratio", description="How much the alpha of the decal modulates the alpha of the base. Probably want this at 0 in a facade...", update=update_linked_decals)# type: ignore
 
-    strength_key_red: bpy.props.FloatProperty(name="Red key for RGB Decal", description="The red key for the RGB decal key", default=0.0)# type: ignore
-    strength_key_green: bpy.props.FloatProperty(name="Green key for RGB Decal", description="The green key for the RGB decal key", default=0.0)# type: ignore
-    strength_key_blue: bpy.props.FloatProperty(name="Blue key for RGB Decal", description="The blue key for the RGB decal key", default=0.0)# type: ignore
-    strength_key_alpha: bpy.props.FloatProperty(name="Alpha key for RGB Decal", description="The alpha key for the RGB decal key", default=0.0)# type: ignore
+    strength_constant: bpy.props.FloatProperty(name="RGB Strength Constant", description="How strong the RGB decal always is", default=1.0, update=update_linked_decals)# type: ignore
+    strength_modulator: bpy.props.FloatProperty(name="RGB Strength Modulator", description="How strong the effect of the keying or modulator texture is on RGB decal's application", default=0.0, update=update_linked_decals)# type: ignore
 
-    strength2_constant: bpy.props.FloatProperty(name="Alpha Strength Constant", description="How strong the alpha decal always is", default=1.0)# type: ignore
-    strength2_modulator: bpy.props.FloatProperty(name="Alpha Strength Modulator", description="How strong the effect of the keying or modulator texture is on alpha decal's application", default=0.0)# type: ignore
+    strength_key_red: bpy.props.FloatProperty(name="Red key for RGB Decal", description="The red key for the RGB decal key", default=0.0, update=update_linked_decals)# type: ignore
+    strength_key_green: bpy.props.FloatProperty(name="Green key for RGB Decal", description="The green key for the RGB decal key", default=0.0, update=update_linked_decals)# type: ignore
+    strength_key_blue: bpy.props.FloatProperty(name="Blue key for RGB Decal", description="The blue key for the RGB decal key", default=0.0, update=update_linked_decals)# type: ignore
+    strength_key_alpha: bpy.props.FloatProperty(name="Alpha key for RGB Decal", description="The alpha key for the RGB decal key", default=0.0, update=update_linked_decals)# type: ignore
 
-    strength2_key_red: bpy.props.FloatProperty(name="Red key for Alpha Decal", description="The red key for the alpha decal key", default=0.0)# type: ignore
-    strength2_key_green: bpy.props.FloatProperty(name="Green key for Alpha Decal", description="The green key for the alpha decal key", default=0.0)# type: ignore
-    strength2_key_blue: bpy.props.FloatProperty(name="Blue key for Alpha Decal", description="The blue key for the alpha decal key", default=0.0)# type: ignore
-    strength2_key_alpha: bpy.props.FloatProperty(name="Alpha key for Alpha Decal", description="The alpha key for the alpha decal key", default=0.0)# type: ignore
+    strength2_constant: bpy.props.FloatProperty(name="Alpha Strength Constant", description="How strong the alpha decal always is", default=1.0, update=update_linked_decals)# type: ignore
+    strength2_modulator: bpy.props.FloatProperty(name="Alpha Strength Modulator", description="How strong the effect of the keying or modulator texture is on alpha decal's application", default=0.0, update=update_linked_decals)# type: ignore
+
+    strength2_key_red: bpy.props.FloatProperty(name="Red key for Alpha Decal", description="The red key for the alpha decal key", default=0.0, update=update_linked_decals)# type: ignore
+    strength2_key_green: bpy.props.FloatProperty(name="Green key for Alpha Decal", description="The green key for the alpha decal key", default=0.0, update=update_linked_decals)# type: ignore
+    strength2_key_blue: bpy.props.FloatProperty(name="Blue key for Alpha Decal", description="The blue key for the alpha decal key", default=0.0, update=update_linked_decals)# type: ignore
+    strength2_key_alpha: bpy.props.FloatProperty(name="Alpha key for Alpha Decal", description="The alpha key for the alpha decal key", default=0.0, update=update_linked_decals)# type: ignore
 
     roughness_boost_factor: bpy.props.FloatProperty(name="Roughness Boost Factor", description="How much the decal modulator boosts the roughness when the decal is applied. 0 means no boost, 1 means full boost.", default=0.0)# type: ignore
 

@@ -7,7 +7,7 @@
 import os
 import bpy # type: ignore
 from . import props
-from .Helpers import file_utils    
+from .Helpers import file_utils
 
 def draw_decal_prop(layout, property_item, index, material_name=""):
     box = layout.box()
@@ -20,13 +20,16 @@ def draw_decal_prop(layout, property_item, index, material_name=""):
     col_left = split.column()
     row_left = col_left.row(align=True)
     row_left.alignment = 'LEFT'
+    
     row_left.prop(property_item, "is_ui_expanded", text=decal_name, icon='TRIA_DOWN' if property_item.is_ui_expanded else 'TRIA_RIGHT', emboss=False)
-    row_left.prop(property_item, "enabled", text="")
+    row_left.prop(property_item, "enabled", text="Enabled")
 
     #Copy and paste operators
     col_right = split.column()
     row_right = col_right.row(align=True)
     row_right.alignment = 'RIGHT'
+    row_right.prop(property_item, "linked", text="", icon='LINKED' if property_item.linked else 'UNLINKED')
+    row_right.separator()
     btn_copy = row_right.operator("xp_ext.copy_decal", text="", icon='COPYDOWN')
     btn_copy.decal_index = index
     btn_copy.material_name = material_name

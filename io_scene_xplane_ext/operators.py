@@ -237,7 +237,63 @@ class BTN_mats_autoodetect_textures(bpy.types.Operator):
         material.xp_materials.normal_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(nml_check_path))
         material.xp_materials.lit_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(lit_check_path))
         material.xp_materials.material_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(mat_check_path))
-        material.xp_materials.control_texture = file_utils.to_relative(file_utils.check_for_dds_or_png(ctl_check_path))
+        material.xp_materials.decal_modulator = file_utils.to_relative(file_utils.check_for_dds_or_png(ctl_check_path))
+
+        if (len(material.xp_materials.decals) == 4):
+            dcl0 = material.xp_materials.decals[0]
+            dcl1 = material.xp_materials.decals[1]
+            dcl2 = material.xp_materials.decals[2]
+            dcl3 = material.xp_materials.decals[3]
+            
+            # If decal 0 is enabled, and decal 2 is enabled, try decal 0's path with the combined, then normal suffixes
+            if (dcl0.enabled and dcl2.enabled) and (file_utils.is_empty(dcl0.texture) or file_utils.is_empty(dcl2.texture)):
+                # Detect decal 2 (normal) from decal 0 (albedo)
+                if file_utils.is_empty(dcl2.texture):
+                    dcl0_name = dcl0.texture
+                    dcl0_name = dcl0_name.replace(".png", "")
+                    dcl0_name = dcl0_name.replace(".dds", "")
+                    dcl0_name = dcl0_name.replace(addon_prefs.suffix_albedo, "")
+                    dcl0_nml_path = file_utils.to_absolute(dcl0_name + addon_prefs.suffix_combined_normal + ".png")
+                    dcl0_nrm_path = file_utils.to_absolute(dcl0_name + addon_prefs.suffix_normal + ".png")
+                    if os.path.exists(dcl0_nml_path):
+                        dcl2.texture = file_utils.to_relative(dcl0_nml_path, True)
+                    elif os.path.exists(dcl0_nrm_path):
+                        dcl2.texture = file_utils.to_relative(dcl0_nrm_path, True)
+                # Detect decal 0 (albedo) from decal 2 (normal)
+                if file_utils.is_empty(dcl0.texture):
+                    dcl2_name = dcl2.texture
+                    dcl2_name = dcl2_name.replace(".png", "")
+                    dcl2_name = dcl2_name.replace(".dds", "")
+                    dcl2_name = dcl2_name.replace(addon_prefs.suffix_normal, "")
+                    dcl2_name = dcl2_name.replace(addon_prefs.suffix_combined_normal, "")
+                    dcl2_alb_path = file_utils.to_absolute(dcl2_name + addon_prefs.suffix_albedo + ".png")
+                    if os.path.exists(dcl2_alb_path):
+                        dcl0.texture = file_utils.to_relative(dcl2_alb_path, True)
+            # If decal 1 is enabled, and decal 3 is enabled, try decal 1's path with the combined, then normal suffixes
+            if (dcl1.enabled and dcl3.enabled) and (file_utils.is_empty(dcl1.texture) or file_utils.is_empty(dcl3.texture)):
+                # Detect decal 3 (normal) from decal 1 (albedo)
+                if file_utils.is_empty(dcl3.texture):
+                    dcl1_name = dcl1.texture
+                    dcl1_name = dcl1_name.replace(".png", "")
+                    dcl1_name = dcl1_name.replace(".dds", "")
+                    dcl1_name = dcl1_name.replace(addon_prefs.suffix_albedo, "")
+                    dcl1_nml_path = file_utils.to_absolute(dcl1_name + addon_prefs.suffix_combined_normal + ".png")
+                    dcl1_nrm_path = file_utils.to_absolute(dcl1_name + addon_prefs.suffix_normal + ".png")
+                    if os.path.exists(dcl1_nrm_path):
+                        dcl3.texture = file_utils.to_relative(dcl1_nrm_path, True)
+                    if os.path.exists(dcl1_nml_path):
+                        dcl3.texture = file_utils.to_relative(dcl1_nml_path, True)
+                # Detect decal 1 (albedo) from decal 3 (normal)
+                if file_utils.is_empty(dcl1.texture):
+                    dcl3_name = dcl3.texture
+                    dcl3_name = dcl3_name.replace(".png", "")
+                    dcl3_name = dcl3_name.replace(".dds", "")
+                    dcl3_name = dcl3_name.replace(addon_prefs.suffix_normal, "")
+                    dcl3_alb_path = file_utils.to_absolute(dcl3_name + addon_prefs.suffix_albedo + ".png")
+                    if os.path.exists(dcl3_alb_path):
+                        dcl1.texture = file_utils.to_relative(dcl3_alb_path, True)
+
+                
 
 
         #Return success

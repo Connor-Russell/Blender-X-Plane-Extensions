@@ -9,6 +9,29 @@ import os
 from . import file_utils # type: ignore
 from . import log_utils # type: ignore
 
+def sync_decal_keying(in_decal_props, out_decal_props):
+    """
+    Copies decal parameters from the first decal property group to the second,
+    leaving slot-specific settings unchanged.
+    """
+    out_decal_props.projected = in_decal_props.projected
+    out_decal_props.tile_ratio = in_decal_props.tile_ratio
+    out_decal_props.scale_x = in_decal_props.scale_x
+    out_decal_props.scale_y = in_decal_props.scale_y
+    out_decal_props.strength_constant = in_decal_props.strength_constant
+    out_decal_props.strength_modulator = in_decal_props.strength_modulator
+    out_decal_props.strength_key_red = in_decal_props.strength_key_red
+    out_decal_props.strength_key_green = in_decal_props.strength_key_green
+    out_decal_props.strength_key_blue = in_decal_props.strength_key_blue
+    out_decal_props.strength_key_alpha = in_decal_props.strength_key_alpha
+    out_decal_props.strength2_constant = in_decal_props.strength2_constant
+    out_decal_props.strength2_modulator = in_decal_props.strength2_modulator
+    out_decal_props.strength2_key_red = in_decal_props.strength2_key_red
+    out_decal_props.strength2_key_green = in_decal_props.strength2_key_green
+    out_decal_props.strength2_key_blue = in_decal_props.strength2_key_blue
+    out_decal_props.strength2_key_alpha = in_decal_props.strength2_key_alpha
+    out_decal_props.roughness_boost_factor = in_decal_props.roughness_boost_factor
+
 def set_xp_decal_prop(in_collection, in_material, in_decal_prop, index):
     """
     Sets the X-Plane decal properties for a given collection and material.
