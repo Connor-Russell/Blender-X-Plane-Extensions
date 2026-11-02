@@ -39,17 +39,18 @@ def _is_rgb_no_alpha_png(path):
         log_utils.warning(f"Failed to determine if texture {path} is RGB without alpha for decal textures.")
         return False
 
-def operator_wrapped_update_settings(self = None, context = None):
+def prop_update_wrapped_update_settings(self = None, context = None):
     if context != None and context.area != None:
         #Force a UI update
         context.area.tag_redraw()
 
-    if context == None:
-        context = bpy.context
-
-    #This function is called when the user updates a property in the UI. It will call the update_settings function to update the material settings.
-    #Get the material from the context
-    in_material = context.material
+    if self == None:
+            return
+        
+    #This function is called when the user updates a property in the UI. It will call the update_nodes function to update the material nodes.
+    in_material = self.id_data
+    if in_material == None:
+        return
 
     #Check to make sure the material is not None
     if in_material == None:
@@ -58,17 +59,18 @@ def operator_wrapped_update_settings(self = None, context = None):
     #Call the update_settings function to update the material settings
     update_settings(in_material)
 
-def operator_wrapped_update_nodes(self = None, context = None):
+def prop_update_wrapped_update_nodes(self = None, context = None):
     if context != None and context.area != None:
         #Force a UI update
         context.area.tag_redraw()
 
-    if context == None:
-            context = bpy.context
+    if self == None:
+        return
     
     #This function is called when the user updates a property in the UI. It will call the update_nodes function to update the material nodes.
-    #Get the material from the context
-    in_material = context.material
+    in_material = self.id_data
+    if in_material == None:
+        return
 
     #Check to make sure the material is not None
     if in_material == None:

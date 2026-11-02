@@ -13,6 +13,7 @@ from . import handler_callbacks
 from .Types import xp_attached_obj_preview
 from .Helpers import decal_utils
 import os
+from .Helpers import log_utils
 
 #Enum for types. Can be START END or SEGMENT
 line_type = [
@@ -144,58 +145,63 @@ def update_attached_obj_preview(self, context):
         xp_attached_obj_preview.unlock_preview_obj_update()
 
 def update_linked_decals(self, context):
-    global updating_linked_decals
-    if updating_linked_decals:
-        return
-    updating_linked_decals = True
+    try:
+        global updating_linked_decals
+        if updating_linked_decals:
+            return
+        updating_linked_decals = True
 
-    # Safety check
-    mat = context.material
-    if not mat:
+        # Safety check
+        mat = self.id_data
+        if not mat:
+            updating_linked_decals = False
+            return
+
+        # Get reference to decals
+        dcl0 = mat.xp_materials.decals[0]
+        dcl1 = mat.xp_materials.decals[1]
+        dcl2 = mat.xp_materials.decals[2]
+        dcl3 = mat.xp_materials.decals[3]
+
+        # Determine the source and target
+        idx = self.index
+
+        src = None
+        tgt = None
+
+        if idx == 0:
+            src = dcl0
+            tgt = dcl2
+        elif idx == 1:
+            src = dcl1
+            tgt = dcl3
+        elif idx == 2:
+            src = dcl2
+            tgt = dcl0
+        elif idx == 3:
+            src = dcl3
+            tgt = dcl1
+
+        if not src or not tgt:
+            updating_linked_decals = False
+            return
+
+        # Sync the decal link states
+        tgt.linked = src.linked
+
+        update_ui(self, context)
+
+        # If linked, sync the keying
+        if not self.linked:
+            updating_linked_decals = False
+            return
+        
+        decal_utils.sync_decal_keying(src, tgt)
         updating_linked_decals = False
-        return
-
-    # Get reference to decals
-    dcl0 = mat.xp_materials.decals[0]
-    dcl1 = mat.xp_materials.decals[1]
-    dcl2 = mat.xp_materials.decals[2]
-    dcl3 = mat.xp_materials.decals[3]
-
-    # Determine the source and target
-    idx = self.index
-
-    src = None
-    tgt = None
-
-    if idx == 0:
-        src = dcl0
-        tgt = dcl2
-    elif idx == 1:
-        src = dcl1
-        tgt = dcl3
-    elif idx == 2:
-        src = dcl2
-        tgt = dcl0
-    elif idx == 3:
-        src = dcl3
-        tgt = dcl1
-
-    if not src or not tgt:
+    except Exception as e:
         updating_linked_decals = False
-        return
+        log_utils.error(str(e), "Error updating linked decal settings")
 
-    # Sync the decal link states
-    tgt.linked = src.linked
-
-    update_ui(self, context)
-
-    # If linked, sync the keying
-    if not self.linked:
-        updating_linked_decals = False
-        return
-    
-    decal_utils.sync_decal_keying(src, tgt)
-    updating_linked_decals = False
 
 #General properties
 
@@ -746,7 +752,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default="//",
         subtype='FILE_PATH',
         **path_options,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     material_texture: bpy.props.StringProperty(
@@ -755,7 +761,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default="//",
         subtype='FILE_PATH',
         **path_options,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     #If calling this from code, always set was_programmatically_updated to True first!!!
@@ -772,7 +778,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         name="Use separate Material Texture",
         description="Whether to use a separate material texture for the material",
         default=False,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     normal_texture: bpy.props.StringProperty(
@@ -781,7 +787,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default="//",
         subtype='FILE_PATH',
         **path_options,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     normal_tile_ratio: bpy.props.FloatProperty(
@@ -789,7 +795,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The number of times the normal tiles to the albedo",
         default=1,
         min=0,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     lit_texture: bpy.props.StringProperty(
@@ -798,7 +804,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default="//",
         subtype='FILE_PATH',
         **path_options,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     weather_texture: bpy.props.StringProperty(
@@ -807,7 +813,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default="//",
         subtype='FILE_PATH',
         **path_options,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     weather_mode: bpy.props.EnumProperty(
@@ -818,35 +824,35 @@ class PROP_mats(bpy.types.PropertyGroup):
                 ("TRANSPARENT", "Transparent", "The weather effects of what is behind this asset show through"),
                 ("TEXTURE", "Texture", "Weather effects are controlled by the weather texture")],
         default="DEFAULT",
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     brightness: bpy.props.FloatProperty(
         name="Brightness",
         description="The brightness of the LIT texture in NITs. -1 to leave default",
         default=-1,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     max_brightness: bpy.props.IntProperty(
             name="Max Brightness",
             description="The maximum brightness of the LIT texture in NITs. -1 to leave default. Applies to the entire object",
             default=-1,
-            update=material_config.operator_wrapped_update_settings
+            update=material_config.prop_update_wrapped_update_settings
         ) # type: ignore
 
     local_max_brightness: bpy.props.IntProperty(
                 name="Max Brightness",
                 description="The maximum brightness of this material's LIT texture in NITs. -1 to leave default.",
                 default=-1,
-                update=material_config.operator_wrapped_update_settings
+                update=material_config.prop_update_wrapped_update_settings
             ) # type: ignore
 
     draped: bpy.props.BoolProperty(
         name="Draped",
         description="Is the material draped?",
         default=False,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     surface_type: bpy.props.EnumProperty(
@@ -854,14 +860,14 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The surface type of the material",
         items=collision_type_enum,
         default="NONE",
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     surface_is_deck: bpy.props.BoolProperty(
         name="Surface is Deck",
         description="Is the surface a deck you can fly under, or solid all the way to the ground?",
         default=False,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     layer_group: bpy.props.EnumProperty(
@@ -869,7 +875,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The layer group of the material",
         items=layer_group_enum,
         default='OBJECTS',
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     layer_group_offset: bpy.props.IntProperty(
@@ -878,7 +884,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0,
         min=-5,
         max=5,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     blend_mode: bpy.props.EnumProperty(
@@ -892,7 +898,7 @@ class PROP_mats(bpy.types.PropertyGroup):
             ('DITHER', "Alpha Dithered", "Draped exclusive, a mix of blend and no blend, with lower values providing sharper cutoffs")
         ],
         default='BLEND',
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     blend_cutoff: bpy.props.FloatProperty(
@@ -901,7 +907,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0.5,
         min=0,
         max=1,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     dither_cutoff: bpy.props.FloatProperty(
@@ -910,14 +916,14 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0.5,
         min=0,
         max=1,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     cast_shadow: bpy.props.BoolProperty(
         name="Casts Shadows",
         description="Does the material cast shadows?",
         default=True,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     polygon_offset: bpy.props.IntProperty(
@@ -926,28 +932,28 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=0,
         min=0,
         max=3,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     light_level_override: bpy.props.BoolProperty(
         name="Light Level Override",
         description="Whether the material overrides the light level",
         default=False,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     light_level_v1: bpy.props.FloatProperty(
         name="Light Level Value 1",
         description="Dataref value for no light",
         default=0.0,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     light_level_v2: bpy.props.FloatProperty(
         name="Light Level Value 2",
         description="Dataref value for full light",
         default=0.0,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     light_level_dataref: bpy.props.StringProperty(
@@ -955,14 +961,14 @@ class PROP_mats(bpy.types.PropertyGroup):
         description="The dataref to use for the light level override",
         default="",
         subtype='NONE',
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     light_level_photometric: bpy.props.BoolProperty(
         name="Photometric Light Level",
         description="Whether the light level override is photometric",
         default=False,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     light_level_brightness: bpy.props.IntProperty(
@@ -971,7 +977,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default=1,
         min=0,
         max=65535,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     #String modulator texture for the decals
@@ -981,7 +987,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         default="//",
         subtype='FILE_PATH',
         **path_options,
-        update=material_config.operator_wrapped_update_settings
+        update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 
     #Decal properties. Currently XP only supports 2 alb and 2 nml decals. However in the future this may change
@@ -995,7 +1001,7 @@ class PROP_mats(bpy.types.PropertyGroup):
     def preview_image_mode_update(self, context):
         if self.preview_image_mode == 'NONE' or self.preview_image_mode == 'CUSTOM':
             #All the other modes will result in the image changing which calls this, so we don't need to update the nodes here
-            material_config.operator_wrapped_update_nodes(self, context)
+            material_config.prop_update_wrapped_update_nodes(self, context)
         elif self.preview_image_mode == 'COLORGRID':
             bpy.ops.xp_ext.set_material_preview_image('INVOKE_DEFAULT', preview_type='COLORGRID')
         elif self.preview_image_mode == 'BAKE':
@@ -1019,7 +1025,7 @@ class PROP_mats(bpy.types.PropertyGroup):
         name="Preview Image",
         description="The preview image used on the material",
         type=bpy.types.Image,
-        update=material_config.operator_wrapped_update_nodes
+        update=material_config.prop_update_wrapped_update_nodes
     ) # type: ignore
 
 # Forests
