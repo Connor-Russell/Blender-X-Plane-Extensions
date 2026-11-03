@@ -1487,6 +1487,12 @@ class BTN_find_textures(bpy.types.Operator):
         subtype="FILE_PATH"
     )
 
+    only_missing: bpy.props.BoolProperty( # type: ignore
+        name="Only Missing",
+        description="Only search for textures that are currently missing.",
+        default=True
+    )
+
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
@@ -1509,7 +1515,7 @@ class BTN_find_textures(bpy.types.Operator):
                 return path
 
             #If the file exists at it's current path, we can just return it
-            if os.path.isfile(file_utils.to_absolute(cleaned_path)):
+            if os.path.isfile(file_utils.to_absolute(cleaned_path)) and self.only_missing:
                 return path
 
             #Check for this *filename* at the new folder

@@ -895,11 +895,12 @@ class MENU_operations(bpy.types.Panel):
         layout.separator()
         layout.label(text="X-Plane Exporter Sync")
         layout.operator("xp_ext.update_collection_textures", text="Update X-Plane Export Texture Settings")
-
+        
         layout.operator("xp_ext.update_all_material_nodes", text="Update All Materials")
-
-        layout.operator("xp_ext.find_textures", text="Find Missing Textures")
-        btn_find_textures_recursive = layout.operator("xp_ext.find_textures", text="Find Missing Textures Recursively")
+        
+        row = layout.row()
+        row.operator("xp_ext.find_textures", text="Find Textures")
+        btn_find_textures_recursive = row.operator("xp_ext.find_textures", text="Find Textures Recursively")
         btn_find_textures_recursive.recursive = True
 
         layout.separator()
