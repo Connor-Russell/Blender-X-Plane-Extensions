@@ -309,9 +309,16 @@ class BTN_mats_update_nodes(bpy.types.Operator):
 
         #Call the function to update the settings. Currently these functions just take None as argument, they get the material from context because when they are called from an update param, they can't get the appropraite args anyway. 
         #In the future we will wrap them for the update call so we can pass the material as an argument here and override materials, but that is a job for another day
-        material_config.update_settings(context.material)
-
-        material_config.update_nodes(context.material)
+        if context is None and hasattr(context, "material") and context.material is not None:
+            material_config.update_settings(context.material)
+            
+            material_config.update_nodes(context.material)
+            
+        else:
+            for obj in bpy.context.selected_objects:
+                for mat in obj.data.materials:
+                    material_config.update_settings(mat)
+                    material_config.update_nodes(mat)
 
         return {'FINISHED'}
 
