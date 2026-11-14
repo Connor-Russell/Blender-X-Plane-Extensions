@@ -17,7 +17,6 @@ from .Types import xp_for
 from .Types import xp_attached_obj_preview
 
 def export_fac(in_col):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         #Create an xp_fac, load it from the collection, and write it to a file
         output = xp_fac.facade()
@@ -29,11 +28,9 @@ def export_fac(in_col):
         output.write(export_path)
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
     log_utils.display_messages()
     
 def export_lin(in_col):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         #Create an xp_lin, load it from the collection, and write it to a file
         output = xp_lin.line()
@@ -45,12 +42,10 @@ def export_lin(in_col):
         output.write(export_path)
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def export_pol(in_col):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         # Create an xp_pol, load it from the collection, and write it to a file
         output = xp_pol.polygon()
@@ -62,12 +57,10 @@ def export_pol(in_col):
         output.write(export_path)
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def export_agp(in_col):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         # Create an xp_agp, load it from the collection, and write it to a file
         output = xp_agp.agp()
@@ -79,14 +72,11 @@ def export_agp(in_col):
         output.write(export_path)
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def export_for(in_col):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
-        xp_attached_obj_preview.unlock_preview_obj_update()
         # Create an xp_agp, load it from the collection, and write it to a file
         output = xp_for.Forest()
         output.from_collection(in_col)
@@ -97,6 +87,5 @@ def export_for(in_col):
         output.write(export_path)
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()

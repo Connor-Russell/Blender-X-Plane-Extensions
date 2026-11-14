@@ -197,7 +197,7 @@ class _attached_object_preview:
         log_utils.new_section(f"Creating attached .obj mesh {self.name}")
 
         #Create the base material
-        mat = bpy.data.materials.new(name=self.name)
+        mat = bpy.data.materials.new(name=f"~PREVIEW~{self.name}")
         mat.use_nodes = True
         xp_mat = mat.xp_materials
         xp_mat.alb_texture = self.alb_texture
@@ -206,8 +206,6 @@ class _attached_object_preview:
             xp_mat.material_texture = self.mat_texture
             xp_mat.do_separate_material_texture = True
         xp_mat.lit_texture = self.lit_texture
-
-        mat.name = self.name
 
         #Now that we have materials, we need to dedupe them with other materials in the scene. Now, you're probably asking, WHY are we not checking this BEFORE we created the materials? This is SO slow!
         #The reason is, materials aren't *just* data, they are code. They resolve file paths, and who knows what other logic they may have, so, rather than duplicate that logic elsewhere and make it harder to maintain, we just create the material, compare, then if needed, delete after.
@@ -562,7 +560,7 @@ def reload_previews_for_asset(resource: str):
             log_utils.warning(f"Failed to reload object: {e}")
 
 @persistent
-def load_existing_mesh_cache_on_file_load():
+def load_existing_mesh_cache_on_file_load(unused, unused2):
     for in_obj in bpy.data.objects:
         if "xp_ext_preview_filepath" in in_obj and in_obj["xp_ext_preview_filepath"] != "" and in_obj["xp_ext_preview_filepath"] != "//":
             # Update the cache path and set our_mesh

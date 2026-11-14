@@ -28,9 +28,9 @@ bl_info = {
 @bpy.app.handlers.persistent
 def pre_save(dummy):
     plugin_version = bl_info["version"]
-    bpy.context.scene.xp_ext.last_save_plugin_version.major = plugin_version[0]
-    bpy.context.scene.xp_ext.last_save_plugin_version.minor = plugin_version[1]
-    bpy.context.scene.xp_ext.last_save_plugin_version.patch = plugin_version[2]
+    bpy.context.scene.xp_ext.last_save_plugin_version_major = plugin_version[0]
+    bpy.context.scene.xp_ext.last_save_plugin_version_minor = plugin_version[1]
+    bpy.context.scene.xp_ext.last_save_plugin_version_patch = plugin_version[2]
     
 
 def register():

@@ -914,7 +914,7 @@ class PROP_mats(bpy.types.PropertyGroup):
             ('HASH', "Alpha Hashed", "Forest exclusive, albedo pixels are clipped but dithered for psuedo blending without culling artifacts"),
             ('DITHER', "Alpha Dithered", "Draped exclusive, a mix of blend and no blend, with lower values providing sharper cutoffs")
         ],
-        default='BLEND',
+        default='CLIP',
         update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 

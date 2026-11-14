@@ -10,6 +10,7 @@ from ..Helpers import decal_utils
 from ..Helpers import misc_utils
 from ..Helpers import log_utils
 from .. import material_config
+from .xp_attached_obj_preview import is_attached_object
 
 from ..Helpers.misc_utils import ftos
 
