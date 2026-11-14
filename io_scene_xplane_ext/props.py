@@ -338,6 +338,17 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     ) # type: ignore
 
 class PROP_xp_ext_scene(bpy.types.PropertyGroup):
+    select_filter_mode: bpy.props.EnumProperty(
+        name="Selection Filter Mode",
+        items=[
+            ('ATTACHED', "Attached", "Only attached objects are selectable"),
+            ('REAL', "Real", "Only non-attached objects are selectable"),
+            ('ALL', "All", "All objects are selectable")
+        ],
+        default='ALL',
+        update=update_ui
+    ) # type: ignore
+
     last_save_plugin_version_major: bpy.props.IntProperty(
         name="Last Saved Plugin Version",
         default=0

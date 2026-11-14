@@ -938,12 +938,15 @@ class MENU_operations(bpy.types.Panel):
         box = layout.box()
         box.prop(xp_ext, "attached_objects_expanded", text="Attached .obj Operations", icon='TRIA_DOWN' if xp_ext.attached_objects_expanded else 'TRIA_RIGHT', emboss=False)
         if xp_ext.attached_objects_expanded:
-            box.operator("xp_ext.replace_object_names", text="Batch Replace Attached Object Resources")
-            box.operator("xp_ext.select_by_object_names", text="Select Attached Objects by Resoucre")
-            box.label(text="Attached Object Selectability")
             row = box.row()
-            row.operator("xp_ext.make_only_attached_selectable", text="Only Attached")
-            row.operator("xp_ext.restore_selectability", text="All")
+            row.operator("xp_ext.replace_object_names", text="Batch Replace Resources")
+            row.operator("xp_ext.select_by_object_names", text="Select by Resoucre")
+            box.label(text="Attached Object Selectability")
+            row = box.row(align=True)
+            filter_mode = xp_ext.select_filter_mode
+            row.operator("xp_ext.select_filter_attached", text="Only Attached", depress=filter_mode == 'ATTACHED')
+            row.operator("xp_ext.select_filter_all", text="All", depress=filter_mode == 'ALL')
+            row.operator("xp_ext.select_filter_real", text="Only Real", depress=filter_mode == 'REAL')
 
         layout.separator()
         
