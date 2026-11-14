@@ -1689,7 +1689,7 @@ class BTN_preview_attached_object(bpy.types.Operator):
     reload: bpy.props.BoolProperty( # type: ignore
         name="Reload",
         description="Whether to reload the attached object preview if it already exists.",
-        default=True
+        default=False
     )
 
     def execute(self, context):
@@ -1714,7 +1714,11 @@ class BTN_preview_attached_object(bpy.types.Operator):
                     xp_attached_obj_preview.reload_previews_for_asset(res)
             else:
                 for obj in target_objects:
+                    if not ((obj.xp_agp.exportable and obj.xp_agp.type == "ATTACHED_OBJ") or (obj.xp_attached_obj.exportable)):
+                        continue
                     try:
+                        if not xp_attached_obj_preview.is_attached_object(obj):
+                            continue
                         result = xp_attached_obj_preview.update_preview_for_single_obj(obj)
                         if result == 1:
                             bpy.data.objects.remove(obj)
@@ -1790,6 +1794,8 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
 
             for obj in target_objects:
                 try:
+                    if not xp_attached_obj_preview.is_attached_object(obj):
+                        continue
                     result = xp_attached_obj_preview.clear_preview_for_single_obj(obj)
                     if result == 1:
                         bpy.data.objects.remove(obj)

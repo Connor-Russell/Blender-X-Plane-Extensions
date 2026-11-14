@@ -9,6 +9,7 @@ from . import props
 from bpy.app.handlers import persistent # type: ignore
 from .Helpers import log_utils
 from .Types import xp_attached_obj_preview
+from . import data_structure_updater
 import os
 
 def update_optional_registrations(self=None, context=None):
@@ -24,6 +25,7 @@ def register():
     
     bpy.app.handlers.depsgraph_update_pre.append(props.update_fac_spelling_choices_depgraph_handler)
     bpy.app.handlers.load_post.append(props.update_fac_spelling_choices_load_handler)
+    bpy.app.handlers.load_post.append(data_structure_updater.update_data_structures)
 
     #Register optional registrations
     if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
@@ -31,6 +33,7 @@ def register():
             bpy.app.handlers.load_post.append(xp_attached_obj_preview.load_existing_mesh_cache_on_file_load)
 
 def unregister():
+    bpy.app.handlers.load_post.remove(data_structure_updater.update_data_structures)
     bpy.app.handlers.load_post.remove(props.update_fac_spelling_choices_load_handler)
     bpy.app.handlers.depsgraph_update_pre.remove(props.update_fac_spelling_choices_depgraph_handler)
 

@@ -108,6 +108,7 @@ def update_preview_obj(self):
                     bpy.data.objects.remove(self.id_data)
             except Exception as e:
                 log_utils.warning(f"Error updating preview for object {self.id_data.name} during property update. Error: {e}")
+                raise e
             log_utils.display_messages()
 
 def update_attached_obj_preview_fac(self, context):
@@ -310,7 +311,7 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     exportable: bpy.props.BoolProperty(
         name="Exportable",
         description="Whether the object is exportable",
-        default=True
+        default=False
     ) # type: ignore
 
     draped: bpy.props.BoolProperty(
@@ -337,10 +338,20 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     ) # type: ignore
 
 class PROP_xp_ext_scene(bpy.types.PropertyGroup):
-    last_save_plugin_version: bpy.props.IntProperty(
+    last_save_plugin_version_major: bpy.props.IntProperty(
         name="Last Saved Plugin Version",
-        default=1
+        default=0
     ) #type: ignore
+
+    last_save_plugin_version_minor: bpy.props.IntProperty(
+            name="Last Saved Plugin Version",
+            default=0
+        ) #type: ignore
+
+    last_save_plugin_version_patch: bpy.props.IntProperty(
+            name="Last Saved Plugin Version",
+            default=0
+        ) #type: ignore
 
     for_collection_search: bpy.props.StringProperty(
         name="Search",

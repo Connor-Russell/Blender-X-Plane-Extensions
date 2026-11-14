@@ -25,6 +25,21 @@ from bpy.app.handlers import persistent # type: ignore
 
 existing_meshes : dict[str, bpy.types.Mesh] = {}
 
+def _copy_prop_group(target, source):
+    for prop in source.bl_rna.properties:
+        if not prop.is_readonly:
+            setattr(target, prop.identifier, getattr(source, prop.identifier))
+
+def is_attached_object(in_obj : bpy.types.Object):
+    """
+    Returns true if this is an attached object, defined by the appropriate properties set, the dictionary key set if it's a mesh (additional safegaurd if you set the wrong properties on a mesh) and is the right type (mesh or empty)
+    """
+    if not ((in_obj.xp_agp.exportable and in_obj.xp_agp.type == "ATTACHED_OBJ") or (in_obj.xp_attached_obj.exportable)):
+        return False
+    if (in_obj.type == "MESH" and not "xp_ext_preview_filepath" in in_obj):
+        return False
+    return in_obj.type == "MESH" or in_obj.type == "EMPTY"
+
 def get_effective_preview_resource(obj : bpy.types.Object) -> str:
     resource = ""
     is_relative = False
@@ -305,11 +320,14 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
 
     # First get the resource
     resource = get_effective_preview_resource(in_obj)
+    print(f"Resource {resource}")
+    print(f"Type {in_obj.type}")
 
     # Now we need to check what state the current objetc is 
     if in_obj.type == 'EMPTY':
         # If this is already an empty (aka no preview) and no preview resource is found, do nothing
         if resource == "" or not os.path.exists(file_utils.to_absolute(resource)):
+            print(f"Resource {resource}")
             in_obj["xp_ext_preview_filepath"] = ""
             return 0
 
@@ -323,15 +341,15 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
                 test_valid = our_mesh.name
             except:
                 our_mesh = None
-                existing_meshes.pop(resource)
+                existing_meshes.pop(resource, None)
 
         # If we still don't have a mesh we will search all existing objects. Heavy, but still faster than loading, and this will only happen once for each new object per session. And once we implement an on-load cache builder, this will only happen once per new object
         if our_mesh == None:
-            for in_obj in bpy.data.objects:
-                if "xp_ext_preview_filepath" in in_obj and in_obj["xp_ext_preview_filepath"] == resource:
+            for obj in bpy.data.objects:
+                if "xp_ext_preview_filepath" in obj and obj["xp_ext_preview_filepath"] == resource:
                     # Update the cache path and set our_mesh
-                    existing_meshes[resource] = in_obj.data
-                    our_mesh = in_obj.data
+                    existing_meshes[resource] = obj.data
+                    our_mesh = obj.data
 
         # If we STILL don't have a mesh, we need to load it
         if our_mesh == None:
@@ -344,33 +362,54 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
 
         # Final safety check
         if our_mesh == None:
-            raise Exception(f"Failed to load attached object \"{resource}\", no mesh data was returned. Obj is {in_obj.name}.. Perhaps the .obj has no mesh data?")
+            raise Exception(f"Failed to load attached object \"{resource}\", no mesh data was returned. Obj is {in_obj.name}.. Perhaps the .obj has no mesh data?") from e
+
+        print(f"Got our mesh {our_mesh}")
 
         # Create a new object, sync the transform, parent, and the collection
-        new_obj = bpy.data.objects.new(f"{resource.split("/")[-1].split(".")[0]} Preview", our_mesh)
+        new_obj : bpy.types.Object = bpy.data.objects.new(f"{resource.split('/')[-1].split('.')[0]} Preview", our_mesh)
+        print(f"Made object {new_obj.name}")
         new_obj["xp_ext_preview_filepath"] = resource
         new_obj.parent = in_obj.parent
         new_obj.matrix_parent_inverse = in_obj.matrix_parent_inverse.copy()
         new_obj.matrix_basis = in_obj.matrix_basis.copy()
-        new_obj.xp_attached_obj = in_obj.xp_attached_obj
-        new_obj.xp_agp = in_obj.xp_agp
-        for col in in_obj.users_collection[0]:
+        _copy_prop_group(new_obj.xp_attached_obj, in_obj.xp_attached_obj)
+        _copy_prop_group(new_obj.xp_agp, in_obj.xp_agp)
+        for col in in_obj.users_collection:
+            print(f"Linking obj to col {col}")
             col.objects.link(new_obj)
+        if in_obj.select_get():
+            new_obj.select_set(True)
+        if bpy.context.active_object == in_obj:
+            bpy.context.view_layer.objects.active = new_obj
+
+        if in_obj.select_get():
+            new_obj.select_set(True)
+        if bpy.context.active_object == in_obj:
+            bpy.context.view_layer.objects.active = new_obj
+
+        #Make this objetc not exportable as a mesh
+        new_obj.xp_lin.exportable = False
+        new_obj.xp_for.exportable = False
+        new_obj.xp_fac_mesh.exportable = False
 
         # Tell the caller we succeeded but delete the old object
         return 1
             
         # If we DID get a resouce now we need to load it
     elif in_obj.type == 'MESH':
+        if not is_attached_object(in_obj):
+            raise Exception(f"Tried to call update_preview_for_single_obj on obj {in_obj.name} but it is not an attached object!")
+        
         # If this is empty, we need to create an empty here
         if resource == "" or not os.path.exists(file_utils.to_absolute(resource)):
             # Create the new empty that matches our mesh data
             new_obj_name = ""
             if resource != "" and resource != "//":
-                new_obj_name = f"{resource.split("/")[-1].split(".")[0]} Preview"
+                new_obj_name = f"{resource.split('/')[-1].split('.')[0]} Preview"
             elif in_obj.xp_agp.exportable and in_obj.xp_agp.type == "ATTACHED_OBJ":
                 new_obj_name = "Unassigned .agp Attached Object"
-            elif in_obj.xp_attached_object.exportable:
+            elif in_obj.xp_attached_obj.exportable:
                 new_obj_name = "Unassigned .fac Attached Object"
             else:
                 #Theoretically should never be called
@@ -378,14 +417,23 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
                 raise Exception(f"Just called update_preview for object that is not exportable for facades or agps! Obj is {in_obj.name}")
 
             new_obj = bpy.data.objects.new(new_obj_name, None)
-            new_obj["xp_ext_preview_filepath"] = resource
+            new_obj.empty_display_type = "ARROWS"
             new_obj.parent = in_obj.parent
             new_obj.matrix_parent_inverse = in_obj.matrix_parent_inverse.copy()
             new_obj.matrix_basis = in_obj.matrix_basis.copy()
-            new_obj.xp_attached_obj = in_obj.xp_attached_obj
-            new_obj.xp_agp = in_obj.xp_agp
-            for col in in_obj.users_collection[0]:
+            _copy_prop_group(new_obj.xp_attached_obj, in_obj.xp_attached_obj)
+            _copy_prop_group(new_obj.xp_agp, in_obj.xp_agp)
+            for col in in_obj.users_collection:
                 col.objects.link(new_obj)
+            if in_obj.select_get():
+                new_obj.select_set(True)
+            if bpy.context.active_object == in_obj:
+                bpy.context.view_layer.objects.active = new_obj
+
+            #Make this objetc not exportable as a mesh
+            new_obj.xp_lin.exportable = False
+            new_obj.xp_for.exportable = False
+            new_obj.xp_fac_mesh.exportable = False
 
             # Return 1 so the caller deletes the original mesh
             return 1
@@ -404,15 +452,15 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
                 test_valid = our_mesh.name
             except:
                 our_mesh = None
-                existing_meshes.pop(resource)
+                existing_meshes.pop(resource, None)
 
         # If we still don't have a mesh we will search all existing objects. Heavy, but still faster than loading, and this will only happen once for each new object per session. And once we implement an on-load cache builder, this will only happen once per new object
         if our_mesh == None:
-            for in_obj in bpy.data.objects:
-                if "xp_ext_preview_filepath" in in_obj and in_obj["xp_ext_preview_filepath"] == resource:
+            for obj in bpy.data.objects:
+                if "xp_ext_preview_filepath" in obj and obj["xp_ext_preview_filepath"] == resource:
                     # Update the cache path and set our_mesh
-                    existing_meshes[resource] = in_obj.data
-                    our_mesh = in_obj.data
+                    existing_meshes[resource] = obj.data
+                    our_mesh = obj.data
 
         # If we STILL don't have a mesh, we need to load it
         if our_mesh == None:
@@ -425,10 +473,10 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
 
         # Final safety check
         if our_mesh == None:
-            raise Exception(f"Failed to load attached object \"{resource}\", no mesh data was returned. Obj is {in_obj.name}. Perhaps the .obj has no mesh data?")
+            raise Exception(f"Failed to load attached object \"{resource}\", no mesh data was returned. Obj is {in_obj.name}. Perhaps the .obj has no mesh data?") from e
 
         # Create a new object, sync the transform, parent, and the collection
-        in_obj.name = f"{resource.split("/")[-1].split(".")[0]} Preview"
+        in_obj.name = f"{resource.split('/')[-1].split('.')[0]} Preview"
         in_obj.data = our_mesh
         in_obj["xp_ext_preview_filepath"] = resource
         
@@ -451,26 +499,32 @@ def clear_preview_for_single_obj(in_obj : bpy.types.Object):
         return 0
 
     elif in_obj.type == 'MESH':
+        if not is_attached_object(in_obj):
+            raise Exception(f"Tried to call clear_preview_for_single_obj on obj {in_obj.name} but it is not an attached object!")
         # Create the new empty that matches our mesh data
         new_obj_name = ""
         if resource != "" and resource != "//":
-            new_obj_name = f"{resource.split("/")[-1].split(".")[0]} Preview"
+            new_obj_name = f"{resource.split('/')[-1].split('.')[0]} Preview"
         elif in_obj.xp_agp.exportable and in_obj.xp_agp.type == "ATTACHED_OBJ":
             new_obj_name = "Unassigned .agp Attached Object"
-        elif in_obj.xp_attached_object.exportable:
+        elif in_obj.xp_attached_obj.exportable:
             new_obj_name = "Unassigned .fac Attached Object"
         else:
             new_obj_name = "Unassigned Attached Object"
 
         new_obj = bpy.data.objects.new(new_obj_name, None)
-        new_obj["xp_ext_preview_filepath"] = resource
+        new_obj.empty_display_type = "ARROWS"
         new_obj.parent = in_obj.parent
         new_obj.matrix_parent_inverse = in_obj.matrix_parent_inverse.copy()
         new_obj.matrix_basis = in_obj.matrix_basis.copy()
-        new_obj.xp_attached_obj = in_obj.xp_attached_obj
-        new_obj.xp_agp = in_obj.xp_agp
-        for col in in_obj.users_collection[0]:
+        _copy_prop_group(new_obj.xp_attached_obj, in_obj.xp_attached_obj)
+        _copy_prop_group(new_obj.xp_agp, in_obj.xp_agp)
+        for col in in_obj.users_collection:
             col.objects.link(new_obj)
+        if in_obj.select_get():
+            new_obj.select_set(True)
+        if bpy.context.active_object == in_obj:
+            bpy.context.view_layer.objects.active = new_obj
 
         # Return 1 so the caller deletes the original mesh
         return 1
@@ -495,7 +549,7 @@ def reload_previews_for_asset(resource: str):
             obj["xp_ext_preview_filepath"] = ""
             objs_to_reload.append(obj)
 
-    existing_meshes.pop(resource)
+    existing_meshes.pop(resource, None)
 
     for obj in objs_to_reload:
         result = 2
@@ -506,60 +560,6 @@ def reload_previews_for_asset(resource: str):
                 bpy.data.objects.remove(obj, do_unlink=True)
         except Exception as e:
             log_utils.warning(f"Failed to reload object: {e}")
-
-def reload_all_previews():
-    """
-    Reloads all preview objects in the blend file
-    """
-    global existing_meshes
-    existing_meshes = dict()
-    for obj in bpy.data.objects:
-        if "xp_ext_preview_filepath" in obj:
-            obj["xp_ext_preview_filepath"] = ""
-
-    objs_to_remove : list[bpy.types.Object] = []
-
-    for obj in bpy.data.objects:
-        if (obj.xp_agp.exportable and obj.xp_agp.type == "ATTACHED_OBJ") or (obj.xp_attached_obj.exportable):
-            try:
-                result = update_preview_for_single_obj(obj)
-                if result == 1:
-                    objs_to_remove.append(obj)
-            except Exception as e:
-                log_utils.warning(f"Failed to reload object {e}")
-
-    for obj in objs_to_remove:
-        try:
-            bpy.data.objects.remove(obj, do_unlink=True)
-        except Exception as e:
-            log_utils.warning(f"Failed to remove attached object {obj.name} after reload. Error: {e}")
-
-def clear_all_previews():
-    """
-    Reloads all preview objects in the blend file
-    """
-    global existing_meshes
-    existing_meshes = dict()
-    for obj in bpy.data.objects:
-        if "xp_ext_preview_filepath" in obj:
-            obj["xp_ext_preview_filepath"] = ""
-
-    objs_to_remove : list[bpy.types.Object] = []
-
-    for obj in bpy.data.objects:
-        if (obj.xp_agp.exportable and obj.xp_agp.type == "ATTACHED_OBJ") or (obj.xp_attached_obj.exportable):
-            try:
-                result = clear_preview_for_single_obj(obj)
-                if result == 1:
-                    objs_to_remove.append(obj)
-            except Exception as e:
-                log_utils.warning(f"Failed to reload object {e}")
-
-    for obj in objs_to_remove:
-        try:
-            bpy.data.objects.remove(obj, do_unlink=True)
-        except Exception as e:
-            log_utils.warning(f"Failed to remove attached object {obj.name} for clearing preview. Error: {e}")
 
 @persistent
 def load_existing_mesh_cache_on_file_load():

@@ -626,12 +626,10 @@ class MENU_agp_obj(bpy.types.Panel):
                 box.prop(context.object.xp_attached_obj, "attached_obj_preview_resource")
                 row = box.row()
                 btn_preview = row.operator("xp_ext.preview_attached_object", text="Preview Resource")
-                btn_preview.reload = True
-                btn_preview.make_real = False
-                row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
-                btn_real_preview = row.operator("xp_ext.preview_attached_object", text="Preview as Real Objects")
-                btn_real_preview.make_real = True
-                btn_real_preview.reload = True
+                btn_preview.do_all_objects = False
+                btn_preview.reload = False
+                btn_clear = row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
+                btn_preview.do_all_objects = False
             elif agp_obj.type == "AUTO_SPLIT_OBJ":
                 layout.separator()
                 layout.label(text="DISCLAIMER:")
@@ -1178,12 +1176,10 @@ class MENU_attached_object(bpy.types.Panel):
             box.prop(attached_obj, "attached_obj_preview_resource")
             row = box.row()
             btn_preview = row.operator("xp_ext.preview_attached_object", text="Preview Resource")
-            btn_preview.reload = True
-            btn_preview.make_real = False
-            row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
-            btn_real_preview = row.operator("xp_ext.preview_attached_object", text="Preview as Real Objects")
-            btn_real_preview.make_real = True
-            btn_real_preview.reload = True
+            btn_preview.do_all_objects = False
+            btn_preview.reload = False
+            btn_clear = row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
+            btn_clear.do_all_objects = False
 
 class MENU_fac_mesh(bpy.types.Panel):
     """Creates a Panel in the object properties window"""
