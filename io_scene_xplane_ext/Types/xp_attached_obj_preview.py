@@ -51,7 +51,7 @@ def get_effective_preview_resource(obj : bpy.types.Object) -> str:
 
     return resource
 
-class attached_object_preview:
+class _attached_object_preview:
     """
     Class to represent a lightweight X-Plane object. This class provides functions to import the object into Blender.
     """
@@ -298,6 +298,7 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
         - If preview resource is valid and same:
             - Return 0
     """
+    global existing_meshes
 
     if len(in_obj.children) > 0:
         raise Exception(f"Attached object must not have children! Obj is {in_obj.name}.")
@@ -335,7 +336,7 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
         # If we STILL don't have a mesh, we need to load it
         if our_mesh == None:
             try:
-                obj_loader = attached_object_preview()
+                obj_loader = _attached_object_preview()
                 obj_loader.read(file_utils.to_absolute(resource))
                 our_mesh = obj_loader.to_mesh()
             except Exception as e:
@@ -416,7 +417,7 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
         # If we STILL don't have a mesh, we need to load it
         if our_mesh == None:
             try:
-                obj_loader = attached_object_preview()
+                obj_loader = _attached_object_preview()
                 obj_loader.read(resource)
                 our_mesh = obj_loader.to_mesh()
             except Exception as e:
@@ -434,6 +435,135 @@ def update_preview_for_single_obj(in_obj : bpy.types.Object):
         # Tell the caller we succeeded and to keep this object
         return 0
 
-    raise Exception("Unsupported object type")    
-    
+    raise Exception("Unsupported object type")  
 
+def clear_preview_for_single_obj(in_obj : bpy.types.Object):
+    """
+    Clears the preview for a single object. If the object was a mesh, it reverts it back to an empty. Returns 0 on success, 1 if success but the caller needs to remove this object. Exceptions propagate up
+    """
+
+    # First get the resource
+    resource = get_effective_preview_resource(in_obj)
+
+    # Now we need to check what state the current objetc is 
+    if in_obj.type == 'EMPTY':
+        in_obj["xp_ext_preview_filepath"] = ""
+        return 0
+
+    elif in_obj.type == 'MESH':
+        # Create the new empty that matches our mesh data
+        new_obj_name = ""
+        if resource != "" and resource != "//":
+            new_obj_name = f"{resource.split("/")[-1].split(".")[0]} Preview"
+        elif in_obj.xp_agp.exportable and in_obj.xp_agp.type == "ATTACHED_OBJ":
+            new_obj_name = "Unassigned .agp Attached Object"
+        elif in_obj.xp_attached_object.exportable:
+            new_obj_name = "Unassigned .fac Attached Object"
+        else:
+            new_obj_name = "Unassigned Attached Object"
+
+        new_obj = bpy.data.objects.new(new_obj_name, None)
+        new_obj["xp_ext_preview_filepath"] = resource
+        new_obj.parent = in_obj.parent
+        new_obj.matrix_parent_inverse = in_obj.matrix_parent_inverse.copy()
+        new_obj.matrix_basis = in_obj.matrix_basis.copy()
+        new_obj.xp_attached_obj = in_obj.xp_attached_obj
+        new_obj.xp_agp = in_obj.xp_agp
+        for col in in_obj.users_collection[0]:
+            col.objects.link(new_obj)
+
+        # Return 1 so the caller deletes the original mesh
+        return 1
+
+    raise Exception("Unsupported object type")  
+
+def reload_previews_for_asset(resource: str):
+    global existing_meshes
+    """
+    Clears the cache for a given object, resets each object's resource flag, then reloads them so that they reload the asset and recreate the cache
+    """
+
+    log_utils.new_section(f"Reloading previews for {resource}")
+
+    if file_utils.is_empty(resource):
+        return
+
+    objs_to_reload : list[bpy.types.Object] = []
+
+    for obj in bpy.data.objects:
+        if "xp_ext_preview_filepath" in obj and obj["xp_ext_preview_filepath"] == resource:
+            obj["xp_ext_preview_filepath"] = ""
+            objs_to_reload.append(obj)
+
+    existing_meshes.pop(resource)
+
+    for obj in objs_to_reload:
+        result = 2
+        try:
+            result = update_preview_for_single_obj(obj)
+
+            if result == 1:
+                bpy.data.objects.remove(obj, do_unlink=True)
+        except Exception as e:
+            log_utils.warning(f"Failed to reload object: {e}")
+
+def reload_all_previews():
+    """
+    Reloads all preview objects in the blend file
+    """
+    global existing_meshes
+    existing_meshes = dict()
+    for obj in bpy.data.objects:
+        if "xp_ext_preview_filepath" in obj:
+            obj["xp_ext_preview_filepath"] = ""
+
+    objs_to_remove : list[bpy.types.Object] = []
+
+    for obj in bpy.data.objects:
+        if (obj.xp_agp.exportable and obj.xp_agp.type == "ATTACHED_OBJ") or (obj.xp_attached_obj.exportable):
+            try:
+                result = update_preview_for_single_obj(obj)
+                if result == 1:
+                    objs_to_remove.append(obj)
+            except Exception as e:
+                log_utils.warning(f"Failed to reload object {e}")
+
+    for obj in objs_to_remove:
+        try:
+            bpy.data.objects.remove(obj, do_unlink=True)
+        except Exception as e:
+            log_utils.warning(f"Failed to remove attached object {obj.name} after reload. Error: {e}")
+
+def clear_all_previews():
+    """
+    Reloads all preview objects in the blend file
+    """
+    global existing_meshes
+    existing_meshes = dict()
+    for obj in bpy.data.objects:
+        if "xp_ext_preview_filepath" in obj:
+            obj["xp_ext_preview_filepath"] = ""
+
+    objs_to_remove : list[bpy.types.Object] = []
+
+    for obj in bpy.data.objects:
+        if (obj.xp_agp.exportable and obj.xp_agp.type == "ATTACHED_OBJ") or (obj.xp_attached_obj.exportable):
+            try:
+                result = clear_preview_for_single_obj(obj)
+                if result == 1:
+                    objs_to_remove.append(obj)
+            except Exception as e:
+                log_utils.warning(f"Failed to reload object {e}")
+
+    for obj in objs_to_remove:
+        try:
+            bpy.data.objects.remove(obj, do_unlink=True)
+        except Exception as e:
+            log_utils.warning(f"Failed to remove attached object {obj.name} for clearing preview. Error: {e}")
+
+@persistent
+def load_existing_mesh_cache_on_file_load():
+    for in_obj in bpy.data.objects:
+        if "xp_ext_preview_filepath" in in_obj and in_obj["xp_ext_preview_filepath"] != "" and in_obj["xp_ext_preview_filepath"] != "//":
+            # Update the cache path and set our_mesh
+            existing_meshes[in_obj["xp_ext_preview_filepath"]] = in_obj.data

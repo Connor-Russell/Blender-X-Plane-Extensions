@@ -11,15 +11,32 @@ from .Helpers import log_utils
 from .Types import xp_attached_obj_preview
 import os
 
+def update_optional_registrations(self=None, context=None):
+    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
+        if xp_attached_obj_preview.load_existing_mesh_cache_on_file_load not in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.append(xp_attached_obj_preview.load_existing_mesh_cache_on_file_load)
+    else:
+        if xp_attached_obj_preview.load_existing_mesh_cache_on_file_load in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.remove(xp_attached_obj_preview.load_existing_mesh_cache_on_file_load)
+
+
 def register():
     
     bpy.app.handlers.depsgraph_update_pre.append(props.update_fac_spelling_choices_depgraph_handler)
     bpy.app.handlers.load_post.append(props.update_fac_spelling_choices_load_handler)
 
+    #Register optional registrations
+    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
+        if xp_attached_obj_preview.load_existing_mesh_cache_on_file_load not in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.append(xp_attached_obj_preview.load_existing_mesh_cache_on_file_load)
+
 def unregister():
     bpy.app.handlers.load_post.remove(props.update_fac_spelling_choices_load_handler)
     bpy.app.handlers.depsgraph_update_pre.remove(props.update_fac_spelling_choices_depgraph_handler)
 
+    # Unregister optional registrations
+    if xp_attached_obj_preview.load_existing_mesh_cache_on_file_load in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(xp_attached_obj_preview.load_existing_mesh_cache_on_file_load)
 
 
     
