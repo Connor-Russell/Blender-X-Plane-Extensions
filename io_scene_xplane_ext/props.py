@@ -96,6 +96,20 @@ def sanitize_prop_path_or_lib_path(in_path):
 last_update_was_programmatic = False
 updating_linked_decals = False
 
+# These are separate functions so they can normalize their own paths - the actual preview code is the same
+
+def update_preview_obj(self):
+    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
+        if self.id_data is not None and isinstance(self.id_data, bpy.types.Object):
+            log_utils.new_section("Auto update preview object")
+            try:
+                result = xp_attached_obj_preview.update_preview_for_single_obj(self.id_data)
+                if result == 1:
+                    bpy.data.objects.remove(self.id_data)
+            except Exception as e:
+                log_utils.warning(f"Error updating preview for object {self.id_data.name} during property update. Error: {e}")
+            log_utils.display_messages()
+
 def update_attached_obj_preview_fac(self, context):
     global last_update_was_programmatic
     if last_update_was_programmatic:
@@ -104,13 +118,7 @@ def update_attached_obj_preview_fac(self, context):
     last_update_was_programmatic = True
     self.attached_obj_preview_resource = sanitize_prop_path_or_lib_path(self.attached_obj_preview_resource)
     update_ui(self, context)
-    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
-        xp_attached_obj_preview.lock_preview_obj_update()
-        try:
-            xp_attached_obj_preview.process_single_object(self.id_data, False)
-        except Exception as e:
-            pass
-        xp_attached_obj_preview.unlock_preview_obj_update()
+    update_preview_obj(self)
 
 def update_attached_obj_preview_agp(self, context):
     global last_update_was_programmatic
@@ -120,13 +128,7 @@ def update_attached_obj_preview_agp(self, context):
     last_update_was_programmatic = True
     self.attached_obj_resource = sanitize_prop_path_or_lib_path(self.attached_obj_resource)
     update_ui(self, context)
-    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
-        xp_attached_obj_preview.lock_preview_obj_update()
-        try:
-            xp_attached_obj_preview.process_single_object(self.id_data, False)
-        except Exception as e:
-            pass
-        xp_attached_obj_preview.unlock_preview_obj_update()
+    update_preview_obj(self)
 
 def update_attached_obj_preview(self, context):
     global last_update_was_programmatic
@@ -136,13 +138,7 @@ def update_attached_obj_preview(self, context):
     last_update_was_programmatic = True
     self.attached_obj_preview_resource = sanitize_prop_path(self.attached_obj_preview_resource)
     update_ui(self, context)
-    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
-        xp_attached_obj_preview.lock_preview_obj_update()
-        try:
-            xp_attached_obj_preview.process_single_object(self.id_data, False)
-        except Exception as e:
-            pass
-        xp_attached_obj_preview.unlock_preview_obj_update()
+    update_preview_obj(self)
 
 def update_linked_decals(self, context):
     try:
@@ -201,7 +197,6 @@ def update_linked_decals(self, context):
     except Exception as e:
         updating_linked_decals = False
         log_utils.error(str(e), "Error updating linked decal settings")
-
 
 #General properties
 
