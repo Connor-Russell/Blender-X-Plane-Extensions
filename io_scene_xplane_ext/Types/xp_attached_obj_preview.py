@@ -21,34 +21,9 @@ from ..Helpers import file_utils
 from ..Helpers import collection_utils
 from typing import List
 from .xp_obj import draw_call
-from .xp_obj import draw_call_state
 from bpy.app.handlers import persistent # type: ignore
 
-#Lights don't actually use LODs, but if there are LOD buckets, XP2B requires them to be in *one*. But if there's no LOD buckets they can't be in *any*. So we have a single global variable to set what bucket ot put them in
-obj_does_use_lods = False
-existing_objects = set()
-collection_children_lengths : dict[str, int] = {}
-locked_preview_obj_update = False
-
-def lock_preview_obj_update():
-    """
-    If updating preview objects is being done elsewhere, call this first to prevent the depsgraph updater from doing it again do to your changes. Must always be followed by unlock_preview_obj_update().
-    """
-    global locked_preview_obj_update
-    locked_preview_obj_update = True
-
-def unlock_preview_obj_update():
-    global locked_preview_obj_update
-    locked_preview_obj_update = False
-
-    #Update the state since the updater wouldn't have done this while we had the update code locked
-    global existing_objects
-    existing_objects = set(obj.session_uid for obj in bpy.data.objects)
-
-    global collection_children_lengths
-    for col in bpy.data.collections:
-        collection_children_lengths[col.name] = len(col.objects)
-    
+existing_meshes : dict[str, bpy.types.Mesh] = {}
 
 def get_effective_preview_resource(obj : bpy.types.Object) -> str:
     resource = ""
@@ -95,12 +70,6 @@ class attached_object_preview:
         self.mat_texture = ""
         self.do_separate_material_texture = False
 
-        #Draped material
-        self.draped_alb_texture = ""
-        self.draped_nml_tile_rat = 1.0
-        self.draped_nml_texture = ""
-        self.draped_lit_texture = ""
-
         self.filepath = ""
 
     def read(self, in_obj_path):
@@ -113,7 +82,6 @@ class attached_object_preview:
         trans_matrix = [1, -1, 1]
 
         cur_start_lod = 0
-        cur_is_draped_tris = False
 
         with open(file_utils.to_absolute(in_obj_path), "r") as f:
             lines = f.readlines()
@@ -140,9 +108,6 @@ class attached_object_preview:
                 'TEXTURE': 2,
                 'TEXTURE_MAP': 3,
                 'TEXTURE_NORMAL': 2,
-                'TEXTURE_DRAPED': 2,
-                'TEXTURE_DRAPED_NORMAL': 3,
-                'TEXTURE_DRAPED_LIT': 2,
                 'TEXTURE_LIT': 2,
                 'GLOBAL_no_blend': 2,
                 'GLOBAL_shadow_blend': 2,
@@ -172,62 +137,29 @@ class attached_object_preview:
                 #Single index
                 self.indicies.append(int(tokens[1]))
 
-            elif tokens[0] == "ATTR_draped":
-                cur_is_draped_tris = True
-            
-            elif tokens[0] == "ATTR_no_draped":
-                cur_is_draped_tris = False
-            
             elif tokens[0] == "TRIS":
                 #Draw call. Start index and length
                 dc = draw_call()
                 dc.start_index = int(float(tokens[1]))
                 dc.length = int(float(tokens[2]))
 
-                #This just let's it grab the right material when it is added
-                dc.state = draw_call_state()
-                dc.state.draped = cur_is_draped_tris
-
                 if cur_start_lod == 0:
                     self.draw_calls.append(dc)
 
             elif tokens[0] == "TEXTURE" and len(tokens) >= 2:
                 self.alb_texture = tokens[1]
-                if self.draped_alb_texture == "":
-                    self.draped_alb_texture = tokens[1]
-                cur_in_draped_mat = False
             
             elif tokens[0] == "TEXTURE_MAP":
                 if tokens[1].lower() == "normal":
                     self.nml_texture = tokens[2]
                 elif tokens[1].lower() == "material_gloss":
                     self.mat_texture = tokens[2]
-                cur_in_draped_mat = False
 
             elif tokens[0] == "TEXTURE_NORMAL":
                 self.nml_texture = tokens[1]
-                if self.draped_nml_texture == "":
-                    self.draped_nml_texture = tokens[1]
-                cur_in_draped_mat = False
-
-            elif tokens[0] == "TEXTURE_DRAPED":
-                self.draped_alb_texture = tokens[1]
-                self.obj_mode = "scenery"
-                cur_in_draped_mat = True
-
-            elif tokens[0] == "TEXTURE_DRAPED_NORMAL":
-                self.draped_nml_tile_rat = float(tokens[1])
-                self.draped_nml_texture = tokens[2]
-                cur_in_draped_mat = True
-
-            elif tokens[0] == "TEXTURE_DRAPED_LIT":
-                self.draped_lit_texture = tokens[1]
-                cur_in_draped_mat = True
 
             elif tokens[0] == "TEXTURE_LIT":
                 self.lit_texture = tokens[1]
-                if self.draped_lit_texture == "":
-                    self.draped_lit_texture = tokens[1]
 
             elif tokens[0] == "ATTR_LOD":
                 #ANIM_lod <start> <end>
@@ -245,15 +177,11 @@ class attached_object_preview:
         self.nml_texture = resolve_texture_path(self.nml_texture)
         self.lit_texture = resolve_texture_path(self.lit_texture)
         self.mat_texture = resolve_texture_path(self.mat_texture)
-        self.draped_alb_texture = resolve_texture_path(self.draped_alb_texture)
-        self.draped_nml_texture = resolve_texture_path(self.draped_nml_texture)
-        self.draped_lit_texture = resolve_texture_path(self.draped_lit_texture)
             
-    def to_scene(self, target_parent, target_collection, make_real=False):
-        log_utils.new_section(f"Creating attached .obj object {self.name}")
+    def to_mesh(self) -> bpy.types.Mesh:
+        log_utils.new_section(f"Creating attached .obj mesh {self.name}")
 
         #Create the base material
-        all_mats = []
         mat = bpy.data.materials.new(name=self.name)
         mat.use_nodes = True
         xp_mat = mat.xp_materials
@@ -266,233 +194,246 @@ class attached_object_preview:
 
         mat.name = self.name
 
-        all_mats.append(mat)
-
-        #Create the draped material if it exists
-        any_draped_dcs = False
-        for dc in self.draw_calls:
-            if dc.state.draped:
-                any_draped_dcs = True
-                break
-        if not file_utils.is_empty(self.draped_alb_texture) and any_draped_dcs:
-            draped_mat = mat.copy()
-            draped_mat.name = self.name + "_draped"
-            draped_mat.use_nodes = True
-            xp_draped_mat = draped_mat.xp_materials
-            xp_draped_mat.alb_texture = self.draped_alb_texture
-            xp_draped_mat.normal_texture = self.draped_nml_texture
-            xp_draped_mat.lit_texture = self.draped_lit_texture
-            xp_draped_mat.draped = True
-            xp_draped_mat.draped_nml_tile_rat = self.draped_nml_tile_rat
-            draped_mat.name = self.name + "_draped"
-
-            all_mats.append(draped_mat)
-
         #Now that we have materials, we need to dedupe them with other materials in the scene. Now, you're probably asking, WHY are we not checking this BEFORE we created the materials? This is SO slow!
         #The reason is, materials aren't *just* data, they are code. They resolve file paths, and who knows what other logic they may have, so, rather than duplicate that logic elsewhere and make it harder to maintain, we just create the material, compare, then if needed, delete after.
-        new_mats = []
-        for our_mat in all_mats:
-            material_config.update_settings(our_mat)
-            new_mat = None
-            for other_mat in bpy.data.materials:
-                if material_config.materials_are_equivalent(our_mat, other_mat) and other_mat != our_mat:
-                    new_mat = other_mat
-                    break
-            #If we end up using our material, we'll update the nodes. Otherwise we swap our material for the existing
-            if new_mat is None:
-                new_mats.append(our_mat)
-                material_config.update_nodes(our_mat)
-            else:
-                new_mats.append(new_mat)
-                bpy.data.materials.remove(our_mat)
-
-        #For the basic draw calls just add 'em to the scene
-        all_objs = []
-        for dc in self.draw_calls:
-            all_objs.append(dc.add_to_scene(self.verticies, self.indicies, new_mats, None))
-
-        #Link all the object to the view layer
-        for obj in all_objs:
-            target_collection.objects.link(obj)
-        
-        #Join all objects into one
-        joined_obj = geometery_utils.join_objects(all_objs, self.name)
-
-        #Link to the collection and set parent
-        if not make_real:
-            joined_obj.xp_attached_obj.exportable = False
-            joined_obj.xp_agp.exportable = False
-            joined_obj.xp_fac_mesh.exportable = False
-            joined_obj['xp_ext_preview_object'] = True
-            joined_obj['xp_ext_preview_filepath'] = self.filepath
-            joined_obj.parent = target_parent
-            joined_obj.hide_select = True
+        material_config.update_settings(mat)
+        existing_mat = None
+        for other_mat in bpy.data.materials:
+            if material_config.materials_are_equivalent(mat, other_mat) and other_mat != mat:
+                existing_mat = other_mat
+                break
+        if existing_mat is None:
+            material_config.update_nodes(mat)
         else:
-            joined_obj.matrix_world = target_parent.matrix_world.copy()  #Copy the location/rotation/scale of the parent, but don't parent it, so it can be edited independently
-            joined_obj.parent = None
-            joined_obj.hide_select = False
+            bpy.data.materials.remove(mat)
+            mat = existing_mat
 
-        return joined_obj
+        vertices = []
+        faces = []
+        loop_uvs = []
+        loop_normals = []
 
-def _get_existing_instance(in_path : str):
-    for obj in bpy.data.objects:
-        if 'xp_ext_preview_filepath' in obj and obj['xp_ext_preview_filepath'] == in_path:
-            return obj
-    return None
+        for dc in self.draw_calls:
+            if dc.is_lod_duplicate:
+                log_utils.info(f"Skipping draw call {dc.start_index}-{dc.length} because it is a duplicate of another draw call in a different LOD bucket")
+                continue
 
-def process_single_object(obj : bpy.types.Object, make_real):
-    lock_preview_obj_update()
-    if obj.type != 'EMPTY':
-        unlock_preview_obj_update()
-        return
+            draw_call_indices = self.indicies[dc.start_index:dc.start_index + dc.length]
+            draw_call_vertices = [self.verticies[index] for index in draw_call_indices]
+            draw_call_indices = list(range(len(draw_call_vertices)))
+            draw_call_indices.reverse()
 
-    for child in obj.children:
-        if 'xp_ext_preview_filepath' in child:
-            bpy.data.objects.remove(child, do_unlink=True)
+            vertex_offset = len(vertices)
+            vertices.extend(
+                (vertex.loc_x, vertex.loc_y, vertex.loc_z)
+                for vertex in draw_call_vertices
+            )
 
-    resource = get_effective_preview_resource(obj)
+            for index in range(0, len(draw_call_indices) - 2, 3):
+                triangle_indices = draw_call_indices[index:index + 3]
+                faces.append(tuple(vertex_offset + vertex_index for vertex_index in triangle_indices))
+                for vertex_index in triangle_indices:
+                    vertex = draw_call_vertices[vertex_index]
+                    loop_uvs.append((vertex.uv_x, vertex.uv_y))
+                    loop_normals.append(
+                        mathutils.Vector((vertex.normal_x, vertex.normal_y, vertex.normal_z)).normalized()
+                    )
 
-    if file_utils.is_empty(resource):
-        unlock_preview_obj_update()
-        return
-    
-    if not os.path.isfile(file_utils.to_absolute(resource)):
-        log_utils.warning(f"Attached object preview resource '{resource}' not found.")
-        unlock_preview_obj_update()
-        return
+        mesh = bpy.data.meshes.new(self.name)
+        mesh.from_pydata(vertices, [], faces)
+        mesh.update()
 
-    parent_collection = None
+        mesh.materials.append(mat)
 
-    #Find the parent collection
-    for col in obj.users_collection:
-        parent_collection = col
-        break
+        uv_layer = mesh.uv_layers.new(name="UVMap")
+        uv_index = 0
+        for polygon in mesh.polygons:
+            polygon.use_smooth = True
+            for loop_index in polygon.loop_indices:
+                uv_layer.data[loop_index].uv = loop_uvs[uv_index]
+                uv_index += 1
 
-    existing_inst = _get_existing_instance(resource)
+        if loop_normals:
+            mesh.normals_split_custom_set(loop_normals)
+            if bpy.app.version < (4, 1, 0):
+                mesh.use_auto_smooth = True
 
-    #Get a list of selected objects and the active object so that we can restore them after
-    selected_objects = list(bpy.context.selected_objects)
-    active_object = bpy.context.view_layer.objects.active
+        return mesh
 
-    new_obj = None
-    if existing_inst is not None and not make_real:
-        #Create a new object based on the existing instance, set hide_select, and parent it
-        new_obj = bpy.data.objects.new(name=os.path.basename(resource), object_data=existing_inst.data)
-        new_obj.hide_select = True
-        new_obj.parent = obj
-        new_obj.xp_attached_obj.exportable = False
-        new_obj.xp_agp.exportable = False
-        new_obj.xp_fac_mesh.exportable = False
-        new_obj['xp_ext_preview_object'] = True
-        new_obj['xp_ext_preview_filepath'] = resource
-        if parent_collection is not None:
-            parent_collection.objects.link(new_obj)
-    else:
-        #Read and add
-        new_obj_loader = attached_object_preview()
-        new_obj_loader.read(resource)
-        new_obj = new_obj_loader.to_scene(obj, parent_collection, make_real)
-
-    if make_real and new_obj is not None:
-        #Make the object data single user, and make the object selectable
-        if new_obj.data is not None:
-            new_obj.data = new_obj.data.copy()
-        new_obj.hide_select = False
-
-    #Restore the selection and active object
-    bpy.ops.object.select_all(action='DESELECT')
-    for sel_obj in selected_objects:
-        sel_obj.select_set(True)
-    bpy.context.view_layer.objects.active = active_object
-
-    unlock_preview_obj_update()
-
-def update_previews_for_resources(resources: set[str]):
-    parents_to_update = set()
-    for obj in list(bpy.data.objects):
-        if 'xp_ext_preview_filepath' in obj:
-            if obj['xp_ext_preview_filepath'] in resources:
-                # We don't need to check the resource here since we check it later
-                if obj.parent is not None and obj.parent.xp_agp.exportable and obj.parent.xp_agp.type == "ATTACHED_OBJ":
-                    parents_to_update.add(obj.parent)
-                bpy.data.objects.remove(obj, do_unlink=True)
-    for obj in parents_to_update:
-        try:
-            res = get_effective_preview_resource(obj)
-            if res in resources:
-                process_single_object(obj, False)
-        except Exception as e:
-            pass
-        
-@persistent
-def reset_scene_tracking_cache(in_file_path, in_startup_file_path):
+def update_preview_for_single_obj(in_obj : bpy.types.Object):
     """
-    Resets globals used to track the scene state. These are used to determine changes to speed up the attached object preview updates.
+    Processes a single object, updating it's preview based on the resource. Returns 0 for success, 1 for success but this object should be deleted, failures are raised as exception. Logic is as follows:
+	
+	- If this object has children, fail with message
+    - Get the resource and resolve it to an absolute path. Resource must be relative to the blend file. We first check the dedicated preview resource. If it is empty, we check the agp attached object resource IF this is an agp attached object and exportable. Then, we check the facade attached object resource IF it is exportable
+    - If we are an empty, we had no preview:
+        - If preview resource is empty:
+			- Set this object's xp_ext_preview_filepath to ""
+			- Return 0
+        - If preview resource is valid:
+            - lookup this resource in our mesh cache. If it is not there, lookup this mesh in the entire scene
+			- If mesh is none:
+				- Load the mesh with attached_object_preview.read and .to_mesh, and store it in the cache
+			- If we got a mesh:
+				- Create new mesh object, set the transform and parent to the same as this empty, set the name to the filename + Preview
+				- Set this object's xp_ext_preview_filepath to the *real* path, what is returned by get_effective_preview_resource
+				- Return 1
+			- Else:
+				- Raise exception
+    - If we are a mesh, we already had a preview:
+        - If preview resource is empty:
+			- If this object has children, fail with message
+			- Add a new empty with the same transform/parent, and set the name to filename + Preview (if there's a filename that isn't used here), or AGP Attached Object if AGP object, or FAC Attached Object if exportable fac attached object, or Unassigned Attached Object
+			- Return 1
+		- If preview resource is valid and different:
+            - lookup this resource in our mesh cache. If it is not there, lookup this mesh in the entire scene
+            - If mesh is none:
+				- Load the mesh with attached_object_preview.read and .to_mesh, and store it in the cache
+			- If we got a mesh:
+				- Create new mesh object, set the transform and parent to the same as this empty, set the name to the filename + Preview
+				- Set this object's xp_ext_preview_filepath to the *real* path, what is returned by get_effective_preview_resource
+				- Return 0
+			- Else:
+				- Raise exception
+        - If preview resource is valid and same:
+            - Return 0
     """
-    global existing_objects
-    existing_objects = set(obj.session_uid for obj in bpy.data.objects)
 
-    global collection_children_lengths
-    for col in bpy.data.collections:
-        collection_children_lengths[col.name] = len(col.objects)
+    if len(in_obj.children) > 0:
+        raise Exception(f"Attached object must not have children! Obj is {in_obj.name}.")
 
-@persistent
-def update_attached_obj_previews(scene, depsgraph):
-    global locked_preview_obj_update
-    if locked_preview_obj_update:
-        return
-    
-    global existing_objects
+    # First get the resource
+    resource = get_effective_preview_resource(in_obj)
 
-    # We need to check if the user moved a preview object *parent* to a different collection. The quickest way (well, probably better ways but I like simple, especially here) is just check if there is a different length of objects in any of the collections. If so, *something* moved, so we'll check everyone
-    global collection_children_lengths
-    local_collection_children_lengths = {}
-    for col in bpy.data.collections:
-        local_collection_children_lengths[col.name] = len(col.objects)
+    # Now we need to check what state the current objetc is 
+    if in_obj.type == 'EMPTY':
+        # If this is already an empty (aka no preview) and no preview resource is found, do nothing
+        if resource == "" or not os.path.exists(file_utils.to_absolute(resource)):
+            in_obj["xp_ext_preview_filepath"] = ""
+            return 0
 
-    # Get the collections that have changed in terms of children count
-    changed_collections = [col_name for col_name, length in local_collection_children_lengths.items() if collection_children_lengths.get(col_name, 0) != length]
+        #Valid preview resource! If this is not make_real, try to load from cache
+        our_mesh = None
+        our_mesh = existing_meshes.get(resource, None)
 
-    for col_name in changed_collections:
-        for obj in bpy.data.collections[col_name].objects:
-            if 'xp_ext_preview_object' in obj and obj.parent is not None:
-                collection_utils.move_obj_to_same_collection(obj, obj.parent)
+        # If we got a mesh from the cache we need to make sure it's still valid. If not, remove it from the cache
+        if our_mesh != None:
+            try:
+                test_valid = our_mesh.name
+            except:
+                our_mesh = None
+                existing_meshes.pop(resource)
 
-    # Update the global collection children lengths to the new state
-    collection_children_lengths = local_collection_children_lengths.copy()
+        # If we still don't have a mesh we will search all existing objects. Heavy, but still faster than loading, and this will only happen once for each new object per session. And once we implement an on-load cache builder, this will only happen once per new object
+        if our_mesh == None:
+            for in_obj in bpy.data.objects:
+                if "xp_ext_preview_filepath" in in_obj and in_obj["xp_ext_preview_filepath"] == resource:
+                    # Update the cache path and set our_mesh
+                    existing_meshes[resource] = in_obj.data
+                    our_mesh = in_obj.data
 
-    #Short circuit check, if the size of the objects is the same we can just exit. *technical?* plausible this false positives, but the perf benefits outweigh the cost. If the scene gets messy the user can just clear all then update all
-    if len(bpy.data.objects) == len(existing_objects):
-        return
+        # If we STILL don't have a mesh, we need to load it
+        if our_mesh == None:
+            try:
+                obj_loader = attached_object_preview()
+                obj_loader.read(file_utils.to_absolute(resource))
+                our_mesh = obj_loader.to_mesh()
+            except Exception as e:
+                raise Exception(f"Failed to load attached object \"{resource}\". Obj is {in_obj.name}. Error is: {e}") from e
 
-    # Get current objects and diffs
-    current_objects = set(obj.session_uid for obj in bpy.data.objects)
-    removed_objects = existing_objects - current_objects
-    added_objects = current_objects - existing_objects
+        # Final safety check
+        if our_mesh == None:
+            raise Exception(f"Failed to load attached object \"{resource}\", no mesh data was returned. Obj is {in_obj.name}.. Perhaps the .obj has no mesh data?")
 
-    # If there were removed objects, we need to check *every* object to look for orphaned attached object previews
-    if len(removed_objects) > 0:
-        for obj in bpy.data.objects:
-            if 'xp_ext_preview_object' in obj:
-                if obj.parent == None:
-                    existing_objects.discard(obj.session_uid)
-                    bpy.data.objects.remove(obj)
+        # Create a new object, sync the transform, parent, and the collection
+        new_obj = bpy.data.objects.new(f"{resource.split("/")[-1].split(".")[0]} Preview", our_mesh)
+        new_obj["xp_ext_preview_filepath"] = resource
+        new_obj.parent = in_obj.parent
+        new_obj.matrix_parent_inverse = in_obj.matrix_parent_inverse.copy()
+        new_obj.matrix_basis = in_obj.matrix_basis.copy()
+        new_obj.xp_attached_obj = in_obj.xp_attached_obj
+        new_obj.xp_agp = in_obj.xp_agp
+        for col in in_obj.users_collection[0]:
+            col.objects.link(new_obj)
 
-    # Store the currently selected and active objects as creating preview objects will shift this around
-    selected_objects = bpy.context.selected_objects
-    original_active_object = bpy.context.active_object
-    # If we have added objects, we need to check every new object to try to set it's previeww object
-    if len(added_objects) > 0:
-        current_objects_to_bpy = {obj.session_uid: obj for obj in bpy.data.objects}
-        for uid in added_objects:
+        # Tell the caller we succeeded but delete the old object
+        return 1
             
-            obj = current_objects_to_bpy[uid]
-            process_single_object(obj, False)
+        # If we DID get a resouce now we need to load it
+    elif in_obj.type == 'MESH':
+        # If this is empty, we need to create an empty here
+        if resource == "" or not os.path.exists(file_utils.to_absolute(resource)):
+            # Create the new empty that matches our mesh data
+            new_obj_name = ""
+            if resource != "" and resource != "//":
+                new_obj_name = f"{resource.split("/")[-1].split(".")[0]} Preview"
+            elif in_obj.xp_agp.exportable and in_obj.xp_agp.type == "ATTACHED_OBJ":
+                new_obj_name = "Unassigned .agp Attached Object"
+            elif in_obj.xp_attached_object.exportable:
+                new_obj_name = "Unassigned .fac Attached Object"
+            else:
+                #Theoretically should never be called
+                new_obj_name = "Unassigned Attached Object"
+                raise Exception(f"Just called update_preview for object that is not exportable for facades or agps! Obj is {in_obj.name}")
 
-    #Re-select the original active object
-    for obj in selected_objects:
-        obj.select_set(True)
-    if original_active_object is not None:
-        bpy.context.view_layer.objects.active = original_active_object
+            new_obj = bpy.data.objects.new(new_obj_name, None)
+            new_obj["xp_ext_preview_filepath"] = resource
+            new_obj.parent = in_obj.parent
+            new_obj.matrix_parent_inverse = in_obj.matrix_parent_inverse.copy()
+            new_obj.matrix_basis = in_obj.matrix_basis.copy()
+            new_obj.xp_attached_obj = in_obj.xp_attached_obj
+            new_obj.xp_agp = in_obj.xp_agp
+            for col in in_obj.users_collection[0]:
+                col.objects.link(new_obj)
 
-    existing_objects = current_objects - removed_objects
+            # Return 1 so the caller deletes the original mesh
+            return 1
+        
+        #Check for same resource. Since we're already a mesh, if it's the same, there's nothing to do
+        if "xp_ext_preview_filepath" in in_obj and resource == in_obj["xp_ext_preview_filepath"]:
+            return 0
+
+        # If we got here our resource is valid and different
+        our_mesh = None
+        our_mesh = existing_meshes.get(resource, None)
+
+        # If we got a mesh from the cache we need to make sure it's still valid. If not, remove it from the cache
+        if our_mesh != None:
+            try:
+                test_valid = our_mesh.name
+            except:
+                our_mesh = None
+                existing_meshes.pop(resource)
+
+        # If we still don't have a mesh we will search all existing objects. Heavy, but still faster than loading, and this will only happen once for each new object per session. And once we implement an on-load cache builder, this will only happen once per new object
+        if our_mesh == None:
+            for in_obj in bpy.data.objects:
+                if "xp_ext_preview_filepath" in in_obj and in_obj["xp_ext_preview_filepath"] == resource:
+                    # Update the cache path and set our_mesh
+                    existing_meshes[resource] = in_obj.data
+                    our_mesh = in_obj.data
+
+        # If we STILL don't have a mesh, we need to load it
+        if our_mesh == None:
+            try:
+                obj_loader = attached_object_preview()
+                obj_loader.read(resource)
+                our_mesh = obj_loader.to_mesh()
+            except Exception as e:
+                raise Exception(f"Failed to load attached object \"{resource}\". Obj is {in_obj.name}. Error is: {e}") from e
+
+        # Final safety check
+        if our_mesh == None:
+            raise Exception(f"Failed to load attached object \"{resource}\", no mesh data was returned. Obj is {in_obj.name}. Perhaps the .obj has no mesh data?")
+
+        # Create a new object, sync the transform, parent, and the collection
+        in_obj.name = f"{resource.split("/")[-1].split(".")[0]} Preview"
+        in_obj.data = our_mesh
+        in_obj["xp_ext_preview_filepath"] = resource
+        
+        # Tell the caller we succeeded and to keep this object
+        return 0
+
+    raise Exception("Unsupported object type")    
+    
+
