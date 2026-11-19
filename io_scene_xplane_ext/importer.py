@@ -17,7 +17,6 @@ from .Types import xp_attached_obj_preview
 import os
 
 def import_lin(in_path):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         #Define just the file name from the path
         in_name = in_path
@@ -29,12 +28,10 @@ def import_lin(in_path):
         lin.to_collection(in_name)
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
     
     log_utils.display_messages()
 
 def import_pol(in_path):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         #Define just the file name from the path
         in_name = in_path
@@ -46,12 +43,10 @@ def import_pol(in_path):
         pol.to_scene()
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def import_fac(in_path):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         #Define just the file name from the path
         in_name = in_path
@@ -63,12 +58,10 @@ def import_fac(in_path):
         fac.to_scene()
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def import_obj(in_path):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         #Define just the file name from the path
         in_name = in_path
@@ -80,12 +73,10 @@ def import_obj(in_path):
         obj.to_scene()
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
     
 def import_agp(in_path):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         #Define just the file name from the path
         in_name = in_path
@@ -97,12 +88,10 @@ def import_agp(in_path):
         agp.to_collection()
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()
 
 def import_for(in_path):
-    xp_attached_obj_preview.lock_preview_obj_update()
     try:
         #Define just the file name from the path
         in_name = in_path
@@ -114,6 +103,5 @@ def import_for(in_path):
         agp.to_collection()
     except Exception as e:
         log_utils.error(f"Failed to export FAC: {e}")
-    xp_attached_obj_preview.unlock_preview_obj_update()
 
     log_utils.display_messages()

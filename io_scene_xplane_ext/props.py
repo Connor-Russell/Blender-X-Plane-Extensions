@@ -96,6 +96,21 @@ def sanitize_prop_path_or_lib_path(in_path):
 last_update_was_programmatic = False
 updating_linked_decals = False
 
+# These are separate functions so they can normalize their own paths - the actual preview code is the same
+
+def update_preview_obj(self):
+    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
+        if self.id_data is not None and isinstance(self.id_data, bpy.types.Object):
+            log_utils.new_section("Auto update preview object")
+            try:
+                result = xp_attached_obj_preview.update_preview_for_single_obj(self.id_data)
+                if result == 1:
+                    bpy.data.objects.remove(self.id_data)
+            except Exception as e:
+                log_utils.warning(f"Error updating preview for object {self.id_data.name} during property update. Error: {e}")
+                raise e
+            log_utils.display_messages()
+
 def update_attached_obj_preview_fac(self, context):
     global last_update_was_programmatic
     if last_update_was_programmatic:
@@ -104,13 +119,7 @@ def update_attached_obj_preview_fac(self, context):
     last_update_was_programmatic = True
     self.attached_obj_preview_resource = sanitize_prop_path_or_lib_path(self.attached_obj_preview_resource)
     update_ui(self, context)
-    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
-        xp_attached_obj_preview.lock_preview_obj_update()
-        try:
-            xp_attached_obj_preview.process_single_object(self.id_data, False)
-        except Exception as e:
-            pass
-        xp_attached_obj_preview.unlock_preview_obj_update()
+    update_preview_obj(self)
 
 def update_attached_obj_preview_agp(self, context):
     global last_update_was_programmatic
@@ -120,13 +129,7 @@ def update_attached_obj_preview_agp(self, context):
     last_update_was_programmatic = True
     self.attached_obj_resource = sanitize_prop_path_or_lib_path(self.attached_obj_resource)
     update_ui(self, context)
-    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
-        xp_attached_obj_preview.lock_preview_obj_update()
-        try:
-            xp_attached_obj_preview.process_single_object(self.id_data, False)
-        except Exception as e:
-            pass
-        xp_attached_obj_preview.unlock_preview_obj_update()
+    update_preview_obj(self)
 
 def update_attached_obj_preview(self, context):
     global last_update_was_programmatic
@@ -136,13 +139,7 @@ def update_attached_obj_preview(self, context):
     last_update_was_programmatic = True
     self.attached_obj_preview_resource = sanitize_prop_path(self.attached_obj_preview_resource)
     update_ui(self, context)
-    if bpy.context.preferences.addons[__package__].preferences.do_automanage_preview_objects:
-        xp_attached_obj_preview.lock_preview_obj_update()
-        try:
-            xp_attached_obj_preview.process_single_object(self.id_data, False)
-        except Exception as e:
-            pass
-        xp_attached_obj_preview.unlock_preview_obj_update()
+    update_preview_obj(self)
 
 def update_linked_decals(self, context):
     try:
@@ -201,7 +198,6 @@ def update_linked_decals(self, context):
     except Exception as e:
         updating_linked_decals = False
         log_utils.error(str(e), "Error updating linked decal settings")
-
 
 #General properties
 
@@ -315,7 +311,7 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     exportable: bpy.props.BoolProperty(
         name="Exportable",
         description="Whether the object is exportable",
-        default=True
+        default=False
     ) # type: ignore
 
     draped: bpy.props.BoolProperty(
@@ -342,10 +338,31 @@ class PROP_attached_obj(bpy.types.PropertyGroup):
     ) # type: ignore
 
 class PROP_xp_ext_scene(bpy.types.PropertyGroup):
-    last_save_plugin_version: bpy.props.IntProperty(
+    select_filter_mode: bpy.props.EnumProperty(
+        name="Selection Filter Mode",
+        items=[
+            ('ATTACHED', "Attached", "Only attached objects are selectable"),
+            ('REAL', "Real", "Only non-attached objects are selectable"),
+            ('ALL', "All", "All objects are selectable")
+        ],
+        default='ALL',
+        update=update_ui
+    ) # type: ignore
+
+    last_save_plugin_version_major: bpy.props.IntProperty(
         name="Last Saved Plugin Version",
-        default=1
+        default=0
     ) #type: ignore
+
+    last_save_plugin_version_minor: bpy.props.IntProperty(
+            name="Last Saved Plugin Version",
+            default=0
+        ) #type: ignore
+
+    last_save_plugin_version_patch: bpy.props.IntProperty(
+            name="Last Saved Plugin Version",
+            default=0
+        ) #type: ignore
 
     for_collection_search: bpy.props.StringProperty(
         name="Search",
@@ -897,7 +914,7 @@ class PROP_mats(bpy.types.PropertyGroup):
             ('HASH', "Alpha Hashed", "Forest exclusive, albedo pixels are clipped but dithered for psuedo blending without culling artifacts"),
             ('DITHER', "Alpha Dithered", "Draped exclusive, a mix of blend and no blend, with lower values providing sharper cutoffs")
         ],
-        default='BLEND',
+        default='CLIP',
         update=material_config.prop_update_wrapped_update_settings
     ) # type: ignore
 

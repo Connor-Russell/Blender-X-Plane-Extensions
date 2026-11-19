@@ -17,7 +17,7 @@ import bpy # type: ignore
 bl_info = {
     "name": "X-Plane Extensions",
     "author": "Connor Russell",
-    "version": (1, 0, 0),
+    "version": (1, 0, 1),
     "blender": (3, 0, 0),
     "location": "Properties > Scene > X-Plane Extensions",
     "description": "Unofficial Blender addon to add support for additional X-Plane formats and QOL improvements.",
@@ -28,7 +28,10 @@ bl_info = {
 @bpy.app.handlers.persistent
 def pre_save(dummy):
     plugin_version = bl_info["version"]
-    bpy.context.scene.xp_ext.last_save_plugin_version = plugin_version[0] + plugin_version[1] + plugin_version[2]
+    bpy.context.scene.xp_ext.last_save_plugin_version_major = plugin_version[0]
+    bpy.context.scene.xp_ext.last_save_plugin_version_minor = plugin_version[1]
+    bpy.context.scene.xp_ext.last_save_plugin_version_patch = plugin_version[2]
+    
 
 def register():
     props.register()

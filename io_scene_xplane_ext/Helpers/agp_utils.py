@@ -9,6 +9,7 @@ import mathutils
 from . import geometery_utils
 from . import log_utils
 from . import misc_utils
+from ..Types.xp_attached_obj_preview import is_attached_object
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #
@@ -507,7 +508,7 @@ def recursively_split_objects(in_object: bpy.types.Object, include_self: bool = 
         if current_object == in_object and not include_self:
             continue
 
-        if current_object.type not in {'MESH', 'LIGHT'} or current_object.hide_get() or current_object.hide_select:
+        if current_object.type not in {'MESH', 'LIGHT'} or current_object.hide_get() or current_object.hide_select or is_attached_object(current_object):
             continue
 
         bpy.context.view_layer.objects.active = current_object

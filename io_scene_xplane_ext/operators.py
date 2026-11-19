@@ -1680,12 +1680,6 @@ class BTN_preview_attached_object(bpy.types.Operator):
     bl_description = "Imports and previews an object that is attached to a facade or .agp file. This is useful for previewing objects that are not part of the main scene but are referenced by the facade or agp file."
     bl_options = {'REGISTER', 'UNDO'}
 
-    make_real: bpy.props.BoolProperty( # type: ignore
-        name="Make Real",
-        description="Whether to make the imported preview object a real object in the scene. If false, the preview object will be hidden and non-selectable, and will not be exported with the scene. This is useful for temporary previews that you don't want to accidentally export.",
-        default=False
-    )
-
     do_all_objects: bpy.props.BoolProperty( # type: ignore
         name="Do All Objects",
         description="Whether to update previews for all objects or just selected.",
@@ -1695,19 +1689,14 @@ class BTN_preview_attached_object(bpy.types.Operator):
     reload: bpy.props.BoolProperty( # type: ignore
         name="Reload",
         description="Whether to reload the attached object preview if it already exists.",
-        default=True
+        default=False
     )
 
     def execute(self, context):
-        xp_attached_obj_preview.lock_preview_obj_update()
         try:
             log_utils.new_section("Preview attached object")
 
-            # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
-            # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
-            # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
             selected_objects = list(context.selected_objects)
-            original_active_object = context.active_object
 
             target_objects = []
 
@@ -1717,98 +1706,104 @@ class BTN_preview_attached_object(bpy.types.Operator):
             else:
                 target_objects = selected_objects
 
-            # Get a list of objects that need to be cleared (for reload)
-            reload_resources = set()
-            if self.reload and not self.make_real:
+            if self.reload:
+                resources_to_reload = set()
                 for obj in target_objects:
-                    resource = xp_attached_obj_preview.get_effective_preview_resource(obj)
-                    if resource != "":
-                        reload_resources.add(resource)
-                # Update the previews for any objects already loaded
-                xp_attached_obj_preview.update_previews_for_resources(reload_resources)
-
-                # Now load the previews for us. If other instances of this object were loaded this will end up linking to their object data, hence why we needed to reload them first
-                for obj in target_objects:
-                    try:
-                        xp_attached_obj_preview.process_single_object(obj, self.make_real)
-                    except Exception as e:
-                        # Try to log it, but if this is an error that the object no longer exists the logging will fail! SO we have to try block that
-                        try:
-                            log_utils.warning(f"Failed to process object {obj.name}: {e}")
-                        except:
-                            pass
-                        pass
+                    resources_to_reload.add(xp_attached_obj_preview.get_effective_preview_resource(obj))
+                for res in resources_to_reload:
+                    xp_attached_obj_preview.reload_previews_for_asset(res)
             else:
                 for obj in target_objects:
+                    if not ((obj.xp_agp.exportable and obj.xp_agp.type == "ATTACHED_OBJ") or (obj.xp_attached_obj.exportable)):
+                        continue
                     try:
-                        if not self.reload:
-                            if len(obj.children) > 0:
-                                continue
-                        print(f"Processing object: {obj.name}")
-                        xp_attached_obj_preview.process_single_object(obj, self.make_real)
-                        print(f"Finished processing object: {obj.name}")
+                        if not xp_attached_obj_preview.is_attached_object(obj):
+                            continue
+                        result = xp_attached_obj_preview.update_preview_for_single_obj(obj)
+                        if result == 1:
+                            bpy.data.objects.remove(obj)
                     except Exception as e:
-                        log_utils.warning(f"Failed to process object {obj.name}: {e}")
-                        # Log teh callstack
-                        import traceback
-                        traceback.print_exc()
-                        pass
-
-            log_utils.display_messages()
-
-            #Deselect all objects
-            for obj in context.scene.objects:
-                obj.select_set(False)
-
-            #Re-select the original active object
-            for obj in selected_objects:
-                obj.select_set(True)
-            if original_active_object is not None:
-                context.view_layer.objects.active = original_active_object
+                        log_utils.warning(f"Failed to update preview object for {obj.name}. Error: {e}")
+                
         except Exception as e:
             raise e
-        finally:
-            xp_attached_obj_preview.unlock_preview_obj_update()
-            pass
 
         return {'FINISHED'}
 
-class BTN_make_only_attached_selectable(bpy.types.Operator):
+class BTN_select_filter_attached(bpy.types.Operator):
     """Makes only attached objects selectable"""
-    bl_idname = "xp_ext.make_only_attached_selectable"
+    bl_idname = "xp_ext.select_filter_attached"
     bl_label = "Make Only Attached Selectable"
     bl_description = "Makes only attached objects selectable, hiding selection for all others."
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        selected_objects = context.selected_objects
         for obj in bpy.data.objects:
-            if obj.hide_select or obj.hide_viewport:
+            if obj.hide_viewport:
+                if 'xp_ext_hidden_for_make_only_attached_selectable' in obj:
+                    obj.hide_select = False
+                    del obj['xp_ext_hidden_for_make_only_attached_selectable']
                 continue
-            elif obj.type == 'LIGHT':
-                obj.hide_viewport = True
-                obj['xp_ext_hidden_for_make_only_attached_selectable'] = True
-            elif obj.type == 'EMPTY' and (obj.xp_attached_obj.exportable or obj.xp_agp.type == 'ATTACHED_OBJ'):
+            elif xp_attached_obj_preview.is_attached_object(obj):
+                if obj.hide_select and 'xp_ext_hidden_for_make_only_attached_selectable' not in obj:
+                    continue
                 obj.hide_select = False
+                if 'xp_ext_hidden_for_make_only_attached_selectable' in obj:
+                    del obj['xp_ext_hidden_for_make_only_attached_selectable']
             else:
+                if obj.hide_select and 'xp_ext_hidden_for_make_only_attached_selectable' not in obj:
+                    continue
                 obj.hide_select = True
                 obj['xp_ext_hidden_for_make_only_attached_selectable'] = True
+        context.scene.xp_ext.select_filter_mode = 'ATTACHED'
         return {'FINISHED'}
 
-class BTN_restore_selectability(bpy.types.Operator):
-    """Restores the selectability of objects hidden by 'Make Only Attached Selectable'"""
-    bl_idname = "xp_ext.restore_selectability"
-    bl_label = "Restore Selectability"
-    bl_description = "Restores the selectability of objects hidden by 'Make Only Attached Selectable'."
+class BTN_select_filter_real(bpy.types.Operator):
+    """Makes only non-attached objects selectable"""
+    bl_idname = "xp_ext.select_filter_real"
+    bl_label = "Make Only Real Selectable"
+    bl_description = "Makes only non-attached objects selectable, hiding selection for all others."
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         for obj in bpy.data.objects:
+            if obj.hide_viewport:
+                if 'xp_ext_hidden_for_make_only_attached_selectable' in obj:
+                    obj.hide_select = False
+                    del obj['xp_ext_hidden_for_make_only_attached_selectable']
+                continue
+            elif not xp_attached_obj_preview.is_attached_object(obj):
+                if obj.hide_select and 'xp_ext_hidden_for_make_only_attached_selectable' not in obj:
+                    continue
+                obj.hide_select = False
+                if 'xp_ext_hidden_for_make_only_attached_selectable' in obj:
+                    del obj['xp_ext_hidden_for_make_only_attached_selectable']
+            else:
+                if obj.hide_select and 'xp_ext_hidden_for_make_only_attached_selectable' not in obj:
+                    continue
+                obj.hide_select = True
+                obj['xp_ext_hidden_for_make_only_attached_selectable'] = True
+        context.scene.xp_ext.select_filter_mode = 'REAL'
+        return {'FINISHED'}
+
+class BTN_select_filter_all(bpy.types.Operator):
+    """Makes all objects selectable"""
+    bl_idname = "xp_ext.select_filter_all"
+    bl_label = "Make All Selectable"
+    bl_description = "Restores selectability for objects hidden by a selection filter."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for obj in bpy.data.objects:
+            if obj.hide_viewport:
+                if 'xp_ext_hidden_for_make_only_attached_selectable' in obj:
+                    obj.hide_select = False
+                    del obj['xp_ext_hidden_for_make_only_attached_selectable']
+                continue
             if 'xp_ext_hidden_for_make_only_attached_selectable' in obj:
                 obj.hide_select = False
                 del obj['xp_ext_hidden_for_make_only_attached_selectable']
-                if obj.type == 'LIGHT':
-                    obj.hide_viewport = False
+        context.scene.xp_ext.select_filter_mode = 'ALL'
         return {'FINISHED'}
 
 class BTN_clear_attached_object_preview(bpy.types.Operator):
@@ -1825,13 +1820,9 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
         )
 
     def execute(self, context):
-        xp_attached_obj_preview.lock_preview_obj_update()
         try:
             log_utils.new_section("Clear attached object preview")
 
-            # Get the selected objects. For each, Skip if not an empty. Then check if either it's .xp_attached_obj.exportable is true or it's .xp_agp.type == ATTACHED_OBJ.
-            # If so, get the corresponding attached_obj_preview_resource, read it, and add it.
-            # If there is no object to add, check for children, if there is a mesh with selection (.hide_select) disabled, delete it
             selected_objects = context.selected_objects
 
             target_objects = selected_objects
@@ -1841,23 +1832,16 @@ class BTN_clear_attached_object_preview(bpy.types.Operator):
 
             for obj in target_objects:
                 try:
-                    if not obj or not obj.type:
+                    if not xp_attached_obj_preview.is_attached_object(obj):
                         continue
-                    if obj.type != 'EMPTY':
-                        continue
-
-                    for child in obj.children:
-                        if 'xp_ext_preview_filepath' in child:
-                            bpy.data.objects.remove(child, do_unlink=True)
-                   
+                    result = xp_attached_obj_preview.clear_preview_for_single_obj(obj)
+                    if result == 1:
+                        bpy.data.objects.remove(obj)
                 except Exception as e:
-                    log_utils.warning(f"Failed to clear attached object preview for {obj.name}: {e}")
+                    log_utils.warning(f"Failed to clear preview object for {obj.name}. Error: {e}")
             log_utils.display_messages()
         except Exception as e:
             raise e
-        finally:
-            xp_attached_obj_preview.unlock_preview_obj_update()
-            pass
 
         return {'FINISHED'}
 
@@ -1941,8 +1925,9 @@ def register():
     bpy.utils.register_class(BTN_preview_attached_object)
     bpy.utils.register_class(BTN_clear_attached_object_preview)
     bpy.utils.register_class(BTN_set_lods)
-    bpy.utils.register_class(BTN_make_only_attached_selectable)
-    bpy.utils.register_class(BTN_restore_selectability)
+    bpy.utils.register_class(BTN_select_filter_attached)
+    bpy.utils.register_class(BTN_select_filter_real)
+    bpy.utils.register_class(BTN_select_filter_all)
     
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
@@ -1988,6 +1973,7 @@ def unregister():
     bpy.utils.unregister_class(BTN_preview_attached_object)
     bpy.utils.unregister_class(BTN_clear_attached_object_preview)
     bpy.utils.unregister_class(BTN_set_lods)
-    bpy.utils.unregister_class(BTN_make_only_attached_selectable)
-    bpy.utils.unregister_class(BTN_restore_selectability)
+    bpy.utils.unregister_class(BTN_select_filter_all)
+    bpy.utils.unregister_class(BTN_select_filter_real)
+    bpy.utils.unregister_class(BTN_select_filter_attached)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_options)

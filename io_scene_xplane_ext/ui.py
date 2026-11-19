@@ -626,12 +626,10 @@ class MENU_agp_obj(bpy.types.Panel):
                 box.prop(context.object.xp_attached_obj, "attached_obj_preview_resource")
                 row = box.row()
                 btn_preview = row.operator("xp_ext.preview_attached_object", text="Preview Resource")
-                btn_preview.reload = True
-                btn_preview.make_real = False
-                row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
-                btn_real_preview = row.operator("xp_ext.preview_attached_object", text="Preview as Real Objects")
-                btn_real_preview.make_real = True
-                btn_real_preview.reload = True
+                btn_preview.do_all_objects = False
+                btn_preview.reload = False
+                btn_clear = row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
+                btn_preview.do_all_objects = False
             elif agp_obj.type == "AUTO_SPLIT_OBJ":
                 layout.separator()
                 layout.label(text="DISCLAIMER:")
@@ -940,12 +938,15 @@ class MENU_operations(bpy.types.Panel):
         box = layout.box()
         box.prop(xp_ext, "attached_objects_expanded", text="Attached .obj Operations", icon='TRIA_DOWN' if xp_ext.attached_objects_expanded else 'TRIA_RIGHT', emboss=False)
         if xp_ext.attached_objects_expanded:
-            box.operator("xp_ext.replace_object_names", text="Batch Replace Attached Object Resources")
-            box.operator("xp_ext.select_by_object_names", text="Select Attached Objects by Resoucre")
-            box.label(text="Attached Object Selectability")
             row = box.row()
-            row.operator("xp_ext.make_only_attached_selectable", text="Only Attached")
-            row.operator("xp_ext.restore_selectability", text="All")
+            row.operator("xp_ext.replace_object_names", text="Batch Replace Resources")
+            row.operator("xp_ext.select_by_object_names", text="Select by Resoucre")
+            box.label(text="Attached Object Selectability")
+            row = box.row(align=True)
+            filter_mode = xp_ext.select_filter_mode
+            row.operator("xp_ext.select_filter_attached", text="Only Attached", depress=filter_mode == 'ATTACHED')
+            row.operator("xp_ext.select_filter_all", text="All", depress=filter_mode == 'ALL')
+            row.operator("xp_ext.select_filter_real", text="Only Real", depress=filter_mode == 'REAL')
 
         layout.separator()
         
@@ -1178,12 +1179,10 @@ class MENU_attached_object(bpy.types.Panel):
             box.prop(attached_obj, "attached_obj_preview_resource")
             row = box.row()
             btn_preview = row.operator("xp_ext.preview_attached_object", text="Preview Resource")
-            btn_preview.reload = True
-            btn_preview.make_real = False
-            row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
-            btn_real_preview = row.operator("xp_ext.preview_attached_object", text="Preview as Real Objects")
-            btn_real_preview.make_real = True
-            btn_real_preview.reload = True
+            btn_preview.do_all_objects = False
+            btn_preview.reload = False
+            btn_clear = row.operator("xp_ext.clear_attached_object_preview", text="Clear Preview")
+            btn_clear.do_all_objects = False
 
 class MENU_fac_mesh(bpy.types.Panel):
     """Creates a Panel in the object properties window"""
