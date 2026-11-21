@@ -12,6 +12,7 @@ import mathutils
 import math
 import os
 import numpy as np
+from io_scene_xplane_ext.Helpers import anim_utils
 
 class difference:
     def __init__(self, category="Unspecified", message="Unspecified"):
@@ -471,14 +472,16 @@ def compare_objects(obj1, obj2):
     #If both have actions we will compare the fcurves
     if act1 is not None and act2 is not None:
         max_anim_diff = 0.001
+        fcurves1 = anim_utils.get_animation_fcurves(obj1.animation_data)
+        fcurves2 = anim_utils.get_animation_fcurves(obj2.animation_data)
 
         # Compare number of fcurves
-        if len(act1.fcurves) != len(act2.fcurves):
-            differences.append(difference("Object Animation", f"Different number of fcurves: {len(act1.fcurves)} vs {len(act2.fcurves)}"))
+        if len(fcurves1) != len(fcurves2):
+            differences.append(difference("Object Animation", f"Different number of fcurves: {len(fcurves1)} vs {len(fcurves2)}"))
             return differences
 
         # Compare each fcurve
-        for fc1, fc2 in zip(act1.fcurves, act2.fcurves):
+        for fc1, fc2 in zip(fcurves1, fcurves2):
             if fc1.data_path != fc2.data_path or fc1.array_index != fc2.array_index:
                 differences.append(difference("Object Animation", f"Fcurve mismatch: {fc1.data_path}[{fc1.array_index}] vs {fc2.data_path}[{fc2.array_index}]"))
                 continue

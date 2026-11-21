@@ -124,7 +124,7 @@ def auto_keyframe(in_obj: bpy.types.Object, dataref, start_value, end_value, loo
     else:
         #Iterate over every frame that has a keyframe
         if in_obj.animation_data and in_obj.animation_data.action:
-            for fcurve in in_obj.animation_data.action.fcurves:
+            for fcurve in anim_utils.get_animation_fcurves(in_obj.animation_data):
                 #Check if this fcurve is for either loc or rot (the only things we can animate)
                 if fcurve.data_path in {'location', 'rotation_euler', 'rotation_quaternion'}:
                     for keyframe_point in fcurve.keyframe_points:

@@ -135,8 +135,14 @@ def config_source_materials(type, mats):
                     #B of combine is 1
                     #Combine to normal map
                     #Normal map to diffuse normal map input (idx 2)
-                    sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
-                    combine_node = mat.node_tree.nodes.new('ShaderNodeCombineRGB')
+                    if bpy.app.version < (5, 0, 0):
+                        sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        combine_node = mat.node_tree.nodes.new('ShaderNodeCombineRGB')
+                    else:
+                        sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateColor')
+                        sep_node.mode = 'RGB'
+                        combine_node = mat.node_tree.nodes.new('ShaderNodeCombineColor')
+                        combine_node.mode = 'RGB'
                     normal_map_node = mat.node_tree.nodes.new('ShaderNodeNormalMap')
                     mat.node_tree.links.new(image_node.outputs[0], sep_node.inputs[0])
                     mat.node_tree.links.new(sep_node.outputs[0], combine_node.inputs[0])
@@ -160,7 +166,11 @@ def config_source_materials(type, mats):
                         #Add a separate RGB node. Linkage is as follows:
                         #Image to sep node
                         #G of sep node to color of diffuse node
-                        sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        if bpy.app.version < (5, 0, 0):
+                            sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        else:
+                            sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateColor')
+                            sep_node.mode = 'RGB'
                         mat.node_tree.links.new(image_node.outputs[0], sep_node.inputs[0])
                         mat.node_tree.links.new(sep_node.outputs[1], output_node.inputs[0])
                     #No path found
@@ -206,7 +216,11 @@ def config_source_materials(type, mats):
                         #Add a separate RGB node. Linkage is as follows:
                         #Image to sep node
                         #R of sep node to color of diffuse node
-                        sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        if bpy.app.version < (5, 0, 0):
+                            sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        else:
+                            sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateColor')
+                            sep_node.mode = 'RGB'
                         mat.node_tree.links.new(image_node.outputs[0], sep_node.inputs[0])
                         mat.node_tree.links.new(sep_node.outputs[0], output_node.inputs[0])
                     #No path found
@@ -229,7 +243,11 @@ def config_source_materials(type, mats):
                         #Add a separate RGB node. Linkage is as follows:
                         #Image to sep node
                         #B of sep node to color of diffuse node
-                        sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        if bpy.app.version < (5, 0, 0):
+                            sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateRGB')
+                        else:
+                            sep_node = mat.node_tree.nodes.new('ShaderNodeSeparateColor')
+                            sep_node.mode = 'RGB'
                         mat.node_tree.links.new(image_node.outputs[0], sep_node.inputs[0])
                         mat.node_tree.links.new(sep_node.outputs[2], output_node.inputs[0])
                     #No path found
@@ -353,7 +371,8 @@ def config_target_bake_texture(target_obj, type, resolution):
         mat = target_obj.data.materials[0]
     else:
         mat = bpy.data.materials.new(name="BAKE_BUFFER_MAT")
-        mat.use_nodes = True
+        if bpy.app.version < (5, 0, 0):
+            mat.use_nodes = True
         target_obj.data.materials.append(mat)
 
     #Clear all the nodes of the current material

@@ -198,7 +198,6 @@ class _attached_object_preview:
 
         #Create the base material
         mat = bpy.data.materials.new(name=f"~PREVIEW~{self.name}")
-        mat.use_nodes = True
         xp_mat = mat.xp_materials
         xp_mat.alb_texture = self.alb_texture
         xp_mat.normal_texture = self.nml_texture

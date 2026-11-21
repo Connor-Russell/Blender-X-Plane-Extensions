@@ -1023,7 +1023,6 @@ class facade:
         # Set wall and roof materials
         if self.import_wall_material:
             wall_material = bpy.data.materials.new(name="WallMaterial")
-            wall_material.use_nodes = True
             wall_material.xp_materials.alb_texture = self.import_wall_material.alb_texture
             wall_material.xp_materials.normal_texture = self.import_wall_material.nml_texture
             wall_material.xp_materials.lit_texture = self.import_wall_material.lit_texture
@@ -1062,7 +1061,6 @@ class facade:
             
         if self.import_roof_material:
             roof_material = bpy.data.materials.new(name="RoofMaterial")
-            roof_material.use_nodes = True
             roof_material.xp_materials.alb_texture = self.import_roof_material.alb_texture
             roof_material.xp_materials.normal_texture = self.import_roof_material.nml_texture
             roof_material.xp_materials.lit_texture = self.import_roof_material.lit_texture

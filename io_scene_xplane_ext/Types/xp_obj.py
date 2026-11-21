@@ -2490,7 +2490,6 @@ class object:
         #Create the base material
         all_mats = []
         mat = bpy.data.materials.new(name=self.name)
-        mat.use_nodes = True
         xp_mat = mat.xp_materials
         xp_mat.alb_texture = self.alb_texture
         xp_mat.normal_texture = self.nml_texture
@@ -2530,7 +2529,6 @@ class object:
         if not file_utils.is_empty(self.draped_alb_texture):
             draped_mat = mat.copy()
             draped_mat.name = self.name + "_draped"
-            draped_mat.use_nodes = True
             xp_draped_mat = draped_mat.xp_materials
             xp_draped_mat.alb_texture = self.draped_alb_texture
             xp_draped_mat.normal_texture = self.draped_nml_texture

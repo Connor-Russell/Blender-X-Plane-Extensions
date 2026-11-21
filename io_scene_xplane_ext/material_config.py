@@ -274,7 +274,10 @@ def update_settings(in_material):
 
     #Set backface culling to TRUE
     in_material.use_backface_culling = True
-    in_material.show_transparent_back = False
+    if bpy.app.version < (4, 2, 0):
+        in_material.show_transparent_back = False
+    else:
+        in_material.use_transparency_overlap = False
 
     #Set XP draped mode based on the draped property
     if xp_mat.draped:
@@ -307,17 +310,33 @@ def update_settings(in_material):
     #Set XP alpha mode based on the blend_alpha property. Alpha Cutoff ("off") or Alpha Blend ("on")
     if xp_mat.blend_mode == "CLIP":
         in_material.xplane.blend_v1000 = 'off'
-        in_material.blend_method = 'CLIP'
-        in_material.alpha_threshold = xp_mat.blend_cutoff
+        if bpy.app.version < (4, 2, 0):
+            in_material.blend_method = 'CLIP'
+            in_material.alpha_threshold = xp_mat.blend_cutoff
+        else:
+            in_material.surface_render_method = 'DITHERED'
         in_material.xplane.blendRatio = xp_mat.blend_cutoff
     elif xp_mat.blend_mode == "SHADOW":
         in_material.xplane.blend_v1000 = 'shadow'
         in_material.xplane.blendRatio = xp_mat.blend_cutoff
-        in_material.blend_method = 'BLEND'
+        if bpy.app.version < (4, 2, 0):
+            in_material.blend_method = 'BLEND'
+        else:
+            in_material.surface_render_method = 'BLENDED'
+    elif xp_mat.blend_mode == "HASH":
+        in_material.xplane.blend_v1000 = 'on'
+        in_material.xplane.blendRatio = xp_mat.blend_cutoff
+        if bpy.app.version < (4, 2, 0):
+            in_material.blend_method = 'HASHED'
+        else:
+            in_material.surface_render_method = 'DITHERED'
     else:
         in_material.xplane.blend_v1000 = 'on'
         in_material.xplane.blendRatio = xp_mat.blend_cutoff
-        in_material.blend_method = 'BLEND'
+        if bpy.app.version < (4, 2, 0):
+            in_material.blend_method = 'BLEND'
+        else:
+            in_material.surface_render_method = 'BLENDED'
         
 
     #Set XP hard mode based on the hard property ("none" or "concrete")
@@ -393,7 +412,11 @@ def create_decal_key_nodes(material, x, y, mod_connection, alb_node, key_r, key_
     y_row_9 = y_row_8 + 100
 
     #Get the split RGB of the albedo, and the split RGB of the modulator
-    node_alb_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+    if bpy.app.version < (5, 0, 0):
+        node_alb_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+    else:
+        node_alb_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateColor")
+        node_alb_split_rgb.mode = 'RGB'
     node_alb_split_rgb.location = (x_col_1, y_row_1)
     node_alb_split_rgb.label = "Alb Split RGB"
     node_alb_split_rgb.hide = True
@@ -563,10 +586,11 @@ def update_nodes(material: bpy.types.Material):
             return
         
         #Check to make sure the material is set to use nodes, otherwise exit and warn the user in the status bar
-        if material.use_nodes == False:
-            material.use_nodes = True
-            #raise Exception("Please set the material to use nodes before attempting to update materials.")
-            #return
+        if bpy.app.version < (5, 0, 0):
+            if material.use_nodes == False:
+                material.use_nodes = True
+                #raise Exception("Please set the material to use nodes before attempting to update materials.")
+                #return
         
         # Check if it is in temp image mode
         if material.xp_materials.preview_image is not None and material.xp_materials.preview_image_mode != 'NONE':
@@ -693,6 +717,20 @@ def update_nodes(material: bpy.types.Material):
         node_principled.location = (-500, 0)
         material.node_tree.links.new(node_principled.outputs[0], node_output.inputs[0])
 
+        #Find the Principled sockets for this Blender version.
+        if bpy.app.version < (3, 0, 0):
+            normal_input = 20
+            roughness_input = 7
+            metalness_input = 4
+        elif bpy.app.version < (4, 0, 0):
+            normal_input = 22
+            roughness_input = 9
+            metalness_input = 6
+        else:
+            normal_input = 6 if bpy.app.version >= (5, 2, 0) else 5
+            roughness_input = 2
+            metalness_input = 1
+
         node_uv = material.node_tree.nodes.new(type="ShaderNodeUVMap")
         node_uv.location = (-5000, -500)
         node_uv.label = "UV Map"
@@ -740,13 +778,21 @@ def update_nodes(material: bpy.types.Material):
             else:
                 material.node_tree.links.new(node_alpha_clamp.outputs[0], node_principled.inputs[4]) #Clamped alpha to alpha
 
+        metalness_output = None
+
         #Set up nml nodes
         if image_nml != None:
 
             node_nml = material.node_tree.nodes.new(type="ShaderNodeTexImage")
             node_nml.label = "Normal Map"
-            node_separate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
-            node_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
+            if bpy.app.version < (5, 0, 0):
+                node_separate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+                node_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
+            else:
+                node_separate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateColor")
+                node_separate_rgb.mode = 'RGB'
+                node_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineColor")
+                node_combine_rgb.mode = 'RGB'
             node_normal_map = material.node_tree.nodes.new(type="ShaderNodeNormalMap")
             node_rough_invert = material.node_tree.nodes.new(type="ShaderNodeInvert")
             node_nml.location = (-2600, -250)
@@ -772,7 +818,7 @@ def update_nodes(material: bpy.types.Material):
             #Now connections, this is funky cuz XP doesn't use conventional formats. We need to map channels as follows:
                 #NML R to separate R
                 #NML G to separate G
-                #NML B to principled metalness
+                #NML B supplies metalness or translucency unless a separate material texture is used
                 #NML alpha to invert
                 #separate R to combine R
                 #separate G to combine G
@@ -789,21 +835,10 @@ def update_nodes(material: bpy.types.Material):
             
             material.node_tree.links.new(node_nml.outputs[1], node_rough_invert.inputs[1])
 
-            if bpy.app.version < (3, 0, 0):
-                material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[20])    #Reconstructed normal to normal
-                if not xp_material_props.do_separate_material_texture:
-                    material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[7])   #Inverted normal roughness to roughness
-                    material.node_tree.links.new(node_separate_rgb.outputs[2], node_principled.inputs[4])   #separate normal B to metalness
-            elif bpy.app.version < (4, 0, 0):
-                material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[22])    #Reconstructed normal to normal
-                if not xp_material_props.do_separate_material_texture:
-                    material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[9])   #Inverted normal roughness to roughness
-                    material.node_tree.links.new(node_separate_rgb.outputs[2], node_principled.inputs[6])   #separate normal B to metalness
-            else:
-                material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[5])    #Reconstructed normal to normal
-                if not xp_material_props.do_separate_material_texture:
-                    material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[2])   #Inverted normal roughness to roughness
-                    material.node_tree.links.new(node_separate_rgb.outputs[2], node_principled.inputs[1])   #separate normal B to metalness
+            material.node_tree.links.new(node_normal_map.outputs[0], node_principled.inputs[normal_input])
+            if not xp_material_props.do_separate_material_texture:
+                material.node_tree.links.new(node_rough_invert.outputs[0], node_principled.inputs[roughness_input])
+                metalness_output = node_separate_rgb.outputs[2]
             
         #If we are in separate material textures mode, we need to set the normal map's tiled UVs
         if xp_material_props.do_separate_material_texture and image_mat != None:
@@ -812,23 +847,29 @@ def update_nodes(material: bpy.types.Material):
             node_mat.location = (-2600, -500)
             node_mat.image = image_mat
             image_mat.colorspace_settings.name = 'Non-Color'
-            node_mat_separate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            if bpy.app.version < (5, 0, 0):
+                node_mat_separate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            else:
+                node_mat_separate_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateColor")
+                node_mat_separate_rgb.mode = 'RGB'
             node_mat_separate_rgb.location = (-2300, -500)
             node_mat_invert_rough = material.node_tree.nodes.new(type="ShaderNodeInvert")
             node_mat_invert_rough.location = (-2000, -500)
 
-            #For material textures, R is metalness, G is inverted roughness
+            #For material textures, R supplies metalness or translucency and G is inverted roughness
             material.node_tree.links.new(node_mat.outputs[0], node_mat_separate_rgb.inputs[0])  #Mat color to mat split rgb
             material.node_tree.links.new(node_mat_separate_rgb.outputs[1], node_mat_invert_rough.inputs[1]) #G (roughness) to invert
-            if bpy.app.version < (3, 0, 0):
-                material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[7]) #Inverted roughness to roughness
-                material.node_tree.links.new(node_mat_separate_rgb.outputs[0], node_principled.inputs[4]) #Mat R to metalness
-            elif bpy.app.version < (4, 0, 0):
-                material.node_tree.links.new(node_mat_separate_rgb.outputs[0], node_principled.inputs[6]) #Mat R to metalness
-                material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[9]) #Inverted roughness to roughness
-            else:
-                material.node_tree.links.new(node_mat_separate_rgb.outputs[0], node_principled.inputs[1])
-                material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[2]) #Inverted roughness to roughness
+            material.node_tree.links.new(node_mat_invert_rough.outputs[0], node_principled.inputs[roughness_input])
+            metalness_output = node_mat_separate_rgb.outputs[0]
+
+        #Use the metalness channel for subsurface scattering in Normal Translucency mode.
+        if xp_material_props.material_mode == "NORMAL_TRANSLUCENCY":
+            if bpy.app.version >= (5, 2, 0):
+                node_principled.inputs[5].default_value = True #Thin Wall
+                if metalness_output is not None:
+                    material.node_tree.links.new(metalness_output, node_principled.inputs[9]) #Subsurface Weight
+        elif metalness_output is not None:
+            material.node_tree.links.new(metalness_output, node_principled.inputs[metalness_input])
 
         #Set up lit nodes
         if image_lit != None:
@@ -846,8 +887,8 @@ def update_nodes(material: bpy.types.Material):
                 material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[26])   #Lit color to emission
                 node_principled.inputs[27].default_value = (1) #Set the emission intensity to 1
             else:
-                material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs[27])   #Lit color to emission
-                node_principled.inputs[28].default_value = (1) #Set the emission intensity to 1
+                material.node_tree.links.new(node_lit.outputs[0], node_principled.inputs["Emission Color"])   #Lit color to emission
+                node_principled.inputs["Emission Strength"].default_value = 1 #Set the emission intensity to 1
 
             #If there is an alb, connect the alpha to it's add so it can impact the alpha, IF the lit has an alpha
             if node_alpha_add_lit != None:
@@ -899,7 +940,11 @@ def update_nodes(material: bpy.types.Material):
             node_mod.image.colorspace_settings.name = 'Non-Color'
             node_mod.label = "Modulator"
 
-            node_mod_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            if bpy.app.version < (5, 0, 0):
+                node_mod_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            else:
+                node_mod_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateColor")
+                node_mod_split_rgb.mode = 'RGB'
             node_mod_split_rgb.location = (-4250, 0)
             node_mod_split_rgb.label = "Mod Split RGB"
             material.node_tree.links.new(node_mod.outputs[0], node_mod_split_rgb.inputs[0])
@@ -1059,12 +1104,20 @@ def update_nodes(material: bpy.types.Material):
             image_decal_1_nml.colorspace_settings.name = 'Non-Color'
             material.node_tree.links.new(output_uv_decal_nml_1, node_decal_1_nml.inputs[0])
 
-            node_decal_1_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            if bpy.app.version < (5, 0, 0):
+                node_decal_1_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            else:
+                node_decal_1_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateColor")
+                node_decal_1_split_rgb.mode = 'RGB'
             node_decal_1_split_rgb.location = (-3750, -500)
             node_decal_1_split_rgb.label = "Decal 1 Split RGB"
             material.node_tree.links.new(node_decal_1_nml.outputs[0], node_decal_1_split_rgb.inputs[0])
 
-            node_decal_1_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
+            if bpy.app.version < (5, 0, 0):
+                node_decal_1_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
+            else:
+                node_decal_1_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineColor")
+                node_decal_1_combine_rgb.mode = 'RGB'
             node_decal_1_combine_rgb.location = (-3500, -500)
             node_decal_1_combine_rgb.label = "Decal 1 Combine RGB"
             material.node_tree.links.new(node_decal_1_split_rgb.outputs[0], node_decal_1_combine_rgb.inputs[0])
@@ -1137,12 +1190,20 @@ def update_nodes(material: bpy.types.Material):
             image_decal_2_nml.colorspace_settings.name = 'Non-Color'
             material.node_tree.links.new(output_uv_decal_nml_2, node_decal_2_nml.inputs[0])
 
-            node_decal_2_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            if bpy.app.version < (5, 0, 0):
+                node_decal_2_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateRGB")
+            else:
+                node_decal_2_split_rgb = material.node_tree.nodes.new(type="ShaderNodeSeparateColor")
+                node_decal_2_split_rgb.mode = 'RGB'
             node_decal_2_split_rgb.location = (-3750, -1500)
             node_decal_2_split_rgb.label = "Decal 2 Split RGB"
             material.node_tree.links.new(node_decal_2_nml.outputs[0], node_decal_2_split_rgb.inputs[0])
 
-            node_decal_2_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
+            if bpy.app.version < (5, 0, 0):
+                node_decal_2_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineRGB")
+            else:
+                node_decal_2_combine_rgb = material.node_tree.nodes.new(type="ShaderNodeCombineColor")
+                node_decal_2_combine_rgb.mode = 'RGB'
             node_decal_2_combine_rgb.location = (-3500, -1500)
             node_decal_2_combine_rgb.label = "Decal 2 Combine RGB"
             material.node_tree.links.new(node_decal_2_split_rgb.outputs[0], node_decal_2_combine_rgb.inputs[0])
@@ -1264,12 +1325,8 @@ def update_nodes(material: bpy.types.Material):
         if node_alpha_post_mix != None:
             material.node_tree.links.new(node_alb_post_mix_1.outputs[0], node_principled.inputs[0])
 
-        if bpy.app.version < (3, 0, 0) and node_nml_post_mix_1 != None:
-                material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[20])    #Reconstructed normal to normal
-        elif bpy.app.version < (4, 0, 0) and node_nml_post_mix_1 != None:
-            material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[22])    #Reconstructed normal to normal
-        elif node_nml_post_mix_1 != None:
-            material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[5])    #Reconstructed normal to normal
+        if node_nml_post_mix_1 != None:
+            material.node_tree.links.new(node_nml_post_mix_1.outputs[0], node_principled.inputs[normal_input])
 
         #Add a final clamp node to clamp the alpha to 0-1
         if node_alpha_post_mix != node_alpha_clamp and node_alpha_post_mix != None:

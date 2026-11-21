@@ -9,7 +9,24 @@ import bpy
 import math
 import mathutils
 
-import mathutils
+def get_animation_fcurves(animation_data):
+    """
+    Return the F-curves associated with the active Action and slot.
+
+    Blender 5.0 removed Action.fcurves. Older versions keep that API as a
+    compatibility proxy for the active slotted Action data.
+    """
+    if animation_data is None or animation_data.action is None:
+        return ()
+
+    action = animation_data.action
+    if bpy.app.version < (5, 0, 0):
+        return action.fcurves
+
+    from bpy_extras.anim_utils import action_get_channelbag_for_slot
+
+    channelbag = action_get_channelbag_for_slot(action, animation_data.action_slot)
+    return channelbag.fcurves if channelbag is not None else ()
 
 def move_along_axis(position, axis, distance):
     """
