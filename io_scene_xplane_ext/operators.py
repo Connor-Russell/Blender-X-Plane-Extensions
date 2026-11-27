@@ -189,6 +189,181 @@ class IMPORT_for(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
 
+class DRAG_IMPORT_lin(bpy.types.Operator):
+    """
+    Imports a .lin being dragged and dropped onto the viewport.
+    """
+    bl_idname = "xp_ext.drag_import_lin"
+    bl_label = "Import a X-Plane line (.lin)"
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+
+    @classmethod
+    def poll(cls, context):
+        return (context.area and context.area.type == "VIEW_3D")
+
+    def execute(self, context):
+
+        for cf in self.files:
+            filepath = f"{self.directory}{os.sep}{cf.name}"
+            importer.import_lin(filepath)
+
+        return {'FINISHED'}
+
+class DRAG_HANDLER_lin(bpy.types.FileHandler):
+    """
+    Handles a .lin being dragged and dropped onto the viewport. Imports it.
+    """
+    bl_idname = "xp_ext.drag_handle_lin"
+    bl_label = "Import a X-Plane line (.lin)"
+    bl_import_operator = "xp_ext.drag_import_lin"
+    bl_file_extensions = ".lin"
+
+    @classmethod
+    def poll_drop(cls, context):
+        return (context.area and context.area.type == 'VIEW_3D')
+
+class DRAG_IMPORT_pol(bpy.types.Operator):
+    """Imports a .pol being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_import_pol"
+    bl_label = "Import a X-Plane polygon (.pol)"
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+
+    @classmethod
+    def poll(cls, context):
+        return (context.area and context.area.type == "VIEW_3D")
+
+    def execute(self, context):
+        for cf in self.files:
+            importer.import_pol(f"{self.directory}{os.sep}{cf.name}")
+        return {'FINISHED'}
+
+class DRAG_HANDLER_pol(bpy.types.FileHandler):
+    """Handles a .pol being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_handle_pol"
+    bl_label = "Import a X-Plane polygon (.pol)"
+    bl_import_operator = "xp_ext.drag_import_pol"
+    bl_file_extensions = ".pol"
+
+    @classmethod
+    def poll_drop(cls, context):
+        return (context.area and context.area.type == 'VIEW_3D')
+
+class DRAG_IMPORT_fac(bpy.types.Operator):
+    """Imports a .fac being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_import_fac"
+    bl_label = "Import a X-Plane facade (.fac)"
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+
+    @classmethod
+    def poll(cls, context):
+        return (context.area and context.area.type == "VIEW_3D")
+
+    def execute(self, context):
+        for cf in self.files:
+            importer.import_fac(f"{self.directory}{os.sep}{cf.name}")
+        return {'FINISHED'}
+
+class DRAG_HANDLER_fac(bpy.types.FileHandler):
+    """Handles a .fac being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_handle_fac"
+    bl_label = "Import a X-Plane facade (.fac)"
+    bl_import_operator = "xp_ext.drag_import_fac"
+    bl_file_extensions = ".fac"
+
+    @classmethod
+    def poll_drop(cls, context):
+        return (context.area and context.area.type == 'VIEW_3D')
+
+class DRAG_IMPORT_obj(bpy.types.Operator):
+    """Imports a .obj being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_import_obj"
+    bl_label = "Import a X-Plane object (.obj)"
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+
+    @classmethod
+    def poll(cls, context):
+        return (context.area and context.area.type == "VIEW_3D")
+
+    def execute(self, context):
+        for cf in self.files:
+            importer.import_obj(f"{self.directory}{os.sep}{cf.name}")
+        return {'FINISHED'}
+
+class DRAG_HANDLER_obj(bpy.types.FileHandler):
+    """Handles a .obj being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_handle_obj"
+    bl_label = "Import a X-Plane object (.obj)"
+    bl_import_operator = "xp_ext.drag_import_obj"
+    bl_file_extensions = ".obj"
+
+    @classmethod
+    def poll_drop(cls, context):
+        return (context.area and context.area.type == 'VIEW_3D')
+
+class DRAG_IMPORT_agp(bpy.types.Operator):
+    """Imports a .agp being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_import_agp"
+    bl_label = "Import a X-Plane autogen point (.agp)"
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+
+    @classmethod
+    def poll(cls, context):
+        return (context.area and context.area.type == "VIEW_3D")
+
+    def execute(self, context):
+        for cf in self.files:
+            importer.import_agp(f"{self.directory}{os.sep}{cf.name}")
+        return {'FINISHED'}
+
+class DRAG_HANDLER_agp(bpy.types.FileHandler):
+    """Handles a .agp being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_handle_agp"
+    bl_label = "Import a X-Plane autogen point (.agp)"
+    bl_import_operator = "xp_ext.drag_import_agp"
+    bl_file_extensions = ".agp"
+
+    @classmethod
+    def poll_drop(cls, context):
+        return (context.area and context.area.type == 'VIEW_3D')
+
+class DRAG_IMPORT_for(bpy.types.Operator):
+    """Imports a .for being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_import_for"
+    bl_label = "Import a X-Plane forest (.for)"
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'}) #type: ignore
+
+    @classmethod
+    def poll(cls, context):
+        return (context.area and context.area.type == "VIEW_3D")
+
+    def execute(self, context):
+        for cf in self.files:
+            importer.import_for(f"{self.directory}{os.sep}{cf.name}")
+        return {'FINISHED'}
+
+class DRAG_HANDLER_for(bpy.types.FileHandler):
+    """Handles a .for being dragged and dropped onto the viewport."""
+    bl_idname = "xp_ext.drag_handle_for"
+    bl_label = "Import a X-Plane forest (.for)"
+    bl_import_operator = "xp_ext.drag_import_for"
+    bl_file_extensions = ".for"
+
+    @classmethod
+    def poll_drop(cls, context):
+        return (context.area and context.area.type == 'VIEW_3D')
+
 class BTN_mats_autoodetect_textures(bpy.types.Operator):
     """Autodetects the texture"""
     bl_idname = "xp_ext.autodetect_texture"
@@ -1928,10 +2103,34 @@ def register():
     bpy.utils.register_class(BTN_select_filter_attached)
     bpy.utils.register_class(BTN_select_filter_real)
     bpy.utils.register_class(BTN_select_filter_all)
+    bpy.utils.register_class(DRAG_IMPORT_lin)
+    bpy.utils.register_class(DRAG_HANDLER_lin)
+    bpy.utils.register_class(DRAG_IMPORT_pol)
+    bpy.utils.register_class(DRAG_HANDLER_pol)
+    bpy.utils.register_class(DRAG_IMPORT_fac)
+    bpy.utils.register_class(DRAG_HANDLER_fac)
+    bpy.utils.register_class(DRAG_IMPORT_obj)
+    bpy.utils.register_class(DRAG_HANDLER_obj)
+    bpy.utils.register_class(DRAG_IMPORT_agp)
+    bpy.utils.register_class(DRAG_HANDLER_agp)
+    bpy.utils.register_class(DRAG_IMPORT_for)
+    bpy.utils.register_class(DRAG_HANDLER_for)
     
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_options)
 
 def unregister():
+    bpy.utils.unregister_class(DRAG_HANDLER_for)
+    bpy.utils.unregister_class(DRAG_IMPORT_for)
+    bpy.utils.unregister_class(DRAG_HANDLER_agp)
+    bpy.utils.unregister_class(DRAG_IMPORT_agp)
+    bpy.utils.unregister_class(DRAG_HANDLER_obj)
+    bpy.utils.unregister_class(DRAG_IMPORT_obj)
+    bpy.utils.unregister_class(DRAG_HANDLER_fac)
+    bpy.utils.unregister_class(DRAG_IMPORT_fac)
+    bpy.utils.unregister_class(DRAG_HANDLER_pol)
+    bpy.utils.unregister_class(DRAG_IMPORT_pol)
+    bpy.utils.unregister_class(DRAG_HANDLER_lin)
+    bpy.utils.unregister_class(DRAG_IMPORT_lin)
     bpy.utils.unregister_class(BTN_agp_exporter)
     bpy.utils.unregister_class(BTN_lin_exporter)
     bpy.utils.unregister_class(BTN_pol_exporter)
